@@ -1,0 +1,13 @@
+Validating plugin manifest: C:\Projects\bws.mods.claude-code\bws-cockpit\.claude-plugin\plugin.json
+
+  ❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
+  ❯ types ./types/index.d.ts declares state: bws-cockpit.view, bws-cockpit.isHidden, bws-cockpit.loops, bws-cockpit.loopSelected, bws-cockpit.loopAction, bws-cockpit.stopArmedAt
+
+Validating hooks: C:\Projects\bws.mods.claude-code\bws-cockpit\hooks\hooks.json
+
+  ❯ ./register.tsx hooks: session.start, turn.complete, prompt.context, command.run{command=cockpit}, command.run{command=resume-run}, command.run{command=loop-watch}, ui.render{component=Pane, requestId=loop-watch}, ui.render{component=AbovePrompt}, tool.call{tool=/"^mcp__unreal[\\w-]*__"/}, tool.call{tool=Bash|PowerShell, command=/"adb"/i}, tool.call{tool=Bash|PowerShell, command=/"unity"/i}, tool.call{tool=Bash|PowerShell, command=/"UnrealEditor\\.exe"/i}
+  ❯ ./register.tsx calls: $.clock.after, $.clock.every, $.clock.now, $.clock.sleep (via isPortUp), $.command.register, $.fs.list (via findLoops, findRun), $.fs.read (via findLoops, findRun, readMcpJson), $.fs.stat (via findLoops), $.http.fetch (via isPortUp), $.process.run (via runLoopCommand, runProbe), $.prompt.submit (via submitResume), $.session.cwd (via findLoops, findRun, readMcpJson, runLoopCommand), $.session.surfaces, $.state.get, $.state.set, $.ui.open, $.ui.resolve, $.ui.toast (via noteGuard, refreshLoops, runLoopCommand, submitResume)
+  ❯ ./register.tsx state writes: bws-cockpit.isHidden, bws-cockpit.loopAction, bws-cockpit.loopSelected, bws-cockpit.loops, bws-cockpit.stopArmedAt, bws-cockpit.view
+  ❯ ./register.tsx state reads: bws-cockpit.isHidden, bws-cockpit.loopAction, bws-cockpit.loopSelected, bws-cockpit.loops, bws-cockpit.stopArmedAt, bws-cockpit.view
+
+✔ Validation passed

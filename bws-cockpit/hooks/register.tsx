@@ -20,11 +20,28 @@ import {
 import type { Probe } from './lib'
 import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand, lowVramArg, normPath } from './shell'
 import type { Dialect } from './shell'
+import { ago, answerCommand, judge, loopState, loopText, money, parseNeeds, parseProgress, parseState } from './loop'
+import type { LoopConfig, LoopLimits } from './loop'
+import type { LoopView } from '../types'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
 const view = atom({ plugin: 'bws-cockpit', key: 'view' } as const, null)
 const isHidden = atom({ plugin: 'bws-cockpit', key: 'isHidden' } as const, false)
+const loops = atom({ plugin: 'bws-cockpit', key: 'loops' } as const, [])
+const loopSelected = atom({ plugin: 'bws-cockpit', key: 'loopSelected' } as const, null)
+const loopAction = atom({ plugin: 'bws-cockpit', key: 'loopAction' } as const, null)
+const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const, null)
+
+const LOOP_PANE = 'loop-watch'
+const STOP_CONFIRM_MS = 10_000
+const RECENT_MS = 24 * 60 * 60 * 1000 // a loop whose state changed in the last day counts as recent
+const UNIT_COLOR: Record<string, string | undefined> = { DONE: 'success', RUNNING: 'success', PAUSED: 'warning', STOPPED: undefined, PENDING: undefined }
+const UNIT_MARK: Record<string, string> = { DONE: '✓', RUNNING: '●', PAUSED: '◆', STOPPED: '■', PENDING: '○' }
+
+// Alerts already toasted in this module's life, so each toasts once.
+const toasted = new Set<string>()
+let isFirstLoopScan = true
 
 // Theme keys, so the band follows the person's theme; `off` draws dim instead.
 const STATE_COLOR: Record<CockpitState, string | undefined> = { good: 'success', warn: 'warning', bad: 'error', off: undefined }
@@ -41,6 +58,7 @@ type Options = {
   cvars: readonly string[]
   adbPath: string
   refreshSeconds: number
+  loop: LoopLimits
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -176,9 +194,102 @@ async function findRun($: EngineInterface): Promise<CockpitRun | null> {
 }
 
 async function refresh($: EngineInterface, o: Options, maxAgeMs: number) {
-  const [run, p] = await Promise.all([findRun($), probe($, o, maxAgeMs)])
+  const [run, p] = await Promise.all([findRun($), probe($, o, maxAgeMs), refreshLoops($, o)])
   const devices = describeDevices(p, o)
   await update($, view, v => ({ run, devices, lastGuard: v?.lastGuard ?? null, lastGuardAt: v?.lastGuardAt ?? null }))
+}
+
+// ---------- Loop Watch ----------
+
+const parseJson = <T,>(text: string | undefined): T | undefined => {
+  if (text === undefined) return undefined
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    return undefined
+  }
+}
+
+// Every harness-loop under <cwd>/Tools/<name>/loop.json with a state.json, newest state first.
+async function findLoops($: EngineInterface, o: Options): Promise<LoopView[]> {
+  const cwd = await $.session.cwd()
+  const now = await $.clock.now()
+  const top = (await settle($.fs.list(cwd))) ?? []
+  const found: LoopView[] = []
+  for (const toolsDir of top.filter(d => d.kind === 'dir' && /^tools$/i.test(d.name))) {
+    const toolsPath = joinPath(cwd, toolsDir.name)
+    for (const h of ((await settle($.fs.list(toolsPath))) ?? []).filter(d => d.kind === 'dir')) {
+      const cfg = parseJson<LoopConfig>(await settle($.fs.read(joinPath(joinPath(toolsPath, h.name), 'loop.json'))))
+      if (!cfg?.harnessDir) continue
+      const statePath = joinPath(joinPath(cwd, cfg.harnessDir), 'state.json')
+      const stat = await settle($.fs.stat(statePath))
+      const text = stat ? await settle($.fs.read(statePath)) : undefined
+      if (!stat || text === undefined) continue
+      const base = parseState(text, cfg, `${toolsDir.name}/${h.name}/harness.py`, stat.mtimeMs)
+      if (!base) continue
+      const units = await Promise.all(
+        base.units.map(async u => {
+          if (!u.folder) return u
+          const prog = parseProgress((await settle($.fs.read(joinPath(joinPath(cwd, u.folder), 'TASKS.md')))) ?? '')
+          return prog ? { ...u, tasksDone: prog.done, tasksTotal: prog.total } : u
+        }),
+      )
+      const cur = units.find(u => u.id === base.current)
+      const isPaused = base.driver.status === 'PAUSED' || cur?.status === 'PAUSED'
+      const needs = isPaused && cur?.folder ? parseNeeds((await settle($.fs.read(joinPath(joinPath(cwd, cur.folder), 'TASKS.md')))) ?? '') : []
+      const partial = { ...base, units, needs }
+      found.push({ ...partial, alerts: judge(partial, now, o.loop) })
+    }
+  }
+  return found.sort((a, b) => b.stateMtime - a.stateMtime)
+}
+
+async function refreshLoops($: EngineInterface, o: Options) {
+  const found = await findLoops($, o)
+  await update($, loops, () => found)
+  const now = await $.clock.now()
+  for (const lp of found) {
+    if (now - lp.stateMtime > RECENT_MS) continue
+    for (const a of lp.alerts) {
+      if (toasted.has(a.key)) continue
+      toasted.add(a.key)
+      // A loop that was already complete when the session opened is old news.
+      if (a.level === 'info' && isFirstLoopScan) continue
+      $.ui.toast(`loop ${lp.name}: ${a.text}`, { timeoutMs: 8000 })
+    }
+  }
+  isFirstLoopScan = false
+}
+
+async function selectedLoop($: EngineInterface): Promise<LoopView | null> {
+  const list = await read($, loops)
+  const pick = await read($, loopSelected)
+  return list.find(l => l.name === pick) ?? list[0] ?? null
+}
+
+async function runLoopCommand($: EngineInterface, o: Options, lp: LoopView, kind: 'stop' | 'resume') {
+  const cwd = await $.session.cwd()
+  const argv = kind === 'stop' ? ['python', lp.harnessPy, 'stop'] : ['python', lp.harnessPy, 'start', '--resume']
+  const at = await $.clock.now()
+  const ran = await settle($.process.run(argv, { cwd, timeoutMs: 120_000 }))
+  const out = ran ? `${ran.stdout}\n${ran.stderr}`.trim().split(/\r?\n/).filter(Boolean).slice(-2).join(' | ') : ''
+  const isError = !ran || ran.exitCode !== 0
+  const text = ran ? `${kind} ${lp.name}: exit ${ran.exitCode}${out ? `: ${out}` : ''}` : `${kind} ${lp.name}: could not run python ${lp.harnessPy}`
+  await update($, loopAction, () => ({ text, at, isError }))
+  await update($, stopArmedAt, () => null)
+  $.ui.toast(text, { timeoutMs: 8000 })
+  await refreshLoops($, o)
+}
+
+// Stop only on a second press within STOP_CONFIRM_MS.
+async function pressStop($: EngineInterface, o: Options, lp: LoopView) {
+  const now = await $.clock.now()
+  const armed = await read($, stopArmedAt)
+  if (armed !== null && now - armed < STOP_CONFIRM_MS) {
+    await runLoopCommand($, o, lp, 'stop')
+    return
+  }
+  await update($, stopArmedAt, () => now)
 }
 
 async function noteGuard($: EngineInterface, text: string) {
@@ -231,6 +342,11 @@ export const register: Register = (on, options) => {
     cvars: cvarText.length > 0 ? cvarText.split(',').map(s => s.trim()).filter(Boolean) : LOW_VRAM_CVARS,
     adbPath: String(options.adbPath ?? 'adb'),
     refreshSeconds: Math.max(5, Number(options.refreshSeconds ?? 30)),
+    loop: {
+      driverStaleMs: Math.max(1, Number(options.loopDriverStaleMinutes ?? 3)) * 60_000,
+      idleMs: Math.max(1, Number(options.loopIdleMinutes ?? 20)) * 60_000,
+      sessionAlert: Math.max(1, Number(options.loopSessionAlert ?? 6)),
+    },
   }
 
   // ---------- Run Cockpit ----------
@@ -238,6 +354,7 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'cockpit', description: 'Show the active run and editor/device status' })
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
+    await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0) {
       void refresh($, o, 0)
@@ -279,6 +396,128 @@ export const register: Register = (on, options) => {
     return { text: `Resuming ${run.folder}…` }
   })
 
+  on('command.run', { command: 'loop-watch' }, async ($, e, next) => {
+    await refreshLoops($, o)
+    const lp = await selectedLoop($)
+    const now = await $.clock.now()
+    if (lp === null) return { text: 'No harness loop here: no Tools/<name>/loop.json with a state.json under this folder.' }
+    const surfaces = await $.session.surfaces()
+    if (surfaces.length === 0) return { text: loopText(lp, now) }
+    const opened = await $.ui.open({ id: LOOP_PANE, title: `Loop · ${lp.name}` })
+    const st = loopState(lp)
+    return opened.isPlaced ? { text: `Loop Watch: ${lp.name} ${st.word}` } : { text: loopText(lp, now) }
+  })
+
+  on('ui.render', { component: 'Pane', requestId: LOOP_PANE }, async ($, e, next) => {
+    const table = $.ui.resolve(e)
+    const { Box, Text, Button, Link } = table
+    const Select = 'Select' in table ? table.Select : null // mobile has none
+    const all = await read($, loops)
+    const lp = await selectedLoop($)
+    const now = await $.clock.now()
+    const width = Math.max(24, (e.props.bodyColumns ?? 80) - 1)
+    if (lp === null) return <Text dimColor>No harness loop in this folder (Tools/&lt;name&gt;/loop.json with a state.json).</Text>
+    const note = await read($, loopAction)
+    const armed = await read($, stopArmedAt)
+    const isArmed = armed !== null && now - armed < STOP_CONFIRM_MS
+    const st = loopState(lp)
+    const isStale = lp.alerts.some(a => a.key.endsWith(':dead'))
+    const cost = lp.units.reduce((s, u) => s + u.costUsd, 0)
+    const sessions = lp.units.reduce((s, u) => s + u.sessions, 0)
+    const done = lp.units.filter(u => u.status === 'DONE').length
+    // Wide: one line per unit with the status word. Medium: one line without it. Narrow
+    // (a docked sidebar): the name on the first line, the numbers dim on the second.
+    const isWide = width >= 90
+    const isNarrow = width < 60
+    const idCol = Math.max(3, ...lp.units.map(u => u.id.length)) + 2
+    const fixed = 2 + idCol + 2 + (isWide ? 9 : 0) + 5 + 9 + 6
+    const nameCol = isNarrow ? Math.max(6, width - 2 - idCol - 2) : Math.max(6, width - fixed - (isWide ? 16 : 0))
+    const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
+    return (
+      <Box flexDirection="column">
+        <Box flexDirection="row">
+          <Text bold>{fit(lp.name, Math.max(6, width - 26))}</Text>
+          <Text color={STATE_COLOR[st.state]} dimColor={st.state === 'off'}>{`  ${st.state === 'off' ? '○' : '●'} ${lp.driver.status.toLowerCase()}`}</Text>
+          <Text color={isStale ? 'error' : undefined} dimColor={!isStale}>{`  ${ago(lp.driver.updatedAt, now)}`}</Text>
+        </Box>
+        {lp.title ? <Text dimColor>{fit(lp.title, width)}</Text> : null}
+        {Select && all.length > 1 ? (
+          <Select
+            key="loop-pick"
+            label="loop "
+            value={lp.name}
+            options={all.map(l => ({ value: l.name, label: `${l.name} (${l.driver.status.toLowerCase()})` }))}
+            onSelect={(value: string) => void update($, loopSelected, () => value)}
+          />
+        ) : null}
+        {lp.boardUrl ? <Link href={lp.boardUrl} label={fit(`board ${lp.boardUrl}`, width)} /> : null}
+        {rule}
+        {lp.units.map(u => {
+          const isCur = u.id === lp.current
+          const color = u.status in UNIT_COLOR ? UNIT_COLOR[u.status] : 'error'
+          const isOff = color === undefined
+          const prog = u.tasksTotal !== null ? `${u.tasksDone}/${u.tasksTotal}` : ''
+          const hb = u.status === 'RUNNING' && u.heartbeatAt !== null ? `${u.heartbeatTool ?? 'tool'} ${ago(u.heartbeatAt, now)}` : ''
+          const isHot = u.status !== 'DONE' && u.sessions >= o.loop.sessionAlert
+          if (isNarrow) {
+            const pad = ' '.repeat(2 + idCol + 2)
+            const nums = [`s${u.sessions}`, money(u.costUsd), prog, hb].filter(Boolean).join(' · ')
+            return (
+              <Box key={`unit-${u.id}`} flexDirection="column">
+                <Box flexDirection="row">
+                  <Text color={isCur ? 'claude' : undefined}>{isCur ? '▸ ' : '  '}</Text>
+                  <Box width={idCol}><Text bold={isCur}>{u.id}</Text></Box>
+                  <Text color={color} dimColor={isOff}>{`${UNIT_MARK[u.status] ?? '!'} `}</Text>
+                  <Text dimColor={u.status === 'DONE'}>{fit(u.name, nameCol)}</Text>
+                </Box>
+                <Text color={isHot ? 'warning' : undefined} dimColor={!isHot}>{`${pad}${fit(nums, width - pad.length)}`}</Text>
+              </Box>
+            )
+          }
+          return (
+            <Box key={`unit-${u.id}`} flexDirection="column">
+              <Box flexDirection="row">
+                <Text color={isCur ? 'claude' : undefined}>{isCur ? '▸ ' : '  '}</Text>
+                <Box width={idCol}><Text bold={isCur}>{u.id}</Text></Box>
+                <Text color={color} dimColor={isOff}>{`${UNIT_MARK[u.status] ?? '!'} `}</Text>
+                {isWide ? (
+                  <Box width={9}><Text color={color} dimColor={isOff}>{u.status.toLowerCase()}</Text></Box>
+                ) : null}
+                <Box width={5}><Text color={isHot ? 'warning' : undefined} dimColor={!isHot}>{`s${u.sessions}`}</Text></Box>
+                <Box width={9}><Text dimColor>{money(u.costUsd)}</Text></Box>
+                <Box width={6}><Text dimColor>{prog}</Text></Box>
+                <Text dimColor={u.status === 'DONE'}>{fit(u.name, nameCol)}</Text>
+                {isWide && hb ? <Text dimColor>{`  ${hb}`}</Text> : null}
+              </Box>
+              {!isWide && hb ? <Text dimColor>{`${' '.repeat(2 + idCol + 2)}${fit(hb, width - idCol - 4)}`}</Text> : null}
+            </Box>
+          )
+        })}
+        {rule}
+        <Text dimColor>{fit(`${lp.units.length} units · ${done} done · ${sessions} sessions · ${money(cost)}`, width)}</Text>
+        {lp.driver.message && lp.driver.status !== 'PAUSED' ? <Text dimColor>{fit(lp.driver.message, width)}</Text> : null}
+        {lp.alerts.map(a => (
+          <Box key={`alert-${a.key}`} flexDirection="row">
+            <Text color={a.level === 'bad' ? 'error' : a.level === 'warn' ? 'warning' : 'success'}>{a.level === 'info' ? '✓ ' : '⚑ '}</Text>
+            <Text wrap="wrap">{a.text}</Text>
+          </Box>
+        ))}
+        {lp.needs.map(n => (
+          <Box key={`need-${n.id}`} flexDirection="column">
+            <Text color="warning" wrap="wrap">{`${n.id} ${n.text}`}</Text>
+            <Text dimColor wrap="wrap">{`  ${answerCommand(lp, lp.current ?? '?', n.id)}`}</Text>
+          </Box>
+        ))}
+        {note ? <Text color={note.isError ? 'error' : undefined} dimColor={!note.isError} wrap="wrap">{`${ago(note.at, now)}: ${note.text}`}</Text> : null}
+        <Box flexDirection="row" columnGap={2} flexWrap="wrap">
+          <Button key="loop-resume" plain dimColor label="resume" hotkey="r" onPress={() => void runLoopCommand($, o, lp, 'resume')} />
+          <Button key="loop-stop" plain dimColor={!isArmed} label={isArmed ? `press s again to stop ${lp.name}` : 'stop'} hotkey="s" onPress={() => void pressStop($, o, lp)} />
+          <Button key="loop-refresh" plain dimColor label="refresh" hotkey="g" onPress={() => void refreshLoops($, o)} />
+        </Box>
+      </Box>
+    )
+  })
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const v = await read($, view)
     if (e.props.hasSurvey || v === null || (await read($, isHidden))) return next(e)
@@ -288,6 +527,9 @@ export const register: Register = (on, options) => {
     const d = v.devices
     const now = await $.clock.now()
     const showGuard = v.lastGuard !== null && v.lastGuardAt !== null && now - v.lastGuardAt < GUARD_NOTE_MS
+    const lp = await selectedLoop($)
+    const isLoopLive = lp !== null && (lp.driver.status === 'RUNNING' || lp.driver.status === 'PAUSED' || now - lp.stateMtime < RECENT_MS)
+    const loopChip = lp && isLoopLive ? { ...loopState(lp), detail: [lp.name, lp.current].filter(Boolean).join(' ') } : null
 
     // Run row: name (bold) · date · open count › next step, cut to the width with plain dots.
     const runRow = (() => {
@@ -324,11 +566,21 @@ export const register: Register = (on, options) => {
                 {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
               </Box>
             ))}
+            {loopChip ? (
+              <Box key="chip-loop" flexDirection="row">
+                <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
+                  {loopChip.state === 'off' ? '○ ' : '● '}
+                </Text>
+                <Text dimColor={loopChip.state === 'off'}>loop</Text>
+                <Text dimColor>{` ${loopChip.detail} ${loopChip.word}`}</Text>
+              </Box>
+            ) : null}
           </Box>
           <Box flexDirection="row" columnGap={2}>
             {run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null}
             <Button key="refresh" plain dimColor label="refresh" hotkey="2" onPress={() => void refresh($, o, 0)} />
             <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />
+            {lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void $.ui.open({ id: LOOP_PANE, title: `Loop · ${lp.name}` })} /> : null}
           </Box>
         </Box>
         {showGuard ? (

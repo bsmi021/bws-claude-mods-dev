@@ -1,8 +1,10 @@
 {
   "name": "bws-cockpit",
-  "version": "0.1.0",
-  "description": "Run Cockpit band (active run, next step, open items, /resume-run) plus an Editor & Device Guard for Unreal, Unity, Blender and adb.",
-  "author": { "name": "Brian" },
+  "version": "0.2.0",
+  "description": "Run Cockpit band (active run, next step, open items, /resume-run), Editor & Device Guard for Unreal, Unity, Blender and adb, and a Loop Watch pane for harness loops.",
+  "author": {
+    "name": "Brian"
+  },
   "types": "./types/index.d.ts",
   "userConfig": {
     "guard": {
@@ -15,7 +17,11 @@
       "type": "string",
       "title": "UE low-VRAM flags",
       "description": "auto: add them when another UE editor or Blender runs, or VRAM use is over the threshold. always / off.",
-      "options": ["auto", "always", "off"],
+      "options": [
+        "auto",
+        "always",
+        "off"
+      ],
       "default": "auto"
     },
     "vramThresholdMb": {
@@ -41,6 +47,24 @@
       "title": "Band refresh (seconds)",
       "description": "How often the band re-probes editors and devices while a terminal or Desktop surface is attached.",
       "default": 30
+    },
+    "loopIdleMinutes": {
+      "type": "number",
+      "title": "Loop: idle alert (minutes)",
+      "description": "Alert when the running worker has made no tool call for this long.",
+      "default": 20
+    },
+    "loopSessionAlert": {
+      "type": "number",
+      "title": "Loop: session alert",
+      "description": "Alert when the current unit reaches this many worker sessions.",
+      "default": 6
+    },
+    "loopDriverStaleMinutes": {
+      "type": "number",
+      "title": "Loop: dead-driver alert (minutes)",
+      "description": "Alert when the driver says RUNNING but its 30-second heartbeat has not updated for this long.",
+      "default": 3
     }
   }
 }

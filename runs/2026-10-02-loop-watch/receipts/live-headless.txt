@@ -1,0 +1,9 @@
+bws-cockpit: Loop warden (TMS Warden kit): STOPPED, updated 16h ago, board http://localhost:8772/
+  stopped by Brian: Brian cancelled the loop at 19:40: 'cancel the loop, /keep-tasks and get the work done'
+  W1 DONE - Temper and the core rotation: 8 sessions, $42.68 6/6 tasks
+  W2 DONE - Garran's Hammer: the pull: 9 sessions, $100.21 8/8 tasks
+  W2b DONE - Ally avoidance at chokepoints: 1 session, $17.27 6/6 tasks
+> W2c STOPPED - Alrec player model: 2 sessions, $0.00 1/6 tasks
+  W3 PENDING - The rest of the kit: 0 sessions, $0.00
+  W4 PENDING - Marks and the Warden playtest pass: 0 sessions, $0.00
+6 units, 3 done, 20 sessions, $160.16

@@ -22,6 +22,30 @@ Built from a 30-day usage review (`runs/2026-10-02-usage-analysis`) that found:
 - **`/cockpit`** gives the same status as text, for sessions where nothing draws.
 - **First-message context.** Every new conversation gets one short block naming the newest run folder, its next step and its open count, with a note to confirm before resuming it. This also works headless.
 
+### Loop Watch (harness loops)
+- **`/loop-watch`** opens a pane for this project's harness loop. It reads `Tools/<name>/loop.json`, then `<harnessDir>/state.json` and each unit's `TASKS.md`, and shows:
+  - the driver status and how long ago it updated
+  - the board link
+  - one row per unit: the current-unit marker, status, sessions, cost and task progress, plus the running worker's last tool and its age
+  - totals, and the driver's message
+  - open needs, each with the exact `harness.py answer` command
+  - a picker when the project has more than one loop
+- **Layout:** in a narrow docked sidebar each unit takes two lines (name, then dim numbers). At 60 columns and up it's one line, and at 90 and up the status word is added.
+- **Alerts:** each one toasts once and lights the band's `loop` chip:
+  - the driver says RUNNING but its 30 s heartbeat has stopped for 3 min or more ("looks dead")
+  - the running worker has made no tool call for 20 min or more
+  - the current unit is on 6 or more sessions
+  - the loop has paused for you
+  - every unit is done
+  - Thresholds are in `/config`. Loops whose state is more than a day old don't toast.
+- **Actions:**
+  - `r` resume runs `harness.py start --resume`
+  - `s` stop runs `harness.py stop`, only on a second press within 10 s
+  - `g` refreshes
+  - The result of each action shows in the pane.
+- **Band:** a `loop` chip (running, needs you, stalled, stopped) and the hotkey `4: loop`, which opens the pane.
+- **Without a pane** (headless `claude -p "/loop-watch"`), the same summary comes back as text.
+
 ### Editor & Device Guard
 Fix mode: it blocks calls that cannot work and adds missing launch flags. It never approves anything.
 
@@ -64,6 +88,9 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `lowVramCvars` | (built-in set) | Comma-separated `cvar=value` list |
 | `adbPath` | `adb` | adb executable |
 | `refreshSeconds` | `30` | Band re-probe interval |
+| `loopIdleMinutes` | `20` | Alert when the running worker has made no tool call for this long |
+| `loopSessionAlert` | `6` | Alert when the current unit reaches this many sessions |
+| `loopDriverStaleMinutes` | `3` | Alert when a RUNNING driver's heartbeat stops |
 
 ## Capabilities it uses
 
@@ -84,7 +111,8 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Check | Result | Receipt |
 |---|---|---|
 | `claude plugin validate` | passed | `receipts/validate.txt` |
-| `claude plugin test` | 29/29 (parsing, command-position rules, every guard path, pass-through, band on terminal + desktop) | `receipts/test.txt` |
+| `claude plugin test` | 44/44 (parsing, command-position rules, every guard path, pass-through, band layout on terminal + desktop, Loop Watch parsing, alerts, pane layouts, stop confirm, resume, toasts, picker) | `receipts/test.txt` |
+| Loop Watch live | headless `/loop-watch` in bws.game.tms printed the real Warden loop; the pane drew in an interactive session, docked at about 30 columns | `runs/2026-10-02-loop-watch/receipts/` |
 | Type-check vs the 2.1.287 declarations (tsc 5.9, strict) | clean | n/a |
 | Corpus replay: classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in echo, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored | `receipts/corpus-replay.md` |
 | Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched; a UE launch under GPU pressure gets the `-ini` overrides; a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started); adb blocked for an unauthorized device; a duplicate TMS editor blocked (pid 59468); `mcp__unreal-mcp__list_toolsets` passes against the live TMS editor on :3092 | `receipts/live-guard.txt` |
