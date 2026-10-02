@@ -1,0 +1,192 @@
+<title>Mods Built Today</title>
+<link rel="stylesheet" href="precog.css">
+<style>
+  .mods-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 820px; }
+  .mods-table th { text-align: left; font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 500; padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--line); letter-spacing: .04em; text-transform: uppercase; }
+  .mods-table td { padding: var(--space-2); border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text); }
+  .mods-table td code, .pc-finding code, .pc-callout code { font-family: var(--font-mono); font-size: 0.85em; color: var(--muted); }
+  .mods-table .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .tbl-wrap { overflow-x: auto; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--space-3); }
+  .plain-list { display: grid; gap: var(--space-1); margin: 0; padding-left: 1.1em; }
+  .plain-list li { color: var(--text); }
+</style>
+<main class="pc-page">
+
+  <header class="pc-hero">
+    <div class="pc-hero__eyebrow"><span class="pc-chip is-info">2026-10-02</span> <span class="pc-chip is-idle">Claude Code 2.1.287</span></div>
+    <h1 class="pc-display-xl">Eight fixes, two plugins, all tested</h1>
+    <p class="pc-lead">Every mod from the usage review is built, tested and running in your sessions. Seven checks still need a live run.</p>
+    <div class="pc-hero__meta"><span class="pc-label">bws-cockpit 0.5.0</span><span class="pc-label">bws-shell-lint 0.1.0</span><span class="pc-label">publish branch ff0b83b · not pushed</span></div>
+  </header>
+
+  <section class="pc-section">
+    <div class="pc-stats">
+      <div class="pc-stat"><span class="pc-stat__value" data-count="8">8</span><span class="pc-label">Features built</span><span class="pc-stat__delta is-good">7 in bws-cockpit, 1 in bws-shell-lint</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="109">109</span><span class="pc-label">Tests passing</span><span class="pc-stat__delta is-good">93 cockpit · 16 shell-lint · 0 fail</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="951">951</span><span class="pc-label">Problems targeted</span><span class="pc-stat__delta is-good">counted in 30 days of sessions</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="7">7</span><span class="pc-label">Checks not yet live</span><span class="pc-stat__delta is-warn">covered by tests only</span></div>
+    </div>
+  </section>
+
+  <section class="pc-section">
+    <div class="pc-tldr">
+      <div>
+        <span class="pc-label">Answer</span>
+        <p class="pc-tldr__answer">All eight mods work against your real projects; the gaps are interactive-only paths and a live paused loop.</p>
+      </div>
+      <ul>
+        <li><span class="pc-chip is-good">live</span><span>Every feature has at least one live run on your machine: real editors, devices, loops and projects.</span></li>
+        <li><span class="pc-chip is-good">safe</span><span>The guards were replayed over 8,277 and 66k of your real commands without blocking a working one.</span></li>
+        <li><span class="pc-chip is-warn">open</span><span>Desktop app, a down MCP port, a paused loop and a few interactive views are tested but unseen live.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="pc-section two">
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">Search timeouts and shell quoting were the biggest</h2><span class="pc-label">What each mod targets, 30 days</span></div>
+      <div class="pc-frame__canvas" id="c-pain"></div>
+      <figcaption class="pc-frame__caption">Occurrences in the usage review. The units differ by row: tool errors, prompts you typed, or both.</figcaption>
+    </figure>
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">109 tests, none failing</h2><span class="pc-label">Tests per feature</span></div>
+      <div class="pc-frame__canvas" id="c-tests"></div>
+      <figcaption class="pc-frame__caption">From <code>claude plugin test</code>, run in each plugin folder on main and again from the publish tree.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">Where each mod steps into a turn</h2><span class="pc-label">Hook map</span></div>
+      <div class="pc-frame__canvas">
+        <svg viewBox="0 0 1000 330" role="img" aria-label="Where each mod hooks into a Claude Code turn">
+          <rect class="pc-d-node" x="10" y="30" width="170" height="110" rx="10"/>
+          <text class="pc-d-label" x="26" y="62">First message</text>
+          <text class="pc-d-small" x="26" y="90">run folder note</text>
+          <text class="pc-d-small" x="26" y="114">project list (home)</text>
+
+          <rect class="pc-d-node is-key" x="215" y="30" width="230" height="110" rx="10"/>
+          <text class="pc-d-label" x="231" y="62">Tool calls</text>
+          <text class="pc-d-small" x="231" y="90">Editor &amp; Device Guard</text>
+          <text class="pc-d-small" x="231" y="112">Shell Lint · Glob from index</text>
+          <text class="pc-d-small" x="231" y="132">find_project</text>
+
+          <rect class="pc-d-node" x="480" y="30" width="160" height="110" rx="10"/>
+          <text class="pc-d-label" x="496" y="62">Subagents</text>
+          <text class="pc-d-small" x="496" y="90">worker model pin</text>
+
+          <rect class="pc-d-node" x="675" y="30" width="150" height="110" rx="10"/>
+          <text class="pc-d-label" x="691" y="62">Stop</text>
+          <text class="pc-d-small" x="691" y="90">Finish-Line Guard</text>
+
+          <rect class="pc-d-node" x="860" y="30" width="130" height="110" rx="10"/>
+          <text class="pc-d-label" x="874" y="62">Turn end</text>
+          <text class="pc-d-small" x="874" y="90">⚑ open-items line</text>
+          <text class="pc-d-small" x="874" y="112">band refresh</text>
+
+          <line class="pc-d-edge" x1="180" y1="85" x2="215" y2="85"/>
+          <line class="pc-d-edge is-key" x1="445" y1="85" x2="480" y2="85"/>
+          <line class="pc-d-edge" x1="640" y1="85" x2="675" y2="85"/>
+          <line class="pc-d-edge" x1="825" y1="85" x2="860" y2="85"/>
+
+          <rect class="pc-d-node" x="10" y="190" width="470" height="110" rx="10"/>
+          <text class="pc-d-label" x="26" y="222">Always on screen</text>
+          <text class="pc-d-small" x="26" y="250">band: run · next step · UE · Unity · Blender · adb · VRAM · loop</text>
+          <text class="pc-d-small" x="26" y="274">Loop Watch pane: units, stalls, stop, resume, answer needs</text>
+
+          <rect class="pc-d-node" x="515" y="190" width="475" height="110" rx="10"/>
+          <text class="pc-d-label" x="531" y="222">Commands</text>
+          <text class="pc-d-small" x="531" y="250">/cockpit · /resume-run · /loop-watch · /projects · /handoff</text>
+          <text class="pc-d-small" x="531" y="274">all answer as text where nothing draws (claude -p)</text>
+        </svg>
+      </div>
+      <figcaption class="pc-frame__caption">Tool-call guards run in every session, harness workers included. Drawn parts (band, pane, ⚑ line) show only in the terminal and Desktop.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Each mod and its proof</h2>
+    <ol class="pc-findings">
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">Project Locator · fixes 351 search timeouts</h3><p>A Glob for <code>**/*.uproject</code> over C:\Projects came back in 4 ms with your 7 real uprojects; the same over the home folder is refused at once.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p><code>/projects refresh</code> indexed 65 projects in 9 s including startup. <code>find_project "street war"</code> returned the folder, uproject and loop. 13 tests. Run folder: <code>runs/2026-10-02-project-locator</code>.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">Shell Lint · fixes 201 quoting failures</h3><p>Three rules catch 239 of 300 quoting failures with no working command refused out of 64.6k; most "unexpected EOF" errors were over-long commands.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p>Precision/recall per rule in <code>corpus-eval.md</code>. Live: the deny text came back and the model's forward-slash retry ran. Loaded with bws-cockpit, no conflicts. 16 tests; fixture shrunk from 512 KB to 54 KB and scrubbed.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">Editor &amp; Device Guard · fixes 172 editor and device failures</h3><p>Blocks unreal-mcp, adb and Unity CLI calls that cannot work, and adds <code>-automated</code> and low-VRAM flags to editor launches.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p>Live: adb blocked when unauthorized and passed when authorized; a second TMS editor blocked; UE low-VRAM and Unity -automated rewrites; unreal-mcp passed against the running editor. Replay over 8,277 real commands: 3 Unity rewrites and 72 UE launches, all real. UE 5.8 read back the -ini overrides.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">Run Cockpit band · fixes 141 resume and status asks</h3><p>A band above the prompt with the run, next step and device dots; <code>/resume-run</code> picks the work back up.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p>Screenshots of the band in a live terminal, before and after the visual cleanup, with colors measured by pixel. 32 tests cover the band, guard and parsing.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">/handoff · fixes 21 handoffs and 12 paste-backs</h3><p>Writes HANDOFF.md from the session and copies a start prompt; resumed sessions use the transcript.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p>Live: a 467-word handoff from a resumed headless session with the right state and commit hash, checked against <code>git log</code>. The first run failed on resume and led to the fallback. 14 tests with the pin.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">Finish-Line Guard · fixes 29 early stops and trust checks</h3><p>Blocks a stop while the session checklist has open items, at most twice per prompt, and asks for evidence on bare "done" claims.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p>Live: Claude stopped with a task open, the guard pushed it back, and it finished; when told to skip, it marked the item "needs Brian" and the guard let it stop. ownerName "Brian" set and confirmed live. 18 tests.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">Loop Watch · fixes 18 stuck-loop prompts</h3><p>A pane with each unit's status, sessions and cost, stall alerts, two-press stop, resume, and answering needs.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p>Live: headless <code>/loop-watch</code> printed the real Warden loop (6 units, 3 done, $160.16); the pane drew in a 30-column sidebar. Stop, resume and answer were proven by tests only, by design. 16 tests.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-good">live</span><div><h3 class="pc-finding__title">Worker model pin · ends the Sonnet 5.5 reminders</h3><p>General-purpose subagents run on claude-sonnet-5-5 unless the Agent call names a model.</p>
+        <details class="pc-details"><summary>Receipts</summary><div class="pc-details__body"><p>Live: with an Opus parent, the unnamed general-purpose subagent ran on Sonnet 5.5, Explore kept Opus, and an explicit haiku stayed on Haiku. Set in your settings only; the published plugin ships with it off.</p></div></details></div></li>
+    </ol>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Still not seen live</h2>
+    <figure class="pc-frame">
+      <div class="tbl-wrap">
+      <table class="mods-table">
+        <thead><tr><th>Status</th><th>What</th><th>Why not yet</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pc-chip is-warn">open</span></td><td>Any drawing in the Desktop app</td><td>All UI checks ran in the terminal</td></tr>
+          <tr><td><span class="pc-chip is-warn">open</span></td><td>unreal-mcp block with the editor's port down</td><td>The editor was up during the live runs</td></tr>
+          <tr><td><span class="pc-chip is-warn">open</span></td><td>Loop Watch alerts and answering needs on a running or paused loop</td><td>No loop was running or paused today</td></tr>
+          <tr><td><span class="pc-chip is-warn">open</span></td><td>The ⚑ finish-line line and the evidence check firing, in a live session</td><td>Live runs exercised the stop block instead</td></tr>
+          <tr><td><span class="pc-chip is-warn">open</span></td><td>The project list in a home-folder session's first message</td><td>Checked through commands and Globs, not a fresh interactive session</td></tr>
+          <tr><td><span class="pc-chip is-warn">open</span></td><td>/handoff's clipboard copy and its fork path in an interactive session</td><td>The live run was headless and went through the fallback</td></tr>
+          <tr><td><span class="pc-chip is-bad">blocked</span></td><td>"Sonnet high" effort for subagents</td><td>The spawn event has no effort setting; parked</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <figcaption class="pc-frame__caption">Each row is covered by tests. The first real paused loop or interactive /handoff is the live check.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <div class="pc-callout pc-brackets">
+      <span class="pc-label">Changed in your settings today</span>
+      <p>AGENTS.md loader back on; both plugins load in every session; ownerName is Brian; workers run on Sonnet 5.5.</p>
+    </div>
+  </section>
+
+  <section class="pc-section">
+    <details class="pc-details"><summary>Settings, backups and the publish branch</summary><div class="pc-details__body">
+      <p><b>~/.claude/settings.json:</b> <code>cc-plugin-agents-md@builtin</code> set back to true; <code>CLAUDE_CODE_PLUGIN_DIRS</code> lists both plugin folders; <code>pluginConfigs["bws-cockpit"].options</code> holds <code>ownerName: "Brian"</code> and <code>workerModel: "claude-sonnet-5-5"</code>. Each change has a backup beside the file (<code>settings.json.bak-2026-10-02-*</code>) and a one-entry diff.</p>
+      <p><b>Publish branch:</b> one root commit plus four updates (dedb6fe, 6ab1542, 1b99a1f, ff0b83b), 28 files, scanned for private names at each step. No remote is configured. Push only <code>publish</code>; never push <code>main</code>, which holds your prompts and transcripts.</p>
+      <p><b>Run folders:</b> each mod has PLAN.md (finish line pinned first), RUNLOG.md and receipts under <code>runs/2026-10-02-*</code> in C:\Projects\bws.mods.claude-code.</p>
+    </div></details>
+  </section>
+</main>
+<script src="precog.js"></script>
+<script>
+  (function () {
+    function draw() {
+      if (!window.Precog) return;
+      Precog.bars(document.getElementById('c-pain'), [
+        {label: 'Search timeouts · Project Locator', value: 351},
+        {label: 'Shell quoting · Shell Lint', value: 201},
+        {label: 'Editor/device failures · Guard', value: 172},
+        {label: 'Resume and status asks · band', value: 141},
+        {label: 'Handoffs and paste-backs · /handoff', value: 33},
+        {label: 'Early stops, trust checks · Finish-Line', value: 29},
+        {label: 'Stuck-loop prompts · Loop Watch', value: 18},
+        {label: 'Model reminders · worker pin', value: 6}
+      ], {unit: '', highlight: 0});
+      Precog.bars(document.getElementById('c-tests'), [
+        {label: 'Guard, band, parsing', value: 32},
+        {label: 'Finish-Line Guard', value: 18},
+        {label: 'Loop Watch', value: 16},
+        {label: 'Shell Lint', value: 16},
+        {label: '/handoff and pin', value: 14},
+        {label: 'Project Locator', value: 13}
+      ], {unit: '', highlight: 0});
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', draw); else draw();
+  })();
+</script>
