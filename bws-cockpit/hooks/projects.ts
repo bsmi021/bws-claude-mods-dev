@@ -2,7 +2,7 @@
 // Pure: no `$`, so tests call it directly. Paths are kept with forward slashes.
 
 export type ProjectEntry = {
-  name: string // relative to its root: "street-war", "old-drive/RPG Project"
+  name: string // relative to its root: "arena-game", "archive/RPG Project"
   path: string // absolute, forward slashes
   root: string
   kinds: string[] // unreal, unity, node, android, python, git

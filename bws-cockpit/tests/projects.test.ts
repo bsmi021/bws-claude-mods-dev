@@ -12,18 +12,18 @@ const win = (p: string) => p.split('/').join(BS)
 type Node = { [name: string]: Node | string } // a folder, or a file's text
 
 const TREE: Node = {
-  'street-war': {
-    'StreetWar.uproject': '{}',
+  'arena-game': {
+    'ArenaGame.uproject': '{}',
     'AGENTS.md': '# rules',
     '.git': {},
-    Tools: { 'greybox-harness': { 'loop.json': '{}' } },
+    Tools: { 'build-harness': { 'loop.json': '{}' } },
     runs: { '2026-10-01-x': {} },
     Content: { 'Stray.uproject': '{}' }, // skipped folder
   },
-  'game.axo': { game: { Axo: { 'Axo.uproject': '{}' } } }, // 3 deep
-  heim: { ProjectSettings: { 'ProjectVersion.txt': 'm_EditorVersion: 6000.6.0f1\n' }, Assets: { deep: {} } },
+  'game.critter': { game: { Critter: { 'Critter.uproject': '{}' } } }, // 3 deep
+  'castle-unity': { ProjectSettings: { 'ProjectVersion.txt': 'm_EditorVersion: 6000.6.0f1\n' }, Assets: { deep: {} } },
   portfolio: { 'package.json': '{"name":"portfolio-site"}' },
-  scribe: { 'settings.gradle.kts': '' },
+  'notes-app': { 'settings.gradle.kts': '' },
   'old-drive': { 'RPG Project': { ProjectSettings: { 'ProjectVersion.txt': 'm_EditorVersion: 2021.3.4f1\n' } } },
   deep: { a: { b: { c: { 'TooDeep.uproject': '{}' } } } }, // 4 deep: not indexed
 }
@@ -65,7 +65,7 @@ function world(on: On, cwd = 'C:/Users/dev') {
   on('fs.stat', ($, e) => {
     const n = lookup(String(e.path))
     if (n === undefined) throw new Error(`ENOENT ${e.path}`)
-    return { value: { kind: typeof n === 'object' ? 'dir' : 'file', size: 1, mtimeMs: norm(e.path).includes('street-war') ? 9000 : 2000, isLink: false } as never }
+    return { value: { kind: typeof n === 'object' ? 'dir' : 'file', size: 1, mtimeMs: norm(e.path).includes('arena-game') ? 9000 : 2000, isLink: false } as never }
   })
   on('tool.call', ($, e) => {
     bottom.push(String(e.tool))
@@ -85,8 +85,8 @@ describe('glob rules', () => {
     expect(isMarkerGlob('**/*.ts')).toBe(false)
     expect(isMarkerGlob('Source/**/*.uproject')).toBe(false)
     expect(globRegex('**/*.uproject').test('a/b/c/X.uproject')).toBe(true)
-    expect(globRegex('*/*.uproject').test('street-war/StreetWar.uproject')).toBe(true)
-    expect(globRegex('*/*.uproject').test('game.axo/game/Axo/Axo.uproject')).toBe(false)
+    expect(globRegex('*/*.uproject').test('arena-game/ArenaGame.uproject')).toBe(true)
+    expect(globRegex('*/*.uproject').test('game.critter/game/Critter/Critter.uproject')).toBe(false)
   })
 
   test('splitGlob takes the literal base from an absolute pattern or the path', () => {
@@ -98,7 +98,7 @@ describe('glob rules', () => {
     expect(isTooWide('C:/Users/dev', [ROOT])).toBe(true)
     expect(isTooWide('C:', [ROOT])).toBe(true)
     expect(isTooWide('/c/Users/dev', [ROOT])).toBe(true)
-    expect(isTooWide('C:/Projects/street-war', [ROOT])).toBe(false)
+    expect(isTooWide('C:/Projects/arena-game', [ROOT])).toBe(false)
   })
 
   test('findProjects matches names loosely and filters by kind', () => {
@@ -106,14 +106,14 @@ describe('glob rules', () => {
       at: 0,
       roots: [ROOT],
       projects: [
-        { name: 'street-war', path: `${ROOT}/street-war`, root: ROOT, kinds: ['unreal'], uprojects: [`${ROOT}/street-war/StreetWar.uproject`], loops: [], hasRuns: false, hasAgents: false, mtime: 2 },
-        { name: 'heim', path: `${ROOT}/heim`, root: ROOT, kinds: ['unity'], uprojects: [], unity: '6000.6.0f1', loops: [], hasRuns: false, hasAgents: false, mtime: 3 },
+        { name: 'arena-game', path: `${ROOT}/arena-game`, root: ROOT, kinds: ['unreal'], uprojects: [`${ROOT}/arena-game/ArenaGame.uproject`], loops: [], hasRuns: false, hasAgents: false, mtime: 2 },
+        { name: 'castle-unity', path: `${ROOT}/castle-unity`, root: ROOT, kinds: ['unity'], uprojects: [], unity: '6000.6.0f1', loops: [], hasRuns: false, hasAgents: false, mtime: 3 },
       ],
     }
-    expect(findProjects(idx, 'street war').map(p => p.name)).toEqual(['street-war'])
-    expect(findProjects(idx, 'StreetWar').map(p => p.name)).toEqual(['street-war'])
-    expect(findProjects(idx, '', 'unity').map(p => p.name)).toEqual(['heim'])
-    expect(findProjects(idx).map(p => p.name)).toEqual(['heim', 'street-war'])
+    expect(findProjects(idx, 'arena game').map(p => p.name)).toEqual(['arena-game'])
+    expect(findProjects(idx, 'ArenaGame').map(p => p.name)).toEqual(['arena-game'])
+    expect(findProjects(idx, '', 'unity').map(p => p.name)).toEqual(['castle-unity'])
+    expect(findProjects(idx).map(p => p.name)).toEqual(['castle-unity', 'arena-game'])
   })
 })
 
@@ -124,28 +124,28 @@ describe('project locator', () => {
     world(on)
     const r = await $.command.run({ command: 'projects', args: '' } as never)
     const text = r.text ?? ''
-    expect(text).toContain('street-war · unreal StreetWar.uproject · loops greybox-harness')
-    expect(text).toContain('game.axo/game/Axo · unreal Axo.uproject')
-    expect(text).toContain('heim · unity 6000.6.0f1')
+    expect(text).toContain('arena-game · unreal ArenaGame.uproject · loops build-harness')
+    expect(text).toContain('game.critter/game/Critter · unreal Critter.uproject')
+    expect(text).toContain('castle-unity · unity 6000.6.0f1')
     expect(text).toContain('old-drive/RPG Project · unity 2021.3.4f1')
     expect(text).toContain('portfolio · node portfolio-site')
-    expect(text).toContain('scribe · android')
+    expect(text).toContain('notes-app · android')
     expect(text).not.toContain('Stray.uproject')
     expect(text).not.toContain('TooDeep')
-    expect(text.indexOf('street-war')).toBeLessThan(text.indexOf('heim')) // newest first
+    expect(text.indexOf('arena-game')).toBeLessThan(text.indexOf('castle-unity')) // newest first
   })
 
   test('find_project answers by name and by kind', async ($, on) => {
     world(on)
-    const r = await $.tool.call({ tool: 'mcp__bws-cockpit__find_project', query: 'street war' } as never)
+    const r = await $.tool.call({ tool: 'mcp__bws-cockpit__find_project', query: 'arena game' } as never)
     const text = String(r.result)
-    expect(text).toContain(`uproject: ${win(`${ROOT}/street-war/StreetWar.uproject`)}`)
-    expect(text).toContain('harness loops: greybox-harness')
+    expect(text).toContain(`uproject: ${win(`${ROOT}/arena-game/ArenaGame.uproject`)}`)
+    expect(text).toContain('harness loops: build-harness')
     expect(text).toContain('AGENTS/CLAUDE.md: yes')
     const unity = String((await $.tool.call({ tool: 'mcp__bws-cockpit__find_project', kind: 'unity' } as never)).result)
-    expect(unity).toContain('heim')
+    expect(unity).toContain('castle-unity')
     expect(unity).toContain('old-drive/RPG Project')
-    expect(unity).not.toContain('street-war')
+    expect(unity).not.toContain('arena-game')
     const none = String((await $.tool.call({ tool: 'mcp__bws-cockpit__find_project', query: 'zzz' } as never)).result)
     expect(none).toMatch(/No project matches "zzz"/)
   })
@@ -154,14 +154,14 @@ describe('project locator', () => {
     const w = world(on)
     const r = await $.tool.call({ tool: 'Glob', pattern: '**/*.uproject', path: win(ROOT) })
     expect(r.result).toEqual({
-      filenames: [win(`${ROOT}/game.axo/game/Axo/Axo.uproject`), win(`${ROOT}/street-war/StreetWar.uproject`)],
+      filenames: [win(`${ROOT}/arena-game/ArenaGame.uproject`), win(`${ROOT}/game.critter/game/Critter/Critter.uproject`)],
       numFiles: 2,
       durationMs: 0,
       truncated: false,
     })
     expect((r.context ?? []).join(' ')).toMatch(/answered this Glob from its project index/)
     const one = await $.tool.call({ tool: 'Glob', pattern: `C:${BS}Projects${BS}*${BS}*.uproject` })
-    expect((one.result as { filenames: string[] }).filenames).toEqual([win(`${ROOT}/street-war/StreetWar.uproject`)])
+    expect((one.result as { filenames: string[] }).filenames).toEqual([win(`${ROOT}/arena-game/ArenaGame.uproject`)])
     const unity = await $.tool.call({ tool: 'Glob', pattern: '**/ProjectSettings/ProjectVersion.txt', path: ROOT })
     expect((unity.result as { numFiles: number }).numFiles).toBe(2)
     expect(w.bottom).toEqual([])
@@ -179,7 +179,7 @@ describe('project locator', () => {
   test('other Globs, and marker Globs inside a project, run as usual', async ($, on) => {
     const w = world(on)
     await $.tool.call({ tool: 'Glob', pattern: '**/*.ts', path: ROOT })
-    await $.tool.call({ tool: 'Glob', pattern: '**/*.uproject', path: `${ROOT}/street-war` })
+    await $.tool.call({ tool: 'Glob', pattern: '**/*.uproject', path: `${ROOT}/arena-game` })
     await $.tool.call({ tool: 'Grep', pattern: 'x', path: ROOT } as never)
     expect(w.bottom).toEqual(['Glob', 'Glob', 'Grep'])
   })
@@ -190,7 +190,7 @@ describe('project locator', () => {
     const first = w.lists.length
     expect(first).toBeGreaterThan(5)
     await $.tool.call({ tool: 'Glob', pattern: '**/*.uproject', path: ROOT })
-    await $.tool.call({ tool: 'mcp__bws-cockpit__find_project', query: 'heim' } as never)
+    await $.tool.call({ tool: 'mcp__bws-cockpit__find_project', query: 'castle-unity' } as never)
     expect(w.lists.length).toBe(first)
     await $.command.run({ command: 'projects', args: 'refresh' } as never)
     expect(w.lists.length).toBe(first * 2)
@@ -202,11 +202,11 @@ describe('project locator', () => {
     const r = await $.prompt.context({ blocks: [] } as never)
     const block = r.blocks.find(b => b.name === 'bwsProjects')
     expect(block?.text).toMatch(/Projects under C:.Projects \(newest first\)/)
-    expect(block?.text).toContain('street-war · unreal StreetWar.uproject')
+    expect(block?.text).toContain('arena-game · unreal ArenaGame.uproject')
   })
 
   test('a session inside a project gets no project list', async ($, on) => {
-    world(on, `${ROOT}/street-war`)
+    world(on, `${ROOT}/arena-game`)
     on('prompt.context', ($, e) => ({ blocks: e.blocks }))
     const r = await $.prompt.context({ blocks: [] } as never)
     expect(r.blocks.find(b => b.name === 'bwsProjects')).toBeUndefined()
