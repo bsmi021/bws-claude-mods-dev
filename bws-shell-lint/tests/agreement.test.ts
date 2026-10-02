@@ -14,13 +14,14 @@ test('TS port agrees with the Python reference on the corpus sample', () => {
     }
   }
   expect(mismatches).toEqual([])
-  expect(FIXTURE.length).toBeGreaterThan(400)
+  expect(FIXTURE.length).toBeGreaterThanOrEqual(80)
 })
 
+// The fixture is a small scrubbed sample (shrink_fixture.py); the full corpus numbers live in corpus-eval.md.
 test('the sample covers every rule and plenty of clean commands', () => {
   const count = (rule: string | null) => FIXTURE.filter(x => x.rule === rule).length
-  expect(count('long-command')).toBeGreaterThan(5)
-  expect(count('dq-trailing-backslash')).toBeGreaterThan(5)
-  expect(count('py-backslash')).toBeGreaterThan(5)
-  expect(count(null)).toBeGreaterThan(300)
+  expect(count('long-command')).toBeGreaterThanOrEqual(3)
+  expect(count('dq-trailing-backslash')).toBeGreaterThanOrEqual(5)
+  expect(count('py-backslash')).toBeGreaterThanOrEqual(5)
+  expect(count(null)).toBeGreaterThanOrEqual(60)
 })
