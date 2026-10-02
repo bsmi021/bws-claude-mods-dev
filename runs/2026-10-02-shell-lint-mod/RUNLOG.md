@@ -81,3 +81,18 @@ Build `bws-shell-lint`. It is a Claude Code mod that denies Bash or PowerShell c
 - **Not fixed (needs Brian):**
   - The old 512 KB fixture is still in git history (commit 6bc8c9f).
   - `runs/` tracks personal data: usage-analysis `prompts.jsonl`, `corrections.jsonl`, `error_samples.json`, `errors.json` and `usage.json`, plus the raw session transcripts in the receipts.
+
+## Publish branch (2026-10-02, Brian chose "Publish branch")
+- **Branch:** orphan `publish`, commit dedb6fe: 1 commit, no history, 22 files, 194 KB of blobs.
+  - Contents: `bws-cockpit/`, `bws-shell-lint/`, a top-level `README.md` (from `publish-README.md`) and `.gitignore`.
+  - Not included: `runs/`, `docs/`, `AGENTS.md`.
+  - `main` is untouched and still holds the history, including the old fixture and the personal `runs/` data. Never push `main`.
+- **Publish-safety pass, beyond the fixture:**
+  - Plugin READMEs: removed the private project and loop names, PIDs and run-folder paths. Load paths are now generic. The capabilities table now covers Loop Watch.
+  - Cockpit tests and messages: game and project names replaced with `my-unity-game`, `my-ue-game/MyGame.uproject` and a "kit" loop. "Ask Brian" is now "ask the user".
+- **Verified in the publish tree:** both plugins validate; bws-cockpit 48/48 and bws-shell-lint 16/16.
+- **Final scan** for the username, first name, device serials, project, game and character names, PIDs and emails. Remaining hits:
+  - neutral fixture paths
+  - two comments naming generator scripts that live in this private repo
+- **Kept by design:** the manifest authors (`bsmi021`, `Brian`).
+- **No remote is configured. Nothing pushed.** To publish: add a remote, then `git push <remote> publish:main`.
