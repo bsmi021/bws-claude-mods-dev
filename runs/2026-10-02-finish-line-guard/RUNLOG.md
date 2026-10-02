@@ -42,3 +42,14 @@ Build mod #4 from the usage review inside `bws-cockpit` (version 0.3.0): keep Cl
 ## Follow-ups (parked)
 - Subagent stops (`classic.SubagentStop`).
 - Refresh the `publish` branch with 0.3.0 when Brian asks.
+
+## Publish refresh (2026-10-02)
+- The private-name scan found Brian's name hard-coded in the guard: the block message, the parked regex, comments and one test.
+  - Replaced with a setting, `ownerName` (default "the user").
+  - Parked items now match `(needs <Name>: ...)` for any capitalised name, so Brian's existing "(needs Brian: ...)" marks still park.
+  - 2 new tests (66 total). Committed on main as fb8d9db.
+  - Brian's own sessions now say "the user" unless he sets `ownerName` to "Brian" in `/config`.
+- **`publish` refreshed** from main: bws-cockpit 0.3.0, and the top README mentions the guard. Commit on top of dedb6fe; 24 files.
+  - Scan: clean apart from the already-scrubbed fixture paths and the manifest authors, which are kept by design.
+  - Validate passes for both plugins; bws-cockpit 66/66 and bws-shell-lint 16/16, run from the publish tree.
+  - Not pushed; no remote is configured.
