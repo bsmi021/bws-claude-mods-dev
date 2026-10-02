@@ -24,6 +24,23 @@ import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, pa
 import type { LoopConfig, LoopLimits } from './loop'
 import type { LoopView } from '../types'
 import { actionable, decide, openItems, openSummary } from './finish'
+import {
+  SCAN_DEPTH,
+  findProjects,
+  findResultText,
+  globIndex,
+  isMarkerGlob,
+  isSkipped,
+  isTooWide,
+  parsePkgName,
+  parseUnityVersion,
+  projectsText,
+  sameDir,
+  splitGlob,
+  toSlash,
+  toWin,
+} from './projects'
+import type { ProjectEntry, ProjectIndex } from './projects'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
@@ -64,6 +81,7 @@ type Options = {
   refreshSeconds: number
   loop: LoopLimits
   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
+  projects: { isOn: boolean; roots: string[] }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -208,6 +226,94 @@ async function readRunFolder($: EngineInterface): Promise<RunFolder | null> {
 }
 
 // ---------- Finish-Line Guard ----------
+
+// ---------- Project Locator: index ----------
+
+const INDEX_KEY = 'bws-cockpit.projectIndex'
+const INDEX_MAX_AGE_MS = 6 * 60 * 60 * 1000
+let indexing: Promise<ProjectIndex> | undefined
+
+const isHomeDir = (dir: string) => /^([a-z]:|\/[a-z])\/users\/[^/]+$/i.test(toSlash(dir))
+
+async function scanDir($: EngineInterface, root: string, dir: string, name: string, depth: number, out: ProjectEntry[]) {
+  const entries = (await settle($.fs.list(dir))) ?? []
+  const files = new Set(entries.filter(f => f.kind === 'file').map(f => f.name.toLowerCase()))
+  const dirs = entries.filter(d => d.kind === 'dir')
+  const uprojects = entries.filter(f => f.kind === 'file' && /\.uproject$/i.test(f.name)).map(f => `${dir}/${f.name}`)
+  const unity = dirs.some(d => /^ProjectSettings$/i.test(d.name))
+    ? parseUnityVersion((await settle($.fs.read(`${dir}/ProjectSettings/ProjectVersion.txt`))) ?? '')
+    : undefined
+  if (depth === 1 || uprojects.length > 0 || unity !== undefined) {
+    const pkg = files.has('package.json') ? (parsePkgName((await settle($.fs.read(`${dir}/package.json`))) ?? '') ?? '(unnamed)') : undefined
+    const kinds = [
+      uprojects.length > 0 ? 'unreal' : '',
+      unity !== undefined ? 'unity' : '',
+      pkg !== undefined ? 'node' : '',
+      files.has('settings.gradle') || files.has('settings.gradle.kts') ? 'android' : '',
+      files.has('pyproject.toml') ? 'python' : '',
+      dirs.some(d => d.name === '.git') || files.has('.git') ? 'git' : '',
+    ].filter(Boolean)
+    const loops: string[] = []
+    for (const t of dirs.filter(d => /^tools$/i.test(d.name))) {
+      for (const h of ((await settle($.fs.list(`${dir}/${t.name}`))) ?? []).filter(d => d.kind === 'dir')) {
+        if (await settle($.fs.exists(`${dir}/${t.name}/${h.name}/loop.json`))) loops.push(h.name)
+      }
+    }
+    const hasRuns = dirs.some(d => /^runs$/i.test(d.name))
+    const stamps = [
+      (await settle($.fs.stat(dir)))?.mtimeMs ?? 0,
+      hasRuns ? ((await settle($.fs.stat(`${dir}/runs`)))?.mtimeMs ?? 0) : 0,
+      ...entries.filter(f => f.kind === 'file').map(f => f.mtimeMs),
+    ]
+    out.push({
+      name,
+      path: dir,
+      root,
+      kinds,
+      uprojects,
+      unity,
+      pkg,
+      loops,
+      hasRuns,
+      hasAgents: files.has('agents.md') || files.has('claude.md'),
+      mtime: Math.max(0, ...stamps),
+    })
+  }
+  if (depth >= SCAN_DEPTH) return
+  for (const d of dirs) {
+    if (isSkipped(d.name) || /^(ProjectSettings|tools)$/i.test(d.name)) continue
+    await scanDir($, root, `${dir}/${d.name}`, `${name}/${d.name}`, depth + 1, out)
+  }
+}
+
+async function scanProjects($: EngineInterface, roots: string[]): Promise<ProjectIndex> {
+  const projects: ProjectEntry[] = []
+  for (const root of roots) {
+    const top = (await settle($.fs.list(root))) ?? []
+    for (const d of top.filter(x => x.kind === 'dir' && !isSkipped(x.name))) {
+      await scanDir($, root, `${root}/${d.name}`, d.name, 1, projects)
+    }
+  }
+  return { at: await $.clock.now(), roots, projects }
+}
+
+// The index from $.store when it is fresh and for the same roots; otherwise one shared scan.
+async function getIndex($: EngineInterface, o: Options, force = false): Promise<ProjectIndex> {
+  const now = await $.clock.now()
+  if (!force) {
+    const stored = (await settle($.store.get(INDEX_KEY))) as ProjectIndex | undefined
+    const isSameRoots = stored?.roots?.join(';').toLowerCase() === o.projects.roots.join(';').toLowerCase()
+    if (stored && isSameRoots && now - stored.at < INDEX_MAX_AGE_MS) return stored
+  }
+  if (!indexing) {
+    indexing = scanProjects($, o.projects.roots).finally(() => {
+      indexing = undefined
+    })
+  }
+  const idx = await indexing
+  await settle($.store.set(INDEX_KEY, idx))
+  return idx
+}
 
 // This session's run folder (written since the session started) and its actionable open items.
 async function sessionFinishLine($: EngineInterface): Promise<{ folder: string; open: string[] } | null> {
@@ -406,7 +512,60 @@ export const register: Register = (on, options) => {
       isHeadless: options.finishLineHeadless === true,
       owner: String(options.ownerName ?? 'the user'),
     },
+    projects: {
+      isOn: options.projectLocator !== false,
+      roots: String(options.projectRoots ?? 'C:/Projects')
+        .split(';')
+        .map(s => toSlash(s.trim()))
+        .filter(Boolean),
+    },
   }
+
+  // ---------- Project Locator ----------
+
+  on('command.run', { command: 'projects' }, async ($, e, next) => {
+    const idx = await getIndex($, o, /\brefresh\b/i.test(e.args))
+    const list = findProjects(idx)
+    return { text: `${list.length} projects under ${idx.roots.map(toWin).join(', ')} (newest first):\n${projectsText(list, 80)}` }
+  })
+
+  on('tool.call', { tool: 'mcp__bws-cockpit__find_project' }, async ($, e, next) => {
+    const input = e as unknown as { query?: unknown; kind?: unknown }
+    const query = typeof input.query === 'string' ? input.query : ''
+    const kind = typeof input.kind === 'string' ? input.kind : ''
+    const idx = await getIndex($, o)
+    return { result: findResultText(idx, findProjects(idx, query, kind), query, kind) }
+  })
+
+  // A marker Glob under a projects root is answered from the index; over a home folder or drive it is refused at once.
+  on('tool.call', { tool: 'Glob' }, async ($, e, next) => {
+    if (!o.projects.isOn) return next(e)
+    const cwd = await $.session.cwd()
+    const { base, rel } = splitGlob(e.pattern, e.path ?? cwd)
+    if (!isMarkerGlob(rel)) return next(e)
+    const root = o.projects.roots.find(r => sameDir(r, base))
+    if (root) {
+      const t0 = await $.clock.now()
+      const idx = await getIndex($, o)
+      const filenames = globIndex(idx, root, rel).map(toWin)
+      const durationMs = Math.max(0, (await $.clock.now()) - t0)
+      return {
+        result: { filenames, numFiles: filenames.length, durationMs, truncated: false },
+        context: [
+          `bws-cockpit answered this Glob from its project index (${toWin(root)}, ${SCAN_DEPTH} folders deep, build and content folders skipped) ` +
+            'instead of a scan that times out. mcp__bws-cockpit__find_project gives more about each project.',
+        ],
+      }
+    }
+    if (isTooWide(base, o.projects.roots)) {
+      return {
+        deny:
+          `bws-cockpit: a Glob for project files over all of ${toWin(base)} times out after 20 s. Call mcp__bws-cockpit__find_project ` +
+          `(query by name, or no query for the whole list), or Glob under a projects root such as ${o.projects.roots.map(toWin).join(', ')}.`,
+      }
+    }
+    return next(e)
+  })
 
   // ---------- Finish-Line Guard ----------
 
@@ -457,6 +616,23 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'cockpit', description: 'Show the active run and editor/device status' })
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
+    if (o.projects.isOn) {
+      await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })
+      await $.tool.register({
+        name: 'find_project',
+        description:
+          'Find a project on this machine by name, without searching the disk. Returns each matching project folder with its kinds ' +
+          '(unreal, unity, node, android, python, git), the .uproject path, the Unity editor version, the package name, harness loops, ' +
+          'and when it was last active. Use it instead of Glob/Grep over the whole projects folder or home folder, which time out.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Words from the project, package, .uproject or loop name. Empty lists every project.' },
+            kind: { type: 'string', enum: ['unreal', 'unity', 'node', 'android', 'python', 'git', 'any'], description: 'Only projects of this kind.' },
+          },
+        },
+      })
+    }
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0) {
       void refresh($, o, 0)
@@ -467,13 +643,30 @@ export const register: Register = (on, options) => {
 
   on('prompt.context', async ($, e, next) => {
     const result = await next(e)
+    const blocks = [...result.blocks]
     const run = await findRun($)
-    if (run === null) return result
-    const text =
-      `Most recently updated run folder here: ${run.folder}` +
-      (run.next ? `; next step: ${shorten(run.next, 200)}` : '') +
-      `; ${run.open} open items. It may belong to another task: confirm before resuming it.`
-    return { ...result, blocks: [...result.blocks, { name: 'bwsCockpit', text }] }
+    if (run !== null) {
+      const text =
+        `Most recently updated run folder here: ${run.folder}` +
+        (run.next ? `; next step: ${shorten(run.next, 200)}` : '') +
+        `; ${run.open} open items. It may belong to another task: confirm before resuming it.`
+      blocks.push({ name: 'bwsCockpit', text })
+    }
+    // Project Locator: a session started in the home folder or a projects root gets the project list.
+    const cwd = await $.session.cwd()
+    if (o.projects.isOn && (isHomeDir(cwd) || o.projects.roots.some(r => sameDir(r, cwd)))) {
+      const idx = await getIndex($, o)
+      const list = findProjects(idx)
+      if (list.length > 0) {
+        blocks.push({
+          name: 'bwsProjects',
+          text:
+            `Projects under ${idx.roots.map(toWin).join(', ')} (newest first). For details call mcp__bws-cockpit__find_project. ` +
+            `Don't Glob or Grep the whole folder: it times out after 20 s.\n${projectsText(list, 40)}`,
+        })
+      }
+    }
+    return blocks.length === result.blocks.length ? result : { ...result, blocks }
   })
 
   on('command.run', { command: 'cockpit' }, async ($, e, next) => {

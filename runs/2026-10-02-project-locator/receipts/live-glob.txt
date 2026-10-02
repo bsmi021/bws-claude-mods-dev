@@ -1,0 +1,54 @@
+TOOL_USE Glob {"pattern": "**/*.uproject", "path": "C:\\Projects"}
+
+TOOL_USE Glob {"pattern": "**/*.uproject", "path": "C:\\Users\\bsmi0"}
+
+RESULT (error) <tool_use_error>bws-cockpit: a Glob for project files over all of C:\Users\bsmi0 times out after 20 s. Call mcp__bws-cockpit__find_project (query by name, or no query for the whole list), or Glob under a projects root such as C:\Projects.</tool_use_error>
+
+RESULT C:\Projects\bws.game.axo\game\Axo\Axo.uproject
+C:\Projects\bws.game.tms\TMS.uproject
+C:\Projects\street-war\StreetWar.uproject
+C:\Projects\synty-assets\source-files\PolygonDarkFortress.uproject
+C:\Projects\tmsUnreal\tmsUnreal.uproject
+C:\Projects\unreal-assets\animations\AnimationLibrary.uproject
+C:\Projects\xwing\XvT\XvT.uproject
+
+  (Glob durationMs=4 numFiles=7)
+
+TOOL_USE ToolSearch {"query": "select:mcp__bws-cockpit__find_project", "max_results": 1}
+
+RESULT [{"type": "tool_reference", "tool_name": "mcp__bws-cockpit__find_project"}]
+
+TOOL_USE mcp__bws-cockpit__find_project {"query": "street war"}
+
+RESULT street-war  (C:\Projects\street-war)
+  kinds: unreal, git
+  uproject: C:\Projects\street-war\StreetWar.uproject
+  harness loops: greybox-harness
+  runs/: yes · AGENTS/CLAUDE.md: yes · active 2026-10-01
+
+FINAL Here are the three results.
+
+**1) Glob `**/*.uproject` in `C:\Projects`**
+```
+C:\Projects\bws.game.axo\game\Axo\Axo.uproject
+C:\Projects\bws.game.tms\TMS.uproject
+C:\Projects\street-war\StreetWar.uproject
+C:\Projects\synty-assets\source-files\PolygonDarkFortress.uproject
+C:\Projects\tmsUnreal\tmsUnreal.uproject
+C:\Projects\unreal-assets\animations\AnimationLibrary.uproject
+C:\Projects\xwing\XvT\XvT.uproject
+```
+A hook note said bws-cockpit answered this from its project index (`C:\Projects`, 3 folders deep, build and content folders skipped) instead of a scan. It said `mcp__bws-cockpit__find_project` gives more detail on each project.
+
+**2) Glob `**/*.uproject` in `C:\Users\bsmi0`**
+```
+<tool_use_error>bws-cockpit: a Glob for project files over all of C:\Users\bsmi0 times out after 20 s. Call mcp__bws-cockpit__find_project (query by name, or no query for the whole list), or Glob under a projects root such as C:\Projects.</tool_use_error>
+```
+
+**3) `mcp__bws-cockpit__find_project` with query "street war"**
+```
+street-war  (C:\Projects\street-war)
+  kinds: unreal, git
+  uproject: C:\Projects\street-war\StreetWar.uproject
+  harness loops: greybox-harness
+  runs/: yes · AGENTS/CLAUDE.m

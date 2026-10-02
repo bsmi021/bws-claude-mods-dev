@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.3.0",
-  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane for harness loops, and a Finish-Line Guard that keeps Claude going while the run checklist has open items.",
+  "version": "0.4.0",
+  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane for harness loops, Finish-Line Guard, and a Project Locator (find_project tool, /projects, index-answered Globs).",
   "author": {
     "name": "Brian"
   },
@@ -95,6 +95,18 @@
       "title": "Finish line: your name",
       "description": "What the Finish-Line Guard calls you when it asks Claude to mark an item that needs you, as in \"(needs <name>: question)\".",
       "default": "the user"
+    },
+    "projectLocator": {
+      "type": "boolean",
+      "title": "Project Locator",
+      "description": "Index the projects under projectRoots: the find_project tool, /projects, Globs for .uproject/ProjectVersion.txt answered from the index, and a project list in home-folder sessions.",
+      "default": true
+    },
+    "projectRoots": {
+      "type": "string",
+      "title": "Project roots",
+      "description": "Folders that hold your projects, separated by ;",
+      "default": "C:/Projects"
     }
   }
 }

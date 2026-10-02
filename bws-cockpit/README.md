@@ -60,6 +60,16 @@ Keeps Claude from stopping while this session's checklist still has work. This s
 - **Visible.** When a turn ends with open items anyway, a line under the answer shows `⚑ finish line: N open · …`.
 - **Headless is off by default**, so harness workers keep their own budgets. `finishLineHeadless` turns it on.
 
+### Project Locator
+Stops Claude from searching the whole disk for a project. A Glob over a big projects folder or a home folder times out after 20 s, and a 30-day review counted 351 of them.
+- **Index.** Scans the folders in `projectRoots` (default `C:/Projects`), 3 folders deep. It skips node_modules, .git, Content, Library, Intermediate, Saved, DerivedDataCache, Binaries, runs, Plugins, Assets, Packages, Temp, obj, build, Source and dot-folders.
+  - Each project records its kinds (unreal, unity, node, android, python, git), its `.uproject`, the Unity editor version, the package name, any harness loops (`Tools/*/loop.json`), whether it has `runs/` and AGENTS.md/CLAUDE.md, and when it was last active.
+  - The index is kept for 6 hours and shared by all sessions.
+- **`find_project` tool** (`mcp__bws-cockpit__find_project`, input `{ query?, kind? }`) returns matching projects with their paths and facts, newest first.
+- **Globs answered from the index.** A Glob for `*.uproject` or `ProjectSettings/ProjectVersion.txt` under a projects root comes back at once, in Glob's own result form, with a note saying so. The same Glob over a home folder or a drive root is refused with a hint, instead of running into the timeout. Every other Glob and Grep runs as usual.
+- **Project list for home-folder sessions.** A session started in a home folder or a projects root gets the 40 newest projects in its first message.
+- **`/projects`** lists them; `/projects refresh` rebuilds the index.
+
 ### Editor & Device Guard
 Fix mode: it blocks calls that cannot work and adds missing launch flags. It never approves anything.
 
@@ -110,16 +120,20 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `evidenceCheck` | `true` | Block once when a done claim cites no evidence |
 | `finishLineHeadless` | `false` | Also guard `claude -p` and SDK sessions |
 | `ownerName` | `the user` | What the guard calls you when it asks Claude to mark an item that needs you |
+| `projectLocator` | `true` | The Project Locator |
+| `projectRoots` | `C:/Projects` | Folders that hold your projects, separated by `;` |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects), `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
 | Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
-| Files | reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
+| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
 | Prompts | `$.prompt.submit` for resume |
+| Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
+| Tools | registers `find_project` |
 
 It writes no files.
 
@@ -130,12 +144,13 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Check | Result |
 |---|---|
 | `claude plugin validate` | passed |
-| `claude plugin test` | 66/66: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
+| `claude plugin test` | 79/79: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
 | Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop |
 | Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
 | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
 | Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched. A UE launch under GPU pressure gets the `-ini` overrides, and a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started). adb is blocked for an unauthorized device and passes once it's authorized. A second editor for an open `.uproject` is blocked. An unreal-mcp call passes against a live editor |
 | Loop Watch live | headless `/loop-watch` printed a real loop; the pane drew in an interactive session docked at about 30 columns |
+| Project Locator live | `/projects refresh` from the home folder indexed 65 real projects (9 s including startup). A Glob for `**/*.uproject` over `C:\Projects` came back from the index in 4 ms with the 7 real `.uproject` files. The same Glob over the home folder was refused at once. `find_project "street war"` returned the folder, `.uproject` and harness loop |
 | Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
 
 Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.

@@ -1,0 +1,66 @@
+bws-cockpit: 65 projects under C:\Projects (newest first):
+- bws.applications.reaction-avatar-studio · node reaction-avatar-studio · active 2026-10-02 · C:\Projects\bws.applications.reaction-avatar-studio
+- bws.mods.claude-code · git · active 2026-10-02 · C:\Projects\bws.mods.claude-code
+- bws.web.pinkgill · node bws-web-pinkgill · active 2026-10-02 · C:\Projects\bws.web.pinkgill
+- bws.android.scribe · android · loops m5-harness · active 2026-10-02 · C:\Projects\bws.android.scribe
+- bws.portfolio-fabricator · node bws-portfolio · active 2026-10-02 · C:\Projects\bws.portfolio-fabricator
+- bws.iron-canopy · unity 6000.6.0f1 · loops canopy-delta-harness, canopy-harness · active 2026-10-02 · C:\Projects\bws.iron-canopy
+- bws.game.axo · loops axo-core-loop-harness · active 2026-10-02 · C:\Projects\bws.game.axo
+- bws.portfolio-t95 · node bws-portfolio · active 2026-10-02 · C:\Projects\bws.portfolio-t95
+- tms-heim · unity 6000.6.0f1 · python · active 2026-10-02 · C:\Projects\tms-heim
+- bws.game.tms · unreal TMS.uproject · loops M1Harness, WardenHarness · active 2026-10-02 · C:\Projects\bws.game.tms
+- bws.portfolio · node bws-portfolio · active 2026-10-02 · C:\Projects\bws.portfolio
+- xwing/XvT · unreal XvT.uproject · loops m2-harness, terra-quality-harness · active 2026-10-02 · C:\Projects\xwing\XvT
+- inflation · folder · active 2026-10-01 · C:\Projects\inflation
+- street-war · unreal StreetWar.uproject · loops greybox-harness · active 2026-10-01 · C:\Projects\street-war
+- prototype.pit-manuever · node pit-maneuver-prototype · loops pitm-harness · active 2026-09-30 · C:\Projects\prototype.pit-manuever
+- bws.game.axo/game/Axo · unreal Axo.uproject · active 2026-09-29 · C:\Projects\bws.game.axo\game\Axo
+- design-systems · folder · active 2026-09-25 · C:\Projects\design-systems
+- pil-agent-plugin · folder · active 2026-09-25 · C:\Projects\pil-agent-plugin
+- synty-assets · folder · active 2026-09-25 · C:\Projects\synty-assets
+- tmsUnreal · unreal tmsUnreal.uproject · active 2026-09-25 · C:\Projects\tmsUnreal
+- unreal-assets/animations · unreal AnimationLibrary.uproject · active 2026-09-24 · C:\Projects\unreal-assets\animations
+- unreal-assets · folder · active 2026-09-24 · C:\Projects\unreal-assets
+- xwing · folder · active 2026-09-24 · C:\Projects\xwing
+- bws.annotations · git · active 2026-09-14 · C:\Projects\bws.annotations
+- synty-assets/source-files · unreal PolygonDarkFortress.uproject · active 2026-09-13 · C:\Projects\synty-assets\source-files
+- bws.motion.library · node @bws/motion · active 2026-09-11 · C:\Projects\bws.motion.library
+- google-notebook-plugin · git · active 2026-09-08 · C:\Projects\google-notebook-plugin
+- animation.station · unity 6000.5.1f1 · active 2026-09-06 · C:\Projects\animation.station
+- procedural-world-generator · folder · active 2026-08-24 · C:\Projects\procedural-world-generator
+- bws.tms.game · folder · active 2026-08-24 · C:\Projects\bws.tms.game
+- coloring-book-02 · folder · active 2026-08-24 · C:\Projects\coloring-book-02
+- urban-war · folder · active 2026-08-24 · C:\Projects\urban-war
+- proc-world-gen-v2 · folder · active 2026-08-24 · C:\Projects\proc-world-gen-v2
+- Monastery · folder · active 2026-08-24 · C:\Projects\Monastery
+- top-gun · node steel-deck · active 2026-08-22 · C:\Projects\top-gun
+- dots-traffic · folder · active 2026-08-04 · C:\Projects\dots-traffic
+- urban-war-movement-state-machine · folder · active 2026-08-04 · C:\Projects\urban-war-movement-state-machine
+- urban-war-inventory-equipment · folder · active 2026-08-04 · C:\Projects\urban-war-inventory-equipment
+- code-explorer · folder · active 2026-08-04 · C:\Projects\code-explorer
+- bad-day · folder · active 2026-08-04 · C:\Projects\bad-day
+- RPG3D · folder · active 2026-08-04 · C:\Projects\RPG3D
+- AdvancedDeepDive_ProcGenTerrain · folder · active 2026-08-04 · C:\Projects\AdvancedDeepDive_ProcGenTerrain
+- ain-import-wizard · folder · active 2026-08-04 · C:\Projects\ain-import-wizard
+- remotion · folder · active 2026-08-04 · C:\Projects\remotion
+- notebooklm-mcp-cli · python · active 2026-07-19 · C:\Projects\notebooklm-mcp-cli
+- battle-souls · unity 6000.4.8f1 · active 2026-06-09 · C:\Projects\battle-souls
+- bws.tms.game-goap-prototype · folder · active 2026-03-03 · C:\Projects\bws.tms.game-goap-prototype
+- nanobanana-coloring · folder · active 2026-01-18 · C:\Projects\nanobanana-coloring
+- personal-podcast · folder · active 2026-01-18 · C:\Projects\personal-podcast
+- mesa-escape-room · folder · active 2026-01-17 · C:\Projects\mesa-escape-room
+- mcp-gemini-dialog-subprocess · folder · active 2026-01-17 · C:\Projects\mcp-gemini-dialog-subprocess
+- family-planner · folder · active 2026-01-17 · C:\Projects\family-planner
+- coloring-book-unity · folder · active 2026-01-17 · C:\Projects\coloring-book-unity
+- valheim-code · folder · active 2026-01-07 · C:\Projects\valheim-code
+- animancer.test · folder · active 2026-01-03 · C:\Projects\animancer.test
+- old-drive · folder · active 2025-11-26 · C:\Projects\old-drive
+- SyntyEditorTools · unity 6000.2.7f2 · active 2025-11-15 · C:\Projects\SyntyEditorTools
+- sas-ai-governance · folder · active 2025-11-01 · C:\Projects\sas-ai-governance
+- mcp-portable-rag · folder · active 2025-11-01 · C:\Projects\mcp-portable-rag
+- notebooks · node notebooks · active 2025-09-27 · C:\Projects\notebooks
+- mcp-unity-rag · folder · active 2025-07-31 · C:\Projects\mcp-unity-rag
+- old-drive/Soulslike-Combat · unity 6000.0.33f1 · active 2025-05-27 · C:\Projects\old-drive\Soulslike-Combat
+- old-drive/RPG Project · unity 6000.0.26f1 · active 2025-05-27 · C:\Projects\old-drive\RPG Project
+- old-drive/bright-souls · unity 2021.1.18f1 · active 2025-05-27 · C:\Projects\old-drive\bright-souls
+- keys · folder · active 2025-05-05 · C:\Projects\keys
