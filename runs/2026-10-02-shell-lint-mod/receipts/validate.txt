@@ -1,0 +1,12 @@
+$ claude --version
+2.1.287 (Claude Code)
+$ claude plugin validate ./bws-shell-lint
+Validating plugin manifest: C:\Projects\bws.mods.claude-code\bws-shell-lint\.claude-plugin\plugin.json
+
+Validating hooks: C:\Projects\bws.mods.claude-code\bws-shell-lint\hooks\hooks.json
+
+  ❯ ./register.ts hooks: tool.call{tool=Bash}
+  ❯ ./register.ts calls: $.ui.toast
+
+✔ Validation passed
+exit=0

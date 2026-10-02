@@ -1,0 +1,231 @@
+{
+ "long-command": {
+  "hits": {
+   "qfail": 167
+  },
+  "examples": {
+   "qfail": [
+    "toolu_01UoMtJ4quCUzF8VVzVS1o12",
+    "toolu_01Gd9sGKdnoHrPdutwCc9wiA",
+    "toolu_01AZZZaxWg7xgHanLTNHKBvW",
+    "toolu_01DXZUaLBfaj7gbYx5jJ9m7u",
+    "toolu_01QJuWZ7cWULeZfy1nQqtMqE"
+   ]
+  }
+ },
+ "dq-trailing-backslash": {
+  "hits": {
+   "qfail": 16,
+   "ok": 1
+  },
+  "examples": {
+   "qfail": [
+    "toolu_01MorhRXBq9eHZvd6eDJ3bKe",
+    "toolu_01UhTibCzh4sYn5PChXhJSJ9",
+    "toolu_01TqYLrVsx34twh2xkyGwNYn",
+    "toolu_01YQvjjYTZ1iiAGnEE618Cjv",
+    "toolu_01NwQ9sygkCS5wAQXmdu21Rn"
+   ],
+   "ok": [
+    "toolu_01HQXcRj5qBn42eANRgKGX5f"
+   ]
+  }
+ },
+ "py-backslash": {
+  "hits": {
+   "qfail": 37,
+   "otherfail": 3,
+   "qfail0": 20,
+   "ok": 2
+  },
+  "examples": {
+   "qfail": [
+    "toolu_012qT99gUt2KUTCYnrPbZm5j",
+    "toolu_01KAcBQfRsNQ2J7Cj83GE8SZ",
+    "toolu_01Gah1FWuPYNjCLj2GSvwaaz",
+    "toolu_01NCjpUEWF4TrukNgZKprYnU",
+    "toolu_01EskgqsnHHRo6g9yu98PCap"
+   ],
+   "otherfail": [
+    "toolu_01X3V5NUjRqfHNcxNMvdnMMo",
+    "toolu_01G5b6dQyUem19zKS9VG2er8",
+    "toolu_01FKrrGZvQ3i653N5iq2GhYB"
+   ],
+   "qfail0": [
+    "toolu_01LvM6g4tf5jXT35V1VKE4wS",
+    "toolu_01NAd32si3wrhfV6RNeNiwoh",
+    "toolu_01586xAbP9mZrmtaV9zLaWmY",
+    "toolu_01Pv1rX41BUjbQpnN2QTdi58",
+    "toolu_0126iQuXm4Gxigi7xodcowFd"
+   ],
+   "ok": [
+    "toolu_01AF4TJohgsTs3NvuPBK9aAx",
+    "toolu_01MeySdmseuXurYVPfkKvXLX"
+   ]
+  }
+ },
+ "unbalanced-quotes": {
+  "hits": {
+   "ok": 10,
+   "qfail": 19,
+   "otherfail": 1,
+   "qfail0": 1
+  },
+  "examples": {
+   "ok": [
+    "toolu_01YUFejhr44pfS6As7TVaYKH",
+    "toolu_01ShbsFbGAEGqyhk3d5iSHXK",
+    "toolu_01SwPwEPVJ8MvBhERGYzxzSk",
+    "toolu_018tBFrcBZGJQHUahKf3FckW",
+    "toolu_012i9XYrizaSxAvr4ZwPzhKw"
+   ],
+   "qfail": [
+    "toolu_01MorhRXBq9eHZvd6eDJ3bKe",
+    "toolu_01UhTibCzh4sYn5PChXhJSJ9",
+    "toolu_01TqYLrVsx34twh2xkyGwNYn",
+    "toolu_01YQvjjYTZ1iiAGnEE618Cjv",
+    "toolu_01NwQ9sygkCS5wAQXmdu21Rn"
+   ],
+   "otherfail": [
+    "toolu_01BcxMBmqHrei6T3yVktZd4x"
+   ],
+   "qfail0": [
+    "toolu_01LRDWtzdGyhmGPFzQ7kAdQb"
+   ]
+  }
+ },
+ "heredoc-unterminated": {
+  "hits": {
+   "ok": 8,
+   "qfail0": 1,
+   "qfail": 1
+  },
+  "examples": {
+   "ok": [
+    "toolu_01YUFejhr44pfS6As7TVaYKH",
+    "toolu_01ShbsFbGAEGqyhk3d5iSHXK",
+    "toolu_01Qr2ZD1naerjLtSGuu9XxMa",
+    "toolu_01YXDJW3mCZyNx2QQ7fraTyY",
+    "toolu_01DvQeKUJ8bxy7w2R56g8daA"
+   ],
+   "qfail0": [
+    "toolu_01LRDWtzdGyhmGPFzQ7kAdQb"
+   ],
+   "qfail": [
+    "toolu_01CfdjkbEmogmeba8fCYPoyJ"
+   ]
+  }
+ },
+ "unquoted-heredoc-expansion": {
+  "hits": {
+   "ok": 51,
+   "otherfail": 2,
+   "qfail": 1
+  },
+  "examples": {
+   "ok": [
+    "toolu_01YUFejhr44pfS6As7TVaYKH",
+    "toolu_019Ah2prMidJsqJZqzRda6T1",
+    "toolu_014hKNCdYeE1YBFWjAoonuiR",
+    "toolu_01XRbktood44pWdoz8aeEZSo",
+    "toolu_01MJ9BR9Q9eq5mWj51XHTery"
+   ],
+   "otherfail": [
+    "toolu_016BLtM5uFLKGfHRpbbq1FYz",
+    "toolu_01SrwE59USQbnN8sziNCdLkH"
+   ],
+   "qfail": [
+    "toolu_011DkrRqQ8Jr3deQ5iMPNa5m"
+   ]
+  }
+ },
+ "cd-winpath-backslash": {
+  "hits": {
+   "ok": 448,
+   "otherfail": 9,
+   "qfail": 1
+  },
+  "examples": {
+   "ok": [
+    "toolu_01BYZivmBbeRuD53Zy8Rqn3U",
+    "toolu_01YGGTjum2LJkyr43RbWxu1C",
+    "toolu_012CR9ZZrUmWm4pSPXMfjexZ",
+    "toolu_01CW89aDAkmxRFW6QTYP56kR",
+    "toolu_01Nqtk5kddJQxonSvsLfJkZb"
+   ],
+   "otherfail": [
+    "toolu_01KNFYHobm29EdgcF3e8nW5Y",
+    "toolu_01Mm4W4qMGZ6crZTYCGR8KwA",
+    "toolu_01KnFLJKXDeZqweLt5a3K4Zv",
+    "toolu_01QtKsoufxXubuiaUfku8xfE",
+    "toolu_01S2EYMnJFJWcsQ75SbcmH7p"
+   ],
+   "qfail": [
+    "toolu_01GD1be1uspB1DpcWpM4BG6N"
+   ]
+  }
+ },
+ "missed_ids": [
+  "toolu_0143unWYJPptxMmenY386PAG",
+  "toolu_015bUEWUFJ3XYhdopXNNmGMA",
+  "toolu_012upUKS4oxRPjEmLegWJc5b",
+  "toolu_01DSp5Ty9mrBfJCdVNVYRUgp",
+  "toolu_01NsP6eWwioc6psWNavHhUiD",
+  "toolu_01X2TqJxG3FvoeCbmdkpDQPY",
+  "toolu_01LRDWtzdGyhmGPFzQ7kAdQb",
+  "toolu_01Qx7VWSgpj4UJH8vh966pNy",
+  "toolu_011bCz4niw9gLchXEveqLHCZ",
+  "toolu_018s3ntFKpbdAGvBhY2ZrjyY",
+  "toolu_012QsqdmALZttXVywkjoBxCA",
+  "toolu_0142xCQuZF8KtFqUqR5SsCkh",
+  "toolu_01JUStzq6k6Jowk6KduNgJqx",
+  "toolu_0126FizSG45zqj83sUwWkSYJ",
+  "toolu_01L56k537ekDcAKsUBZw1Ua2",
+  "toolu_01C5rtET7cLy1i5K3bXWBw9j",
+  "toolu_01Wz6c5AoKwtneU64fQuMnFG",
+  "toolu_01Wg646k7CQUDn8EGeHaQbtT",
+  "toolu_01WXL17cseD2Mm8RqNEKgFJq",
+  "toolu_01BMN4Ce6V4kCy9T7Nwrs47C",
+  "toolu_01GD1be1uspB1DpcWpM4BG6N",
+  "toolu_01RzT9RTLDJKx2HADGE5YzZh",
+  "toolu_01N8bDES8MBagR34TSj6T8yh",
+  "toolu_01FTs7iZMpR75wy8xz2cbku1",
+  "toolu_012BjchUcyDPevGd5CTN8kYL",
+  "toolu_01BXHxfD6Hac8yvbrn6Bab2m",
+  "toolu_015vc7xQofV5rT2Y1Qju9A8m",
+  "toolu_017Fv4Do7CkK8qHy4C7CReYK",
+  "toolu_01E43AEJTa9sPgPug9gCyvUi",
+  "toolu_0191gA5Pw4Fu3Nr97BwCs7LW",
+  "toolu_01Jqosa8V2FaMpFpZcAdGao1",
+  "toolu_01CfdjkbEmogmeba8fCYPoyJ",
+  "toolu_011pKzcQVEDfonzb9yj9Dn1h",
+  "toolu_01KgtpdhNU7MRb6UbWoxB1oc",
+  "toolu_01Kzysv7GAinnzx2HUKFhDde",
+  "toolu_014wKxofYA9ZSqGvHRQktYM6",
+  "toolu_01K2wYYYENhsfQDkqjRFpuTc",
+  "toolu_01Rqutvg6X35n3kJjNYt2TeV",
+  "toolu_019fPGPi1U43iV2KqLZ1GuvT",
+  "toolu_01B8a8Pg79otrhGdczcQ3hHg",
+  "toolu_013HZMkAiv5zYZQHEDHCajim",
+  "toolu_019t4G2E9cCsiS1vCGogGtxk",
+  "toolu_01UjUK2eKyPh8uNJ1fRN1CW8",
+  "toolu_01E7T24bJNMvBJxgmkwM3uZT",
+  "toolu_01Q68Ar2sCi3hMrY4EN8Yfe3",
+  "toolu_01CUtFPoqVDWvmjKNsPEoJH9",
+  "toolu_01XLfFEJG3EbXKmepgSSqJMs",
+  "toolu_01YJZCdoucpzovKWivBAMdra",
+  "toolu_012ALDB9sV9pyx53q3TaKusx",
+  "toolu_01GDeeou4VDLFTg6NaS8TWmp",
+  "toolu_011eMtQfzdqpZgS85b15mgWg",
+  "toolu_01Sq8jcorqN25ESB69MK9zqw",
+  "toolu_01Xx87zeKkn6Fv2JxGGqMPdC",
+  "toolu_017H31EAeKPhKA8x82Kcn5xw",
+  "toolu_01Cz8c8zqAyFKGaovt3wHub1",
+  "toolu_01PK3jCEjQjvHzPVVsi64Skn",
+  "toolu_0157Vxm3mG6J2vinbvLBgnVA",
+  "toolu_016a5E2r4EsKjd8FUJd7HqjA",
+  "toolu_01NS4VfhCt6bZNeMuWazF1j2",
+  "toolu_01QhVKCHjmLKoxmweSNHaLtF",
+  "toolu_01Ay5YbW8e5Do2zZaaChMKU8"
+ ]
+}

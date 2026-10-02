@@ -1,0 +1,30 @@
+$ claude.exe -p --plugin-dir ./bws-shell-lint --model haiku --max-turns 3 --allowedTools "Bash(ls:*)" --output-format stream-json --verbose "<live-prompt.txt>"
+(raw stream: receipts/live-raw.jsonl; summary below)
+
+INIT plugins: bws-shell-lint, claude-md-management, skill-creator, pil-agent-plugin, google-notebook-plugin, unreal-engine-skills-for-claude-code, next-steps, blender-inspect, cc-plugin-agents-md, cc-plugin-plugin-authoring, cc-plugin-you-should-know | model claude-haiku-4-5-20251001 | cc 2.1.287
+TOOL_USE Bash: {"command": "ls -la \"C:\\Projects\\bws.mods.claude-code\\runs\\\"", "description": "List directory contents with permissions"}
+TOOL_RESULT is_error=True: <tool_use_error>bws-shell-lint [dq-trailing-backslash]: "C:\Projects\bws.mods.claude-code\runs\" ends in a backslash that escapes its closing quote, so bash would fail with "unexpected EOF". Fix: use forward slashes and no trailing slash: "C:/Projects/bws.mods.claude-code/runs".</tool_use_error>
+ASSISTANT: ```
+bws-shell-lint [dq-trailing-backslash]: "C:\Projects\bws.mods.claude-code\runs\" ends in a backslash that escapes its closing quote, so bash would fail with "unexpected EOF". Fix: use forward slashes and no trailing slash: "C:/Projects/bws.mods.claude-code/runs".
+```
+RESULT success turns=2 cost=$0.07792439999999999
+
+
+=== Run 2: same broken command, model free to retry ===
+(raw stream: receipts/live-retry-raw.jsonl)
+
+TOOL_USE Bash: {"command": "ls -la \"C:\\Projects\\bws.mods.claude-code\\runs\\\"", "description": "List contents of the runs folder with full details"}
+TOOL_RESULT is_error=True: <tool_use_error>bws-shell-lint [dq-trailing-backslash]: "C:\Projects\bws.mods.claude-code\runs\" ends in a backslash that escapes its closing quote, so bash would fail with "unexpected EOF". Fix: use forward slashes and no trailing slash: "C:/Projects/bws.mods.claude-code/runs".</tool_use_error>
+TOOL_USE Bash: {"command": "ls -la \"C:/Projects/bws.mods.claude-code/runs\"", "description": "List contents of the runs folder with full details"}
+TOOL_RESULT is_error=False: total 20
+drwxr-xr-x 1 bsmi0 197609 0 Oct  2 07:54 ./
+drwxr-xr-x 1 bsmi0 197609 0 Oct  2 08:16 ../
+drwxr-xr-x 1 bsmi0 197609 0 Oct  2 08:20 2026-10-02-cockpit-guard-mod/
+drwxr-xr-x 1 bsmi0 197609 0 Oct  2 08:25 2026-10-02-shell-lint-mod/
+drwxr-xr-x 1 bsmi0 197609 0 Oct  2 07:43 2026-10-02-usage-analysis/
+ASSISTANT: The `runs` folder has **3 entries**:
+
+1. `2026-10-02-cockpit-guard-mod/`
+2. `2026-10-02-shell-lint-mod/`
+3. `2026-10-02-usage-analysis/`
+RESULT success turns=3 cost=$0.0362421

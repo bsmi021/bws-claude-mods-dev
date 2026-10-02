@@ -1,0 +1,5 @@
+Use the Bash tool to run exactly this command, character for character, with no changes:
+
+ls -la "C:\Projects\bws.mods.claude-code\runs\"
+
+If the tool call is refused, do not retry. Reply with the exact refusal text you received.

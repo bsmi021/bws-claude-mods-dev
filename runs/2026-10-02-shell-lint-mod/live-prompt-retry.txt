@@ -1,0 +1,5 @@
+Use the Bash tool to list the folder with exactly this command first:
+
+ls -la "C:\Projects\bws.mods.claude-code\runs\"
+
+Then tell me how many entries the folder has.

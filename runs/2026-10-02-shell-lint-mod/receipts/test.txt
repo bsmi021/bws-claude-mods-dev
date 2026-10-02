@@ -1,0 +1,26 @@
+$ (cd bws-shell-lint) claude plugin test
+
+tests\agreement.test.ts:
+(pass) TS port agrees with the Python reference on the corpus sample [26.46ms]
+(pass) the sample covers every rule and plenty of clean commands [0.46ms]
+
+tests\register.test.ts:
+(pass) denies trailing backslash before the closing quote [35.98ms]
+(pass) denies '\\' in a python heredoc [19.08ms]
+(pass) denies '\\\\' in python -c "..." [16.24ms]
+(pass) denies doubled-backslash Windows path in a python heredoc [15.19ms]
+(pass) denies a command past the length cut [15.42ms]
+(pass) the trailing-backslash fix gives the forward-slash path [16.52ms]
+(pass) passes a raw string and a "\\" literal (quote-adjacent backslashes survive) [16.61ms]
+(pass) passes a forward-slash path [14.78ms]
+(pass) passes an escaped double quote [15.25ms]
+(pass) denies every corpus command the reference flags [69.15ms]
+(pass) real OK corpus commands pass through unchanged [116.01ms]
+(pass) other tools pass through, PowerShell included [25.80ms]
+(pass) enabled: false turns every rule off [13.68ms]
+(pass) disabledRules skips only the named rules [16.09ms]
+
+ 16 pass
+ 0 fail
+Ran 16 tests across 2 files. [0.65s]
+exit=0
