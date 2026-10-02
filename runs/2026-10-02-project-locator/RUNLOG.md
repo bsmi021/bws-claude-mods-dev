@@ -44,3 +44,12 @@ Build mod #6 from the usage review inside `bws-cockpit` (version 0.4.0). It stop
 - Grep timeouts: content search can't come from an index.
 - `package.json` Globs, where the index would be incomplete.
 - Refreshing `publish` with 0.4.0 when Brian asks.
+
+## Publish refresh (2026-10-02)
+- The pre-scan found real project names in the new test fixture and README: street-war/StreetWar, game.axo/Axo, heim, scribe, greybox-harness.
+  - Replaced with arena-game/ArenaGame, game.critter/Critter, castle-unity, notes-app and build-harness. One expected Glob order changed with the names.
+  - Committed on main as a82becf. 79/79.
+- **`publish` refreshed** from main with bws-cockpit 0.4.0. The top README mentions the Project Locator. Committed on top of 6ab1542; 26 files.
+  - Scan: only the already-scrubbed fixture paths, the generator comments and the manifest authors (kept by design).
+  - Validate passes for both plugins; bws-cockpit 79/79 and bws-shell-lint 16/16, run from the publish tree.
+  - Not pushed; no remote is configured.
