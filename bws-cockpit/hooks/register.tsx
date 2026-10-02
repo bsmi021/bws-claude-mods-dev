@@ -23,6 +23,7 @@ import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
 import type { LoopView } from '../types'
+import { actionable, decide, openItems, openSummary } from './finish'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
@@ -43,6 +44,9 @@ const UNIT_MARK: Record<string, string> = { DONE: '✓', RUNNING: '●', PAUSED:
 const toasted = new Set<string>()
 let isFirstLoopScan = true
 
+// Finish-Line Guard: stops blocked since Brian's last prompt. Reset by prompt.submit, so it can never loop.
+let continuesUsed = 0
+
 // Theme keys, so the band follows the person's theme; `off` draws dim instead.
 const STATE_COLOR: Record<CockpitState, string | undefined> = { good: 'success', warn: 'warning', bad: 'error', off: undefined }
 const GUARD_NOTE_MS = 10 * 60 * 1000
@@ -59,6 +63,7 @@ type Options = {
   adbPath: string
   refreshSeconds: number
   loop: LoopLimits
+  finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -160,7 +165,21 @@ const devicesText = (d: CockpitDevices) =>
   d.chips.map(c => (c.label === 'VRAM' ? `VRAM ${c.detail}${c.state === 'warn' ? ' (pressure)' : ''}` : `${c.label} ${c.word}${c.detail ? ` ${c.detail}` : ''}`)).join(' · ')
 
 // The newest run folder under <cwd>/runs, by its RUNLOG/PLAN/TASKS times.
+type RunFolder = { folder: string; mtime: number; runlog: string; plan: string; tasks: string }
+
 async function findRun($: EngineInterface): Promise<CockpitRun | null> {
+  const r = await readRunFolder($)
+  if (!r) return null
+  return {
+    folder: r.folder,
+    next: parseNext(r.runlog) ?? parseNext(r.tasks) ?? parseNext(r.plan),
+    finish: parseFinish(r.plan) ?? parseFinish(r.runlog),
+    open: countOpen(r.plan) + countOpen(r.tasks),
+  }
+}
+
+// The newest run folder under <cwd>/runs, by its RUNLOG/PLAN/TASKS times, with their text.
+async function readRunFolder($: EngineInterface): Promise<RunFolder | null> {
   const cwd = await $.session.cwd()
   const runsDir = joinPath(cwd, 'runs')
   const entries = await settle($.fs.list(runsDir))
@@ -185,12 +204,18 @@ async function findRun($: EngineInterface): Promise<CockpitRun | null> {
     return hit ? ((await settle($.fs.read(joinPath(joinPath(runsDir, best!.name), hit)))) ?? '') : ''
   }
   const [runlog, plan, tasks] = await Promise.all([text('RUNLOG.md'), text('PLAN.md'), text('TASKS.md')])
-  return {
-    folder: `runs/${best.name}`,
-    next: parseNext(runlog) ?? parseNext(tasks) ?? parseNext(plan),
-    finish: parseFinish(plan) ?? parseFinish(runlog),
-    open: countOpen(plan) + countOpen(tasks),
-  }
+  return { folder: `runs/${best.name}`, mtime: best.mtime, runlog, plan, tasks }
+}
+
+// ---------- Finish-Line Guard ----------
+
+// This session's run folder (written since the session started) and its actionable open items.
+async function sessionFinishLine($: EngineInterface): Promise<{ folder: string; open: string[] } | null> {
+  const r = await readRunFolder($)
+  if (!r) return null
+  const { startedAt } = await $.session.usage()
+  if (r.mtime < startedAt) return null
+  return { folder: r.folder, open: actionable([...openItems(r.plan), ...openItems(r.tasks)]) }
 }
 
 async function refresh($: EngineInterface, o: Options, maxAgeMs: number) {
@@ -374,7 +399,55 @@ export const register: Register = (on, options) => {
       idleMs: Math.max(1, Number(options.loopIdleMinutes ?? 20)) * 60_000,
       sessionAlert: Math.max(1, Number(options.loopSessionAlert ?? 6)),
     },
+    finish: {
+      isOn: options.finishLine !== false,
+      maxContinues: Math.max(0, Number(options.finishLineMaxContinues ?? 2)),
+      evidenceCheck: options.evidenceCheck !== false,
+      isHeadless: options.finishLineHeadless === true,
+    },
   }
+
+  // ---------- Finish-Line Guard ----------
+
+  on('prompt.submit', async ($, e, next) => {
+    continuesUsed = 0
+    return next(e)
+  })
+
+  on('classic.Stop', async ($, e, next) => {
+    if (!o.finish.isOn) return next(e)
+    if (!o.finish.isHeadless && (await $.session.surfaces()).length === 0) return next(e)
+    const fl = await sessionFinishLine($)
+    if (fl === null) return next(e) // no run folder touched this session: nothing to hold to
+    const decision = decide({
+      open: fl.open,
+      folder: fl.folder,
+      message: e.last_assistant_message ?? '',
+      continuesUsed,
+      maxContinues: o.finish.maxContinues,
+      isWaiting: (e.background_tasks?.length ?? 0) > 0 || (e.session_crons?.length ?? 0) > 0,
+      evidenceCheck: o.finish.evidenceCheck,
+    })
+    if (decision === null) return next(e)
+    continuesUsed += 1
+    $.ui.toast(
+      decision.kind === 'open' ? `finish line: ${fl.open.length} open, keeping Claude going` : 'finish line: asked Claude for evidence',
+      { timeoutMs: 6000 },
+    )
+    return { block: decision.block }
+  })
+
+  // One turn.complete hook: refresh the band, then add the finish-line line under the answer.
+  on('turn.complete', async ($, e, next) => {
+    const surfaces = await $.session.surfaces()
+    if (surfaces.length > 0) void refresh($, o, 15000)
+    const result = await next(e)
+    if (!o.finish.isOn || e.isAborted || e.agentId) return result
+    const fl = await sessionFinishLine($)
+    if (fl === null || fl.open.length === 0) return result
+    const line = `⚑ finish line: ${fl.open.length} open · ${openSummary(fl.open, 3)}`
+    return { ...result, text: result.text ? `${result.text}\n${line}` : line }
+  })
 
   // ---------- Run Cockpit ----------
 
@@ -387,12 +460,6 @@ export const register: Register = (on, options) => {
       void refresh($, o, 0)
       $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
     }
-    return next(e)
-  })
-
-  on('turn.complete', async ($, e, next) => {
-    const surfaces = await $.session.surfaces()
-    if (surfaces.length > 0) void refresh($, o, 15000)
     return next(e)
   })
 

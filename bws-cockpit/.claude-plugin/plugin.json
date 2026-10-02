@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.2.0",
-  "description": "Run Cockpit band (active run, next step, open items, /resume-run), Editor & Device Guard for Unreal, Unity, Blender and adb, and a Loop Watch pane for harness loops.",
+  "version": "0.3.0",
+  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane for harness loops, and a Finish-Line Guard that keeps Claude going while the run checklist has open items.",
   "author": {
     "name": "Brian"
   },
@@ -65,6 +65,30 @@
       "title": "Loop: dead-driver alert (minutes)",
       "description": "Alert when the driver says RUNNING but its 30-second heartbeat has not updated for this long.",
       "default": 3
+    },
+    "finishLine": {
+      "type": "boolean",
+      "title": "Finish-Line Guard",
+      "description": "Keep Claude going when this session's run folder still has open checklist items, and ask for evidence when it claims done without any.",
+      "default": true
+    },
+    "finishLineMaxContinues": {
+      "type": "number",
+      "title": "Finish line: continues per prompt",
+      "description": "How many times the guard may block a stop before your next prompt.",
+      "default": 2
+    },
+    "evidenceCheck": {
+      "type": "boolean",
+      "title": "Finish line: evidence check",
+      "description": "Block once when a reply claims the work is done but cites no evidence (test counts, receipt paths, commit hash).",
+      "default": true
+    },
+    "finishLineHeadless": {
+      "type": "boolean",
+      "title": "Finish line in headless sessions",
+      "description": "Also guard claude -p and SDK sessions (off by default so harness workers keep their own budgets).",
+      "default": false
     }
   }
 }

@@ -48,6 +48,18 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
 - **Band:** a `loop` chip (running, needs you, stalled, stopped) and the hotkey `4: loop`, which opens the pane.
 - **Without a pane** (headless `claude -p "/loop-watch"`), the same summary comes back as text.
 
+### Finish-Line Guard
+Keeps Claude from stopping while this session's checklist still has work. This session's run folder is the newest `runs/*` whose RUNLOG, PLAN or TASKS was written since the session started; a stale folder never counts.
+- **Open items.** When Claude tries to end its turn and PLAN.md or TASKS.md still has `- [ ]` items, the stop is blocked and Claude is told which items remain (up to 5). It is also told how to hand back properly: say so plainly, and mark the item `(blocked: …)` or `(needs <you>: …)`.
+- **Items that never hold it open:** items marked blocked, waiting on, needs the user/you, parked, deferred, follow-up, later or out of scope.
+- **Never blocked:**
+  - a reply that hands back: it ends with a question, or says "your call", "want me to", "should I" or "let me know"
+  - a turn with background tasks or scheduled wake-ups pending
+- **Evidence check.** When nothing is open but the reply claims "done", "complete", "all tests pass", ✅ and so on without citing evidence, the stop is blocked once. Evidence is test counts, receipt or log paths, "exit 0", a commit hash or a URL.
+- **Bounded.** At most `finishLineMaxContinues` blocks (default 2) per prompt you send, so it can never loop.
+- **Visible.** When a turn ends with open items anyway, a line under the answer shows `⚑ finish line: N open · …`.
+- **Headless is off by default**, so harness workers keep their own budgets. `finishLineHeadless` turns it on.
+
 ### Editor & Device Guard
 Fix mode: it blocks calls that cannot work and adds missing launch flags. It never approves anything.
 
@@ -93,12 +105,16 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `loopIdleMinutes` | `20` | Alert when the running worker has made no tool call for this long |
 | `loopSessionAlert` | `6` | Alert when the current unit reaches this many sessions |
 | `loopDriverStaleMinutes` | `3` | Alert when a RUNNING driver's heartbeat stops |
+| `finishLine` | `true` | The Finish-Line Guard |
+| `finishLineMaxContinues` | `2` | Stops the guard may block per prompt you send |
+| `evidenceCheck` | `true` | Block once when a done claim cites no evidence |
+| `finishLineHeadless` | `false` | Also guard `claude -p` and SDK sessions |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
 | Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
 | Files | reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
@@ -113,7 +129,8 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Check | Result |
 |---|---|
 | `claude plugin validate` | passed |
-| `claude plugin test` | 48/48: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, and Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker) |
+| `claude plugin test` | 64/64: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
+| Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop |
 | Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
 | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
 | Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched. A UE launch under GPU pressure gets the `-ini` overrides, and a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started). adb is blocked for an unauthorized device and passes once it's authorized. A second editor for an open `.uproject` is blocked. An unreal-mcp call passes against a live editor |

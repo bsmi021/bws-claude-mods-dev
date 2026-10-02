@@ -1,0 +1,91 @@
+// Finish-Line Guard: decides whether the main loop may stop. Pure: no `$`, so tests call it directly.
+
+export type FinishInput = {
+  open: string[] // actionable open items of this session's run folder
+  folder: string | null
+  message: string // the assistant's last message
+  continuesUsed: number // blocks already spent since Brian's last prompt
+  maxContinues: number
+  isWaiting: boolean // background tasks or session crons still pending
+  evidenceCheck: boolean
+}
+
+export type FinishDecision = { block: string; kind: 'open' | 'evidence' } | null
+
+const clean = (s: string) => s.replace(/\*\*/g, '').replace(/`/g, '').replace(/\s+/g, ' ').trim()
+
+// `- [ ] text` lines, the text cleaned.
+export const openItems = (markdown: string): string[] =>
+  markdown
+    .split(/\r?\n/)
+    .map(l => l.match(/^\s*[-*]\s+\[ \]\s+(.+)$/)?.[1])
+    .filter((t): t is string => t !== undefined)
+    .map(clean)
+
+// Items that wait on someone else or were put aside: they never hold the session open.
+const PARKED =
+  /\b(blocked|waiting (on|for)|needs? (brian|the user|you|user)|on hold|parked|deferred?|follow-?ups?|later|out of scope|won'?t do|not now|optional)\b/i
+
+export const isParked = (item: string) => PARKED.test(item)
+
+export const actionable = (items: string[]) => items.filter(i => !isParked(i))
+
+// A reply that hands control back to Brian: a question, or an explicit hand-back.
+const HAND_BACK =
+  /(your call|want me to|should i\b|shall i\b|which (one|do you|would you)|do you want|waiting on you|need(s)? you to|needs? your|let me know|over to you|your decision|confirm (whether|if|before)|before i (continue|proceed))/i
+
+export const isHandBack = (message: string) => {
+  const tail = message.trim().replace(/[\s*_`)\]]+$/, '')
+  return tail.endsWith('?') || HAND_BACK.test(message.slice(-1500))
+}
+
+// A completion claim in the headline or the closing lines.
+const CLAIM =
+  /(\b(all )?(done|complete[d]?|finished|shipped)\b|\ball (tests|checks) pass(ed|ing)?\b|\bready to (merge|ship|push)\b|\bworks now\b|✅)/i
+
+export const claimsDone = (message: string) => {
+  const lines = message.trim().split(/\r?\n/).filter(l => l.trim().length > 0)
+  const ends = [...lines.slice(0, 3), ...lines.slice(-3)].join('\n')
+  return CLAIM.test(ends)
+}
+
+const EVIDENCE = [
+  /[\w./\\-]+\.(txt|png|jpe?g|webp|gif|json|jsonl|log|md|html|xml|csv)\b/i, // a receipt or file path
+  /\breceipts?\b/i,
+  /\b\d+\s*\/\s*\d+\b.*\b(pass|tests?|green)\b|\b(pass|tests?)\b.*\b\d+\s*\/\s*\d+\b/i, // 48/48 tests
+  /\b\d+\s+(tests?\s+)?(pass(ed|ing)?|green)\b/i, // 16 pass
+  /\b0 fail(s|ed|ures)?\b/i,
+  /\bexit(ed)?( code)? 0\b/i,
+  /\b(commit|committed|sha)\b[^\n]{0,40}\b[0-9a-f]{7,40}\b/i,
+  /https?:\/\/\S+/i,
+]
+
+export const hasEvidence = (message: string) => EVIDENCE.some(r => r.test(message))
+
+export const openSummary = (open: string[], max = 5) =>
+  open
+    .slice(0, max)
+    .map(i => (i.length > 90 ? `${i.slice(0, 87)}...` : i))
+    .join('; ') + (open.length > max ? `; and ${open.length - max} more` : '')
+
+export const decide = (x: FinishInput): FinishDecision => {
+  if (x.continuesUsed >= x.maxContinues || x.isWaiting || isHandBack(x.message)) return null
+  if (x.open.length > 0) {
+    return {
+      kind: 'open',
+      block:
+        `bws-cockpit finish line: ${x.folder ?? 'the run folder'} still has ${x.open.length} open item${x.open.length === 1 ? '' : 's'}: ` +
+        `${openSummary(x.open)}. Keep going on them. If one is blocked or needs Brian, say so plainly in your reply and mark it in the ` +
+        `checklist (e.g. "- [ ] item (blocked: reason)" or "(needs Brian: question)"); the guard then lets you stop.`,
+    }
+  }
+  if (x.evidenceCheck && claimsDone(x.message) && !hasEvidence(x.message)) {
+    return {
+      kind: 'evidence',
+      block:
+        'bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, ' +
+        'file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done.',
+    }
+  }
+  return null
+}
