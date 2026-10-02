@@ -79,17 +79,20 @@ It writes no files.
 
 ## Tested
 
-Tested on Claude Code 2.1.287, Windows 11, Git Bash and PowerShell 7.6.
+Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 
 | Check | Result | Receipt |
 |---|---|---|
 | `claude plugin validate` | passed | `receipts/validate.txt` |
-| `claude plugin test` | 26/26 | `receipts/test.txt` |
-| Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean | — |
-| Live headless (`claude -p --plugin-dir`) | real blocks for adb (no device, then an unauthorized device) and for a duplicate TMS editor (pid 59468); real rewrites adding Unity `-automated` and the UE low-VRAM `-ini` overrides (Blender plus UE running) | `receipts/live-guard.txt` |
+| `claude plugin test` | 29/29 (parsing, command-position rules, every guard path, pass-through, band on terminal + desktop) | `receipts/test.txt` |
+| Type-check vs the 2.1.287 declarations (tsc 5.9, strict) | clean | n/a |
+| Corpus replay: classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in echo, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored | `receipts/corpus-replay.md` |
+| Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched; a UE launch under GPU pressure gets the `-ini` overrides; a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started); adb blocked for an unauthorized device; a duplicate TMS editor blocked (pid 59468); `mcp__unreal-mcp__list_toolsets` passes against the live TMS editor on :3092 | `receipts/live-guard.txt` |
 | Interactive terminal band | see RUNLOG | `receipts/band.png` |
 
-Not tested:
+Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.
+
+Untested:
 - the Desktop app
-- a live unreal-mcp block (no project with a down MCP port was loaded headless)
+- a live unreal-mcp block (port down)
 - adb pass-through with an authorized device

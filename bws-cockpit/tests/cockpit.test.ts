@@ -1,18 +1,8 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import {
-  adbNeedsDevice,
-  countOpen,
-  findUeGuiLaunch,
-  fixUnityLaunch,
-  isUnityPipelineCommand,
-  parseAdb,
-  parseFinish,
-  parseNext,
-  parseProcs,
-  parseUnrealMcpUrl,
-} from '../hooks/lib'
+import { countOpen, parseAdb, parseFinish, parseNext, parseProcs, parseUnrealMcpUrl } from '../hooks/lib'
+import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand } from '../hooks/shell'
 
 // ---------- the world beneath the plugin ----------
 
@@ -112,7 +102,7 @@ describe('command classification', () => {
   test('unity launches get -automated', () => {
     expect(fixUnityLaunch('unity open C:/Projects/tms-heim && echo ok')).toEqual({
       command: 'unity open C:/Projects/tms-heim --args -automated && echo ok',
-      note: 'added --args -automated to unity open',
+      note: 'added -automated to unity open',
     })
     expect(fixUnityLaunch("unity open 'C:/p' --args -logFile x.log")).toMatchObject({ command: "unity open 'C:/p' --args -automated -logFile x.log" })
     expect(fixUnityLaunch('"C:/Unity/6000.6.0f1/Editor/Unity.exe" -projectPath C:/p -logFile -')).toMatchObject({
@@ -128,6 +118,39 @@ describe('command classification', () => {
     expect(findUeGuiLaunch(`"${UE}" C:/p/x.uproject -run=pythonscript -script=a.py -nullrhi`)).toBeUndefined()
     expect(findUeGuiLaunch('Get-Process UnrealEditor.exe -EA SilentlyContinue')).toBeUndefined()
     expect(findUeGuiLaunch(`Start-Process -FilePath "${UE}" -ArgumentList '"C:/p/x.uproject"'`)?.isStartProcess).toBe(true)
+  })
+})
+
+describe('command position only (false-positive shapes from the 30-day replay)', () => {
+  test('mentions are not invocations', () => {
+    expect(findUeGuiLaunch(`echo "${UE}" "C:/p/x.uproject"`)).toBeUndefined()
+    expect(findUeGuiLaunch(`Get-CimInstance Win32_Process -Filter "Name='UnrealEditor.exe'" | Select ProcessId,CommandLine`, 'powershell')).toBeUndefined()
+    expect(findUeGuiLaunch(`$editor='C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Binaries\\Win64\\UnrealEditor.exe'; $project='C:\\p\\x.uproject'`, 'powershell')).toBeUndefined()
+    expect(findUeGuiLaunch(`$ed = "${UE}"\n$proj = "C:\\p\\x.uproject"`, 'powershell')).toBeUndefined()
+    expect(findUeGuiLaunch(`cat > launch.sh <<'EOF'\n"${UE}" "C:/p/x.uproject"\nEOF\nchmod +x launch.sh`)).toBeUndefined()
+    expect(findUeGuiLaunch(`# "${UE}" "C:/p/x.uproject"\nls`)).toBeUndefined()
+    expect(fixUnityLaunch('git commit -m "docs: unity open needs -automated"')).toBeUndefined()
+    expect(fixUnityLaunch(`$exe = 'C:\\Program Files\\Unity\\Hub\\Editor\\6000.5.1f1\\Editor\\Unity.exe'`, 'powershell')).toBeUndefined()
+    expect(fixUnityLaunch('unity open --help 2>&1 | head -25')).toBeUndefined()
+    expect(fixUnityLaunch(`"/c/Program Files/Unity/Hub/Editor/6000.6.0f1/Editor/Unity.exe" -batchmode -quit -projectPath C:/p -executeMethod B.Run`)).toBeUndefined()
+    expect(isUnityPipelineCommand(`python - <<'PY'\nprint("unity command eval")\nPY`)).toBe(false)
+    expect(adbNeedsDevice('grep -rn "adb shell" src')).toBe(false)
+    expect(adbNeedsDevice(`git commit -q -F - <<'EOF'\nfix: adb shell input tap now works\nEOF`)).toBe(false)
+  })
+  test('real invocations behind wrappers are found', () => {
+    expect(adbNeedsDevice('export MSYS_NO_PATHCONV=1; ADB=/c/Android/Sdk/platform-tools/adb.exe $ADB shell am force-stop x')).toBe(true)
+    expect(adbNeedsDevice('n=$(adb shell pidof com.bws.inkwell)')).toBe(true)
+    expect(isUnityPipelineCommand('cd C:/p && timeout 120 unity --format json command --project-path C:/p test_status 2>&1 | head')).toBe(true)
+    expect(findUeGuiLaunch(`(nohup "${UE}" 'C:\\p\\x.uproject' > /dev/null 2>&1 &)`)?.uproject).toBe('C:\\p\\x.uproject')
+    expect(findUeGuiLaunch(`$p = Start-Process -FilePath "${UE}" -ArgumentList '"C:\\p\\x.uproject"' -PassThru`, 'powershell')?.isStartProcess).toBe(true)
+  })
+  test('appended flags land before redirects and line continuations', () => {
+    const cmd = `"${UE}" \\\n  "C:/p/x.uproject" -nosplash \\\n  > "$R/log.txt" 2>&1 &`
+    const launch = findUeGuiLaunch(cmd)
+    expect(launch).toBeDefined()
+    const out = addLowVram(cmd, launch!, ['t.MaxFPS=30'])
+    expect(out).toBe(`"${UE}" \\\n  "C:/p/x.uproject" -nosplash -ini:Engine:[SystemSettings]:t.MaxFPS=30 \\\n  > "$R/log.txt" 2>&1 &`)
+    expect(fixUnityLaunch("(unity open 'C:/p' > launch.json 2>&1 &)")).toMatchObject({ command: "(unity open 'C:/p' --args -automated > launch.json 2>&1 &)" })
   })
 })
 
@@ -171,7 +194,7 @@ describe('guard', () => {
     const reached = world(on, {})
     const r = await $.tool.call({ tool: 'Bash', command: 'unity open C:/Projects/tms-heim' })
     expect(reached[0]?.command).toBe('unity open C:/Projects/tms-heim --args -automated')
-    expect((r.context ?? []).join(' ')).toMatch(/added --args -automated/)
+    expect((r.context ?? []).join(' ')).toMatch(/added -automated to unity open/)
   })
 
   test('unity CLI pipeline command is blocked with no editor running', async ($, on) => {

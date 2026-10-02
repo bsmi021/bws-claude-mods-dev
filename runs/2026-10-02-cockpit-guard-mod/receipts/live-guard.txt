@@ -53,3 +53,63 @@ C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe C:/Pro
 TOOL_USE  adb shell echo hello-from-device
 
 RESULT (error) <tool_use_error>bws-cockpit: no Android device is ready (adb devices: 57251FDCQ001LB unauthorized). Ask Brian to connect and unlock the device, then retry.</tool_use_error>
+
+===== run 4 (after the command-position parser): echo passes, real-shaped launches rewritten, adb blocked =====
+
+
+--- live-guard4: bash
+
+TOOL_USE  echo "C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe" "C:/Projects/street-war/StreetWar.uproject"
+
+RESULT C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe C:/Projects/street-war/StreetWar.uproject
+
+TOOL_USE  "C:/nonexistent/Epic/Binaries/Win64/UnrealEditor.exe" "C:/Projects/street-war/StreetWar.uproject" -log 2>&1 | head -2
+
+RESULT /usr/bin/bash: line 1: C:/nonexistent/Epic/Binaries/Win64/UnrealEditor.exe: No such file or directory
+
+TOOL_USE  "C:/nonexistent/Unity/Hub/Editor/6000.6.0f1/Editor/Unity.exe" -projectPath C:/Projects/tms-heim 2>&1 | head -2
+
+RESULT /usr/bin/bash: line 1: C:/nonexistent/Unity/Hub/Editor/6000.6.0f1/Editor/Unity.exe: No such file or directory
+
+TOOL_USE  adb shell echo hi
+
+RESULT (error) <tool_use_error>bws-cockpit: no Android device is ready (adb devices: 57251FDCQ001LB unauthorized). Ask Brian to connect and unlock the device, then retry.</tool_use_error>
+
+ASSISTANT Results, in order:
+
+**1)** Output:
+```
+C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe C:/Projects/street-war/StreetWar.uproject
+```
+
+**2)** Output:
+```
+/usr/bin/bash: line 1: C:/nonexistent/Epic/Binaries/Win64/UnrealEditor.exe: No such file or directory
+```
+Note attached to the result: "bws-cockpit: added low-VRAM -ini overrides to the UE launch (GPU pressure); the command ran as: `"C:/nonexistent/Epic/Binaries/Win64/UnrealEditor.exe" "C:/Projects/street-war/StreetWar.uproject" -log -ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPercentage=50,[SystemSettings]:r.Streaming.PoolSize=768,[SystemSettings]:sg.ViewDistanceQuality=0,[SystemSettings]:sg.TextureQuality=1,[SystemSettings]:sg.ShadowQuality=0,[SystemSettings]:sg.ShadingQuality=0,[SystemSettings]:sg.Re…`" (the note is truncated in the original).
+
+**3)** Output:
+```
+/usr/bin/bash: line 1: C:/nonexistent/Unity/Hub/Editor/6000.6.0f1/Editor/Unity.exe: No such file or directory
+```
+Note attached to the result: "bws-cockpit: added -automated to the Unity editor launch; the command ran as: `"C:/nonexistent/Unity/Hub/Editor/6000.6.0f1/Editor/Unity.exe" -projectPath C:/Projects/tms-heim -automated 2>&1 | head -2`"
+
+**4)** The command was blocked and did not run:
+```
+<tool_use_error>bws-cockpit: no Android device is ready (adb devices: 57251FDCQ001LB unauthorized). Ask Brian to connect and
+
+--- live-guard5: unreal-mcp from C:/Projects/bws.game.tms with the TMS editor up on :3092
+
+ASSISTANT The tool is deferred, so its schema must be loaded first.
+
+TOOL_USE  ToolSearch
+
+RESULT [{"type": "tool_reference", "tool_name": "mcp__unreal-mcp__list_toolsets"}]
+
+TOOL_USE  mcp__unreal-mcp__list_toolsets
+
+RESULT [{"type": "text", "text": "- ToolsetRegistry.AgentSkillToolset: Provides tools for listing, reading, and creating/updating skills.\n- GASToolsets.GameplayCueToolset: Provides tools for inspecting, executing, and managing gameplay cues and their notify assets.\n- GASToolsets.AttributeSetToolset: Provides tools for discovering AttributeSet classes and their gameplay attributes.\n- GASToolsets.AbilitySystemInspectorToolset: Provides tools for inspecting the runtime state of an AbilitySystemComponent.\nEach function takes a direct actor pointer and raises a script error if the\nactor is null or has no AbilitySystemComponent.\n- DataflowAgent.DataflowAgentToolset: Dataflow Agent Toolset - exposes
+
+ASSISTANT `list_toolsets` succeeded with no error. It returned about 50 toolsets, including AutomationTestToolset, LiveCodingToolset, EditorAppToolset and the actor, asset and blueprint toolsets.
+
+Three claude.ai connectors still need authorizing in your claude.ai connector settings, and their tools are unavailable until then: AINRI, Vercel and byterover-mcp.

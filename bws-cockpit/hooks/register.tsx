@@ -4,17 +4,10 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { CockpitDevices, CockpitRun, CockpitView } from '../types'
 import {
   LOW_VRAM_CVARS,
-  addLowVram,
-  adbNeedsDevice,
   countOpen,
-  findUeGuiLaunch,
-  fixUnityLaunch,
   isBlender,
   isUeGui,
   isUnity,
-  isUnityPipelineCommand,
-  lowVramArg,
-  normPath,
   parseAdb,
   parseFinish,
   parseNext,
@@ -24,6 +17,10 @@ import {
   shorten,
 } from './lib'
 import type { Probe } from './lib'
+import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand, lowVramArg, normPath } from './shell'
+import type { Dialect } from './shell'
+
+const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
 const view = atom({ plugin: 'bws-cockpit', key: 'view' } as const, null)
 const isHidden = atom({ plugin: 'bws-cockpit', key: 'isHidden' } as const, false)
@@ -62,7 +59,13 @@ async function readMcpJson($: EngineInterface): Promise<string | undefined> {
 
 async function isPortUp($: EngineInterface, url: string): Promise<boolean> {
   // Any HTTP answer means the server listens; a refused or timed-out connect means down.
-  const answered = settle($.http.fetch(url, { method: 'GET' })).then(r => r !== undefined)
+  // A JSON-RPC ping by POST: a GET can open an SSE stream that never ends on some servers.
+  const ping = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 'bws-cockpit-ping', method: 'ping' }),
+  }
+  const answered = settle($.http.fetch(url, ping)).then(r => r !== undefined)
   const timeout = $.clock.sleep(3000).then(() => false)
   return Promise.race([answered, timeout])
 }
@@ -308,7 +311,7 @@ export const register: Register = (on, options) => {
   })
 
   on('tool.call', { tool: ['Bash', 'PowerShell'], command: /adb/i }, async ($, e, next) => {
-    if (!o.guard || !adbNeedsDevice(e.command)) return next(e)
+    if (!o.guard || !adbNeedsDevice(e.command, dialectOf(e.tool))) return next(e)
     const p = await probe($, o, 5000)
     if (p.adb === undefined || p.adb.ready.length > 0) return next(e)
     const seen = p.adb.other.length > 0 ? p.adb.other.join(', ') : 'none attached'
@@ -320,7 +323,7 @@ export const register: Register = (on, options) => {
 
   on('tool.call', { tool: ['Bash', 'PowerShell'], command: /unity/i }, async ($, e, next) => {
     if (!o.guard) return next(e)
-    const fix = fixUnityLaunch(e.command)
+    const fix = fixUnityLaunch(e.command, dialectOf(e.tool))
     if (fix && 'deny' in fix) {
       noteGuard($, 'blocked a Unity launch without -automated')
       return { deny: `bws-cockpit: ${fix.deny}` }
@@ -329,7 +332,7 @@ export const register: Register = (on, options) => {
       noteGuard($, fix.note)
       return withNote(await next({ ...e, command: fix.command }), `${fix.note}; the command ran as: ${shorten(fix.command, 400)}`)
     }
-    if (isUnityPipelineCommand(e.command)) {
+    if (isUnityPipelineCommand(e.command, dialectOf(e.tool))) {
       const p = await probe($, o, 5000)
       if (!p.procs.some(isUnity)) {
         noteGuard($, 'blocked a unity CLI command: no editor running')
@@ -345,7 +348,7 @@ export const register: Register = (on, options) => {
 
   on('tool.call', { tool: ['Bash', 'PowerShell'], command: /UnrealEditor\.exe/i }, async ($, e, next) => {
     if (!o.guard) return next(e)
-    const launch = findUeGuiLaunch(e.command)
+    const launch = findUeGuiLaunch(e.command, dialectOf(e.tool))
     if (!launch) return next(e)
     const p = await probe($, o, 3000)
     const open = p.procs.filter(isUeGui)
