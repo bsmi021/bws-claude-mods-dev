@@ -52,3 +52,10 @@ Build mods #1 and #2 from the usage review as one plugin, `bws-cockpit/`. The fi
   - re-injecting the cockpit block after compaction (no clean route seen yet)
   - Loop Watch pane
   - dev-server tracker
+
+## Interop with bws-shell-lint (mod #3, built by a subagent, commit 6bc8c9f)
+- Ran one headless session with both `--plugin-dir` flags (`receipts/live-both.txt`):
+  - cockpit added `-automated` to a Unity launch
+  - shell-lint denied `ls "C:\...\"` (dq-trailing-backslash) with its fix hint
+  - `echo` passed through both
+- No conflicts.
