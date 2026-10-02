@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { CockpitDevices, CockpitRun, CockpitView } from '../types'
+import type { CockpitChip, CockpitDevices, CockpitRun, CockpitState } from '../types'
 import {
   LOW_VRAM_CVARS,
   countOpen,
@@ -14,6 +14,7 @@ import {
   parseProcs,
   parseUnrealMcpUrl,
   parseVram,
+  fit,
   shorten,
 } from './lib'
 import type { Probe } from './lib'
@@ -24,6 +25,10 @@ const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershel
 
 const view = atom({ plugin: 'bws-cockpit', key: 'view' } as const, null)
 const isHidden = atom({ plugin: 'bws-cockpit', key: 'isHidden' } as const, false)
+
+// Theme keys, so the band follows the person's theme; `off` draws dim instead.
+const STATE_COLOR: Record<CockpitState, string | undefined> = { good: 'success', warn: 'warning', bad: 'error', off: undefined }
+const GUARD_NOTE_MS = 10 * 60 * 1000
 
 const PS_PROCS =
   "Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('UnrealEditor.exe','Unity.exe','blender.exe') } | " +
@@ -108,20 +113,33 @@ const isPressure = (p: Probe, o: Options) =>
   (o.lowVramMode === 'auto' &&
     (p.procs.some(isUeGui) || p.procs.some(isBlender) || (p.vram !== undefined && p.vram.usedMb >= o.vramThresholdMb)))
 
+const vramText = (p: Probe) => (p.vram ? `${(p.vram.usedMb / 1024).toFixed(1)}/${(p.vram.totalMb / 1024).toFixed(1)} GB` : 'n/a')
+
 const describeDevices = (p: Probe, o: Options): CockpitDevices => {
-  const ue = p.procs.filter(isUeGui)
-  const port = p.ueMcp ? p.ueMcp.url.replace(/^https?:\/\/[^:/]+/, '').replace(/\/.*$/, '') : ''
-  const ueState = ue.length === 0 ? 'off' : `${ue.length} open`
-  const mcpState = p.ueMcp ? ` · mcp${port} ${p.ueMcp.isUp ? 'up' : 'down'}` : ''
-  return {
-    ue: `UE ${ueState}${mcpState}`,
-    unity: `Unity ${p.procs.some(isUnity) ? 'open' : 'off'}`,
-    blender: `Blender ${p.procs.some(isBlender) ? 'open' : 'off'}`,
-    adb: p.adb === undefined ? 'adb n/a' : p.adb.ready.length > 0 ? `adb ${p.adb.ready.length} ready` : `adb ${p.adb.other.length > 0 ? 'not ready' : 'none'}`,
-    vram: p.vram ? `VRAM ${(p.vram.usedMb / 1024).toFixed(1)}/${(p.vram.totalMb / 1024).toFixed(1)} GB` : 'VRAM n/a',
-    isPressure: isPressure(p, { ...o, lowVramMode: o.lowVramMode === 'off' ? 'auto' : o.lowVramMode }),
+  const pressure = isPressure(p, { ...o, lowVramMode: o.lowVramMode === 'off' ? 'auto' : o.lowVramMode })
+  const ue = p.procs.filter(isUeGui).length
+  const port = p.ueMcp?.url.match(/:(\d+)/)?.[1]
+  const count = ue > 1 ? `×${ue}` : undefined
+  const chips: CockpitChip[] = []
+  if (ue === 0) chips.push({ label: 'UE', word: 'off', state: 'off' })
+  else if (p.ueMcp && !p.ueMcp.isUp) chips.push({ label: 'UE', detail: [count, port && `:${port} down`].filter(Boolean).join(' '), word: 'mcp down', state: 'bad' })
+  else chips.push({ label: 'UE', detail: [count, port && `:${port}`].filter(Boolean).join(' ') || undefined, word: 'up', state: 'good' })
+  const unity = p.procs.some(isUnity)
+  chips.push({ label: 'Unity', word: unity ? 'open' : 'off', state: unity ? 'good' : 'off' })
+  const blender = p.procs.some(isBlender)
+  chips.push({ label: 'Blender', word: blender ? 'open' : 'off', state: blender ? 'good' : 'off' })
+  if (p.adb) {
+    const { ready, other } = p.adb
+    if (ready.length > 0) chips.push({ label: 'adb', detail: ready.length > 1 ? `×${ready.length}` : undefined, word: 'ready', state: 'good' })
+    else if (other.length > 0) chips.push({ label: 'adb', detail: other[0]?.split(' ').slice(1).join(' '), word: 'not ready', state: 'warn' })
+    else chips.push({ label: 'adb', word: 'none', state: 'off' })
   }
+  if (p.vram) chips.push({ label: 'VRAM', detail: vramText(p), word: pressure ? 'pressure' : 'ok', state: pressure ? 'warn' : 'good' })
+  return { chips, isPressure: pressure }
 }
+
+const devicesText = (d: CockpitDevices) =>
+  d.chips.map(c => (c.label === 'VRAM' ? `VRAM ${c.detail}${c.state === 'warn' ? ' (pressure)' : ''}` : `${c.label} ${c.word}${c.detail ? ` ${c.detail}` : ''}`)).join(' · ')
 
 // The newest run folder under <cwd>/runs, by its RUNLOG/PLAN/TASKS times.
 async function findRun($: EngineInterface): Promise<CockpitRun | null> {
@@ -160,12 +178,13 @@ async function findRun($: EngineInterface): Promise<CockpitRun | null> {
 async function refresh($: EngineInterface, o: Options, maxAgeMs: number) {
   const [run, p] = await Promise.all([findRun($), probe($, o, maxAgeMs)])
   const devices = describeDevices(p, o)
-  await update($, view, v => ({ run, devices, lastGuard: v?.lastGuard ?? null }))
+  await update($, view, v => ({ run, devices, lastGuard: v?.lastGuard ?? null, lastGuardAt: v?.lastGuardAt ?? null }))
 }
 
-function noteGuard($: EngineInterface, text: string) {
+async function noteGuard($: EngineInterface, text: string) {
   $.ui.toast(`bws-cockpit: ${text}`)
-  void update($, view, v => ({ run: v?.run ?? null, devices: v?.devices ?? null, lastGuard: text }))
+  const at = await $.clock.now()
+  await update($, view, v => ({ run: v?.run ?? null, devices: v?.devices ?? null, lastGuard: text, lastGuardAt: at }))
 }
 
 const runSummary = (run: CockpitRun | null) =>
@@ -247,8 +266,7 @@ export const register: Register = (on, options) => {
   on('command.run', { command: 'cockpit' }, async ($, e, next) => {
     await refresh($, o, 0)
     const v = await read($, view)
-    const d = v?.devices
-    const devices = d ? [d.ue, d.unity, d.blender, d.adb, d.vram].join(' · ') + (d.isPressure ? ' · VRAM pressure' : '') : 'devices: n/a'
+    const devices = v?.devices ? devicesText(v.devices) : 'devices: n/a'
     const guard = v?.lastGuard ? `\nLast guard action: ${v.lastGuard}` : ''
     return { text: `${runSummary(v?.run ?? null)}\n${devices}${guard}` }
   })
@@ -265,30 +283,62 @@ export const register: Register = (on, options) => {
     const v = await read($, view)
     if (e.props.hasSurvey || v === null || (await read($, isHidden))) return next(e)
     const { Box, Text, Button } = $.ui.resolve(e)
-    const width = Math.max(30, (e.props.bodyColumns ?? 100) - 2)
+    const width = Math.max(40, (e.props.bodyColumns ?? 100) - 1)
     const run = v.run
     const d = v.devices
-    const runLine = run
-      ? `RUN ${run.folder.replace(/^runs\//, '')}  ·  ${run.open} open  ·  next: ${run.next ?? '–'}`
-      : 'RUN none under runs/'
+    const now = await $.clock.now()
+    const showGuard = v.lastGuard !== null && v.lastGuardAt !== null && now - v.lastGuardAt < GUARD_NOTE_MS
+
+    // Run row: name (bold) · date · open count › next step, cut to the width with plain dots.
+    const runRow = (() => {
+      if (!run) return null
+      const base = run.folder.replace(/^runs\//, '')
+      const m = base.match(/^(\d{4})-(\d{2})-(\d{2})-(.+)$/)
+      const name = m?.[4] ?? base
+      const date = m ? `${m[2]}-${m[3]}` : ''
+      const openText = run.open > 0 ? `${run.open} open` : 'no open items'
+      const head = `${name}  ${date}  ${openText}  › `
+      const nextStep = run.next ?? 'no next step in RUNLOG'
+      return (
+        <Box flexDirection="row">
+          <Text bold>{name}</Text>
+          <Text dimColor>{date ? `  ${date}` : ''}</Text>
+          <Text color={run.open > 0 ? 'warning' : 'success'}>{`  ${openText}`}</Text>
+          <Text dimColor>{'  › '}</Text>
+          <Text wrap="truncate-end">{fit(nextStep, width - head.length)}</Text>
+        </Box>
+      )
+    })()
+
     return (
       <Box flexDirection="column">
-        <Text wrap="truncate-end">{shorten(runLine, width)}</Text>
-        {d ? (
-          <Text dimColor wrap="truncate-end">
-            {shorten(`${d.ue}  ·  ${d.unity}  ·  ${d.blender}  ·  ${d.adb}  ·  ${d.vram}${d.isPressure ? ' (pressure)' : ''}`, width)}
-          </Text>
-        ) : null}
-        {v.lastGuard ? (
-          <Text color="yellow" wrap="truncate-end">
-            {shorten(`guard: ${v.lastGuard}`, width)}
-          </Text>
-        ) : null}
-        <Box flexDirection="row" gap={1}>
-          {run ? <Button key="resume" label="Resume run" hotkey="1" onPress={() => void resume($)} /> : null}
-          <Button key="refresh" label="Refresh" hotkey="2" onPress={() => void refresh($, o, 0)} />
-          <Button key="hide" label="Hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />
+        {runRow}
+        <Box flexDirection="row" justifyContent="space-between" flexWrap="wrap" columnGap={2}>
+          <Box flexDirection="row" columnGap={2} flexWrap="wrap">
+            {(d?.chips ?? []).map(c => (
+              <Box key={`chip-${c.label}`} flexDirection="row">
+                <Text color={STATE_COLOR[c.state]} dimColor={c.state === 'off'}>
+                  {c.state === 'off' ? '○ ' : '● '}
+                </Text>
+                <Text dimColor={c.state === 'off'}>{c.label}</Text>
+                {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
+              </Box>
+            ))}
+          </Box>
+          <Box flexDirection="row" columnGap={2}>
+            {run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null}
+            <Button key="refresh" plain dimColor label="refresh" hotkey="2" onPress={() => void refresh($, o, 0)} />
+            <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />
+          </Box>
         </Box>
+        {showGuard ? (
+          <Box flexDirection="row">
+            <Text color="warning">{'⚑ '}</Text>
+            <Text dimColor wrap="truncate-end">
+              {fit(`guard ${v.lastGuard}`, width - 2)}
+            </Text>
+          </Box>
+        ) : null}
       </Box>
     )
   })
@@ -302,7 +352,7 @@ export const register: Register = (on, options) => {
     if (p.ueMcp === undefined || p.ueMcp.isUp) return next(e)
     const ue = p.procs.filter(isUeGui)
     const why = ue.length > 0 ? 'an editor is running but its MCP port does not answer (still loading, or MCP not started)' : 'no Unreal editor is running'
-    noteGuard($, `blocked ${e.tool}: ${p.ueMcp.url} down`)
+    await noteGuard($, `blocked ${e.tool}: ${p.ueMcp.url} down`)
     return {
       deny:
         `bws-cockpit: Unreal MCP at ${p.ueMcp.url} is not reachable: ${why}. ` +
@@ -315,7 +365,7 @@ export const register: Register = (on, options) => {
     const p = await probe($, o, 5000)
     if (p.adb === undefined || p.adb.ready.length > 0) return next(e)
     const seen = p.adb.other.length > 0 ? p.adb.other.join(', ') : 'none attached'
-    noteGuard($, `blocked adb: no ready device (${seen})`)
+    await noteGuard($, `blocked adb: no ready device (${seen})`)
     return {
       deny: `bws-cockpit: no Android device is ready (adb devices: ${seen}). Ask Brian to connect and unlock the device, then retry.`,
     }
@@ -325,17 +375,17 @@ export const register: Register = (on, options) => {
     if (!o.guard) return next(e)
     const fix = fixUnityLaunch(e.command, dialectOf(e.tool))
     if (fix && 'deny' in fix) {
-      noteGuard($, 'blocked a Unity launch without -automated')
+      await noteGuard($, 'blocked a Unity launch without -automated')
       return { deny: `bws-cockpit: ${fix.deny}` }
     }
     if (fix) {
-      noteGuard($, fix.note)
+      await noteGuard($, fix.note)
       return withNote(await next({ ...e, command: fix.command }), `${fix.note}; the command ran as: ${shorten(fix.command, 400)}`)
     }
     if (isUnityPipelineCommand(e.command, dialectOf(e.tool))) {
       const p = await probe($, o, 5000)
       if (!p.procs.some(isUnity)) {
-        noteGuard($, 'blocked a unity CLI command: no editor running')
+        await noteGuard($, 'blocked a unity CLI command: no editor running')
         return {
           deny:
             'bws-cockpit: no Unity editor is running, so the unity CLI pipeline has nothing to talk to. ' +
@@ -356,7 +406,7 @@ export const register: Register = (on, options) => {
       const target = normPath(launch.uproject)
       const dupe = open.find(proc => normPath(proc.cmdline).includes(target))
       if (dupe) {
-        noteGuard($, `blocked a second editor for ${launch.uproject}`)
+        await noteGuard($, `blocked a second editor for ${launch.uproject}`)
         return {
           deny:
             `bws-cockpit: ${launch.uproject} is already open in UnrealEditor (pid ${dupe.pid}). ` +
@@ -367,15 +417,15 @@ export const register: Register = (on, options) => {
     if (o.lowVramMode === 'off' || launch.hasOverrides || !isPressure(p, o)) return next(e)
     const arg = lowVramArg(o.cvars)
     if (launch.isStartProcess) {
-      noteGuard($, 'blocked a UE launch without low-VRAM flags')
+      await noteGuard($, 'blocked a UE launch without low-VRAM flags')
       return {
         deny:
-          `bws-cockpit: other GPU apps are running (${describeDevices(p, o).vram}), so UE must launch with the low-VRAM overrides. ` +
+          `bws-cockpit: other GPU apps are running (VRAM ${vramText(p)}), so UE must launch with the low-VRAM overrides. ` +
           `Add this element to -ArgumentList and run again: '${arg}'`,
       }
     }
     const command = addLowVram(e.command, launch, o.cvars)
-    noteGuard($, 'added low-VRAM overrides to the UE launch')
+    await noteGuard($, 'added low-VRAM overrides to the UE launch')
     return withNote(await next({ ...e, command }), `added low-VRAM -ini overrides to the UE launch (GPU pressure); the command ran as: ${shorten(command, 400)}`)
   })
 }

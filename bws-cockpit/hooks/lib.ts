@@ -123,3 +123,10 @@ export const parseFinish = (text: string): string | undefined =>
   firstBulletUnder(text.split(/\r?\n/), /^#{1,4}\s.*finish line/i)
 
 export const shorten = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
+
+// Cuts to n columns with ASCII dots, so the surface never draws its own truncation mark.
+export const fit = (s: string, n: number) => {
+  const flat = s.replace(/\s+/g, ' ').trim()
+  if (n <= 3) return ''
+  return flat.length > n ? `${flat.slice(0, n - 3).trimEnd()}...` : flat
+}

@@ -328,10 +328,59 @@ describe('cockpit', () => {
         component: 'AbovePrompt',
         props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
       })
-      expect(await ui.find({ type: 'Text', text: /RUN 2026-10-02-bow-fix .* 2 open .* next: verify the draw anim/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /UE off .* VRAM 1\.0\/8\.0 GB/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /10-02/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /2 open/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^verify the draw anim in PIE$/ })).toBeDefined()
+      for (const label of ['UE', 'Unity', 'Blender', 'adb', 'VRAM']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /1\.0\/8\.0 GB/ })).toBeDefined()
       expect(await ui.find({ key: 'resume' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /RUN |next:|guard/ })).toBeUndefined()
       await ui.unmount()
     }
+  })
+})
+
+const BAND = {
+  plugin: 'bws-cockpit',
+  component: 'AbovePrompt',
+  props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 80, scroll: { offset: 0, bodyRows: 8 }, view: {} },
+} as const
+
+describe('band layout', () => {
+  test('a long next step is cut to the width with ASCII dots', async ($, on) => {
+    const long = 'W3 TMS.Full.Warden.Kit (one live run), then the W3 visual check and the W2c visual check (one capture run each), then the W4 build'
+    world(on, { ...RUN_WORLD, files: { ...RUN_WORLD.files, [`${CWD}/runs/2026-10-02-bow-fix/RUNLOG.md`]: `- Next: ${long}\n` } })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    const cut = await ui.find({ type: 'Text', text: /^W3 TMS\.Full\.Warden\.Kit/ })
+    expect(cut?.text.endsWith('...')).toBe(true)
+    expect(cut?.text.includes('…')).toBe(false)
+    expect(('bow-fix  10-02  2 open  › ' + (cut?.text ?? '')).length <= 79).toBe(true)
+    await ui.unmount()
+  })
+
+  test('the guard note shows for ten minutes, then goes', async ($, on) => {
+    const w = world(on, { ...RUN_WORLD, adb: 'List of devices attached\nR5CT\tunauthorized\n' })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    await $.tool.call({ tool: 'Bash', command: 'adb shell ls' })
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await ui.find({ type: 'Text', text: /guard blocked adb/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^unauthorized$|^ unauthorized$/ })).toBeDefined()
+    await ui.unmount()
+    await w.clock.advance(11 * 60 * 1000)
+    const later = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await later.find({ type: 'Text', text: /guard/ })).toBeUndefined()
+    await later.unmount()
+  })
+
+  test('no run folder: no run row and no resume button', async ($, on) => {
+    world(on, { procs: 'UnrealEditor.exe|5|x', mcpJson: MCP_HTTP, isMcpUp: false })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await ui.find({ key: 'resume' })).toBeUndefined()
+    expect(await ui.find({ key: 'refresh' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /:3091 down/ })).toBeDefined()
+    await ui.unmount()
   })
 })

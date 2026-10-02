@@ -69,3 +69,13 @@ Build mods #1 and #2 from the usage review as one plugin, `bws-cockpit/`. The fi
   - the init lists both mods
   - shell-lint denied a trailing-backslash `ls`, and the model's forward-slash retry ran
 - Applies to new sessions only, including headless harness workers. Sessions already open need a restart.
+
+## Band v2: visual cleanup (2026-10-02)
+- **Brian's ask:** the band looked messy. One long sentence on a flat run line, a stray `[-]`, no color, and buttons taking a full row.
+- **Run row:** bold run name, dim `MM-DD` date, the open count (amber when items are open, green when none), and the next step cut to the width with ASCII `...`. The row is hidden when there is no run folder.
+- **Status row:** a chip per tool, `●` colored by state (success/warning/error theme keys) or a dim `○` when off, with detail such as `:3092`, `×2`, `unauthorized` or `4.5/8.0 GB`. The hotkeys (`1: resume  2: refresh  3: hide`) sit on the right as plain dim buttons.
+- **Guard note:** shows for 10 minutes after an action, then disappears.
+- **`[-]`:** drawn by Claude Code at the band's right edge, not by the mod. It is outside the mod's tree and stays at the right edge whatever the layout. It is most likely the band's own collapse control.
+- **Bug caught on the way:** a local `next` variable shadowed the hook continuation. The loader refused that reload and kept the previous version loaded, so no session lost the mod. I renamed it to `nextStep`.
+- **Color check:** the first screenshot had no color because my tool shell sets `NO_COLOR=1` and the test window inherited it. I relaunched with it cleared. Measured pixels show green (78,186,101), amber, dim and bright tones (`receipts/band-v2-color.png`, `band-v2-color-zoom.png`).
+- **Tests:** 32/32, adding cases for ASCII truncation, the 10-minute guard note, and the no-run-folder layout. Validate is clean and tsc strict is clean.
