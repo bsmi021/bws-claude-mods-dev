@@ -89,6 +89,12 @@
       "title": "Finish line in headless sessions",
       "description": "Also guard claude -p and SDK sessions (off by default so harness workers keep their own budgets).",
       "default": false
+    },
+    "ownerName": {
+      "type": "string",
+      "title": "Finish line: your name",
+      "description": "What the Finish-Line Guard calls you when it asks Claude to mark an item that needs you, as in \"(needs <name>: question)\".",
+      "default": "the user"
     }
   }
 }

@@ -4,7 +4,7 @@ Two [Claude Code mods](https://code.claude.com/docs/en/plugins/mods/overview) fo
 
 | Mod | What it does |
 |---|---|
-| [`bws-cockpit`](bws-cockpit/README.md) | A band above the prompt: the newest run folder and its next step, plus live Unreal, Unity, Blender, adb and VRAM state, with `/resume-run` and `/cockpit`. An Editor & Device Guard that blocks Unreal MCP, adb and Unity CLI calls that cannot work, and adds `-automated` and low-VRAM flags to editor launches. A Loop Watch pane for harness loops, with stall alerts, stop and resume, and answering a paused loop's questions. |
+| [`bws-cockpit`](bws-cockpit/README.md) | A band above the prompt: the newest run folder and its next step, plus live Unreal, Unity, Blender, adb and VRAM state, with `/resume-run` and `/cockpit`. An Editor & Device Guard that blocks Unreal MCP, adb and Unity CLI calls that cannot work, and adds `-automated` and low-VRAM flags to editor launches. A Loop Watch pane for harness loops, with stall alerts, stop and resume, and answering a paused loop's questions. A Finish-Line Guard that keeps Claude working while the session's checklist has open items, and asks for evidence when it claims done without any. |
 | [`bws-shell-lint`](bws-shell-lint/README.md) | Refuses Bash commands that will fail on Windows Git Bash (over-long commands, a backslash before a closing quote, backslashes that reach Python halved) and gives the corrected form. |
 
 ## Load

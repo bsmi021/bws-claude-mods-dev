@@ -68,7 +68,7 @@ describe('finish-line rules', () => {
     expect(items).toEqual(['add the band row', 'write the README', 'ask the user which color to use (needs the user: palette)', 'Desktop app check (parked)'])
     expect(actionable(items)).toEqual(['add the band row', 'write the README'])
     expect(isParked('flaky test (blocked: CI is down)')).toBe(true)
-    expect(isParked('waiting on Brian for the art')).toBe(true)
+    expect(isParked('waiting on the art lead for the sprites')).toBe(true)
     expect(isParked('write the README')).toBe(false)
   })
 
@@ -158,6 +158,20 @@ describe('finish-line guard', () => {
   test('finishLineHeadless: true guards headless sessions too', { options: { finishLineHeadless: true } }, async ($, on) => {
     world(on, { surfaces: [] })
     expect((await $.classic.Stop(stop('The parser is in.'))).block).toContain('2 open items')
+  })
+
+  test('ownerName names the person in the block message; "(needs <Name>: ...)" parks an item', { options: { ownerName: 'Dana' } }, async ($, on) => {
+    world(on, { plan: '## Tasks\n- [ ] add the band row\n- [ ] pick the palette (needs Dana: warm or cool?)\n' })
+    const r = await $.classic.Stop(stop('The parser is in.'))
+    expect(r.block).toContain('1 open item: add the band row')
+    expect(r.block).toContain('If one is blocked or needs Dana')
+    expect(r.block).toContain('"(needs Dana: question)"')
+  })
+
+  test('the default owner is "the user"', async ($, on) => {
+    world(on, {})
+    const r = await $.classic.Stop(stop('The parser is in.'))
+    expect(r.block).toContain('"(needs the user: question)"')
   })
 
   test('finishLine: false passes everything through', { options: { finishLine: false } }, async ($, on) => {

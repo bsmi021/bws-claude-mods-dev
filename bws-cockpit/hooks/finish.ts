@@ -4,10 +4,11 @@ export type FinishInput = {
   open: string[] // actionable open items of this session's run folder
   folder: string | null
   message: string // the assistant's last message
-  continuesUsed: number // blocks already spent since Brian's last prompt
+  continuesUsed: number // blocks already spent since the person's last prompt
   maxContinues: number
   isWaiting: boolean // background tasks or session crons still pending
   evidenceCheck: boolean
+  owner?: string // what the block message calls the person ("the user" unless configured)
 }
 
 export type FinishDecision = { block: string; kind: 'open' | 'evidence' } | null
@@ -23,14 +24,15 @@ export const openItems = (markdown: string): string[] =>
     .map(clean)
 
 // Items that wait on someone else or were put aside: they never hold the session open.
+// "needs <Name>:" (the form the block message asks for) counts for any name.
 const PARKED =
-  /\b(blocked|waiting (on|for)|needs? (brian|the user|you|user)|on hold|parked|deferred?|follow-?ups?|later|out of scope|won'?t do|not now|optional)\b/i
+  /\b(blocked|waiting (on|for)|needs? (the user|you|user)|on hold|parked|deferred?|follow-?ups?|later|out of scope|won'?t do|not now|optional)\b|\bneeds? [A-Z][\w-]*:/i
 
 export const isParked = (item: string) => PARKED.test(item)
 
 export const actionable = (items: string[]) => items.filter(i => !isParked(i))
 
-// A reply that hands control back to Brian: a question, or an explicit hand-back.
+// A reply that hands control back to the person: a question, or an explicit hand-back.
 const HAND_BACK =
   /(your call|want me to|should i\b|shall i\b|which (one|do you|would you)|do you want|waiting on you|need(s)? you to|needs? your|let me know|over to you|your decision|confirm (whether|if|before)|before i (continue|proceed))/i
 
@@ -71,12 +73,13 @@ export const openSummary = (open: string[], max = 5) =>
 export const decide = (x: FinishInput): FinishDecision => {
   if (x.continuesUsed >= x.maxContinues || x.isWaiting || isHandBack(x.message)) return null
   if (x.open.length > 0) {
+    const owner = x.owner && x.owner.trim().length > 0 ? x.owner.trim() : 'the user'
     return {
       kind: 'open',
       block:
         `bws-cockpit finish line: ${x.folder ?? 'the run folder'} still has ${x.open.length} open item${x.open.length === 1 ? '' : 's'}: ` +
-        `${openSummary(x.open)}. Keep going on them. If one is blocked or needs Brian, say so plainly in your reply and mark it in the ` +
-        `checklist (e.g. "- [ ] item (blocked: reason)" or "(needs Brian: question)"); the guard then lets you stop.`,
+        `${openSummary(x.open)}. Keep going on them. If one is blocked or needs ${owner}, say so plainly in your reply and mark it in the ` +
+        `checklist (e.g. "- [ ] item (blocked: reason)" or "(needs ${owner}: question)"); the guard then lets you stop.`,
     }
   }
   if (x.evidenceCheck && claimsDone(x.message) && !hasEvidence(x.message)) {

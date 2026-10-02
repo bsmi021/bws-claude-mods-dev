@@ -44,7 +44,7 @@ const UNIT_MARK: Record<string, string> = { DONE: '✓', RUNNING: '●', PAUSED:
 const toasted = new Set<string>()
 let isFirstLoopScan = true
 
-// Finish-Line Guard: stops blocked since Brian's last prompt. Reset by prompt.submit, so it can never loop.
+// Finish-Line Guard: stops blocked since the person's last prompt. Reset by prompt.submit, so it can never loop.
 let continuesUsed = 0
 
 // Theme keys, so the band follows the person's theme; `off` draws dim instead.
@@ -63,7 +63,7 @@ type Options = {
   adbPath: string
   refreshSeconds: number
   loop: LoopLimits
-  finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean }
+  finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -404,6 +404,7 @@ export const register: Register = (on, options) => {
       maxContinues: Math.max(0, Number(options.finishLineMaxContinues ?? 2)),
       evidenceCheck: options.evidenceCheck !== false,
       isHeadless: options.finishLineHeadless === true,
+      owner: String(options.ownerName ?? 'the user'),
     },
   }
 
@@ -427,6 +428,7 @@ export const register: Register = (on, options) => {
       maxContinues: o.finish.maxContinues,
       isWaiting: (e.background_tasks?.length ?? 0) > 0 || (e.session_crons?.length ?? 0) > 0,
       evidenceCheck: o.finish.evidenceCheck,
+      owner: o.finish.owner,
     })
     if (decision === null) return next(e)
     continuesUsed += 1
