@@ -55,3 +55,11 @@ The finish line is in [PLAN.md](PLAN.md).
 ## Follow-ups (parked)
 - Subagent effort ("sonnet high"): `agent.spawn` has no effort field; a per-subagent `turn.step` effort override is possible later.
 - Refresh `publish` with 0.5.0 when Brian asks.
+
+## Publish refresh (2026-10-02)
+- The pre-scan of the new 0.5.0 files (handoff.ts, handoff.test.ts, README, register.tsx) found no private names. The only hit was the manifest author, kept by design.
+- The publish README now mentions /handoff and the worker model pin (commit on main).
+- **`publish` refreshed** from main with bws-cockpit 0.5.0, committed on top of 1b99a1f; 28 files.
+  - Full scan: only the two generator-script comments and the manifest authors.
+  - Validate passes for both plugins; bws-cockpit 93/93 and bws-shell-lint 16/16, run from the publish tree.
+  - Not pushed; no remote is configured.
