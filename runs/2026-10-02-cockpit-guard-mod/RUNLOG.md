@@ -39,19 +39,22 @@ Build mods #1 and #2 from the usage review as one plugin, `bws-cockpit/`. The fi
 |---|---|---|
 | 1 | validate | ✅ `receipts/validate.txt` |
 | 2 | tests | ✅ 29/29, `receipts/test.txt`; tsc strict is clean; corpus replay `receipts/corpus-replay.md` |
-| 3 | band screenshot | ⏳ waiting on Brian to trust the folder in the "claude" window, then retake `receipts/band.png` |
+| 3 | band screenshot | ✅ `receipts/band.png`: live terminal session, run line, device row (UE 1 open, Blender open, adb 1 ready, VRAM 5.4/8.0 GB pressure), buttons |
 | 4 | live guard | ✅ blocks (adb, duplicate editor), rewrites (UE low-VRAM, Unity -automated), pass-throughs (echo, unreal-mcp with the editor up), `receipts/live-guard.txt` |
 | 5 | README | ✅ |
-| 6 | RUNLOG + commit | ✅ (this commit) |
+| 6 | RUNLOG + commit | ✅ |
 
-## Next
-- After the folder is trusted: screenshot the band (row contents, the buttons).
-- After the device is authorized: re-run the adb pass-through check.
-- Brian decides whether to load the mod in every session through `CLAUDE_CODE_PLUGIN_DIRS`.
-- Parked:
-  - re-injecting the cockpit block after compaction (no clean route seen yet)
-  - Loop Watch pane
-  - dev-server tracker
+## Close-out (2026-10-02)
+- Brian trusted the folder. The band rendered live (`receipts/band.png`).
+- Brian authorized the tablet. `adb shell echo hello-from-device` passed through the guard and returned the text (`receipts/live-guard.txt`, run 6).
+- **Every finish-line item is done.**
+
+## Follow-ups (parked, not part of this finish line)
+- Decide whether to load both mods in every session through `CLAUDE_CODE_PLUGIN_DIRS`, or a local marketplace.
+- Untested: a live unreal-mcp block with the port down, and the Desktop app.
+- Re-inject the cockpit block after compaction (no clean route yet).
+- Loop Watch pane and dev-server tracker (mods #5 and #7 of the review).
+- Before any push: review or shrink `bws-shell-lint/tests/corpus-fixture.ts` (512 KB of real commands).
 
 ## Interop with bws-shell-lint (mod #3, built by a subagent, commit 6bc8c9f)
 - Ran one headless session with both `--plugin-dir` flags (`receipts/live-both.txt`):

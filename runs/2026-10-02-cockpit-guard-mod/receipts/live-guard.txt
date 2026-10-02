@@ -113,3 +113,10 @@ RESULT [{"type": "text", "text": "- ToolsetRegistry.AgentSkillToolset: Provides 
 ASSISTANT `list_toolsets` succeeded with no error. It returned about 50 toolsets, including AutomationTestToolset, LiveCodingToolset, EditorAppToolset and the actor, asset and blueprint toolsets.
 
 Three claude.ai connectors still need authorizing in your claude.ai connector settings, and their tools are unavailable until then: AINRI, Vercel and byterover-mcp.
+
+===== run 6: tablet authorized, adb passes through =====
+
+
+TOOL_USE  adb shell echo hello-from-device
+
+RESULT hello-from-device

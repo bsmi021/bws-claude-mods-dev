@@ -88,11 +88,11 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Type-check vs the 2.1.287 declarations (tsc 5.9, strict) | clean | n/a |
 | Corpus replay: classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in echo, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored | `receipts/corpus-replay.md` |
 | Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched; a UE launch under GPU pressure gets the `-ini` overrides; a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started); adb blocked for an unauthorized device; a duplicate TMS editor blocked (pid 59468); `mcp__unreal-mcp__list_toolsets` passes against the live TMS editor on :3092 | `receipts/live-guard.txt` |
-| Interactive terminal band | see RUNLOG | `receipts/band.png` |
+| Interactive terminal band | drawn live with the run line, device row (UE, Unity, Blender, adb, VRAM with pressure) and buttons | `receipts/band.png` |
+| adb pass-through | with the tablet authorized, `adb shell echo` runs untouched | `receipts/live-guard.txt` (run 6) |
 
 Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.
 
 Untested:
 - the Desktop app
 - a live unreal-mcp block (port down)
-- adb pass-through with an authorized device
