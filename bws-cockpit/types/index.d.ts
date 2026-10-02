@@ -44,7 +44,8 @@ export type LoopUnit = {
   tasksTotal: number | null
 }
 
-export type LoopNeed = { id: string; text: string }
+// `answered` is the first line of Brian's answer in the unit's ANSWERS.md, or null.
+export type LoopNeed = { id: string; text: string; answered: string | null }
 
 export type LoopAlert = { key: string; level: 'warn' | 'bad' | 'info'; text: string }
 

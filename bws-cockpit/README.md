@@ -28,7 +28,9 @@ Built from a 30-day usage review (`runs/2026-10-02-usage-analysis`) that found:
   - the board link
   - one row per unit: the current-unit marker, status, sessions, cost and task progress, plus the running worker's last tool and its age
   - totals, and the driver's message
-  - open needs, each with the exact `harness.py answer` command
+  - open needs, each with an input box: type your answer and press Enter. That runs `python <harness.py> answer <unit> <N> <your text>` in the repo root and refreshes the pane. The text goes as a single argument with no shell, so quotes and `&` pass as typed. An empty answer is refused.
+  - needs already answered in the unit's `ANSWERS.md` show `answered: ...` instead of the box. Once every open need is answered, the pane says `all needs answered · r resumes the loop`. `harness.py answer` records the answer but does not resume the loop.
+  - on a surface without input boxes (mobile), and in the headless text, the exact `answer` command is shown instead
   - a picker when the project has more than one loop
 - **Layout:** in a narrow docked sidebar each unit takes two lines (name, then dim numbers). At 60 columns and up it's one line, and at 90 and up the status word is added.
 - **Alerts:** each one toasts once and lights the band's `loop` chip:
@@ -111,7 +113,7 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Check | Result | Receipt |
 |---|---|---|
 | `claude plugin validate` | passed | `receipts/validate.txt` |
-| `claude plugin test` | 44/44 (parsing, command-position rules, every guard path, pass-through, band layout on terminal + desktop, Loop Watch parsing, alerts, pane layouts, stop confirm, resume, toasts, picker) | `receipts/test.txt` |
+| `claude plugin test` | 48/48 (parsing, command-position rules, every guard path, pass-through, band layout on terminal + desktop, Loop Watch parsing, alerts, pane layouts, stop confirm, resume, toasts, picker, answering needs) | `receipts/test.txt` |
 | Loop Watch live | headless `/loop-watch` in bws.game.tms printed the real Warden loop; the pane drew in an interactive session, docked at about 30 columns | `runs/2026-10-02-loop-watch/receipts/` |
 | Type-check vs the 2.1.287 declarations (tsc 5.9, strict) | clean | n/a |
 | Corpus replay: classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in echo, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored | `receipts/corpus-replay.md` |

@@ -45,3 +45,20 @@ Build mod #5 from the usage review: a pane that watches harness loops and flags 
 ## Follow-ups (parked)
 - Answer needs from inside the pane (an Input that runs `harness.py answer`).
 - Loops outside the session's folder.
+
+## Follow-up: answer needs from the pane (2026-10-02)
+- `harness.py answer` (template and the TMS copy) only appends to `<unit folder>/ANSWERS.md`. It neither ticks the need nor resumes.
+- **Pane:**
+  - Each open need without an answer gets an Input (`answer-<unit>-<N>`). Enter runs `python <harness.py> answer <unit> <N> <text>` in the repo root, as argv with no shell. The note and a toast show the result, then the pane refreshes.
+  - An empty answer is refused and runs nothing.
+- **ANSWERS.md is now read too** (`parseAnswers`: the latest `## N..` heading wins, first line kept):
+  - An answered need shows `answered: …` instead of the Input.
+  - When every open need is answered, the pane shows `all needs answered · r resumes the loop`. The headless text shows the `start --resume` line.
+- **Surfaces without Input** (mobile) and the headless text keep the `answer` command line.
+- **Tests:** 4 new, 48/48 total.
+  - The argv is exact for an answer containing `"`, `'` and `&`.
+  - The stubbed `answer` appends to ANSWERS.md the way the harness does, so the refresh picks the answer up.
+  - Also covered: empty input, already-answered on desktop, and the headless text.
+- Validate clean, tsc strict clean.
+- **Not run live:** no loop is paused today, and I won't answer Brian's real needs for him.
+- **Mistake on the way:** I generated test code through escaped Python strings, which broke three literals. I fixed them with direct edits. This is the pattern in Brian's global rules.

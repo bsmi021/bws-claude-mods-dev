@@ -20,7 +20,7 @@ import {
 import type { Probe } from './lib'
 import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand, lowVramArg, normPath } from './shell'
 import type { Dialect } from './shell'
-import { ago, answerCommand, judge, loopState, loopText, money, parseNeeds, parseProgress, parseState } from './loop'
+import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
 import type { LoopView } from '../types'
 
@@ -236,7 +236,14 @@ async function findLoops($: EngineInterface, o: Options): Promise<LoopView[]> {
       )
       const cur = units.find(u => u.id === base.current)
       const isPaused = base.driver.status === 'PAUSED' || cur?.status === 'PAUSED'
-      const needs = isPaused && cur?.folder ? parseNeeds((await settle($.fs.read(joinPath(joinPath(cwd, cur.folder), 'TASKS.md')))) ?? '') : []
+      const curDir = cur?.folder ? joinPath(cwd, cur.folder) : null
+      const needs =
+        isPaused && curDir
+          ? withAnswers(
+              parseNeeds((await settle($.fs.read(joinPath(curDir, 'TASKS.md')))) ?? ''),
+              parseAnswers((await settle($.fs.read(joinPath(curDir, 'ANSWERS.md')))) ?? ''),
+            )
+          : []
       const partial = { ...base, units, needs }
       found.push({ ...partial, alerts: judge(partial, now, o.loop) })
     }
@@ -278,6 +285,26 @@ async function runLoopCommand($: EngineInterface, o: Options, lp: LoopView, kind
   await update($, loopAction, () => ({ text, at, isError }))
   await update($, stopArmedAt, () => null)
   $.ui.toast(text, { timeoutMs: 8000 })
+  await refreshLoops($, o)
+}
+
+// Records Brian's answer with `harness.py answer` (argv, no shell, so any quotes pass as typed), then refreshes.
+async function answerNeed($: EngineInterface, o: Options, lp: LoopView, unit: string, need: string, value: string) {
+  const at = await $.clock.now()
+  const text = value.trim()
+  if (text.length === 0) {
+    await update($, loopAction, () => ({ text: `answer ${unit} ${need}: empty, nothing sent`, at, isError: true }))
+    return
+  }
+  const cwd = await $.session.cwd()
+  const ran = await settle($.process.run(['python', lp.harnessPy, 'answer', unit, need, text], { cwd, timeoutMs: 60_000 }))
+  const out = ran ? `${ran.stdout}\n${ran.stderr}`.trim().split(/\r?\n/).filter(Boolean).slice(-1).join('') : ''
+  const isError = !ran || ran.exitCode !== 0
+  const note = ran
+    ? `answer ${unit} ${need}: ${isError ? `exit ${ran.exitCode}` : 'recorded'}${out ? `: ${out}` : ''}`
+    : `answer ${unit} ${need}: could not run python ${lp.harnessPy}`
+  await update($, loopAction, () => ({ text: note, at, isError }))
+  $.ui.toast(note, { timeoutMs: 8000 })
   await refreshLoops($, o)
 }
 
@@ -412,6 +439,7 @@ export const register: Register = (on, options) => {
     const table = $.ui.resolve(e)
     const { Box, Text, Button, Link } = table
     const Select = 'Select' in table ? table.Select : null // mobile has none
+    const Input = 'Input' in table ? table.Input : null
     const all = await read($, loops)
     const lp = await selectedLoop($)
     const now = await $.clock.now()
@@ -502,12 +530,36 @@ export const register: Register = (on, options) => {
             <Text wrap="wrap">{a.text}</Text>
           </Box>
         ))}
-        {lp.needs.map(n => (
-          <Box key={`need-${n.id}`} flexDirection="column">
-            <Text color="warning" wrap="wrap">{`${n.id} ${n.text}`}</Text>
-            <Text dimColor wrap="wrap">{`  ${answerCommand(lp, lp.current ?? '?', n.id)}`}</Text>
-          </Box>
-        ))}
+        {lp.needs.map(n => {
+          const unit = lp.current ?? '?'
+          if (n.answered !== null) {
+            return (
+              <Box key={`need-${n.id}`} flexDirection="column">
+                <Text dimColor wrap="wrap">{`✓ ${n.id} ${n.text}`}</Text>
+                <Text color="success" wrap="wrap">{`  answered: ${fit(n.answered, Math.max(10, width - 12))}`}</Text>
+              </Box>
+            )
+          }
+          return (
+            <Box key={`need-${n.id}`} flexDirection="column">
+              <Text color="warning" wrap="wrap">{`${n.id} ${n.text}`}</Text>
+              {Input ? (
+                <Input
+                  key={`answer-${unit}-${n.id}`}
+                  label={`${n.id} › `}
+                  placeholder="type your answer, Enter sends it"
+                  submitLabel="answer"
+                  onSubmit={(value: string) => void answerNeed($, o, lp, unit, n.id, value)}
+                />
+              ) : (
+                <Text dimColor wrap="wrap">{`  ${answerCommand(lp, unit, n.id)}`}</Text>
+              )}
+            </Box>
+          )
+        })}
+        {lp.needs.length > 0 && lp.needs.every(n => n.answered !== null) ? (
+          <Text color="success">{'all needs answered · r resumes the loop'}</Text>
+        ) : null}
         {note ? <Text color={note.isError ? 'error' : undefined} dimColor={!note.isError} wrap="wrap">{`${ago(note.at, now)}: ${note.text}`}</Text> : null}
         <Box flexDirection="row" columnGap={2} flexWrap="wrap">
           <Button key="loop-resume" plain dimColor label="resume" hotkey="r" onPress={() => void runLoopCommand($, o, lp, 'resume')} />

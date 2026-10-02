@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { judge, loopState, parseNeeds, parseProgress, parseState } from '../hooks/loop'
+import { judge, loopState, parseAnswers, parseNeeds, parseProgress, parseState } from '../hooks/loop'
 
 // A harness-loop shaped like the real Warden loop in bws.game.tms.
 const CWD = 'C:/proj'
@@ -52,7 +52,7 @@ const PAUSED_STATE = stateJson({ status: 'PAUSED', updated: '2026-10-01T19:58:00
 const TASKS_W2C = '# W2c\nStatus: IN_PROGRESS\n\n## Tasks\n- [x] T01 rig\n- [x] T02 import\n- [ ] T03 clip\n\n## Needs Brian\n- [ ] N1 pick the hammer clip: A or B\n- [x] N0 old answered\n'
 const TASKS_W1 = '# W1\nStatus: DONE\n\n## Tasks\n- [x] T01 a\n- [x] T02 b\n'
 
-type World = { state?: string; second?: boolean; stateMtime?: number }
+type World = { state?: string; second?: boolean; stateMtime?: number; answers?: string }
 
 let clockStart = 0
 const norm = (p: unknown) => String(p).split(String.fromCharCode(92)).join('/')
@@ -74,6 +74,7 @@ function world(on: On, w: World) {
     [`${CWD}/runs/w2c/TASKS.md`]: TASKS_W2C,
     [`${CWD}/runs/w1/TASKS.md`]: TASKS_W1,
   }
+  if (w.answers !== undefined) files[`${CWD}/runs/w2c/ANSWERS.md`] = w.answers
   if (w.second) {
     files[`${CWD}/Tools/M1Harness/loop.json`] = loopJson('m1', 'runs/m1-harness', 8769)
     files[`${CWD}/runs/m1-harness/state.json`] = stateJson({ status: 'STOPPED', updated: '2026-09-28T10:00:00' }, null, { U1: { status: 'DONE' } })
@@ -98,7 +99,14 @@ function world(on: On, w: World) {
     return { value: { kind: 'file', size: 1, mtimeMs: old ? T0 - 5 * 86_400_000 : (w.stateMtime ?? T0 - 20_000), isLink: false } as never }
   })
   on('process.run', ($, e) => {
-    runs.push({ argv: [...e.argv].map(String), cwd: e.init?.cwd })
+    const argv = [...e.argv].map(String)
+    runs.push({ argv, cwd: e.init?.cwd })
+    if (argv[2] === 'answer') {
+      // what harness.py answer does: append to the unit's ANSWERS.md
+      const prev = files[`${CWD}/runs/w2c/ANSWERS.md`] ?? '# W2c: Brian answers (binding)\n\n'
+      files[`${CWD}/runs/w2c/ANSWERS.md`] = `${prev}## ${argv[4]} — 2026-10-01T20:01:00\n\n${argv[5]}\n\n`
+      return { value: { exitCode: 0, stdout: `recorded answer for ${argv[3]} ${argv[4]} in runs/w2c/ANSWERS.md`, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    }
     return { value: { exitCode: 0, stdout: 'driver stop requested', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
   on('http.fetch', () => {
@@ -124,7 +132,7 @@ describe('loop parsing and judging', () => {
     expect(v?.boardUrl).toBe('http://localhost:8772/')
     expect(v?.units[1]?.heartbeatTool).toBe('Bash')
     expect(parseProgress(TASKS_W2C)).toEqual({ done: 2, total: 3 })
-    expect(parseNeeds(TASKS_W2C)).toEqual([{ id: 'N1', text: 'pick the hammer clip: A or B' }])
+    expect(parseNeeds(TASKS_W2C)).toEqual([{ id: 'N1', text: 'pick the hammer clip: A or B', answered: null }])
     expect(parseState('not json', {}, 'h.py', 0)).toBeNull()
   })
 
@@ -150,6 +158,29 @@ describe('loop parsing and judging', () => {
     const v = parseState(stopped, { name: 'x' }, 'h.py', T0)!
     expect(judge({ ...v, needs: [] }, T0, LIMITS)).toEqual([])
     expect(loopState({ ...v, needs: [], alerts: [] }).state).toBe('off')
+  })
+})
+
+describe('answers', () => {
+  test('parseAnswers keeps the first line of the latest answer per need', () => {
+    const md = `# W2c: Brian answers (binding)
+
+## N1 — 2026-10-01T18:00:00
+
+use A
+
+## N2 — 2026-10-01T18:05:00
+
+
+ship it
+more detail
+
+## N1 — 2026-10-01T19:00:00
+
+actually B
+`
+    expect(parseAnswers(md)).toEqual({ N1: 'actually B', N2: 'ship it' })
+    expect(parseAnswers('')).toEqual({})
   })
 })
 
@@ -242,6 +273,52 @@ describe('loop watch', () => {
     const idle = w.toasts.filter(t => /no tool activity/.test(t))
     expect(idle.length).toBe(1)
     expect(w.toasts.filter(t => /on session 7/.test(t)).length).toBe(1)
+  })
+
+  test('an open need has an Input; Enter records the answer with harness.py answer, then refreshes', async ($, on) => {
+    const w = world(on, { state: PAUSED_STATE })
+    await $.command.run({ command: 'loop-watch', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(await ui.find({ key: 'answer-W2c-N1' })).toBeDefined()
+    const typed = `use clip "B", it's cleaner & reads better`
+    await ui.input({ key: 'answer-W2c-N1', text: typed })
+    expect(w.runs).toEqual([{ argv: ['python', 'Tools/WardenHarness/harness.py', 'answer', 'W2c', 'N1', typed], cwd: CWD }])
+    expect(w.toasts.some(t => /answer W2c N1: recorded/.test(t))).toBe(true)
+    await ui.unmount()
+    const after = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(await after.find({ key: 'answer-W2c-N1' })).toBeUndefined()
+    expect(await after.find({ type: 'Text', text: /answered: use clip "B", it's cleaner & reads better/ })).toBeDefined()
+    expect(await after.find({ type: 'Text', text: /all needs answered · r resumes the loop/ })).toBeDefined()
+    expect(await after.find({ type: 'Text', text: /answer W2c N1: recorded/ })).toBeDefined()
+    await after.unmount()
+  })
+
+  test('an empty answer runs nothing', async ($, on) => {
+    const w = world(on, { state: PAUSED_STATE })
+    await $.command.run({ command: 'loop-watch', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.input({ key: 'answer-W2c-N1', text: '   ' })
+    expect(w.runs).toEqual([])
+    expect(await ui.find({ type: 'Text', text: /answer W2c N1: empty, nothing sent/ })).toBeDefined()
+    expect(await ui.find({ key: 'answer-W2c-N1' })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a need already answered in ANSWERS.md shows the answer and the resume hint', async ($, on) => {
+    world(on, { state: PAUSED_STATE, answers: `# W2c
+
+## N1 — 2026-10-01T19:59:00
+
+B, the overhead swing
+` })
+    const r = await $.command.run({ command: 'loop-watch', args: '' } as never)
+    expect(r.text).toContain('Answered (W2c): N1 pick the hammer clip: A or B')
+    expect(r.text).toContain('answer: B, the overhead swing')
+    expect(r.text).toContain('All needs answered: python Tools/WardenHarness/harness.py start --resume')
+    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    expect(await ui.find({ key: 'answer-W2c-N1' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /answered: B, the overhead swing/ })).toBeDefined()
+    await ui.unmount()
   })
 
   test('the band shows a loop chip and a 4: loop hotkey', async ($, on) => {

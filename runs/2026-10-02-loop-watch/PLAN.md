@@ -44,3 +44,18 @@ Brian's ask: "build the loop watch pane". Built inside `bws-cockpit`, which shar
 - Answering needs from inside the pane (an Input that runs `harness.py answer`).
 - Loops outside the session's working directory.
 - Changing `harness.py` or the skill. The pane is read-only apart from stop and resume.
+
+## Follow-up: answer needs from the pane (2026-10-02)
+Brian's ask: "an Input per open need that runs harness.py answer <unit> <N> with what I type, then refreshes".
+
+`harness.py answer` appends the answer to `<unit folder>/ANSWERS.md` (`## N1 — <time>`). It does not tick the need in TASKS.md, and it does not resume; the worker reads ANSWERS.md on the next session.
+
+### Finish line
+1. Each open need that has no answer in ANSWERS.md gets an Input. Enter runs `python <harness.py> answer <unit> <N> <text>` in the repo root:
+   - The text goes as one argv element; no shell, so quotes are safe.
+   - The result shows in the pane and as a toast, then the pane refreshes.
+2. Empty text is refused with a note, and nothing runs.
+3. A need with an answer in ANSWERS.md shows `answered: <first line>` instead of the Input. When every open need is answered, the pane shows `all needs answered · r resumes the loop`.
+4. A surface without Input (mobile) and the headless text keep the `answer` command line.
+5. Tests prove all of the above (argv, cwd, empty, quotes, answered state, resume hint). Validate, tsc, README and RUNLOG are updated; local commit.
+6. Not run live: no loop is paused today, and Brian's real loops are not answered on his behalf.

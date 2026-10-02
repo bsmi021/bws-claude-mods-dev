@@ -23,11 +23,39 @@ export const parseNeeds = (tasksMd: string): LoopNeed[] => {
     if (line.startsWith('## ')) inNeeds = /^## needs/i.test(line)
     else if (inNeeds) {
       const m = line.match(/^- \[ \] (N\d+)\b\s*(.*)$/)
-      if (m) out.push({ id: m[1] ?? '', text: (m[2] ?? '').replace(/^[:—-]\s*/, '').trim() })
+      if (m) out.push({ id: m[1] ?? '', text: (m[2] ?? '').replace(/^[:—-]\s*/, '').trim(), answered: null })
     }
   }
   return out
 }
+
+// ANSWERS.md as `harness.py answer` writes it: `## N1 — <time>`, then the text. The latest answer per need wins.
+export const parseAnswers = (answersMd: string): Record<string, string> => {
+  const out: Record<string, string> = {}
+  let id: string | null = null
+  let body: string[] = []
+  const flush = () => {
+    const first = body.map(l => l.trim()).find(l => l.length > 0)
+    if (id && first !== undefined) out[id] = first
+  }
+  for (const line of answersMd.split(/\r?\n/)) {
+    const h = line.match(/^## (N\d+|WIDE(?:-NO)?)\b/)
+    if (h) {
+      flush()
+      id = h[1] ?? null
+      body = []
+    } else if (line.startsWith('# ')) {
+      flush()
+      id = null
+      body = []
+    } else body.push(line)
+  }
+  flush()
+  return out
+}
+
+export const withAnswers = (needs: LoopNeed[], answers: Record<string, string>): LoopNeed[] =>
+  needs.map(n => ({ ...n, answered: answers[n.id] ?? null }))
 
 export const parseProgress = (tasksMd: string): { done: number; total: number } | null => {
   let inTasks = false
@@ -175,7 +203,12 @@ export const loopText = (v: LoopView, now: number): string => {
     }),
     `${v.units.length} units, ${done} done, ${sessions} sessions, ${money(cost)}`,
     ...v.alerts.map(a => `! ${a.text}`),
-    ...v.needs.map(n => `Needs you (${v.current}): ${n.id} ${n.text}\n  ${answerCommand(v, v.current ?? '?', n.id)}`),
+    ...v.needs.map(n =>
+      n.answered !== null
+        ? `Answered (${v.current}): ${n.id} ${n.text}\n  answer: ${n.answered}`
+        : `Needs you (${v.current}): ${n.id} ${n.text}\n  ${answerCommand(v, v.current ?? '?', n.id)}`,
+    ),
+    ...(v.needs.length > 0 && v.needs.every(n => n.answered !== null) ? [`All needs answered: python ${v.harnessPy} start --resume`] : []),
   ]
   if (v.driver.message && v.driver.status !== 'PAUSED') lines.splice(1, 0, `  ${v.driver.message}`)
   return lines.join('\n')
