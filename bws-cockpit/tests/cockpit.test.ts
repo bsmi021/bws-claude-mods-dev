@@ -68,7 +68,7 @@ const UE = 'C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEdito
 describe('parsing', () => {
   test('next step: last explicit Next line wins, else the bullet under a next heading', () => {
     expect(parseNext('- Next: build band\nlater\n**Next step:** run tests')).toBe('run tests')
-    expect(parseNext('## Status / next step\n\n- Brian picks mods\n## Other\n- x')).toBe('Brian picks mods')
+    expect(parseNext('## Status / next step\n\n- the user picks mods\n## Other\n- x')).toBe('the user picks mods')
     expect(parseNext('# nothing here')).toBeUndefined()
   })
   test('finish line, open items', () => {
@@ -77,7 +77,7 @@ describe('parsing', () => {
   })
   test('probe output', () => {
     expect(parseAdb('List of devices attached\nR5CT 	device\nemulator-5554\toffline\n')).toEqual({ ready: ['R5CT'], other: ['emulator-5554 offline'] })
-    expect(parseProcs('UnrealEditor.exe|42|"C:/UE/UnrealEditor.exe" "C:/p/TMS.uproject"\r\n\r\n')[0]?.pid).toBe(42)
+    expect(parseProcs('UnrealEditor.exe|42|"C:/UE/UnrealEditor.exe" "C:/p/MyGame.uproject"\r\n\r\n')[0]?.pid).toBe(42)
     const proxy = JSON.stringify({ mcpServers: { 'unreal-mcp': { type: 'stdio', command: 'python', args: ['proxy.py', 'http://127.0.0.1:3092/mcp'] } } })
     expect(parseUnrealMcpUrl(proxy)).toBe('http://127.0.0.1:3092/mcp')
     expect(parseUnrealMcpUrl(MCP_HTTP, 'unreal-engine')).toBeUndefined()
@@ -100,8 +100,8 @@ describe('command classification', () => {
     expect(isUnityPipelineCommand('echo community command')).toBe(false)
   })
   test('unity launches get -automated', () => {
-    expect(fixUnityLaunch('unity open C:/Projects/tms-heim && echo ok')).toEqual({
-      command: 'unity open C:/Projects/tms-heim --args -automated && echo ok',
+    expect(fixUnityLaunch('unity open C:/Projects/my-unity-game && echo ok')).toEqual({
+      command: 'unity open C:/Projects/my-unity-game --args -automated && echo ok',
       note: 'added -automated to unity open',
     })
     expect(fixUnityLaunch("unity open 'C:/p' --args -logFile x.log")).toMatchObject({ command: "unity open 'C:/p' --args -automated -logFile x.log" })
@@ -113,7 +113,7 @@ describe('command classification', () => {
     expect(fixUnityLaunch('unity --format json command --project-path C:/p recompile')).toBeUndefined()
   })
   test('UE GUI launches only', () => {
-    expect(findUeGuiLaunch(`"${UE}" "C:/Projects/bws.game.tms/TMS.uproject" -log &`)?.uproject).toBe('C:/Projects/bws.game.tms/TMS.uproject')
+    expect(findUeGuiLaunch(`"${UE}" "C:/Projects/my-ue-game/MyGame.uproject" -log &`)?.uproject).toBe('C:/Projects/my-ue-game/MyGame.uproject')
     expect(findUeGuiLaunch(`"${UE.replace('UnrealEditor.exe', 'UnrealEditor-Cmd.exe')}" C:/p/x.uproject -run=pythonscript`)).toBeUndefined()
     expect(findUeGuiLaunch(`"${UE}" C:/p/x.uproject -run=pythonscript -script=a.py -nullrhi`)).toBeUndefined()
     expect(findUeGuiLaunch('Get-Process UnrealEditor.exe -EA SilentlyContinue')).toBeUndefined()
@@ -192,8 +192,8 @@ describe('guard', () => {
 
   test('unity open gets -automated and the model is told', async ($, on) => {
     const reached = world(on, {})
-    const r = await $.tool.call({ tool: 'Bash', command: 'unity open C:/Projects/tms-heim' })
-    expect(reached[0]?.command).toBe('unity open C:/Projects/tms-heim --args -automated')
+    const r = await $.tool.call({ tool: 'Bash', command: 'unity open C:/Projects/my-unity-game' })
+    expect(reached[0]?.command).toBe('unity open C:/Projects/my-unity-game --args -automated')
     expect((r.context ?? []).join(' ')).toMatch(/added -automated to unity open/)
   })
 
@@ -212,10 +212,10 @@ describe('guard', () => {
 
   test('UE launch under GPU pressure gets the low-VRAM -ini overrides', async ($, on) => {
     const reached = world(on, { procs: 'blender.exe|9|blender', vram: '4662, 8188' })
-    const cmd = `"${UE}" "C:/Projects/bws.game.tms/TMS.uproject" -log > /dev/null 2>&1 &`
+    const cmd = `"${UE}" "C:/Projects/my-ue-game/MyGame.uproject" -log > /dev/null 2>&1 &`
     const r = await $.tool.call({ tool: 'Bash', command: cmd })
     const ran = reached[0]?.command ?? ''
-    expect(ran).toContain('"C:/Projects/bws.game.tms/TMS.uproject" -log -ini:Engine:[SystemSettings]:t.MaxFPS=30,')
+    expect(ran).toContain('"C:/Projects/my-ue-game/MyGame.uproject" -log -ini:Engine:[SystemSettings]:t.MaxFPS=30,')
     expect(ran).toContain('[SystemSettings]:r.ScreenPercentage=50')
     expect(ran.endsWith('> /dev/null 2>&1 &')).toBe(true)
     expect((r.context ?? []).join(' ')).toMatch(/low-VRAM/)
@@ -229,8 +229,8 @@ describe('guard', () => {
   })
 
   test('a second editor for an open .uproject is blocked', async ($, on) => {
-    const reached = world(on, { procs: `UnrealEditor.exe|501|"${UE}" "C:\\Projects\\bws.game.tms\\TMS.uproject" -log` })
-    const r = await $.tool.call({ tool: 'PowerShell', command: `& "${UE}" "C:/Projects/bws.game.tms/TMS.uproject"` })
+    const reached = world(on, { procs: `UnrealEditor.exe|501|"${UE}" "C:\\Projects\\my-ue-game\\MyGame.uproject" -log` })
+    const r = await $.tool.call({ tool: 'PowerShell', command: `& "${UE}" "C:/Projects/my-ue-game/MyGame.uproject"` })
     expect(r.deny ?? r.text ?? '').toMatch(/already open in UnrealEditor \(pid 501\)/)
     expect(reached.length).toBe(0)
   })
@@ -349,11 +349,11 @@ const BAND = {
 
 describe('band layout', () => {
   test('a long next step is cut to the width with ASCII dots', async ($, on) => {
-    const long = 'W3 TMS.Full.Warden.Kit (one live run), then the W3 visual check and the W2c visual check (one capture run each), then the W4 build'
+    const long = 'W3 Game.Full.Kit (one live run), then the W3 visual check and the W2c visual check (one capture run each), then the W4 build'
     world(on, { ...RUN_WORLD, files: { ...RUN_WORLD.files, [`${CWD}/runs/2026-10-02-bow-fix/RUNLOG.md`]: `- Next: ${long}\n` } })
     await $.command.run({ command: 'cockpit', args: '' } as never)
     const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-    const cut = await ui.find({ type: 'Text', text: /^W3 TMS\.Full\.Warden\.Kit/ })
+    const cut = await ui.find({ type: 'Text', text: /^W3 Game\.Full\.Kit/ })
     expect(cut?.text.endsWith('...')).toBe(true)
     expect(cut?.text.includes('…')).toBe(false)
     expect(('bow-fix  10-02  2 open  › ' + (cut?.text ?? '')).length <= 79).toBe(true)

@@ -288,7 +288,7 @@ async function runLoopCommand($: EngineInterface, o: Options, lp: LoopView, kind
   await refreshLoops($, o)
 }
 
-// Records Brian's answer with `harness.py answer` (argv, no shell, so any quotes pass as typed), then refreshes.
+// Records the user's answer with `harness.py answer` (argv, no shell, so any quotes pass as typed), then refreshes.
 async function answerNeed($: EngineInterface, o: Options, lp: LoopView, unit: string, need: string, value: string) {
   const at = await $.clock.now()
   const text = value.trim()
@@ -660,7 +660,7 @@ export const register: Register = (on, options) => {
     return {
       deny:
         `bws-cockpit: Unreal MCP at ${p.ueMcp.url} is not reachable: ${why}. ` +
-        `Start or wait for the editor (if other editors or Blender are open, launch with low-VRAM flags), then retry. Ask Brian if you cannot.`,
+        `Start or wait for the editor (if other editors or Blender are open, launch with low-VRAM flags), then retry. Ask the user if you cannot.`,
     }
   })
 
@@ -671,7 +671,7 @@ export const register: Register = (on, options) => {
     const seen = p.adb.other.length > 0 ? p.adb.other.join(', ') : 'none attached'
     await noteGuard($, `blocked adb: no ready device (${seen})`)
     return {
-      deny: `bws-cockpit: no Android device is ready (adb devices: ${seen}). Ask Brian to connect and unlock the device, then retry.`,
+      deny: `bws-cockpit: no Android device is ready (adb devices: ${seen}). Ask the user to connect and unlock the device, then retry.`,
     }
   })
 
@@ -693,7 +693,7 @@ export const register: Register = (on, options) => {
         return {
           deny:
             'bws-cockpit: no Unity editor is running, so the unity CLI pipeline has nothing to talk to. ' +
-            'Launch it first (unity open <project> --args -automated) and wait for the pipeline to come up, or ask Brian.',
+            'Launch it first (unity open <project> --args -automated) and wait for the pipeline to come up, or ask the user.',
         }
       }
     }

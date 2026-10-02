@@ -3,19 +3,19 @@ import type { On } from 'claude-code'
 
 import { judge, loopState, parseAnswers, parseNeeds, parseProgress, parseState } from '../hooks/loop'
 
-// A harness-loop shaped like the real Warden loop in bws.game.tms.
+// A harness-loop shaped like a real one.
 const CWD = 'C:/proj'
 const T0 = Date.parse('2026-10-01T20:00:00')
 const LIMITS = { driverStaleMs: 3 * 60_000, idleMs: 20 * 60_000, sessionAlert: 6 }
 
 const loopJson = (name: string, harnessDir: string, port: number) =>
-  JSON.stringify({ name, title: name === 'warden' ? 'TMS Warden kit' : 'M1 beats', harnessDir, board: { port } })
+  JSON.stringify({ name, title: name === 'kit' ? 'Demo kit' : 'M1 beats', harnessDir, board: { port } })
 
 type UnitIn = { status: string; sessions?: number; cost?: number; folder?: string | null; hb?: string; tool?: string }
 
 const stateJson = (driver: { status: string; updated: string; message?: string }, current: string | null, units: Record<string, UnitIn>) =>
   JSON.stringify({
-    title: 'TMS Warden kit',
+    title: 'Demo kit',
     driver: { status: driver.status, pid: null, message: driver.message ?? '', updated: driver.updated, desired: 'run' },
     current,
     order: Object.keys(units),
@@ -44,12 +44,12 @@ const RUNNING_STATE = stateJson({ status: 'RUNNING', updated: '2026-10-01T19:59:
   W3: { status: 'PENDING' },
 })
 
-const PAUSED_STATE = stateJson({ status: 'PAUSED', updated: '2026-10-01T19:58:00', message: 'W2c: needs Brian: N1 pick the hammer clip' }, 'W2c', {
+const PAUSED_STATE = stateJson({ status: 'PAUSED', updated: '2026-10-01T19:58:00', message: 'W2c: needs the user: N1 pick the final clip' }, 'W2c', {
   W1: { status: 'DONE', sessions: 8, cost: 42.68, folder: 'runs/w1' },
   W2c: { status: 'PAUSED', sessions: 2, cost: 3, folder: 'runs/w2c' },
 })
 
-const TASKS_W2C = '# W2c\nStatus: IN_PROGRESS\n\n## Tasks\n- [x] T01 rig\n- [x] T02 import\n- [ ] T03 clip\n\n## Needs Brian\n- [ ] N1 pick the hammer clip: A or B\n- [x] N0 old answered\n'
+const TASKS_W2C = '# W2c\nStatus: IN_PROGRESS\n\n## Tasks\n- [x] T01 rig\n- [x] T02 import\n- [ ] T03 clip\n\n## Needs the user\n- [ ] N1 pick the final clip: A or B\n- [x] N0 old answered\n'
 const TASKS_W1 = '# W1\nStatus: DONE\n\n## Tasks\n- [x] T01 a\n- [x] T02 b\n'
 
 type World = { state?: string; second?: boolean; stateMtime?: number; answers?: string }
@@ -69,8 +69,8 @@ function world(on: On, w: World) {
     return { value: undefined }
   })
   const files: Record<string, string> = {
-    [`${CWD}/Tools/WardenHarness/loop.json`]: loopJson('warden', 'runs/2026-09-30-warden-harness/state', 8772),
-    [`${CWD}/runs/2026-09-30-warden-harness/state/state.json`]: w.state ?? RUNNING_STATE,
+    [`${CWD}/Tools/KitHarness/loop.json`]: loopJson('kit', 'runs/2026-09-30-kit-harness/state', 8772),
+    [`${CWD}/runs/2026-09-30-kit-harness/state/state.json`]: w.state ?? RUNNING_STATE,
     [`${CWD}/runs/w2c/TASKS.md`]: TASKS_W2C,
     [`${CWD}/runs/w1/TASKS.md`]: TASKS_W1,
   }
@@ -81,7 +81,7 @@ function world(on: On, w: World) {
   }
   const dirs: Record<string, { name: string; kind: 'dir' | 'file' }[]> = {
     [CWD]: [{ name: 'Tools', kind: 'dir' }, { name: 'runs', kind: 'dir' }, { name: 'README.md', kind: 'file' }],
-    [`${CWD}/Tools`]: [{ name: 'WardenHarness', kind: 'dir' }, ...(w.second ? [{ name: 'M1Harness', kind: 'dir' as const }] : [])],
+    [`${CWD}/Tools`]: [{ name: 'KitHarness', kind: 'dir' }, ...(w.second ? [{ name: 'M1Harness', kind: 'dir' as const }] : [])],
   }
   on('fs.list', ($, e) => {
     const hit = dirs[norm(e.path)]
@@ -103,7 +103,7 @@ function world(on: On, w: World) {
     runs.push({ argv, cwd: e.init?.cwd })
     if (argv[2] === 'answer') {
       // what harness.py answer does: append to the unit's ANSWERS.md
-      const prev = files[`${CWD}/runs/w2c/ANSWERS.md`] ?? '# W2c: Brian answers (binding)\n\n'
+      const prev = files[`${CWD}/runs/w2c/ANSWERS.md`] ?? '# W2c: the user answers (binding)\n\n'
       files[`${CWD}/runs/w2c/ANSWERS.md`] = `${prev}## ${argv[4]} — 2026-10-01T20:01:00\n\n${argv[5]}\n\n`
       return { value: { exitCode: 0, stdout: `recorded answer for ${argv[3]} ${argv[4]} in runs/w2c/ANSWERS.md`, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     }
@@ -126,27 +126,27 @@ const PANE = {
 
 describe('loop parsing and judging', () => {
   test('state, progress and needs', () => {
-    const v = parseState(RUNNING_STATE, { name: 'warden', board: { port: 8772 } }, 'Tools/WardenHarness/harness.py', T0)
+    const v = parseState(RUNNING_STATE, { name: 'kit', board: { port: 8772 } }, 'Tools/KitHarness/harness.py', T0)
     expect(v?.units.map(u => u.id)).toEqual(['W1', 'W2c', 'W3'])
     expect(v?.current).toBe('W2c')
     expect(v?.boardUrl).toBe('http://localhost:8772/')
     expect(v?.units[1]?.heartbeatTool).toBe('Bash')
     expect(parseProgress(TASKS_W2C)).toEqual({ done: 2, total: 3 })
-    expect(parseNeeds(TASKS_W2C)).toEqual([{ id: 'N1', text: 'pick the hammer clip: A or B', answered: null }])
+    expect(parseNeeds(TASKS_W2C)).toEqual([{ id: 'N1', text: 'pick the final clip: A or B', answered: null }])
     expect(parseState('not json', {}, 'h.py', 0)).toBeNull()
   })
 
   test('alerts: idle worker, session count, dead driver, paused, complete', () => {
-    const v = parseState(RUNNING_STATE, { name: 'warden' }, 'h.py', T0)!
+    const v = parseState(RUNNING_STATE, { name: 'kit' }, 'h.py', T0)!
     const live = judge({ ...v, needs: [] }, T0, LIMITS).map(a => a.text)
     expect(live.some(t => /W2c has had no tool activity for 40m \(last: Bash\)/.test(t))).toBe(true)
     expect(live.some(t => /W2c is on session 7/.test(t))).toBe(true)
     expect(live.some(t => /looks dead/.test(t))).toBe(false)
     const later = judge({ ...v, needs: [] }, T0 + 5 * 60_000, LIMITS).map(a => a.text)
     expect(later.some(t => /driver says RUNNING but has not updated for 5m/.test(t))).toBe(true)
-    const p = parseState(PAUSED_STATE, { name: 'warden' }, 'h.py', T0)!
+    const p = parseState(PAUSED_STATE, { name: 'kit' }, 'h.py', T0)!
     const paused = judge({ ...p, needs: [] }, T0, LIMITS)
-    expect(paused.map(a => a.text)).toEqual(['paused for you: W2c: needs Brian: N1 pick the hammer clip'])
+    expect(paused.map(a => a.text)).toEqual(['paused for you: W2c: needs the user: N1 pick the final clip'])
     expect(loopState({ ...p, needs: [], alerts: paused }).word).toBe('needs you')
     const doneState = stateJson({ status: 'IDLE', updated: '2026-10-01T19:00:00' }, null, { A: { status: 'DONE' }, B: { status: 'DONE' } })
     const d = parseState(doneState, { name: 'x' }, 'h.py', T0)!
@@ -163,7 +163,7 @@ describe('loop parsing and judging', () => {
 
 describe('answers', () => {
   test('parseAnswers keeps the first line of the latest answer per need', () => {
-    const md = `# W2c: Brian answers (binding)
+    const md = `# W2c: the user answers (binding)
 
 ## N1 — 2026-10-01T18:00:00
 
@@ -190,11 +190,11 @@ describe('loop watch', () => {
   test('/loop-watch with no surface replies with the summary as text', async ($, on) => {
     world(on, { state: PAUSED_STATE })
     const r = await $.command.run({ command: 'loop-watch', args: '' } as never)
-    expect(r.text).toContain('Loop warden (TMS Warden kit): PAUSED')
+    expect(r.text).toContain('Loop kit (Demo kit): PAUSED')
     expect(r.text).toContain('board http://localhost:8772/')
     expect(r.text).toContain('> W2c PAUSED - Unit W2c: 2 sessions, $3.00 2/3 tasks')
-    expect(r.text).toContain('Needs you (W2c): N1 pick the hammer clip: A or B')
-    expect(r.text).toContain('python Tools/WardenHarness/harness.py answer W2c N1 "<your answer>"')
+    expect(r.text).toContain('Needs you (W2c): N1 pick the final clip: A or B')
+    expect(r.text).toContain('python Tools/KitHarness/harness.py answer W2c N1 "<your answer>"')
   })
 
   test('/loop-watch in a folder with no loop says so', async ($, on) => {
@@ -211,7 +211,7 @@ describe('loop watch', () => {
     await $.command.run({ command: 'loop-watch', args: '' } as never) // loads the loops
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...PANE, surface })
-      expect(await ui.find({ type: 'Text', text: /^warden$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^kit$/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /● running/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /^running$/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /^▸ $/ })).toBeDefined()
@@ -246,13 +246,13 @@ describe('loop watch', () => {
     const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
     await ui.press({ key: 'loop-stop' })
     expect(w.runs.length).toBe(0)
-    expect((await ui.find({ key: 'loop-stop' }))?.text).toMatch(/press s again to stop warden/)
+    expect((await ui.find({ key: 'loop-stop' }))?.text).toMatch(/press s again to stop kit/)
     await w.clock.advance(11_000) // the arm expires
     await ui.press({ key: 'loop-stop' })
     expect(w.runs.length).toBe(0)
     await ui.press({ key: 'loop-stop' })
-    expect(w.runs).toEqual([{ argv: ['python', 'Tools/WardenHarness/harness.py', 'stop'], cwd: CWD }])
-    expect(await ui.find({ type: 'Text', text: /stop warden: exit 0: driver stop requested/ })).toBeDefined()
+    expect(w.runs).toEqual([{ argv: ['python', 'Tools/KitHarness/harness.py', 'stop'], cwd: CWD }])
+    expect(await ui.find({ type: 'Text', text: /stop kit: exit 0: driver stop requested/ })).toBeDefined()
     await ui.unmount()
   })
 
@@ -260,9 +260,9 @@ describe('loop watch', () => {
     const w = world(on, { state: PAUSED_STATE })
     await $.command.run({ command: 'loop-watch', args: '' } as never)
     const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
-    expect(await ui.find({ type: 'Text', text: /N1 pick the hammer clip/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /N1 pick the final clip/ })).toBeDefined()
     await ui.press({ key: 'loop-resume' })
-    expect(w.runs).toEqual([{ argv: ['python', 'Tools/WardenHarness/harness.py', 'start', '--resume'], cwd: CWD }])
+    expect(w.runs).toEqual([{ argv: ['python', 'Tools/KitHarness/harness.py', 'start', '--resume'], cwd: CWD }])
     await ui.unmount()
   })
 
@@ -282,7 +282,7 @@ describe('loop watch', () => {
     expect(await ui.find({ key: 'answer-W2c-N1' })).toBeDefined()
     const typed = `use clip "B", it's cleaner & reads better`
     await ui.input({ key: 'answer-W2c-N1', text: typed })
-    expect(w.runs).toEqual([{ argv: ['python', 'Tools/WardenHarness/harness.py', 'answer', 'W2c', 'N1', typed], cwd: CWD }])
+    expect(w.runs).toEqual([{ argv: ['python', 'Tools/KitHarness/harness.py', 'answer', 'W2c', 'N1', typed], cwd: CWD }])
     expect(w.toasts.some(t => /answer W2c N1: recorded/.test(t))).toBe(true)
     await ui.unmount()
     const after = await $.ui.mount({ ...PANE, surface: 'terminal' })
@@ -312,9 +312,9 @@ describe('loop watch', () => {
 B, the overhead swing
 ` })
     const r = await $.command.run({ command: 'loop-watch', args: '' } as never)
-    expect(r.text).toContain('Answered (W2c): N1 pick the hammer clip: A or B')
+    expect(r.text).toContain('Answered (W2c): N1 pick the final clip: A or B')
     expect(r.text).toContain('answer: B, the overhead swing')
-    expect(r.text).toContain('All needs answered: python Tools/WardenHarness/harness.py start --resume')
+    expect(r.text).toContain('All needs answered: python Tools/KitHarness/harness.py start --resume')
     const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
     expect(await ui.find({ key: 'answer-W2c-N1' })).toBeUndefined()
     expect(await ui.find({ type: 'Text', text: /answered: B, the overhead swing/ })).toBeDefined()
@@ -331,7 +331,7 @@ B, the overhead swing
       props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
     })
     expect(await band.find({ type: 'Text', text: /^loop$/ })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: / warden W2c needs you$/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: / kit W2c needs you$/ })).toBeDefined()
     expect(await band.find({ key: 'loop' })).toBeDefined()
     await band.unmount()
   })
@@ -341,7 +341,7 @@ B, the overhead swing
     await $.command.run({ command: 'loop-watch', args: '' } as never)
     const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
     expect(await ui.find({ key: 'loop-pick' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^warden$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^kit$/ })).toBeDefined()
     await $.ui.select({ plugin: 'bws-cockpit', key: 'loop-pick', value: 'm1' })
     await ui.unmount()
     const again = await $.ui.mount({ ...PANE, surface: 'terminal' })
