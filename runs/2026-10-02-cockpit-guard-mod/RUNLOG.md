@@ -62,3 +62,10 @@ Build mods #1 and #2 from the usage review as one plugin, `bws-cockpit/`. The fi
   - shell-lint denied `ls "C:\...\"` (dq-trailing-backslash) with its fix hint
   - `echo` passed through both
 - No conflicts.
+
+## Global load (2026-10-02)
+- Added `CLAUDE_CODE_PLUGIN_DIRS` = `C:/Projects/bws.mods.claude-code/bws-cockpit;C:/Projects/bws.mods.claude-code/bws-shell-lint` to the `env` block of `~/.claude/settings.json`. Backup: `settings.json.bak-2026-10-02-plugindirs`; the diff against it is that one line.
+- Verified from `C:/Projects/bws.game.tms` with no `--plugin-dir` flag (`receipts/plugin-dirs-check.txt`):
+  - the init lists both mods
+  - shell-lint denied a trailing-backslash `ls`, and the model's forward-slash retry ran
+- Applies to new sessions only, including headless harness workers. Sessions already open need a restart.

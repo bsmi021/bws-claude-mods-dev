@@ -1,0 +1,18 @@
+PLUGINS: ['bws-cockpit', 'bws-shell-lint', 'claude-md-management', 'skill-creator', 'pil-agent-plugin', 'google-notebook-plugin', 'unreal-engine-skills-for-claude-code', 'next-steps', 'blender-inspect', 'cc-plugin-agents-md', 'cc-plugin-plugin-authoring', 'cc-plugin-you-should-know']
+TOOL_USE ls "C:\Projects\bws.game.tms\"
+RESULT <tool_use_error>bws-shell-lint [dq-trailing-backslash]: "C:\Projects\bws.game.tms\" ends in a backslash that escapes its closing quote, so bash would fail with "unexpected EOF". Fix: use forward slashes and no trailing slash: "C:/Projects/bws.game.tms".</tool_use_error>
+TOOL_USE ls "C:/Projects/bws.game.tms"
+RESULT AGENTS.md
+Binaries/
+Build/
+CLAUDE.md
+Config/
+Content/
+DerivedDataCache/
+Intermediate/
+Saved/
+Source/
+TMS.uproject
+Tools/
+docs/
+runs/
