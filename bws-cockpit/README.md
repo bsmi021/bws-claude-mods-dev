@@ -2,7 +2,7 @@
 
 A Claude Code mod. It puts the active run and live editor/device state above the prompt, and guards calls to Unreal, Unity and adb.
 
-Built from a 30-day usage review (`runs/2026-10-02-usage-analysis`) that found:
+Built from a 30-day review of one developer's Claude Code sessions across Unreal, Unity, web and Android work, which found:
 - 94 resume prompts and 47 "where are we" prompts
 - 95 unreal-mcp failures
 - 42 Unity pipeline timeouts
@@ -64,14 +64,14 @@ Fix mode: it blocks calls that cannot work and adds missing launch flags. It nev
 Notes on the guard:
 - Every rewrite adds a note the model reads after the tool result, so it is never silent. A toast tells you as well.
 - Commandlets (`UnrealEditor-Cmd`, `-run=`, `-nullrhi`, `-game`) are never touched.
-- The low-VRAM set comes from your earlier TMS sessions (`Config/Harness/EditorLaunch.json` `lowPerfExecCmds`).
-- It uses `-ini:` overrides instead of `-ExecCmds="…"` because the override form has no spaces or quotes, so Git Bash and PowerShell pass it through intact. Verified with a UE 5.8 commandlet, which read back MaxFPS 30, ScreenPercentage 50, PoolSize 768, Shadow 0 and Texture 1 (`runs/2026-10-02-cockpit-guard-mod/receipts/ue-ini-override-check.txt`).
+- The built-in low-VRAM set caps the frame rate at 30, halves the screen percentage, shrinks the texture pool to 768 MB and drops the scalability groups to low. Replace it with `lowVramCvars`.
+- It uses `-ini:` overrides instead of `-ExecCmds="…"` because the override form has no spaces or quotes, so Git Bash and PowerShell pass it through intact. Verified with a UE 5.8 commandlet, which read back MaxFPS 30, ScreenPercentage 50, PoolSize 768, Shadow 0 and Texture 1.
 
 ## Load it
 
 ```bash
 # one session
-claude --plugin-dir C:\Projects\bws.mods.claude-code\bws-cockpit
+claude --plugin-dir path/to/bws-cockpit
 ```
 
 To load it in every session, add the path to `CLAUDE_CODE_PLUGIN_DIRS` in the `env` block of `~/.claude/settings.json`. Or add this repo as a directory marketplace and install it.
@@ -98,10 +98,10 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.context`, `command.run` (cockpit, resume-run), `ui.render` (AbovePrompt), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
-| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices` |
-| Network | GET to the project's unreal-mcp URL (localhost) |
-| Files | reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md` and `.mcp.json` |
+| Hooks | `session.start`, `turn.complete`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
+| Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
+| Files | reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
 | Prompts | `$.prompt.submit` for resume |
 
 It writes no files.
@@ -110,19 +110,19 @@ It writes no files.
 
 Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 
-| Check | Result | Receipt |
-|---|---|---|
-| `claude plugin validate` | passed | `receipts/validate.txt` |
-| `claude plugin test` | 48/48 (parsing, command-position rules, every guard path, pass-through, band layout on terminal + desktop, Loop Watch parsing, alerts, pane layouts, stop confirm, resume, toasts, picker, answering needs) | `receipts/test.txt` |
-| Loop Watch live | headless `/loop-watch` in bws.game.tms printed the real Warden loop; the pane drew in an interactive session, docked at about 30 columns | `runs/2026-10-02-loop-watch/receipts/` |
-| Type-check vs the 2.1.287 declarations (tsc 5.9, strict) | clean | n/a |
-| Corpus replay: classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in echo, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored | `receipts/corpus-replay.md` |
-| Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched; a UE launch under GPU pressure gets the `-ini` overrides; a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started); adb blocked for an unauthorized device; a duplicate TMS editor blocked (pid 59468); `mcp__unreal-mcp__list_toolsets` passes against the live TMS editor on :3092 | `receipts/live-guard.txt` |
-| Interactive terminal band | drawn live with the run line, device row (UE, Unity, Blender, adb, VRAM with pressure) and buttons | `receipts/band.png` |
-| adb pass-through | with the tablet authorized, `adb shell echo` runs untouched | `receipts/live-guard.txt` (run 6) |
+| Check | Result |
+|---|---|
+| `claude plugin validate` | passed |
+| `claude plugin test` | 48/48: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, and Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker) |
+| Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
+| Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
+| Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched. A UE launch under GPU pressure gets the `-ini` overrides, and a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started). adb is blocked for an unauthorized device and passes once it's authorized. A second editor for an open `.uproject` is blocked. An unreal-mcp call passes against a live editor |
+| Loop Watch live | headless `/loop-watch` printed a real loop; the pane drew in an interactive session docked at about 30 columns |
+| Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
 
 Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.
 
 Untested:
 - the Desktop app
 - a live unreal-mcp block (port down)
+- a live running or paused loop (tests cover it)
