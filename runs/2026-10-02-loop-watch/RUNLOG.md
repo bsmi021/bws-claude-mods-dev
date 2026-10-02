@@ -43,7 +43,7 @@ Build mod #5 from the usage review: a pane that watches harness loops and flags 
 - Stop and resume against a real loop: deliberately not run.
 
 ## Follow-ups (parked)
-- Answer needs from inside the pane (an Input that runs `harness.py answer`).
+- ~~Answer needs from inside the pane~~ done, see below.
 - Loops outside the session's folder.
 
 ## Follow-up: answer needs from the pane (2026-10-02)
