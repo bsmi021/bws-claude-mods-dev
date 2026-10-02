@@ -1,0 +1,56 @@
+== step 1 (task) tail
+I stopped there as asked. `bye.txt` and `README.md` are still open. I didn't write a `RUNLOG.md`, since you only asked for the plan and task files. Git warned that LF will become CRLF on these files; that is the line-ending setting and harmless.
+
+The claude.ai connectors (AINRI, Atlassian, Excalidraw, Gmail, Google Calendar, Google Drive, Hugging Face, Mermaid Chart, Three.js 3D Viewer, Vercel, byterover-mcp) need authorizing in your claude.ai connector settings before they work. `copilot-bridge` failed to connect. None of them were needed for this task.
+
+== step 2: claude -p --continue /handoff
+bws-cockpit: Handoff written: runs/2026-10-02-demo/HANDOFF.md (467 words).
+Start the next session with this prompt:
+Read runs/2026-10-02-demo/HANDOFF.md first, then the RUNLOG.md, PLAN.md and TASKS.md beside it if they exist. Restate the finish line and the next step in two lines, check what is actually done against the receipts, then continue from the next step.
+
+== HANDOFF.md written
+# Handoff: Demo run, hello/bye/README files
+
+## Objective
+Complete the three-item finish line for the run in `runs/2026-10-02-demo/`. The user asked for the work one task at a time, and only the first task is finished.
+
+## Finish line
+- [x] hello.txt holds hi
+- [ ] bye.txt holds bye
+- [ ] README.md lists both files
+
+## Done so far
+- Created `runs/2026-10-02-demo/PLAN.md` with a "## Finish line" list of the three items above.
+- Created `runs/2026-10-02-demo/TASKS.md` with three matching `- [ ]` tasks. The first is now ticked `- [x] hello.txt holds hi`.
+- Created `runs/2026-10-02-demo/hello.txt` containing `hi`.
+- Committed all of it as `e98b47e` with the message "demo: hello".
+- I only saw the TASKS.md output after the tick, and it showed the expected state. I did not run a separate check of `hello.txt` contents beyond what the commit holds.
+
+## Next step
+Create `runs/2026-10-02-demo/bye.txt` containing `bye`. Then change `- [ ] bye.txt holds bye` to `- [x] bye.txt holds bye` in `runs/2026-10-02-demo/TASKS.md`. Commit. The user has not specified a commit message for this task, so choose a short one in the same style, such as "demo: bye". Then stop, unless the user says to continue to the README task.
+
+## Open items
+- bye.txt task: open (see Next step).
+- README.md task: open. It must list both `hello.txt` and `bye.txt`, so do it after bye.txt exists. The location is not stated. Placing it in `runs/2026-10-02-demo/` is the natural assumption, but confirm or state that assumption in your summary.
+- No `RUNLOG.md` exists. The user did not ask for one.
+- The user has not said whether to do the remaining tasks one at a time or together. The first request said "first task only", so default to one task per turn and stop after each.
+
+## Key files and commands
+- `runs/2026-10-02-demo/PLAN.md`
+- `runs/2026-10-02-demo/TASKS.md`
+- `runs/2026-10-02-demo/hello.txt`
+- `git log --oneline` to confirm `e98b47e` is present.
+- `printf 'bye\n' > runs/2026-10-02-demo/bye.txt` is an example way to create the file.
+
+## Decisions and constraints
+- Do only the task you are asked to do, tick it in `TASKS.md`, commit with git, then stop.
+- The first commit message was supplied by the user: "demo: hello".
+- Keep `PLAN.md` and `TASKS.md` wording identical to the finish-line items.
+
+## Watch out for
+- Git prints "LF will be replaced by CRLF" warnings on these files. This is a line-ending setting and harmless. Do not change the git config to silence it.
+- Several claude.ai connectors (AINRI, Atlassian, Gmail, Google Drive, Vercel and others) are unauthorized, and `copilot-bridge` failed to connect. None are needed for this work, so ignore them.
+- The previous session wrote files with `printf` from inside `runs/2026-10-02-demo`. Check your working directory before using relative paths, so files don't end up in the wrong folder.
+
+== git log in the scratch repo
+e98b47e demo: hello

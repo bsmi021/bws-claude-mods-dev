@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.4.0",
-  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane for harness loops, Finish-Line Guard, and a Project Locator (find_project tool, /projects, index-answered Globs).",
+  "version": "0.5.0",
+  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Finish-Line Guard, Project Locator, /handoff, and a worker model pin for subagents.",
   "author": {
     "name": "Brian"
   },
@@ -107,6 +107,18 @@
       "title": "Project roots",
       "description": "Folders that hold your projects, separated by ;",
       "default": "C:/Projects"
+    },
+    "workerModel": {
+      "type": "string",
+      "title": "Worker model for subagents",
+      "description": "Run subagents of the types in workerAgentTypes on this model when the Agent call names none (e.g. claude-sonnet-5-5). Empty: off. An explicit model in the call still wins.",
+      "default": ""
+    },
+    "workerAgentTypes": {
+      "type": "string",
+      "title": "Worker subagent types",
+      "description": "Subagent types the worker model applies to, comma-separated.",
+      "default": "general-purpose,claude"
     }
   }
 }

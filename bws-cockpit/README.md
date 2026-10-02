@@ -70,6 +70,20 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 - **Project list for home-folder sessions.** A session started in a home folder or a projects root gets the 40 newest projects in its first message.
 - **`/projects`** lists them; `/projects refresh` rebuilds the index.
 
+### /handoff
+- **`/handoff [focus]`** writes a handoff for a fresh agent into this session's run folder as `HANDOFF.md`. With no run folder written this session, it goes in a new `runs/<date>-handoff/`.
+  - It's written by the session's own model from this conversation (`$.model.fork`, served from the prompt cache).
+  - Sections: objective, finish line, what's done with receipts, the next step, open items, key files and commands, decisions and constraints, traps.
+  - Optional focus text steers it.
+  - An existing HANDOFF.md is kept as `HANDOFF.<yyyymmdd-hhmm>.md`.
+- **Resumed sessions:** in a resumed session, before its first request there is nothing to fork, so the handoff is built from the transcript rows instead.
+- **Start prompt:** the reply shows a short start prompt for the next session, and puts it on the clipboard where there is one.
+
+### Worker model pin
+- **`workerModel`** (e.g. `claude-sonnet-5-5`): subagents of the types in `workerAgentTypes` (default `general-purpose,claude`) run on it whenever the Agent call names no model.
+- **Left alone:** an explicit `model` in the call still wins, for the complex task. Forks always inherit, and other types (Explore, Plan, plugin agents with their own model) are not touched.
+- **Off by default.** A toast names the model on each pinned spawn.
+
 ### Editor & Device Guard
 Fix mode: it blocks calls that cannot work and adds missing launch flags. It never approves anything.
 
@@ -122,16 +136,19 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `ownerName` | `the user` | What the guard calls you when it asks Claude to mark an item that needs you |
 | `projectLocator` | `true` | The Project Locator |
 | `projectRoots` | `C:/Projects` | Folders that hold your projects, separated by `;` |
+| `workerModel` | (empty: off) | Model for subagents whose Agent call names none |
+| `workerAgentTypes` | `general-purpose,claude` | Subagent types the worker model applies to |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects), `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
 | Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
 | Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
 | Prompts | `$.prompt.submit` for resume |
+| Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
 | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
 | Tools | registers `find_project` |
 
@@ -144,13 +161,15 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Check | Result |
 |---|---|
 | `claude plugin validate` | passed |
-| `claude plugin test` | 79/79: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
+| `claude plugin test` | 93/93: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
 | Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop |
 | Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
 | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
 | Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched. A UE launch under GPU pressure gets the `-ini` overrides, and a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started). adb is blocked for an unauthorized device and passes once it's authorized. A second editor for an open `.uproject` is blocked. An unreal-mcp call passes against a live editor |
 | Loop Watch live | headless `/loop-watch` printed a real loop; the pane drew in an interactive session docked at about 30 columns |
 | Project Locator live | `/projects refresh` from the home folder indexed 65 real projects (9 s including startup). A Glob for `**/*.uproject` over `C:\Projects` came back from the index in 4 ms with the 7 real `.uproject` files. The same Glob over the home folder was refused at once. `find_project` by name returned the folder, `.uproject` and harness loop |
+| /handoff live | After a headless task in a scratch repo, `claude -p --continue "/handoff"` wrote a 467-word HANDOFF.md through the resumed-session fallback, with the correct commit hash and next step |
+| Worker pin live | A parent on claude-opus-5-5 spawned three subagents: general-purpose with no model ran on claude-sonnet-5-5 (toast shown), Explore kept claude-opus-5-5, and an explicit `haiku` stayed on Haiku |
 | Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
 
 Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.

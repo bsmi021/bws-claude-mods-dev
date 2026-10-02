@@ -1,0 +1,18 @@
+PARENT MODEL claude-opus-5-5
+TOAST general-purpose subagent on claude-sonnet-5-5
+FINAL Agent 1 is running in the background. I'll start agent 2 once it finishes.
+PARENT MODEL claude-opus-5-5
+PARENT MODEL claude-opus-5-5
+PARENT MODEL claude-opus-5-5
+FINAL Agent 1 replied PONG. Agent 2 is still running; agent 3 starts once it finishes.
+FINAL Agents 1 and 2 are done. Agent 3, the Haiku one, is still running, and I'll report all three once it replies.
+FINAL All three agents ran one after another. The Haiku agent didn't follow its prompt.
+
+1. **general-purpose (default model):** replied `PONG`, as asked.
+2. **Explore (default model):** replied `PING`, as asked.
+3. **general-purpose (Haiku):** didn't reply `OK`. It said: "Ready. System reminders and instructions loaded. Understood Brian's work style, session structure, Windows/Git conventions, CodeGrap
+PARENT MODEL claude-opus-5-5
+FINAL 
+SPAWN subagent_type=general-purpose model_param=None -> subagent replies from ['claude-sonnet-5-5']
+SPAWN subagent_type=Explore model_param=None -> subagent replies from ['claude-opus-5-5']
+SPAWN subagent_type=general-purpose model_param=haiku -> subagent replies from ['claude-haiku-4-5-20251001']

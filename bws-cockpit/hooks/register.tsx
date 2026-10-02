@@ -41,6 +41,7 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
+import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
@@ -82,6 +83,7 @@ type Options = {
   loop: LoopLimits
   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
+  pin: { model: string; types: string[] }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -519,7 +521,57 @@ export const register: Register = (on, options) => {
         .map(s => toSlash(s.trim()))
         .filter(Boolean),
     },
+    pin: {
+      model: String(options.workerModel ?? '').trim(),
+      types: parseTypes(String(options.workerAgentTypes ?? 'general-purpose,claude')),
+    },
   }
+
+  // ---------- /handoff ----------
+
+  on('command.run', { command: 'handoff' }, async ($, e, next) => {
+    const cwd = await $.session.cwd()
+    const now = await $.clock.now()
+    const run = await readRunFolder($)
+    const { startedAt } = await $.session.usage()
+    const folder = run !== null && run.mtime >= startedAt ? run.folder : handoffFolder(now)
+    $.ui.toast(`handoff: writing ${folder}/HANDOFF.md`, { timeoutMs: 4000 })
+    const focus = e.args.trim()
+    let r = await $.model.fork({ prompt: handoffPrompt(folder, focus) })
+    // A resumed session has a transcript but nothing to fork until its first request: build from the rows instead.
+    if (!r.isAnswered && r.reason === 'nothing-to-fork') {
+      const rows = (await settle($.session.messages())) ?? []
+      const transcript = transcriptText(rows)
+      if (transcript.length === 0) return { text: 'No handoff written: there is nothing to hand off yet: this conversation has no messages.' }
+      r = await $.model.complete({ model: await $.session.model(), prompt: transcriptPrompt(transcript, folder, focus), maxTokens: 3000 })
+    }
+    if (!r.isAnswered) return { text: `No handoff written: the model call failed (${r.reason}).` }
+    const body = r.text.trim()
+    if (body.length === 0) return { text: 'No handoff written: the model returned an empty reply.' }
+    const path = joinPath(cwd, `${folder}/HANDOFF.md`)
+    const previous = await settle($.fs.read(path))
+    const kept = previous !== undefined ? keptName(now) : null
+    if (kept !== null) await $.fs.write(joinPath(cwd, `${folder}/${kept}`), previous ?? '')
+    await $.fs.write(path, `${body}\n`)
+    const start = startPrompt(folder)
+    const surfaces = await $.session.surfaces()
+    const copied = surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
+    return {
+      text:
+        `Handoff written: ${folder}/HANDOFF.md (${words(body)} words)` +
+        (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
+        `.\nStart the next session with this prompt${copied ? ' (copied to the clipboard)' : ''}:\n${start}`,
+    }
+  })
+
+  // ---------- worker model pin ----------
+
+  on('agent.spawn', async ($, e, next) => {
+    const model = pinnedModel(e, o.pin)
+    if (model === undefined) return next(e)
+    $.ui.toast(`${e.subagentType} subagent on ${model}`, { timeoutMs: 3000 })
+    return next({ ...e, model })
+  })
 
   // ---------- Project Locator ----------
 
@@ -616,6 +668,7 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'cockpit', description: 'Show the active run and editor/device status' })
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
+    await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy its start prompt', argumentHint: '[focus]' })
     if (o.projects.isOn) {
       await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })
       await $.tool.register({
