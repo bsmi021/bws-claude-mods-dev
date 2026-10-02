@@ -1,0 +1,2676 @@
+{
+ "Bash": [
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nfailed to create review: GraphQL: Review Can not approve your own pull request (addPullRequestReview)"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n<string>:13: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).\r\nTraceback (most recent call last):\r\n  File \"<string>\", line 9, in <module>\r\nKeyError: 'dat"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>Blocked: sleep 240 followed by: cd C:/Projects/animation.station-wph git status --porcelain grep -v \"review-phase2\\|review-load\\|_baseline\\|/inbox/\\|/locks/\\|vscode\\|ProjectSettings\\|Generated.meta\" head -20 echo \"--- .Every check ---\" grep -n \"\\.Every(\" Assets/AnimationStation/Editor/Facade/Inspector/CinematicSpecEditor.cs. To wait"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 7, in <module>\r\n  File \"C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\json\\__init__.py\", line 346, in loads\r\n    return _default_decoder.decode(s)\r\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Program Files\\WindowsApps"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 7, in <module>\r\nAttributeError: 'NoneType' object has no attribute 'get'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== filtered run 1: AGY's new tests ===\n  summary: {'total': 978, 'passed': 977, 'failed': 1, 'skipped': 0, 'inconclusive': 0}\r\n=== filtered run 2: AGY's new tests ===\nTraceback (most recent call last):\r\n  File \"<string>\", line 4, in <module>\r\nTypeError: 'NoneType' object is not subscriptable"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n/usr/bin/bash: -c: line 93: unexpected EOF while looking for matching `''"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 4, in <module>\r\nAttributeError: 'NoneType' object has no attribute 'get'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nAssets/AnimationStation/Editor/Compilation/CinematicCleanOperation.cs:17:        public IReadOnlyList<string> DeletedSceneObjects { get; }\nAssets/AnimationStation/Editor/Compilation/CinematicCleanOperation.cs:18:        public IReadOnlyList<string> DeletedAssetPaths { get; }\nAssets/AnimationStation/Editor/Compilation/CinematicCleanOpera"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n{\n  \"success\": false,\n  \"command\": \"unity command recompile\",\n  \"data\": null,\n  \"errors\": [\n    {\n      \"code\": \"COMMAND_FAILED\",\n      \"message\": \"Pipeline command 'recompile' timed out after 240000ms\"\n    }\n  ],\n  \"warnings\": []\n}\n\n=== console errors ===\nTraceback (most recent call last):\r\n  File \"<string>\", line 4, in <module>\r\nAttri"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== error ===\nTraceback (most recent call last):\r\n  File \"<string>\", line 4, in <module>\r\nAttributeError: 'NoneType' object has no attribute 'get'\r\n=== warning ===\nTraceback (most recent call last):\r\n  File \"<string>\", line 4, in <module>\r\nAttributeError: 'NoneType' object has no attribute 'get'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\nOLD:         | grep -vE '^Assets/AnimationStation/(Editor/(Inspection|Resolvers)(/|.meta)|Tests/)' \\\r\nNEW:         | grep -vE '^Assets/AnimationStation/(Editor/(Inspection|Resolvers)(/|\\.meta)|Tests/)' \\\\\r\n/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/6ae1779b-d87d-4b43-97f2-38884bc2ff80/scratchpad/watch-wpd.sh:"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 127\n88413a5 EBC_HANDOFF: a consequential message is unconfirmed until echoed back\n\n docs/handoff/EBC_HANDOFF.md | 20 ++++++++++++++++++++\n 1 file changed, 20 insertions(+)\n=== content ===\n+**A consequential message to an agent is UNCONFIRMED until that agent echoes\n+something back that could only be true if it arrived** (added 2026-09-02)"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 143\nCommand timed out after 2m 0s\n=== guard.ps1 line 47 region ===\nReport 'No vendor references in product sources' $hits\n\n# 3. Forbidden third-party dependencies (AGENTS.md standing invariant).\n# `(?<!has)RootMotion` rather than a bare `RootMotion`: Unity's OWN\n# AnimationClip.hasRootMotion contains the vendor name as a substring, so the"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nAS042ReviewerProbeTest.cs.txt\nREQ-AS-042-GATE-final.json\nREQ-AS-042-TEST-full-run.json\nassets-root-listing.txt\nchallenge-packet.md\ngit-status-at-gate.txt\nhash-baseline-pre-mutation.json\nlive-ground-truth-probe.json\nmutation-harness-report-FINAL.json\nmutation-harness-report-M1-M3-retry.json\nmutation-harness-report-M8.json\nmutation-harnes"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 143\nCommand timed out after 2m 0s\n=== per-ID census, ASR-DEP007..019, ALL paths, no head/-l ==="
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 5, in <module>\r\nAttributeError: 'list' object has no attribute 'get'\r\nTOP-LEVEL keys: list len 5"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nscript: \n\n=== git history of that file (was the hard-failure change real?) ==="
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\patch2.py\", line 39, in <module>\r\n    assert s.count(old4) == 1, s.count(old4)\r\n           ^^^^^^^^^^^^^^^^^^\r\nAssertionError: 0"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\nsed: can't read Assets/AnimationStation/Tests/Editor/CinematicSpecContractTest.cs: No such file or directory\n---- SpecProjectionFixtures 206-210 ----\nsed: can't read Assets/AnimationStation/Tests/Editor/SpecProjectionFixtures.cs: No such file or directory"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 13, in <module>\r\n  File \"C:\\Projects\\animation.station\\runs\\2026-09-02-wp-d-2783126b\\state_machine.py\", line 107, in sha256_file\r\n    with path.open(\"rb\") as handle:\r\n         ^^^^^^^^^\r\nAttributeError: 'str' object has no attribute 'open'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== probe source ===\n  DELETED\n\n=== gate lock ===\nGATE LOCK: free\n\n=== AS-042 artifacts (new since freeze?) ===\n6960 10:56:34 \n868 12:00:05 \n868 10:15:53 \n20765 11:50:25 \n6 11:41:24 \n255 10:00:58 \n31190 08:33:21 \n318 10:16:04 \n2815 11:51:07 \n2815 10:13:09 \n5313 08:44:21 \n8890 10:07:35 \n2223 09:56:29 \n993 10:07:29 \n11031 11:57:21 \n4512 1"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== does AS-042's packet have an 'Evidence requirements' section? ===\n0"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 5, in <module>\r\nKeyError: 'definition'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 6, in <module>\r\nKeyError: 'agent_id'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 126\nwarning: in the working copy of 'docs/BUILD_AND_GATE_RULES.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'scripts/ebc/check-mutation-chain.py', LF will be replaced by CRLF the next time Git touches it\n/usr/bin/bash: line 5: /mingw64/bin/git: Argument list too long"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== staged ===\nOn branch wpe-compiler-core\nnothing to commit, working tree clean"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"C:\\Projects\\animation.station\\runs\\2026-09-03-wp-i-da9735ab\\state_machine.py\", line 1806, in <module>\r\n    raise SystemExit(main())\r\n                     ^^^^^^\r\n  File \"C:\\Projects\\animation.station\\runs\\2026-09-03-wp-i-da9735ab\\state_machine.py\", line 1771, in main\r\n    result = {\"decision_i"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<stdin>\", line 12, in <module>\r\nAssertionError: ['                if (!present.Contains(expected))']"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nreview_clean ok\nTraceback (most recent call last):\r\n  File \"<string>\", line 4, in <module>\r\n  File \"C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\json\\__init__.py\", line 346, in loads\r\n    return _default_decoder.decode(s)\r\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Program F"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>Blocked: sleep 25 followed by: cat \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/81d92e38-b410-4cc1-be57-b3e356631408/tasks/b9a5211eu.output\" head -40. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep 2; done`). To wait for a command you started, use run_in_background: "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\nwrote worktree-veto\r\nusage: state_machine.py [-h]\r\n                        {init,task-lock,status,verify,report,task-add,task-revise,task-supersede,task-cancel,evidence-add,decision-add,authority-register,runlog-add,configure}\r\n                        ...\r\nstate_machine.py: error: argument command: invalid choice: 'C:/Projects/animation"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 4, in <module>\r\nKeyError: 'data'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 15, in <module>\r\nKeyError: 'data'\r\nrun                                     total  that test\r\npreflight-baseline-teststatus.json        946      0.81s\r\nwip-gate-1-teststatus.json                946      0.48s\r\ndiag-wedged-run-teststatus.json           971    111.11s\r\ndiag-focuse"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n  File \"<stdin>\", line 6\r\n    if '/Tests/' in root.replace('\\','/'): continue\r\n                                       ^\r\nSyntaxError: unterminated string literal (detected at line 6)"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nnon-ASCII chars present: Traceback (most recent call last):\r\n  File \"<stdin>\", line 4, in <module>\r\n  File \"C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\encodings\\cp1252.py\", line 19, in encode\r\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\r\n           ^^^^^"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nPASS  No banned file types/names in product folder (FND-007)\nPASS  No vendor references in product sources\nFAIL  No forbidden third-party dependencies\n      Assets\\AnimationStation\\Tests\\Editor\\AS042ReviewerProbeTest.cs:41: \"Assets/Kevin Iglesias/Human Animations/Animations/Female/Movement/Walk/RootMotion/HumanF@Walk01_Forward [RM].fbx\""
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n  File \"<stdin>\", line 12\r\n    names.append(os.path.join(dp,f).replace('\\','/'))\r\n                                                  ^\r\nSyntaxError: unterminated string literal (detected at line 12)"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\as040\\build_record.py\", line 470, in <module>\r\n    re.compile(rx)\r\n  File \"C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nls: cannot access 'runs/2026-09-02-wp-d-2783126b/artifacts/AS-040/': No such file or directory\n=== sha256 of each ===\n/usr/bin/bash: line 3: cd: runs/2026-09-02-wp-d-2783126b/artifacts/AS-040: No such file or directory"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n\u001b[31;1mClear-Item: \u001b[0mC:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\recompile.ps1:5\u001b[0m\r\n\u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m\r\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m   5 | \u001b[0m \u001b[36;1mCli @('--format','json','command','--project-path',$P,'refresh_assets\u001b[0m .\u001b[0m\r\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b["
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 143\nCommand timed out after 2m 0s\nPRE console errors=0 warnings=0"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nPASS  No banned file types/names in product folder (FND-007)\nPASS  No vendor references in product sources\nFAIL  No forbidden third-party dependencies\n      Assets\\AnimationStation\\Tests\\Editor\\AS042ReviewerProbeTest.cs:41: \"Assets/Kevin Iglesias/Human Animations/Animations/Female/Movement/Walk/RootMotion/HumanF@Walk01_Forward [RM].fbx\""
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n/usr/bin/bash: eval: line 6: syntax error near unexpected token `('\n/usr/bin/bash: eval: line 6: `powershell -File \"$cli\" -UnityArguments @('--format','json','status') 2>&1 | head -60'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== git ls-files for Resolvers dir ===\nAssets/AnimationStation/Editor/Resolvers/ActorRigVerification.cs\nAssets/AnimationStation/Editor/Resolvers/ActorRigVerification.cs.meta\nAssets/AnimationStation/Editor/Resolvers/AnimationBeatEvaluation.cs\nAssets/AnimationStation/Editor/Resolvers/AnimationBeatEvaluation.cs.meta\nAssets/AnimationStation"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n/usr/bin/bash: -c: line 85: unexpected EOF while looking for matching `''"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nC:\\Projects\\animation.station\\scripts\\ebc\\hash-baseline.ps1 : Cannot bind parameter 'Encoding'. Cannot convert value \r\n\"utf8NoBOM\" to type \"Microsoft.PowerShell.Commands.FileSystemCmdletProviderEncoding\". Error: \"Unable to match the \r\nidentifier name utf8NoBOM to a valid enumerator name. Specify one of the following enumerator names and"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n/usr/bin/bash: eval: line 7: unexpected EOF while looking for matching `\"'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n---"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nGATE LOCK: busy (held by author-as043, 2715s) -- waiting...\r\nGATE LOCK: busy (held by author-as043, 2735s) -- waiting...\r\nGATE LOCK: acquired by author-as044\r\n\n[exited with code 0]\n---current lock---\ncat: 'C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\unity-gate.lo"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n/usr/bin/bash: eval: line 5: unexpected EOF while looking for matching `\"'"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n   210 docs/handoff/EBC_HANDOFF.md\n   367 AGENTS.md\n    95 DECISIONS.jsonl\n   538 docs/plans/PLANS_ANIMSTATION_V1.md\nwc: docs/plans/PLANS_WPD.md: No such file or directory\n  1210 total"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\ntotal 4\ndrwxr-xr-x 1 bsmi0 197609 0 Sep  1 23:15 ./\ndrwxr-xr-x 1 bsmi0 197609 0 Sep  1 23:17 ../\n---AS-040 inbox---\nls: cannot access 'runs/2026-09-02-wp-d-2783126b/inbox/AS-040/': No such file or directory"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n3fe5107a3c073c779dd554a588d36fa8c954b1ca\n=== log -3 ===\n3fe5107 AS-043 rev 2, AS-044 rev 3: encode the SPEC MUSTs both contracts dropped\n121c1ce AS-044 AC revision (rev 2): stop AC-1 pre-deciding AC-6's question\nd2a54da WP-D round-2 corrections, run bootstrapped and locked\n=== status incl ignored in inbox ===\n?? runs/2026-09-02-wp-d-278"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 123\nAssets/AnimationStation/Editor/Adapters/ICaptureBackend.cs:130:    /// NFR-006 requires, so the interface is pipeline-agnostic and the assembly\nAssets/AnimationStation/Editor/Adapters/IRenderPipelineAdapter.cs:15:    /// (\"Package-specific APIs MUST be isolated behind adapters\") and NFR-006 is\nAssets/AnimationStation/Editor/Adapters/I"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>Blocked: sleep 30 followed by: echo \"waited 30s\". To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep 2; done`). To wait for a command you started, use run_in_background: true. Do not chain shorter sleeps to work around this block.</tool_use_error>"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\ngrep: Unmatched ) or \\)"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\ngrep: Unmatched ) or \\)"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n99 DECISIONS.jsonl\nDEC-067\r\n--- working tree status ---\n M Packages/manifest.json\n M Packages/packages-lock.json\n M ProjectSettings/ProjectSettings.asset\n?? Assets/AnimationStation/Editor/Resolvers.meta\n?? Assets/AnimationStation/Editor/Resolvers/\n?? Assets/AnimationStation/Tests/Editor/AssetResolverTest.cs\n?? Assets/AnimationStation/Te"
+  ]
+ ],
+ "Monitor": [
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>InputValidationError: Monitor failed due to the following issues:\nAn unexpected parameter `timeout` was provided\nAn unexpected parameter `until` was provided\n\nThis tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. Without the schema in your prompt, typed parameters (arrays, n"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nAn unexpected parameter `timeout` was provided</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nThe required parameter `description` is missing\n\nThis tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. Without the schema in your prompt, typed parameters (arrays, numbers, booleans) get emitted as strings and "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nThe required parameter `description` is missing\n\nThis tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. Without the schema in your prompt, typed parameters (arrays, numbers, booleans) get emitted as strings and "
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nThe parameter `description` type is expected as `string` but provided as `unknown`\n\nThis tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. Without the schema in your prompt, typed parameters (arrays, numbers, bo"
+  ],
+  [
+   "C--Projects-bws-portfolio--claude-worktrees-perf-chapter-1",
+   "This session is isolated in the worktree C:\\Projects\\bws.portfolio\\.claude\\worktrees\\perf-chapter-1, but this command runs node with a program that can start another program (repl) next to an operand, env value or input that is computed at runtime or not plain text inside a construct too complex to verify, so what it runs cannot be shown not to be "
+  ],
+  [
+   "C--Projects-bws-portfolio-fabricator",
+   "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nThe required parameter `description` is missing\n\nThis tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. Without the schema in your prompt, typed parameters (arrays, numbers, booleans) get emitted as strings and "
+  ],
+  [
+   "C--Projects-prototype-pit-manuever",
+   "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nThe parameter `description` type is expected as `string` but provided as `unknown`\n\nThis tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. Without the schema in your prompt, typed parameters (arrays, numbers, bo"
+  ]
+ ],
+ "Edit": [
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString:             Names.DiagnosticsFilter = \"diagnostics-filter\";</tool_use_error>"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString: ### 1. OPEN \u2014 \u00a79.4's `substitute` policy has no field to key on (AS-044)\n\n**This is a genuine contract gap, found while authoring this plan, and it\nchanges AS-044's shape.**\n\n\u00a79.4 requires: *\"The default policy SHALL be strict for named actors and props,\nand substitute only for generic ba"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString:                 \"description\": \"Fixture inventory golden test against the WP-B Smithy.unity scene, with expected counts reconciled against the independently derived live census already recorded in the WP-C run log (256 GameObjects, 89 renderers, 21 colliders, 7 anchors, 1 NavMeshSurface),"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString: - **`failing_assertion` is what makes RED mean anything**: `failed: 1` alone cannot\n  distinguish your mutation from an unrelated failure.</tool_use_error>"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString: Note there are now several Unity Editors running on this machine, including one\non `C:\\Projects\\animation.station-wpi` for the concurrent WP-I run. Matching the\nwrong one is a live hazard, not a hypothetical.</tool_use_error>"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString:     \"pathChar       = ? any character except \\\"/\\\" \\\":\\\" \\\"|\\\" \\\"\\\\\\\\\\\" ? ;\\n\"\n    \"extChar        = ? any character except \\\"/\\\" \\\":\\\" \\\"|\\\" \\\"\\\\\\\\\\\" \\\".\\\" ? ;\\n\"</tool_use_error>"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString:         [UnityTest]\n        public IEnumerator AddingToANonEmptyCollection_AlsoDefaultConstructs_ReplacingUnitysCopySemantics()\n        {\n            // The deliberate behaviour change, asserted rather than left implicit.\n            // Unity's array insert copies the LAST element's value"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>String to replace not found in file.\nString: `population.matches_run_total` is *assigned* `true` at\n`run-tier1-gate.ps1:254` on any `-TestFilter` run and fed straight into `pass`\nat line 272, so on a filtered run it is true by construction and carries no\ninformation. I verified those two lines in the script at HEAD rather than takin"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\TASKS.md, but you haven't granted it yet."
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "<tool_use_error>String to replace not found in file.\nString: _FIT_PATH = SCRIPTS + r\"it_params.json\"</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "EPERM: operation not permitted, rename 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioCombatTests.cpp.tmp.58416.4f2bcfaef39b' -> 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioCombatTests.cpp'"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "EPERM: operation not permitted, rename 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioAlrecTests.cpp.tmp.58416.7218634dedb2' -> 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioAlrecTests.cpp'"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "EPERM: operation not permitted, rename 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioSocialTests.cpp.tmp.58416.5a3672e88493' -> 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioSocialTests.cpp'"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "EPERM: operation not permitted, rename 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioSocialTests.cpp.tmp.58416.d20dfd40c267' -> 'C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\Tests\\Qualification\\TmsCharacterScenarioSocialTests.cpp'"
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "<tool_use_error>String to replace not found in file.\nString: RUNP = r\"C:\\Projectsws.game.axouns6-09-28-axo-blender-rig\\workake\"\nuns6-09-28-axo-blender-rig\\workake\"\n</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: - [~] T02 [BUILD] Implement exactly the approved spec: rules in C++ and data assets, Blueprints for glue and visuals only (TEC-03). Compile with Live Coding (Tools/Harness/editor.py compile); reflection or module changes go through editor.py restart. Content maps and assets are built by a"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: \t\t\tM.Position = E->GetActorLocation();</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: \t\t\tTestTrue(TEXT(\"an ineligible (dropped) opponent is never taken\"), ReacquireFromMemory(Member, Dropped.Snapshot(), Now, R, TieCm, Alrec) == Alrec);\n\t\t}</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString:                 text = line.decode(\"utf-8\", errors=\"replace\").rstrip(\"\n\")\n                if text.startswith(\"data:\"):\n                    data.append(text[5:].strip())\n                elif not text and data:\n                    msg = json.loads(\"\n\".join(data))</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: AC3 VERIFICATION: Clip count sums per pack\nTotal from CSV rows: 214\nActual total clips: 438\nTolerance (\u00b110%): 43.8\nWithin tolerance: False\n(note: Edit also tried swapping \\uXXXX escapes and their characters; neither form matched, so the mismatch is likely elsewhere in old_string. Re-read "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString:     # Scan Synty-site packs (skip if already in Asset Store)\n    print(\"Scanning Synty-site packages...\", file=sys.stderr)\n    for pack_stem in SYNTY_PACKS:\n        if pack_stem.lower() in seen_packs:\n            print(f\"  {pack_stem} (skipped, using Asset Store version)\", file=sys.stderr"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: def is_character(path_str):\n    \"\"\"Check if path matches character criteria.\"\"\"\n    path_lower = path_str.lower()\n    \n    # Check for /Characters/ in path\n    if \"/characters/\" in path_lower:\n        return True\n    \n    # Check file extension\n    if not path_lower.endswith((\".prefab\", \""
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: def classify_asset(name, source):\n    \"\"\"Classify an asset based on its name and source.\"\"\"\n    lower_name = name.lower()\n    \n    # Music\n    if any(x in lower_name for x in ['music', 'ambient', 'battle', 'epic', 'orchestral', 'soundtrack', 'bgm']):\n        return 'music', 'n.a.'\n    \n  "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString:     # Generate MD output (max 25 lines)\n    md_content = []\n    for pack_name in sorted(MY_PACKS):\n        if pack_name not in movesets:\n            continue\n        \n        # Count total clips\n        total_clips = sum(len(clips) for clips in movesets[pack_name].values())\n        \n     "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: def get_picks_spec():\n    \"\"\"Return list of pick specifications\"\"\"\n    return [\n        # Archetypes\n        (\"Archetype\", \"R-KNIGHT\", \"Risen Knight, sword + shield\", \n         \"Explosive Knight Warrior Mecanim Animation Pack\", \"sword_shield\"),\n        (\"Archetype\", \"L-MANATARMS\", \"Man-at"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: def load_clips_csv():\n    \"\"\"Load clips database as set of (pack, file, clip)\"\"\"\n    clips = set()\n    clips_file = WORK_DIR / \"clips.csv\"\n    \n    if clips_file.exists():\n        with open(clips_file, \"r\", encoding=\"utf-8\") as f:\n            reader = csv.DictReader(f)\n            for row"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: def load_clips_by_name():\n    \"\"\"Load clips indexed by (clip_name) to find file paths\"\"\"\n    clips_by_name = {}  # clip_name -> [(pack, file, clip)]\n    \n    clips_file = WORK_DIR / \"clips.csv\"\n    if clips_file.exists():\n        with open(clips_file, \"r\", encoding=\"utf-8\") as f:\n        "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString:     header = ['group', 'need_id', 'need', 'pick_pack', 'pick_file', 'pick_clip', \n              'variant', 'alternates', 'confidence', 'notes']\n    \n    with open(output_path, 'w', newline='') as f:\n        writer = csv.DictWriter(f, fieldnames=header)\n        writer.writeheader()\n       "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString:     # R-BRACED: 2-handed moveset (idle, walk, light chain, heavy overhead, hit, death)\n    # Default: Explosive 2-Handed Warrior\n    # Use RPG Character Mecanim for 2-handed\n    file, clip = find_clip_in_pack(pack_index, '2-Handed Warrior Mecanim Animation Pack', 'Idle')\n    if clip:\n    "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString: def find_clip_in_pack(pack_index, pack_name, search_terms):\n    \"\"\"Find first clip matching search terms in a pack.\"\"\"\n    if pack_name not in pack_index or not pack_index[pack_name]:\n        return None, None\n    \n    search_terms_lower = [t.lower() for t in (search_terms if isinstance(s"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>String to replace not found in file.\nString:     # F-CROW: Crow on graves\n    file, clip = find_clip_in_pack(pack_index, 'BIRDS PACK', 'Crow')\n    if clip:\n        picks.append(make_pick(\n            'Fauna', 'F-CROW', 'Crow on graves: ground idle / eat / hop / walk; takeoff; fly; landing',\n            'BIRDS PACK', file, clip,\n    "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>No changes to make: old_string and new_string are exactly the same.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   "<tool_use_error>String to replace not found in file.\nString:         /// <summary>Upper-body override layer: an empty rest state and one state per action trigger, each returning to rest.</summary></tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-motion-library",
+   "<tool_use_error>String to replace not found in file.\nString:       :where(:root:not(.m-reduce):not(.m-no-timeline)) .m-read[data-m-split] > .m-w {\n        animation: m-read-w linear;\n        animation-timeline: view();</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio--claude-worktrees-perf-chapter-1",
+   "<tool_use_error>String to replace not found in file.\nString:     draw(advect, dye.write, {\n      velocity: velocity.read.texture,\n      source: dye.read.texture,\n      dt,\n      decay: Math.exp(-dt * 0.48),\n    });\n    dye.swap();\n    paint();\n    // Keep simulating only while a wake can still be visible; pointer input resumes the loop.\n    if (pen"
+  ],
+  [
+   "C--Projects-bws-portfolio-fabricator",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio-fabricator",
+   "<tool_use_error>String to replace not found in file.\nString: /MotionVideo|<video/);</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio-fabricator",
+   "<tool_use_error>String to replace not found in file.\nString:   assert.doesNotMatch(work, /MotionVideo|<video/);</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "<tool_use_error>String to replace not found in file.\nString: window.bonePos = </tool_use_error>"
+  ],
+  [
+   "C--Projects-pil-agent-plugin-pil-agent-plugin",
+   "<tool_use_error>String to replace not found in file.\nString:     assert data.startswith(b\"PNG\n\n\")</tool_use_error>"
+  ],
+  [
+   "C--Projects-skiball-hoops",
+   "<tool_use_error>File does not exist. Note: your current working directory is C:\\Projects\\skiball.hoops.</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>String to replace not found in file.\nString: <code>Assets/Synty/</code> \u2014 <code>PolygonDarkFantasy/Models/Characters.fbx</code> (18 meshes, rigged,\n50 bones) and the <code>PolygonFantasyHeroCharacters</code> modular static parts.\n(note: Edit also tried swapping \\uXXXX escapes and their characters; neither form matched, so the mismat"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>String to replace not found in file.\nString:       that carry metres of translation <em>baked into the pose</em>: 1.51&nbsp;m and ~137\u00b0 of rotation in\n      <code>hit_react_back_01</code>, 7.93&nbsp;m in <code>hit_react_medium_01</code>. With\n(note: Edit also tried swapping \\uXXXX escapes and their characters; neither form matched, "
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>String to replace not found in file.\nString: probe_pairs.json'))]\" | tr -d '' | while read a b; do</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim--agents-skills",
+   "<tool_use_error>String to replace not found in file.\nString: ## M3 \u2014 `tms-heim-building-constraint-planner/SKILL.md:3-13`\n\nEnumeration and the 8-item negative list \u2192 one boundary sentence.\n\n```diff\n description: >\n   Route and diagnose canonical building-constraint work in C:\\Projects\\tms-heim.\n-  Use when a request involves building blueprint auth"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>String to replace not found in file.\nString: ```powershell\n.un_ue_import.ps1 -Script ueuild_sample_scene.py -Render\n```</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>String to replace not found in file.\nString:         a2=a.replace('\n','\n'); c2=c.replace('\n','\n')</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.\nString: main()</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>String to replace not found in file.\nString: | in | present \u2014 `UAlrecQueryComponent::InteractionTarget`: `InteractionRange=200` cm, `InteractionAngle=30\u00b0` camera cone, line-of-sight required, cached for `InteractionQueryInterval=.1` s, candidate rescan every `CandidateRefreshInterval=.5` s | in | Unreal centralizes selection; Unity "
+  ]
+ ],
+ "PowerShell": [
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nException: C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1:18\r\nLine |\r\n  18 |              throw \"The explicitly requested Unity CLI path does not e \u2026\r\n     |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | The explicitly requested Unity CLI path does not exist: editors"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\nusage: state_machine.py runlog-add [-h] [--run-dir RUN_DIR] --kind\r\n                                   {objective,activity,outcome,blocker}\r\n                                   --message MESSAGE\r\nstate_machine.py runlog-add: error: the following arguments are required: --kind, --message"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n{\"error\": \"TransitionError\", \"detail\": \"Only the assigned reviewer may record the clean review\"}"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nGATE LOCK: acquired by test-A\r\nGATE LOCK: held by test-A for -14399s (since 09/02/2026 12:13:21 UTC)\r\n--- age must now be a small POSITIVE number, not ~-14400 ---\r\n--- prove the STALE path fires (StaleSeconds=1, was unreachable before the fix) ---\r\nGATE LOCK: busy (held by test-A, -14399s) -- waiting...\r\nGATE LOCK: busy (held by test-A,"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\nConvertFrom-Json: \r\nLine |\r\n   6 |  \u2026 = (($r -join \"`n\") | ConvertFrom-Json).data.result | ConvertFrom-Json\r\n     |                                                         ~~~~~~~~~~~~~~~~\r\n     | Cannot bind argument to parameter 'InputObject' because it is null.\r\nstatus:   failed:"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\ntotal errors:"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n   Speed :           118,657,091 Bytes/sec.\r\n   Speed :             6,789.613 MegaBytes/min.\r\n   Ended : Thursday, September 3, 2026 12:33:09 PM\r\n\r\n\r\n\r\n   Speed :           512,955,609 Bytes/sec.\r\n   Speed :            29,351.555 MegaBytes/min.\r\n   Ended : Thursday, September 3, 2026 12:33:11 PM\r\n\r\n--- verify ---\r\nSynty : src=4696 dst=4"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nPASS  No banned file types/names in product folder (FND-007)\r\nPASS  No vendor references in product sources\r\nPASS  No forbidden third-party dependencies\r\nPASS  Product asmdefs are Editor-only\r\nPASS  Product asmdefs reference no dev/vendor assemblies\r\nFAIL  No hard-coded absolute paths in product code (NFR-011)\r\n      Assets\\AnimationSta"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTEST: EveryFailure_IsStructuredWithANonzeroCode_AndNothingEscapes\r\nMSG :   Expected: String containing \"\"success\":false\" |   But was:  \"{ |   \"schemaVersion\": \"1.0.0\", |   \"command\": \"\", |   \"correlationId\": \"82317455608b4ab9bb31e37d46d9946a\", |   \"success\": false, |   \"status\": \"invalid_request\", |   \"cinematicId\": \"\", |   \"specHash\": "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nrun-mutation.ps1: Cannot bind argument to parameter 'Replace' because it is an empty string."
+  ],
+  [
+   "C--Projects-animation-station",
+   "Remove-Item on system path '//' is blocked. This path is protected from removal."
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\nsuccess: False  command: unity command cine\r\nexitCode: \r\nConvertFrom-Json: \r\nLine |\r\n  11 |  ($res.envelope | ConvertFrom-Json -AsHashtable) | ForEach-Object { \"e \u2026\r\n     |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Cannot bind argument to parameter 'InputObject' because it is null."
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\"checks\":{\"recompile\":{\"completed\":true,\"f"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Remove-Item on system path ''C:\\Program' is blocked. This path is protected from removal."
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nTraceback (most recent call last):\r\n  File \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\8fd5658e-d6e9-46e4-a29b-6d193cba9b46\\scratchpad\\revise-as082.py\", line 25, in <module>\r\n    existing = list(current[\"acceptance_criteria\"])\r\n                    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\r\nKeyError: 'acceptance_criteria"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n1 tandem_assigned AS-080 \r\n2 evidence_submitted AS-080 author-as080\r\n3 review_clean AS-080 reviewer-as080\r\n4 lead_validated AS-080 lead-wph\r\n5 tandem_assigned AS-081A \r\n--- lock ---\r\nGATE LOCK: free  (C:\\Projects\\animation.station-wph\\unity-gate.lock)\r\n--- artifacts AS-081A ---"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nAS-081C revision: 2 | evidence events: 0\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\8fd5658e-d6e9-46e4-a29b-6d193cba9b46\\scratchpad\\revise-as081c-b.py\", line 27, in <module>\r\n    existing = list(current[\"definition\"][\"acceptance_criteria\"])\r\n                    ~~~"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 2\n=== LEDGER TAIL ===\r\n9 tandem_assigned AS-081B \r\n10 evidence_submitted AS-081B sha256:273fe3d2448bedf266621557181bf9fad721634ebed8daa0b268cc1f95bacf39\r\n=== VERIFY ===\r\n{\r\n  \"mismatches\": {},\r\n  \"valid\": true\r\n}\r\n=== MUTATION CHAIN (lead re-run) ===\r\nno mutation-evidence.json at runs/2026-09-03-wp-h-a1319c85\\artifacts\\AS-081B\\mutation-ev"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n=== cancel the orphaned run ===\r\n\r\n  \"success\": false,\r\n  \"errors\": [\r\n=== release the dead holder's lock (author is stopped) ===\r\n{\"holder\":\"author-as082\",\"acquired_utc\":\"2026-09-04T00:22:06Z\",\"acquiring_shell_pid_NOT_LIVENESS\":47808}\r\nlock removed\r\nGATE LOCK: free  (C:\\Projects\\animation.station-wph\\unity-gate.lock)"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n=== product/test files modified between 23:59 and 00:20 UTC ===\r\n\r\nUTC      File\r\n---      ----\r\n00:04:25 Editor\\Facade\\CinematicsFacade.cs\r\n00:05:20 Editor\\Gui\\AnimationStation.Cinematics.Gui.asmdef\r\n=== test_status now ==="
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n=== editor_status ===\r\n\r\n  \"command\": \"unity command editor_status\",\r\n=== process health (CPU should move if it is working) ===\r\npid 49340 GONE"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Compilation Failed\\n  'AnimationClip' does not contain a definition for 'hasRootMotion' and no accessible extension method 'hasRootMotion' accepting a first argument of type 'AnimationClip"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Pipeline server returned 400 Bad Request: Internal Server Error. Main thread operation timed out after 60ms\"\r\n    }\r\n  ],\r\n  \"warnings\": []\r\n}"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Compilation Failed\\n  Argument 1: cannot convert from 'string' to 'UnityEngine.Object' (line 10, col 71)\\n  The type or namespace name 'GUID' does not exist in the namespace 'UnityEditor' "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== M2_BandRuleViolated ===\r\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n[1/8] pipeline"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== M2_BandRuleViolated ===\r\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n[1/8] pipeline"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\nWrote C:\\Projects\\animation.station\\runs\\20"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Compilation Failed\\n  'AnimationClip' does not contain a definition for 'hasRootMotion' and no accessible extension method 'hasRootMotion' accepting a first argument of type 'AnimationClip"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Pipeline server returned 400 Bad Request: Internal Server Error. Main thread operation timed out after 60ms\"\r\n    }\r\n  ],\r\n  \"warnings\": []\r\n}"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Compilation Failed\\n  Argument 1: cannot convert from 'string' to 'UnityEngine.Object' (line 10, col 71)\\n  The type or namespace name 'GUID' does not exist in the namespace 'UnityEditor' "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== M2_BandRuleViolated ===\r\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n[1/8] pipeline"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n=== M2_BandRuleViolated ===\r\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n[1/8] pipeline"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\nWrote C:\\Projects\\animation.station\\runs\\20"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n---SUCCESS---"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Compilation Failed\\n  The type or namespace name 'AvatarBuilder' does not exist in the namespace 'UnityEditor.Animations' (are you missing an assembly reference?) (line 3, col 17)\\n  Unrea"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Compilation Failed\\n  The type or namespace name 'AvatarBuilder' does not exist in the namespace 'UnityEditor' (are you missing an assembly reference?) (line 3, col 17)\\n  Unreachable code"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nC:\\Projects\\animation.station\\scripts\\decisions\\append-decision.ps1 : Cannot bind parameter 'Encoding'. Cannot convert value \"utf8NoBOM\" to type \"Microsoft.PowerShell.Commands.FileSystemCmdletProviderEncoding\". Error: \"Unable to match the identifier name utf8NoBOM to \r\na valid enumerator name. Specify one of the following enumerator nam"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] console logs (error, warning)\r\n[6/8] list_tests (enumerated EditMode population)\r\n[7/8] run_tests --mode editor\r\n[8/8] scripts/guard.ps1\r\n{\r\n  \"checks\": {\r\n    \"recompile\": {\r\n     "
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 6\n{\r\n  \"success\": false,\r\n  \"command\": \"unity command eval\",\r\n  \"data\": null,\r\n  \"errors\": [\r\n    {\r\n      \"code\": \"COMMAND_FAILED\",\r\n      \"message\": \"Compilation Failed\\n  'AssetResolver' is inaccessible due to its protection level (line 1, col 55)\\n  Unreachable code detected (line 9, col 12)\"\r\n    }\r\n  ],\r\n  \"warnings\": []\r\n}"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\nParserError: C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\run_mutation.ps1:25\r\nLine |\r\n  25 |      throw \"$MutationId: Find text not present in $TargetFile -- canno \u2026\r\n     |             ~~~~~~~~~~~~\r\n     | Variable reference is not valid. ':' was not followed by"
+  ],
+  [
+   "C--Projects-animation-station",
+   "Exit code 1\n[M1] baseline sha256: d6f9555fb9119a2eb2681e791f6b0427e30a90d282a2906b9be45241b8c60b8b\r\n[M1] mutated sha256: 05bd5e274b4e0208f6dcf6f71ac6925d0d14d072e6313b498ed8b3d75e7e804e\r\n[1/8] pipeline list (reachability preflight)\r\n[2/8] clear_console\r\n[3/8] recompile\r\n[4/8] wait for editor idle (domain reload / asset refresh settle)\r\n[5/8] consol"
+  ]
+ ],
+ "TaskStop": [
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>Task bc637w3f7 is not running (status: completed)</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>Task bn4kxqh8h is not running (status: completed)</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>Missing required parameter: task_id</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>Task bc4hflc7o is not running (status: killed)</tool_use_error>"
+  ],
+  [
+   "C--Projects-skiball-hoops",
+   "<tool_use_error>Task b649s9vyj is not running (status: killed)</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>No task found with ID: world-streaming. Running teammates: adversary@session-43e25321, buildings@session-43e25321</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>No task found with ID: world-streaming [6b8b38]. Running teammates: adversary@session-43e25321</tool_use_error>"
+  ]
+ ],
+ "Write": [
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>Subagents should return findings as text, not write report files. Include this content in your final response instead.</tool_use_error>"
+  ],
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>Subagents should return findings as text, not write report files. Include this content in your final response instead.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\hello.txt, but you haven't granted it yet."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\hello.txt, but you haven't granted it yet."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\hello.txt, but you haven't granted it yet."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\hello.txt, but you haven't granted it yet."
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "<tool_use_error>Subagents should return findings as text, not write report files. Include this content in your final response instead.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "<tool_use_error>Subagents should return findings as text, not write report files. Include this content in your final response instead.</tool_use_error>"
+  ],
+  [
+   "C--Projects-harness-test",
+   "<tool_use_error>InputValidationError: Write failed due to the following issues:\nAn unexpected parameter `old_string` was provided\nAn unexpected parameter `new_string` was provided\nThe parameter `content` type is expected as `string` but provided as `unknown`</tool_use_error>"
+  ],
+  [
+   "C--Projects-pil-agent-plugin",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-skiball-hoops",
+   "<tool_use_error>InputValidationError: Write failed due to the following issue:\nAn unexpected parameter `description` was provided</tool_use_error>"
+  ],
+  [
+   "C--Projects-slop-bnd-exercise-1",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Subagents should return findings as text, not write report files. Include this content in your final response instead.</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>InputValidationError: Write failed due to the following issue:\nAn unexpected parameter `description` was provided</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>InputValidationError: Write failed due to the following issues:\nAn unexpected parameter `code` was provided\nThe parameter `content` type is expected as `string` but provided as `unknown`</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0",
+   "<tool_use_error>Error: No such tool available: Write. Write is disabled for this session, in subagents as well as here.</tool_use_error>"
+  ]
+ ],
+ "Read": [
+  [
+   "C--Projects-animation-station",
+   "<tool_use_error>InputValidationError: Read was called with input that could not be parsed as JSON.\nYou sent (first 139 of 139 bytes): {\"file_path\": \"C:\\\\Projects\\\\animation.station\\\\runs\\\\2026-09-02-wp-d-2783126b\\\\artifacts\\\\AS-043\\\\challenge-packet.md\", \"offset\": 166,171}\nCommon causes: unescaped backslashes in file paths (use / or \\\\), unescaped "
+  ],
+  [
+   "C--Projects-animation-station",
+   "File does not exist. Note: your current working directory is C:\\Projects\\animation.station."
+  ],
+  [
+   "C--Projects-animation-station",
+   "File does not exist. Note: your current working directory is C:\\Projects\\animation.station."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Unable to resize image \u2014 its pixels could not be decoded (the file may be damaged, or use an encoding Claude Code cannot read), and at 1600x2560px it is over the 2000x2000px limit, so it cannot be sent. Re-save it as a PNG or JPEG and try again."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.frisbee."
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.frisbee."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo\\runs\\2026-09-28-axo-blender-rig."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo\\runs\\2026-09-28-axo-blender-rig."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "<tool_use_error>InputValidationError: Read was called with input that could not be parsed as JSON.\nYou sent (first 94 of 94 bytes): {\"file_path\": \"C:\\\\Projects\\\\bws.game.axo\\\\tools\\\\axo\\\\verify_runtime.py\", \"offset\": 130, 235}\nCommon causes: unescaped backslashes in file paths (use / or \\\\), unescaped control characters, or truncated output. Retry "
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo\\runs\\2026-09-26-axo-core-loop-harness\\units\\2026-09-26-axo-core-loop-v0-integration."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo\\runs\\2026-09-26-axo-core-loop-harness\\units\\2026-09-26-axo-core-loop-v0-integration."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo\\runs\\2026-09-26-axo-core-loop-harness\\units\\2026-09-26-axo-core-loop-v0-integration."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo\\runs\\2026-09-28-axo-blender-rig."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.axo."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>InputValidationError: Read was called with input that could not be parsed as JSON.\nYou sent (first 119 of 119 bytes): {\"file_path\": \"C:\\\\Projects\\\\bws.game.tms\\\\Source\\\\TMS\\\\Public\\\\Combat\\\\TmsThreatTable.h\", \"offset\": 40, , \"limit\": 65}\nCommon causes: unescaped backslashes in file paths (use / or \\\\), unescaped control characters, "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms\\runs\\2026-09-25-tms-gdd-interview."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.web.pinkgill\\runs\\2026-09-28-axo-leg."
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.web.pinkgill\\runs\\2026-09-28-axo-eyes."
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.web.pinkgill."
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.web.pinkgill\\runs\\2026-09-28-axo-canonical-natural\\harness."
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.web.pinkgill."
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "[Tool call interrupted: the session ended before this call's result was recorded, so its outcome is unknown. Check whether it took effect before relying on it or running it again.]"
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "File does not exist. Note: your current working directory is C:\\Projects\\bws.web.pinkgill."
+  ],
+  [
+   "C--Projects-skiball-hoops",
+   "File does not exist. Note: your current working directory is C:\\Projects\\skiball.hoops\\Assets\\_Project\\Scripts."
+  ],
+  [
+   "C--Projects-street-war",
+   "File does not exist. Note: your current working directory is C:\\Projects\\street-war."
+  ],
+  [
+   "C--Projects-street-war",
+   "pdftoppm is not installed. Install poppler-utils (e.g. `brew install poppler` or `apt-get install poppler-utils`) to enable PDF page rendering."
+  ],
+  [
+   "C--Projects-street-war",
+   "pdftoppm is not installed. Install poppler-utils (e.g. `brew install poppler` or `apt-get install poppler-utils`) to enable PDF page rendering."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "File does not exist. Note: your current working directory is C:\\Projects\\tms-heim."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "File does not exist. Note: your current working directory is C:\\Projects\\tms-heim."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "File does not exist. Note: your current working directory is C:\\Projects\\tms-heim\\runs\\2026-09-29-berrit-kitbash\\scripts."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "File does not exist. Note: your current working directory is C:\\Projects\\tms-heim\\runs\\2026-09-30-odram-kitbash\\scripts."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "File does not exist. Note: your current working directory is C:\\Projects\\tms-heim."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "File does not exist. Note: your current working directory is C:\\Projects\\tms-heim."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "File has an image extension but its content is not a valid PNG/JPEG/GIF/WebP. Detected: unrecognized bytes (hex: 76 2f 31 01 02 00 00 00). This usually means a download saved an error/login page instead of the image. Use `file \"C:\\Projects\\tmsUnreal\\Tools\\SyntyPort\\renders\\pieces_persp.png\"` to confirm, or read it as text with Bash (e.g. `head -c 5"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "File does not exist. Note: your current working directory is C:\\Projects\\tmsUnreal."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "pdftoppm is not installed. Install poppler-utils (e.g. `brew install poppler` or `apt-get install poppler-utils`) to enable PDF page rendering."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "pdftoppm is not installed. Install poppler-utils (e.g. `brew install poppler` or `apt-get install poppler-utils`) to enable PDF page rendering."
+  ]
+ ],
+ "AskUserQuestion": [
+  [
+   "C--Projects-bws-android-scribe",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said:\nThe user wants to clarify these questions.\n    This means they may have additional information, context or questions for you.\n    Take their response into "
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "[Tool call interrupted: the session ended before this call's result was recorded, so its outcome is unknown. Check whether it took effect before relying on it or running it again.]"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said:\nThe user wants to clarify these questions.\n    This means they may have additional information, context or questions for you.\n    Take their response into "
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "[Tool call interrupted: the session ended before this call's result was recorded, so its outcome is unknown. Check whether it took effect before relying on it or running it again.]"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   "[Tool call interrupted: the session ended before this call's result was recorded, so its outcome is unknown. Check whether it took effect before relying on it or running it again.]"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "[Tool call interrupted: the session ended before this call's result was recorded, so its outcome is unknown. Check whether it took effect before relying on it or running it again.]"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\n\nNote: The user's next message may contain a correction or preference. Pay close attention \u2014 if they explain what went wrong"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\n\nNote: The user's next message may contain a correction or preference. Pay close attention \u2014 if they explain what went wrong"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\n\nNote: The user's next message may contain a correction or preference. Pay close attention \u2014 if they explain what went wrong"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "[Request interrupted by user for tool use]"
+  ],
+  [
+   "C--Users-bsmi0--agents",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\n\nNote: The user's next message may contain a correction or preference. Pay close attention \u2014 if they explain what went wrong"
+  ],
+  [
+   "C--Users-bsmi0--agents",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\n\nNote: The user's next message may contain a correction or preference. Pay close attention \u2014 if they explain what went wrong"
+  ]
+ ],
+ "mcp__claude-in-chrome__navigate": [
+  [
+   "C--Projects-bws-android-scribe",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "This site is blocked by your organization\u2019s policy."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "The server-side auto mode classifier gave no verdict (error), so auto mode cannot determine the safety of mcp__claude-in-chrome__navigate. This is a transient failure of the check, not a judgment about the action: a later response may get a verdict. You may try the action again once, as-is. Repeated attempts are slowed by a growing delay, and after"
+  ],
+  [
+   "C--Projects-bws-annotations",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "The hidden tabs_context_mcp lookup did not respond within 8s. The Chrome extension may be slow to start, or the computer running that browser may be offline or asleep. Retry navigate, or call tabs_context_mcp explicitly to get a tabId first."
+  ],
+  [
+   "C--Projects-design-systems",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-prototype-pit-manuever",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "This site is blocked by your organization\u2019s policy."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ]
+ ],
+ "mcp__claude-in-chrome__computer": [
+  [
+   "C--Projects-bws-android-scribe",
+   "Couldn't determine which page this action targets. Re-read tabs_context_mcp and try again."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab 1013788733. The renderer may be frozen or unresponsive."
+  ],
+  [
+   "C--Projects-design-systems",
+   "Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab 1013797181. The renderer may be frozen or unresponsive."
+  ],
+  [
+   "C--Projects-design-systems",
+   "Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab 1013797181. The renderer may be frozen or unresponsive."
+  ],
+  [
+   "C--Projects-design-systems",
+   "Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab 1013797181. The renderer may be frozen or unresponsive."
+  ]
+ ],
+ "Skill": [
+  [
+   "C--Projects-bws-android-scribe",
+   "Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Self-Modification]. If you have other tasks that don't depend on this action, continue working on those. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "<tool_use_error>Unknown skill: figma-use</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "<tool_use_error>Unknown skill: unity-cli</tool_use_error>"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>Skill evaluate-instruction-stack is disabled for model invocation in skillOverrides settings</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "<tool_use_error>Unknown skill: new-primitive-skill-011ceeb7</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "<tool_use_error>Unknown skill: new-primitive-skill-2fe20a5a</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "<tool_use_error>Unknown skill: new-primitive-skill-048b1fdc</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "<tool_use_error>Unknown skill: new-primitive-skill-4b4b3c15</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "<tool_use_error>Unknown skill: new-primitive-skill-048b1fdc</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "<tool_use_error>Unknown skill: new-primitive-skill-2fe20a5a</tool_use_error>"
+  ],
+  [
+   "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "<tool_use_error>Unknown skill: new-primitive-skill-1d0bf418</tool_use_error>"
+  ]
+ ],
+ "mcp__claude_ai_Figma__get_figma_skill": [
+  [
+   "C--Projects-bws-android-scribe",
+   "The server-side auto mode classifier gave no verdict (error), so auto mode cannot determine the safety of mcp__claude_ai_Figma__get_figma_skill. This is a transient failure of the check, not a judgment about the action: a later response may get a verdict. You may try the action again once, as-is. Repeated attempts are slowed by a growing delay, and"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "The server-side auto mode classifier gave no verdict (error), so auto mode cannot determine the safety of mcp__claude_ai_Figma__get_figma_skill. This is a transient failure of the check, not a judgment about the action: a later response may get a verdict. You may try the action again once, as-is. Repeated attempts are slowed by a growing delay, and"
+  ]
+ ],
+ "mcp__claude_ai_Figma__use_figma": [
+  [
+   "C--Projects-bws-android-scribe",
+   "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\n\nNote: The user's next message may contain a correction or preference. Pay close attention \u2014 if they explain what went wrong"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "TypeError: cannot read property 'findAll' of null\n    at btn (PLUGIN_1_SOURCE:15:206)\n    at <anonymous> (PLUGIN_1_SOURCE:55:26)\n\nFigma Debug UUID: 56047bf8-7757-4234-a386-c7810e399e13"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Error: in set_textAutoResize: Cannot write to node with unloaded font \"Roboto Regular\". Please call figma.loadFontAsync({ family: \"Roboto\", style: \"Regular\" }) and await the returned promise first.\n    at set (<input>:75:11)\n    at <anonymous> (PLUGIN_1_SOURCE:2:123)\n\nFigma Debug UUID: 9f3e8cb8-c25f-48eb-b7ec-e88d1a04acec"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Error: in set_vectorPaths: Failed to convert path. Invalid command at S\n    at set (<input>:75:11)\n    at vec (PLUGIN_1_SOURCE:14:117)\n    at <anonymous> (PLUGIN_1_SOURCE:78:56)\n\nFigma Debug UUID: da891e49-f464-41b5-b70a-a761c370e3f0"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "TypeError: cannot read property 'findAll' of null\n    at recolor (PLUGIN_1_SOURCE:12:47)\n    at btn (PLUGIN_1_SOURCE:13:379)\n    at <anonymous> (PLUGIN_1_SOURCE:47:67)\n\nFigma Debug UUID: 49414cc8-fa60-4428-8a88-41cad8b85bce"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Error: in get_componentPropertyDefinitions: Can only get component property definitions of a component set or non-variant component\n    at get (<input>:52:11)\n    at owner (PLUGIN_3_SOURCE:15:196)\n    at <anonymous> (PLUGIN_3_SOURCE:23:20)\n\nFigma Debug UUID: 2b3b2819-1e0d-4826-b592-316f1d9e2ba3"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Error: in setPluginData: figma.setPluginData is not supported in this host runtime (only private plugins on web can use it). Use figma.setSharedPluginData(namespace, key, value) instead \u2014 shared plugin data works across plugins and host runtimes. Pick a stable namespace (>=3 chars, alphanumeric/_/.) unique to your integration, e.g. figma.getSharedP"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Error: in getMainComponentAsync: The node with id \"I31:238;4:89\" does not exist\n    at <anonymous> (PLUGIN_1_SOURCE:19:114)\n\nFigma Debug UUID: 26003bd8-d9d6-43c4-b8a6-ab81e6b35894"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Error: in findAll: \"findAll\" callback crashed: TypeError: cannot convert symbol to number\n    at <anonymous> (PLUGIN_1_SOURCE:9:28)\n\nFigma Debug UUID: 30c18d8d-7a49-405b-a9bf-975da96db5d3"
+  ]
+ ],
+ "mcp__claude-in-chrome__browser_batch": [
+  [
+   "C--Projects-bws-android-scribe",
+   "Tab 0 is not in Claude's tab group for this session. Tools can only target tabs inside the group. Call tabs_context_mcp to list valid tabs (or create the group with createIfEmpty: true), or tabs_create_mcp to add a tab."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "Can't interact with browser-internal or unparseable URLs. Navigate to a web page first."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "[computer:wait] Waited for 2 seconds\n[computer:scroll] Scrolled down by 5 ticks at (756, 500) [Image omitted due to error]\n\nactions[2] (computer:screenshot) failed: Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab 1013798390. The renderer may be frozen or unresponsive. (2 completed, 3 remaining)"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "The \"browser_batch\" tool did not respond in time. If Chrome is on another computer, that computer may be closed or asleep. The page may also be loading or unresponsive, or Chrome may be waiting for the user. Try a lighter operation (e.g., \"get_page_text\" instead of a screenshot) once. If that also gets no response, ask the user to check that the co"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "[navigate] Navigated to http://localhost:3000/work/agent-ownership\n[computer:wait] Waited for 4 seconds\n[computer:scroll] Scrolled down by 6 ticks at (756, 400) [Image omitted due to error]\n[computer:wait] Waited for 2 seconds\n\nactions[4] (computer:screenshot) failed: Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out af"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "[navigate] Navigated to http://localhost:3000/\n[computer:wait] Waited for 5 seconds\n[find] Found 1 matching element\n\n- ref_27: article \"The Coding Agent Is Not the Owner\" (article) - This is the article card element that directly contains the heading \"The Coding Agent Is Not the Owner\" and all related content (image, date, description, and link) th"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "[navigate] Navigated to http://localhost:3000/\n[computer:wait] Waited for 6 seconds\n[computer:scroll] Scrolled down by 21 ticks at (756, 400) [Image omitted due to error]\n[computer:wait] Waited for 4 seconds\n\nactions[4] (computer:screenshot) failed: Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab "
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "[navigate] Navigated to http://localhost:3000/work/agent-ownership\n[computer:wait] Waited for 6 seconds\n[computer:scroll] Scrolled down by 20 ticks at (756, 400) [Image omitted due to error]\n[computer:wait] Waited for 3 seconds\n\nactions[4] (computer:screenshot) failed: Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out a"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "[computer:scroll] Scrolled down by 5 ticks at (500, 400) [Image omitted due to error]\n[computer:wait] Waited for 3 seconds\n\nactions[2] (computer:screenshot) failed: Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab 1013788257. The renderer may be frozen or unresponsive. (2 completed, 0 remaining)"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "[computer:scroll] Scrolled down by 6 ticks at (640, 400) [Image omitted due to error]\n[computer:wait] Waited for 1 second\n\nactions[2] (computer:screenshot) failed: Error capturing screenshot: CDP sendCommand \"Page.captureScreenshot\" timed out after 30000ms on tab 1013788803. The renderer may be frozen or unresponsive. (2 completed, 9 remaining)"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "The \"browser_batch\" tool did not respond in time. The Chrome extension is connected but the page may be loading, unresponsive, or waiting on a permission prompt in the extension side panel. Try a lighter operation (e.g., \"get_page_text\" instead of a screenshot) or ask the user to check the page and any pending prompts."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "The \"browser_batch\" tool did not respond in time. The Chrome extension is connected but the page may be loading, unresponsive, or waiting on a permission prompt in the extension side panel. Try a lighter operation (e.g., \"get_page_text\" instead of a screenshot) or ask the user to check the page and any pending prompts."
+  ]
+ ],
+ "DesignSync": [
+  [
+   "C--Projects-bws-android-scribe",
+   "DesignSync needs design-system authorization. Run /design-login to authorize it with your claude.ai account \u2014 this works even when this session authenticates with an API key or a provider token."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "DesignSync needs design-system authorization. Run /design-login to authorize it with your claude.ai account \u2014 this works even when this session authenticates with an API key or a provider token."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   "DesignSync needs design-system authorization. Run /design-login to authorize it with your claude.ai account \u2014 this works even when this session authenticates with an API key or a provider token."
+  ]
+ ],
+ "mcp__claude_ai_Figma__get_screenshot": [
+  [
+   "C--Projects-bws-android-scribe",
+   "Input validation error: Invalid arguments for tool get_screenshot: nodeId: Node ID must be in the format \"123:456\" or \"123-456\""
+  ]
+ ],
+ "Grep": [
+  [
+   "C--Projects-bws-annotations",
+   "Path does not exist: C:\\wrtc\\win\\src\\pc\\enable_media.cc. Note: your current working directory is C:\\Projects\\bws.annotations."
+  ],
+  [
+   "C--Projects-bws-annotations",
+   "Path does not exist: C:\\wrtc\\win\\src\\media\\base\\video_adapter.h. Note: your current working directory is C:\\Projects\\bws.annotations."
+  ],
+  [
+   "C--Projects-bws-annotations",
+   "Path does not exist: C:\\Projects\\bws.annotations\\runs\\2026-09-11-usb-discovery\\logcat.txt. Note: your current working directory is C:\\Projects\\bws.annotations."
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   "Path does not exist: C:\\Projects\\tmsUnreal\\Source\\tmsUnreal\\NPC. Note: your current working directory is C:\\Projects\\bws.frisbee."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Search failed \u2014 ripgrep rejected the pattern, glob, or file type without searching:\nrg: regex parse error:\n    (?:ActionEnd|Removed|Resolved|Invalidated\" )|ProjectileResolved|HazardEnd)\n                                                                             ^\nerror: unopened group"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Path does not exist: C:\\Projects\\bws.game.tms\\Source\\TMS\\Private\\Combat\\TmsCombatSettings.cpp. Note: your current working directory is C:\\Projects\\bws.game.tms."
+  ],
+  [
+   "C--Projects-street-war",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-street-war",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-street-war",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-street-war",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Path does not exist: C:/Projects/tms-heim/Assets/Scripts/Tests. Note: your current working directory is C:\\Projects\\tms-heim."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Search failed \u2014 ripgrep rejected the pattern, glob, or file type without searching:\nrg: regex parse error:\n    (?:RecoveryService\\.|\\.Inspect\\(|\\.DiscardStaging\\(|RecoveryService()\n    ^\nerror: unclosed group"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Search failed \u2014 ripgrep rejected the pattern, glob, or file type without searching:\nrg: regex parse error:\n    (?:new BuildPlacementService|BuildPlacementService()\n    ^\nerror: unclosed group"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Path does not exist: C:/Projects/tms-heim/tools/ValidationGateManifest.psd1. Note: your current working directory is C:\\Projects\\tms-heim."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Path does not exist: C:/Projects/tmsUnreal/Source/tmsUnreal/Inventory/AlrecDroppedItem.h. Note: your current working directory is C:\\Projects\\tmsUnreal."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Search failed \u2014 ripgrep rejected the pattern, glob, or file type without searching:\nrg: regex parse error:\n    (?:SectionId(\\s*=\\s*FName\\(TEXT\\(|SectionId\\(TEXT\\()\n    ^\nerror: unclosed group"
+  ],
+  [
+   "C--Users-bsmi0",
+   "Path does not exist: C:\\Projects\\tmsUnreal\\tools\\run_python.ps1. Note: your current working directory is C:\\Users\\bsmi0."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ]
+ ],
+ "Glob": [
+  [
+   "C--Projects-bws-annotations",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Directory does not exist: C:\\Users\\bsmi0\\Documents\\Unreal Projects. Note: your current working directory is C:\\Users\\bsmi0."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ],
+  [
+   "C--Users-bsmi0",
+   "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+  ]
+ ],
+ "Artifact": [
+  [
+   "C--Projects-bws-game-axo",
+   "<tool_use_error>read with a file `path` takes only `url`, `path`, `paths`, `out_dir` \u2014 remove prompt.</tool_use_error>"
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "Deleting an Artifact needs the user's confirmation, and no one can answer it in this session, so nothing was deleted. Do not retry the delete in this session; the user can delete it themselves: in the Claude Code terminal `/artifacts` lists their Artifacts (press d to delete the selected one), or on claude.ai from the Artifact's own menu."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "Deleting an Artifact needs the user's confirmation, and no one can answer it in this session, so nothing was deleted. Do not retry the delete in this session; the user can delete it themselves: in the Claude Code terminal `/artifacts` lists their Artifacts (press d to delete the selected one), or on claude.ai from the Artifact's own menu."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "Deleting an Artifact needs the user's confirmation, and no one can answer it in this session, so nothing was deleted. Do not retry the delete in this session; the user can delete it themselves: in the Claude Code terminal `/artifacts` lists their Artifacts (press d to delete the selected one), or on claude.ai from the Artifact's own menu."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "files: \"swarm.bin\" (no contentType, and extension \".bin\" is not served) \u2014 nothing was published. Served types, by extension (a file named with one of these needs no contentType): pages .html; styles .css; scripts .js .mjs .wasm; data .json .map .geojson .webmanifest .txt .md .csv .xml; images .svg .png .jpg .jpeg .gif .webp .avif .ico; fonts .woff "
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "file read failed: no file is published at that path in the served version \u2014 list with `scope: \"files\"` shows the paths"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "file read failed: no file is published at that path in the served version \u2014 list with `scope: \"files\"` shows the paths"
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "files: \"project/components/index.d.ts\" (no contentType, and extension \".ts\" is not served) \u2014 nothing was published. Served types, by extension (a file named with one of these needs no contentType): pages .html; styles .css; scripts .js .mjs .wasm; data .json .map .geojson .webmanifest .txt .md .csv .xml; images .svg .png .jpg .jpeg .gif .webp .avif"
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "files: \"runs/2026-09-29-axo-motion-eval/desktop-02-read-00.png\" not found"
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   "files: \"runs/2026-09-30-axo-reactions/sleep-glow.webp\" not found"
+  ],
+  [
+   "C--Projects-design-systems",
+   "files: \"project/components/index.d.ts\" (no contentType, and extension \".ts\" is not served) \u2014 nothing was published. Served types, by extension (a file named with one of these needs no contentType): pages .html; styles .css; scripts .js .mjs .wasm; data .json .map .geojson .webmanifest .txt .md .csv .xml; images .svg .png .jpg .jpeg .gif .webp .avif"
+  ],
+  [
+   "C--Projects-design-systems",
+   "Nothing was published or removed: this publish touches files whose published content is not what you last saw, and sending your copy could discard content you have not read.\n\nAlready published, and not read as published or listed by you in this session:\n- \"precog.css\"\n  now: sha256 7505ab7f6df90a29402680151d6e76fba395367e9bba8d25f6aaa99dcf13d563, 1"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Deleting an Artifact needs the user's confirmation, and no one can answer it in this session, so nothing was deleted. Do not retry the delete in this session; the user can delete it themselves: in the Claude Code terminal `/artifacts` lists their Artifacts (press d to delete the selected one), or on claude.ai from the Artifact's own menu."
+  ]
+ ],
+ "mcp__blender__execute_blender_code": [
+  [
+   "C--Projects-bws-game-axo",
+   "Error executing tool execute_blender_code: Cannot connect to Blender at localhost:9878. Ensure Blender is running with the MCP addon enabled and the server started."
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   "Error executing tool execute_blender_code: Cannot connect to Blender at localhost:9878. Ensure Blender is running with the MCP addon enabled and the server started."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Error executing tool execute_blender_code: Cannot connect to Blender at localhost:9876. Ensure Blender is running with the MCP addon enabled and the server started."
+  ]
+ ],
+ "mcp__unreal-mcp__describe_toolset": [
+  [
+   "C--Projects-bws-game-axo",
+   "Toolset 'LiveCodingToolset' not found. Available toolsets: ToolsetRegistry.AgentSkillToolset, AutomationTestToolset.AutomationTestToolset, ConfigSettingsToolset.ConfigSettingsToolset, LiveCodingToolset.LiveCodingToolset, NiagaraToolsets.NiagaraToolset_Info, NiagaraToolsets.NiagaraToolset_Component, NiagaraToolsets.NiagaraToolset_Blueprint, NiagaraT"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Missing required parameter: toolset_name"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Missing required parameter: toolset_name"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Missing required parameter: toolset_name"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "MCP server \"unreal-mcp\" session expired"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Missing required parameter: toolset_name"
+  ]
+ ],
+ "ScheduleWakeup": [
+  [
+   "C--Projects-bws-game-axo",
+   "`prompt` is required when `stop` is not true."
+  ]
+ ],
+ "Agent": [
+  [
+   "C--Projects-bws-game-axo",
+   "Agent type 'noop' not found. Available agents: backend-api-specialist, claude, cs2-modding-tdd, Explore, feature-documenter, figma-requirements-extractor, general-purpose, initializer, msw-api-mocker, pil-agent-plugin:image-comparison-analyst, Plan, qa-specialist, readme-generator, requirements-analyst, rtk-query-api-developer, statusline-setup, ta"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Fork is not available inside a forked worker. Complete your task directly using your tools."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Fork is not available inside a forked worker. Complete your task directly using your tools."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Fork is not available inside a forked worker. Complete your task directly using your tools."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Fork is not available inside a forked worker. Complete your task directly using your tools."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Teammates cannot spawn other teammates \u2014 the team roster is flat. To spawn a subagent instead, omit the `name` parameter."
+  ]
+ ],
+ "mcp__unreal-mcp__call_tool": [
+  [
+   "C--Projects-bws-game-tms",
+   "Function \"get_properties\", input param \"instance\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"instance\":{\"type\":\"object\",\"title\":\"/Script/CoreUObject.Object\",\"description\":\"Represents a reference to a UObject or UClass.\",\"propertie"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Function \"get_properties\", input param \"instance\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"instance\":{\"type\":\"object\",\"title\":\"/Script/CoreUObject.Object\",\"description\":\"Represents a reference to a UObject or UClass.\",\"propertie"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "ECONNREFUSED: Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Function \"CaptureViewport\", input param \"captureTransform\" needs a default value.Function input params Json -\n{}"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Function \"CaptureViewport\", input param \"annotations\" needs a default value.Function input params Json -\n{\"captureTransform\":{\"location\":{\"x\":75201.899999999994,\"y\":85553,\"z\":44621},\"rotation\":{\"pitch\":-24.199999999999999,\"yaw\":-134.40000000000001,\"roll\":0},\"scale\":{\"x\":1,\"y\":1,\"z\":1}},\"bShowUI\":false}"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "The operation timed out."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "The operation timed out."
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "No automation tests matched filter 'StartsWith:TMS.Full.Maps.Route'"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Unknown tool describe"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "Function \"get_properties\", input param \"instance\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"instance\":{\"type\":\"object\",\"title\":\"/Script/CoreUObject.Object\",\"description\":\"Represents a reference to a UObject or UClass.\",\"propertie"
+  ],
+  [
+   "C--Projects-street-war",
+   "GetObjectProperties on '/Game/StreetWar/Data/AI/ST_SWEnemyCombat.ST_SWEnemyCombat' (StateTree): the following properties could not be read: Schema"
+  ],
+  [
+   "C--Projects-street-war",
+   "ECONNREFUSED: Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-street-war",
+   "ECONNREFUSED: Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-street-war",
+   "Unknown tool LoadLevel"
+  ],
+  [
+   "C--Projects-street-war",
+   "Function \"CaptureViewport\", input param \"annotations\" needs a default value.Function input params Json -\n{\"captureTransform\":{\"location\":{\"x\":-400,\"y\":-150,\"z\":145},\"rotation\":{\"pitch\":0,\"yaw\":0,\"roll\":0},\"scale\":{\"x\":1,\"y\":1,\"z\":1}}}"
+  ],
+  [
+   "C--Projects-street-war",
+   "Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unknown tool editor_toolset.toolsets.scene.SceneTools.get_current_level"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Tool 'help' not found"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unknown tool ToolsetRegistry.AgentSkillToolset.ListSkills"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Path \"c:\\projects\\tmsunreal\\tools\\syntyport\\export\\collision_wire.json\" is not within an allowed root. Allowed roots: ['c:\\\\projects\\\\tmsunreal\\\\content', 'c:\\\\projects\\\\tmsunreal\\\\saved', 'c:\\\\program files\\\\epic games\\\\ue_5.8\\\\engine\\\\plugins\\\\audioinsights\\\\content', 'c:\\\\program files\\\\epic games\\\\ue_5.8\\\\engine\\\\plugins\\\\audioinsightsruntime\\\\"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 11: RuntimeError: Script error in editor_toolset.toolsets.scene.SceneTools.find_actors:\nFunction \"find_actors\", input param \"tag\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"root\":{\"default\":null,\"type\":\"object\",\"title\":\"/Scri"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Function \"CaptureViewport\", input param \"annotations\" needs a default value.Function input params Json -\n{\"captureTransform\":{\"location\":{\"x\":-750,\"y\":-1450,\"z\":620},\"rotation\":{\"pitch\":-12,\"yaw\":42,\"roll\":0},\"scale\":{\"x\":1,\"y\":1,\"z\":1}},\"bShowUI\":false}"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 57: RuntimeError: Script error in editor_toolset.toolsets.scene.SceneTools.add_to_scene_from_class:\nFunction \"add_to_scene_from_class\", input param \"actor_type\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"actor_type\":{\"type\":\""
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 36: KeyError: \"'emitterSummaries' not found. Available keys: ['emitters', 'systemName', 'userVariables']\"\nTraceback (script frames only):\n  File \"<script>\", line 36, in run\n    for e in (summary.get(\"emitterSummaries\") or summary.get(\"emitters\") or [])\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 51: RuntimeError: Script error in NiagaraToolsets.NiagaraToolset_System.GetEmitterTopology:\nEmitter 'Smoke' not found in system 'NS_BrazierSmoke'. Available emitters: [Fountain]\nTraceback (script frames only):\n  File \"<script>\", line 51, in run\n    topo = execute_tool(\n           ^^^^^^^^^^^^^"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 78: KeyError: \"'ParticleUpdateScript' not found. Available keys: ['bEnabled', 'emitterName', 'emitterSpawnScript', 'emitterUpdateScript', 'particleSpawnScript', 'particleUpdateScript', 'rendererClasses', 'renderers', 'simTarget']\"\nTraceback (script frames only):\n  File \"<script>\", line 78, in run\n    out[\"update_order\"] = [str(m[\"moduleName\"])"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 30: RuntimeError: Script error in NiagaraToolsets.NiagaraToolset_System.ApplyStackIssueFix:\nCannot collect stack issues while a compile is in flight. Wait for compilation to complete (UNiagaraSystem::OnSystemCompiled) before calling.\nTraceback (script frames only):\n  File \"<script>\", line 30, in run\n    execute_tool(\"NiagaraToolsets.NiagaraToo"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "call_tool cannot dispatch to itself"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 11: RuntimeError: Script error in editor_toolset.toolsets.object.ObjectTools.get_properties:\nGetObjectProperties on '/Game/Synty/PolygonDarkFantasy/Maps/Sample_HollowVale.Sample_HollowVale:PersistentLevel.NiagaraActor_0.NiagaraComponent0' (NiagaraComponent): the following properties could not be read: bAutoDestroy, AgeUpdateMode\nTraceback (scr"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 26: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.find_assets:\nFunction \"find_assets\", input param \"folder_path\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"folder_path\":{\"type\":\"string\"},\"name\":{\"type"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "GetObjectProperties on '/Engine/EngineMaterials/OrientParticle.OrientParticle' (Texture2D): the following properties could not be read: BlendMode\nGetObjectProperties on '/Engine/EngineMaterials/OrientParticle.OrientParticle' (Texture2D): the following properties could not be read: ShadingModel\nGetObjectProperties on '/Engine/EngineMaterials/OrientP"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 80: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.save_assets:\nAsset does not exist: /Game/Synty/PolygonDarkFantasy/FX/M_Smoke\nTraceback (script frames only):\n  File \"<script>\", line 80, in run\n    out[\"saved\"] = execute_tool(\"editor_toolset.toolsets.asset.AssetTools.save_assets\",\n                   ^^^^^^^^^^^^^^^^^^^"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Asset does not exist: /Game/Synty/PolygonDarkFantasy/FX/M_Smoke.M_Smoke\nAsset does not exist: /Game/Synty/PolygonDarkFantasy/FX/M_Smoke"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 7: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.save_assets:\nAsset does not exist: /Game/Synty/PolygonDarkFantasy/FX/M_Smoke\nTraceback (script frames only):\n  File \"<script>\", line 7, in run\n    return {\"saved\": execute_tool(\n                     ^^^^^^^^^^^^^"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 15: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.save_assets:\nAsset does not exist: /Game/Synty/PolygonDarkFantasy/FX/M_SmokeSoot\nTraceback (script frames only):\n  File \"<script>\", line 15, in run\n    out[\"saved\"] = execute_tool(AT + \"save_assets\",\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Toolset 'ObjectTools' not found"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Function \"get_properties\", input param \"properties\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"instance\":{\"type\":\"object\",\"title\":\"/Script/CoreUObject.Object\",\"description\":\"Represents a reference to a UObject or UClass.\",\"propert"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Function \"ListTests\", input param \"nameFilter\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"nameFilter\":{\"type\":\"string\",\"description\":\"Optional substring filter applied to the test's full path.\"},\"tagFilter\":{\"type\":\"string\",\"descr"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Failed to capture any editor windows."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "GetObjectProperties on '/Game/Alrec/Animation/AM_Heavy.AM_Heavy' (AnimMontage): the following properties could not be read: Notifies"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Tool 'editor_toolset.toolsets.asset.AssetTools.find_assets' not found"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Function \"find_assets\", input params are required by the function input schema Json, but incoming function input params Json is empty.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"folder_path\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"asset_type\":{\"default\":null,\"type\":\"object\",\"title\":\"/Script/CoreUObject.Class\",\"description\":\"Represen"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Asset does not exist: /Game/Alrec/Animation/Clips/AN_Idle"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Asset does not exist: /Game/Alrec/Animation/Clips/AN_Idle"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Asset does not exist: /Game/Alrec/Animation/Clips/AN_Idle\nAsset does not exist: /Game/Alrec/Animation/Clips/AN_Idle\nAsset does not exist: /Game/Alrec/Animation/Clips/AN_Idle"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Asset does not exist: /Game/Alrec/Revision3/ValidationClips/V3_AN_Idle"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 4: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.get_dependencies:\nAsset does not exist: /Game/Alrec/Animation/ABP_Alrec\nTraceback (script frames only):\n  File \"<script>\", line 10, in run\n    d = deps(\"/Game/Alrec/Animation/ABP_Alrec\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<script>\", line 4, in deps\n "
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Asset does not exist: /Game/Alrec/Animation/ABP_Alrec"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "line 4: RuntimeError: Script error in editor_toolset.toolsets.object.ObjectTools.get_properties:\nFunction \"get_properties\", input param \"properties\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"instance\":{\"type\":\"object\",\"title\":\"/S"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Import of \"C:/Projects/tmsUnreal/SourceArt/Alrec/Animations/IdleConcept.fbx\" produced no assets. The file format may not be supported or the file may be invalid."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Function \"CaptureViewport\", input param \"captureTransform\" needs a default value.Function input params Json -\n{\"bShowUI\":false}"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Failed to capture any editor windows."
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Function \"RunTestsByFilter\", input param \"filterExpression\" is required by the function input schema Json, but is missing from the incoming function input params Json.\nFunction schema Json -\n{\"type\":\"object\",\"properties\":{\"filterExpression\":{\"type\":\"string\",\"description\":\"Filter expression as described above.\"}},\"required\":[\"filterExpression\"]}\nFun"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unable to connect. Is the computer able to access the url?"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unknown tool Find"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Unable to connect. Is the computer able to access the url?"
+  ]
+ ],
+ "mcp__unreal-mcp__list_toolsets": [
+  [
+   "C--Projects-bws-game-tms",
+   "empty reply from the TMS editor MCP server"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   "empty reply from the TMS editor MCP server"
+  ]
+ ],
+ "mcp__claude-in-chrome__get_page_text": [
+  [
+   "C--Projects-bws-game-tms",
+   "No text content found. Page may contain only images, videos, or canvas-based content."
+  ]
+ ],
+ "WebFetch": [
+  [
+   "C--Projects-bws-game-tms",
+   "getaddrinfo ENOTFOUND aigamedev.com"
+  ],
+  [
+   "C--Users-bsmi0--agents",
+   "unable to verify the first certificate"
+  ]
+ ],
+ "mcp__claude-in-chrome__javascript_tool": [
+  [
+   "C--Projects-bws-portfolio",
+   "Failed to execute JavaScript: CDP sendCommand \"Runtime.evaluate\" timed out after 45000ms on tab 1013788257. The renderer may be frozen or unresponsive."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "Failed to execute JavaScript: CDP sendCommand \"Runtime.evaluate\" timed out after 45000ms on tab 1013788733. The renderer may be frozen or unresponsive."
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   "Failed to execute JavaScript: CDP sendCommand \"Runtime.evaluate\" timed out after 45000ms on tab 1013788803. The renderer may be frozen or unresponsive."
+  ],
+  [
+   "C--Projects-bws-portfolio--claude-worktrees-perf-chapter-1",
+   "Failed to execute JavaScript: CDP sendCommand \"Runtime.evaluate\" timed out after 45000ms on tab 1013788861. The renderer may be frozen or unresponsive."
+  ],
+  [
+   "C--Projects-prototype-pit-manuever",
+   "Failed to execute JavaScript: {\"code\":-32603,\"message\":\"Internal error\"}"
+  ]
+ ],
+ "StructuredOutput": [
+  [
+   "C--Projects-bws-portfolio",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'reasoning'"
+  ],
+  [
+   "C--Projects-street-war",
+   "<tool_use_error>InputValidationError: StructuredOutput was called with input that could not be parsed as JSON.\nYou sent (first 200 of 24358 bytes): {\"area\": \"UE 5.8.2 automation test registration + AHUD canvas drawing\", \"findings\": [{\"claim\":\"IMPLEMENT_SIMPLE_AUTOMATION_TEST takes exactly 3 args and also emits a file-scope static instance in an a\nC"
+  ],
+  [
+   "C--Projects-street-war",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'reasoning'"
+  ],
+  [
+   "C--Projects-street-war",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'reasoning'"
+  ],
+  [
+   "C--Projects-street-war",
+   "Output does not match required schema: root: must have required property 'summary', root: must have required property 'key_facts', root: must have required property 'unverified'"
+  ],
+  [
+   "C--Projects-street-war",
+   "Output does not match required schema: root: must have required property 'summary', root: must have required property 'key_facts', root: must have required property 'unverified'"
+  ],
+  [
+   "C--Projects-street-war",
+   "Output does not match required schema: root: must have required property 'summary', root: must have required property 'key_facts', root: must have required property 'unverified'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'lane', root: must have required property 'summary', root: must have required property 'maturity', root: must have required property 'percent_complete', root: must have required property 'features', root: must have required property 'dead_code', root: must have required proper"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'summary', root: must have required property 'specs', root: must have required property 'doc_drift'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'lane', root: must have required property 'summary', root: must have required property 'maturity', root: must have required property 'percent_complete', root: must have required property 'features', root: must have required property 'dead_code', root: must have required proper"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'confidence', root: must have required property 'correction', root: must have required property 'checks_run'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'verdict'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Output does not match required schema: root: must have required property 'verdict'"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>InputValidationError: StructuredOutput was called with input that could not be parsed as JSON.\nYou sent (first 200 of 4946 bytes): {\"group\": \"Creature AI, spawning, companions\", \"summary\": \"Yes \u2014 this whole group already runs on a flat, presenter-less, non-streamed scene: it's not hypothetical, it's the shipped composition behind\nCo"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   "Output does not match required schema: root: must have required property 'refuted', root: must have required property 'reason'"
+  ]
+ ],
+ "bash": [
+  [
+   "C--Projects-pil-agent-plugin-pil-agent-plugin",
+   "<tool_use_error>Error: No such tool available: bash. Tool names are case-sensitive: call Bash instead.</tool_use_error>"
+  ]
+ ],
+ "mcp__blender__get_blendfile_summary_path_info": [
+  [
+   "C--Projects-tms-heim",
+   "Error executing tool get_blendfile_summary_path_info: Cannot connect to Blender at localhost:9876. Ensure Blender is running with the MCP addon enabled and the server started."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Error executing tool get_blendfile_summary_path_info: Cannot connect to Blender at localhost:9876. Ensure Blender is running with the MCP addon enabled and the server started."
+  ],
+  [
+   "C--Projects-tms-heim",
+   "Error executing tool get_blendfile_summary_path_info: Cannot connect to Blender at localhost:9876. Ensure Blender is running with the MCP addon enabled and the server started."
+  ]
+ ],
+ "components": [
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ],
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: components</tool_use_error>"
+  ]
+ ],
+ "order_constraints": [
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: order_constraints</tool_use_error>"
+  ]
+ ],
+ "blockers": [
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: blockers</tool_use_error>"
+  ]
+ ],
+ "minimal_test_reference": [
+  [
+   "C--Projects-tms-heim",
+   "<tool_use_error>Error: No such tool available: minimal_test_reference</tool_use_error>"
+  ]
+ ],
+ "SendMessage": [
+  [
+   "C--Projects-tmsUnreal",
+   "<tool_use_error>InputValidationError: SendMessage was called with input that could not be parsed as JSON.\nYou sent (first 106 of 106 bytes): {\"to\": \"npc-main\", \"message\": , \"notify_when_idle\": true, \"summary\": \"Pure idle subscription on npc-main\"}\nCommon causes: unescaped backslashes in file paths (use / or \\\\), unescaped control characters, or tru"
+  ]
+ ],
+ "mcp__unreal-engine__list_toolsets": [
+  [
+   "C--Projects-xwing-XvT",
+   "Unable to connect. Is the computer able to access the url?"
+  ]
+ ],
+ "mcp__unreal-engine__unreal": [
+  [
+   "C--Projects-xwing-XvT",
+   "Error [INVALID_ARGUMENT]: Invalid screenshot mode. Supported modes: editor_viewport, game_viewport, full_editor_window"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [SECURITY_VIOLATION]: Invalid or unsafe screenshot path: [path redacted]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 6, in <module>??    print(c.get_name(), c.get_relative_lo[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 5, in <module>??    print('loc', p.get_actor_location(), [TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [SECURITY_VIOLATION]: Invalid or unsafe file path: [path redacted]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 15, in <module>??    bb = m.get_bounding_box(); size = bb[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 17, in <module>??    ns.enabled = False; m.set_editor_pro[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 2, in <module>??    s = unreal.get_default_object(unreal.[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 2, in <module>??    s = unreal.EditorPerformanceSettings.[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 4, in <module>??    for a in unreal.GameplayStatics.get_a[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 2, in <module>??    unreal.GameMapsSettings.set_global_de[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 5, in <module>??    print('gm=%s pc=%s pawn=%s' % (gm.get[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 10, in <module>??    if pc: out.append('pawn=%s' % (pc.ge[TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 4, in <module>??    player = pc.get_pawn()??             [TRUNCATED]"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):??  File \"[path redacted]\", line 22, in <module>??    exec(compile(_user_code, r'..[path redacted]', 'exec'), _exec_globals)??  File \"..[path redacted]\", line 8, in <module>??    out.append('%s hull=%.0f[path redacted]%.0f laser=%[TRUNCATED]"
+  ]
+ ],
+ "TaskOutput": [
+  [
+   "C--Projects-xwing-XvT",
+   "<tool_use_error>No task found with ID: fbx-research@session-6d350544</tool_use_error>"
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   "<tool_use_error>No task found with ID: cammatch-research@session-6d350544</tool_use_error>"
+  ]
+ ],
+ "WebSearch": [
+  [
+   "C--Users-bsmi0",
+   "<tool_use_error>InputValidationError: WebSearch failed due to the following issue:\nAn unexpected parameter `parameter` was provided</tool_use_error>"
+  ]
+ ],
+ "Get-ChildItem": [
+  [
+   "C--Users-bsmi0--codex-worktrees-procedural-world-exit-harness-tmsUnreal",
+   "<tool_use_error>Error: No such tool available: Get-ChildItem</tool_use_error>"
+  ]
+ ]
+}

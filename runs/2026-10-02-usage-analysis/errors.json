@@ -1,0 +1,2725 @@
+{
+ "err_buckets": [
+  [
+   "other",
+   806
+  ],
+  [
+   "compile/build error",
+   451
+  ],
+  [
+   "file not found",
+   450
+  ],
+  [
+   "glob/grep timeout",
+   351
+  ],
+  [
+   "python error",
+   203
+  ],
+  [
+   "path quoting",
+   201
+  ],
+  [
+   "timeout/killed",
+   191
+  ],
+  [
+   "file locked/in use",
+   151
+  ],
+  [
+   "permission/denied",
+   57
+  ],
+  [
+   "edit mismatch",
+   56
+  ],
+  [
+   "exit code only",
+   39
+  ],
+  [
+   "command not found",
+   29
+  ],
+  [
+   "unreal editor",
+   23
+  ]
+ ],
+ "err_by_tool": [
+  [
+   [
+    "Bash",
+    "other"
+   ],
+   432
+  ],
+  [
+   [
+    "Glob",
+    "glob/grep timeout"
+   ],
+   301
+  ],
+  [
+   [
+    "Bash",
+    "compile/build error"
+   ],
+   299
+  ],
+  [
+   [
+    "Bash",
+    "file not found"
+   ],
+   289
+  ],
+  [
+   [
+    "Bash",
+    "path quoting"
+   ],
+   201
+  ],
+  [
+   [
+    "PowerShell",
+    "other"
+   ],
+   169
+  ],
+  [
+   [
+    "PowerShell",
+    "compile/build error"
+   ],
+   131
+  ],
+  [
+   [
+    "Bash",
+    "timeout/killed"
+   ],
+   118
+  ],
+  [
+   [
+    "Bash",
+    "file locked/in use"
+   ],
+   115
+  ],
+  [
+   [
+    "PowerShell",
+    "python error"
+   ],
+   114
+  ],
+  [
+   [
+    "Read",
+    "file not found"
+   ],
+   71
+  ],
+  [
+   [
+    "mcp__unreal-mcp__call_tool",
+    "other"
+   ],
+   54
+  ],
+  [
+   [
+    "Grep",
+    "glob/grep timeout"
+   ],
+   50
+  ],
+  [
+   [
+    "Edit",
+    "edit mismatch"
+   ],
+   46
+  ],
+  [
+   [
+    "PowerShell",
+    "timeout/killed"
+   ],
+   46
+  ],
+  [
+   [
+    "Glob",
+    "file not found"
+   ],
+   40
+  ],
+  [
+   [
+    "Bash",
+    "python error"
+   ],
+   36
+  ],
+  [
+   [
+    "PowerShell",
+    "file locked/in use"
+   ],
+   36
+  ],
+  [
+   [
+    "Bash",
+    "exit code only"
+   ],
+   31
+  ],
+  [
+   [
+    "Bash",
+    "permission/denied"
+   ],
+   29
+  ],
+  [
+   [
+    "PowerShell",
+    "file not found"
+   ],
+   27
+  ],
+  [
+   [
+    "StructuredOutput",
+    "other"
+   ],
+   21
+  ],
+  [
+   [
+    "PowerShell",
+    "command not found"
+   ],
+   17
+  ],
+  [
+   [
+    "Agent",
+    "other"
+   ],
+   17
+  ],
+  [
+   [
+    "Edit",
+    "other"
+   ],
+   16
+  ],
+  [
+   [
+    "Bash",
+    "unreal editor"
+   ],
+   14
+  ],
+  [
+   [
+    "components",
+    "python error"
+   ],
+   14
+  ],
+  [
+   [
+    "Artifact",
+    "other"
+   ],
+   13
+  ],
+  [
+   [
+    "Bash",
+    "command not found"
+   ],
+   12
+  ],
+  [
+   [
+    "mcp__claude-in-chrome__navigate",
+    "other"
+   ],
+   12
+  ],
+  [
+   [
+    "mcp__unreal-mcp__call_tool",
+    "file not found"
+   ],
+   12
+  ],
+  [
+   [
+    "mcp__unreal-engine__unreal",
+    "compile/build error"
+   ],
+   12
+  ],
+  [
+   [
+    "Write",
+    "edit mismatch"
+   ],
+   10
+  ],
+  [
+   [
+    "Skill",
+    "other"
+   ],
+   10
+  ],
+  [
+   [
+    "Grep",
+    "file not found"
+   ],
+   9
+  ],
+  [
+   [
+    "mcp__unreal-mcp__call_tool",
+    "compile/build error"
+   ],
+   9
+  ],
+  [
+   [
+    "Write",
+    "other"
+   ],
+   8
+  ],
+  [
+   [
+    "AskUserQuestion",
+    "permission/denied"
+   ],
+   8
+  ],
+  [
+   [
+    "Read",
+    "other"
+   ],
+   8
+  ],
+  [
+   [
+    "PowerShell",
+    "exit code only"
+   ],
+   8
+  ]
+ ],
+ "examples": {
+  "other": [
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && gh pr review 7 --repo bsmi021/animation.station --approve --body \"$(cat <<'EOF'\nVerified a8693a7 against",
+    "Exit code 1 failed to create review: GraphQL: Review Can not approve your own pull request (addPullRequestReview)"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station\nf=$(find . -name \"check_mutation_chain.py\" -not -path \"*/Library/*\" 2>/dev/null | head -1)\necho \"script: $f",
+    "Exit code 1 script: === git history of that file (was the hard-failure change real?) ==="
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$run = 'C:\\Projects\\animation.station\\runs\\2026-09-02-wp-d-2783126b'\npython \"$run\\state_machine.py\" evidence-add --event-file \"$run\\inbox\\AS",
+    "Exit code 2 {\"error\": \"TransitionError\", \"detail\": \"Only the assigned reviewer may record the clean review\"}"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && echo \"=== probe source ===\" && (ls Assets/AnimationStation/Tests/Editor/AS042ReviewerProbeTest.cs >/dev/",
+    "Exit code 1 === probe source === DELETED === gate lock === GATE LOCK: free === AS-042 artifacts (new since freeze?) === 6960 10:56:34 868 12:00:05 868 10:15:53 20765 11:50:25 6 11:41:24 255 10:00:58 31190 08:33:21 318 10"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && echo \"=== does AS-042's packet have an 'Evidence requirements' section? ===\" && grep -c -i \"evidence req",
+    "Exit code 1 === does AS-042's packet have an 'Evidence requirements' section? === 0"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station 2>/dev/null; git add scripts/ebc/check-mutation-chain.py docs/BUILD_AND_GATE_RULES.md docs/SCRIPT_INVENTORY",
+    "Exit code 126 warning: in the working copy of 'docs/BUILD_AND_GATE_RULES.md', LF will be replaced by CRLF the next time Git touches it warning: in the working copy of 'scripts/ebc/check-mutation-chain.py', LF will be rep"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station 2>/dev/null; echo \"=== staged ===\"; git diff --cached --name-only; git commit -q -F \"C:\\Users\\bsmi0\\AppData",
+    "Exit code 1 === staged === On branch wpe-compiler-core nothing to commit, working tree clean"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli='C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'; $P='C:\\Projects\\animation.station'\n& $cli -UnityArguments @('--f",
+    "Exit code 6 ConvertFrom-Json: Line | 6 | \u2026 = (($r -join \"`n\") | ConvertFrom-Json).data.result | ConvertFrom-Json | ~~~~~~~~~~~~~~~~ | Cannot bind argument to parameter 'InputObject' because it is null. status: failed:"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli='C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'; $P='C:\\Projects\\animation.station'\n$r = & $cli -UnityArguments @",
+    "Exit code 6 total errors:"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$src='C:\\Projects\\animation.station'; $dst='C:\\Projects\\animation.station-wpi'\nforeach ($d in 'Synty','Kevin Iglesias') {\n  robocopy \"$src\\A",
+    "Exit code 1 Speed : 118,657,091 Bytes/sec. Speed : 6,789.613 MegaBytes/min. Ended : Thursday, September 3, 2026 12:33:09 PM Speed : 512,955,609 Bytes/sec. Speed : 29,351.555 MegaBytes/min. Ended : Thursday, September 3, "
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& 'C:\\Projects\\animation.station-wpi\\scripts\\ebc\\run-tier1-gate.ps1' -TestFilter CommandHandlerTest 2>&1 | Select-Object -Last 32",
+    "Exit code 1 [1/8] pipeline list (reachability preflight) [2/8] clear_console [3/8] recompile [4/8] wait for editor idle (domain reload / asset refresh settle) [5/8] console logs (error, warning) [6/8] list_tests (enumera"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& 'C:\\Projects\\animation.station-wpi\\scripts\\guard.ps1' 2>&1 | Select-String -Pattern 'FAIL|GUARD' -Context 0,6",
+    "Exit code 1 PASS No banned file types/names in product folder (FND-007) PASS No vendor references in product sources PASS No forbidden third-party dependencies PASS Product asmdefs are Editor-only PASS Product asmdefs re"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& 'C:\\Projects\\animation.station-wpi\\scripts\\ebc\\run-tier1-gate.ps1' -TestFilter BridgeTransportTest 2>&1 | Select-Object -Last 26",
+    "Exit code 1 [1/8] pipeline list (reachability preflight) [2/8] clear_console [3/8] recompile [4/8] wait for editor idle (domain reload / asset refresh settle) [5/8] console logs (error, warning) [6/8] list_tests (enumera"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& 'C:\\Projects\\animation.station-wpi\\scripts\\ebc\\run-tier1-gate.ps1' -TestFilter BatchEntryPointTest 2>&1 | Select-Object -Last 18",
+    "Exit code 1 [1/8] pipeline list (reachability preflight) [2/8] clear_console [3/8] recompile [4/8] wait for editor idle (domain reload / asset refresh settle) [5/8] console logs (error, warning) [6/8] list_tests (enumera"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli='C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'; $P='C:\\Projects\\animation.station-wpi'\n$r = & $cli -UnityArgumen",
+    "Exit code 1 TEST: EveryFailure_IsStructuredWithANonzeroCode_AndNothingEscapes MSG : Expected: String containing \"\"success\":false\" | But was: \"{ | \"schemaVersion\": \"1.0.0\", | \"command\": \"\", | \"correlationId\": \"82317455608"
+   ]
+  ],
+  "compile/build error": [
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station-wph && python -c \"\nimport json,glob,os\nfiles = ['preflight-baseline','wip-gate-1','wip-gate-2','fixture-run",
+    "Exit code 1 <string>:13: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.f"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && python -c \"\nimport json,sys\nraw=open(r'C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-st",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 7, in <module> File \"C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\json\\__init__.py\", line 346, "
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && timeout 120 unity --format json command --project-path C:\\\\Projects\\\\animation.station-wph test_status 2",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 7, in <module> AttributeError: 'NoneType' object has no attribute 'get'"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && for i in 1 2; do echo \"=== filtered run $i: AGY's new tests ===\"; timeout 300 unity --format json comman",
+    "Exit code 1 === filtered run 1: AGY's new tests === summary: {'total': 978, 'passed': 977, 'failed': 1, 'skipped': 0, 'inconclusive': 0} === filtered run 2: AGY's new tests === Traceback (most recent call last): File \"<s"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && timeout 150 unity --format json command --project-path 'C:/Projects/animation.station-wph' --timeout 120",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 4, in <module> AttributeError: 'NoneType' object has no attribute 'get'"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station-wph && grep -rn \"DeletedAssetPaths\\|DeletedSceneObjects\" Assets/ 2>/dev/null | head; echo \"(none above = cl",
+    "Exit code 1 Assets/AnimationStation/Editor/Compilation/CinematicCleanOperation.cs:17: public IReadOnlyList<string> DeletedSceneObjects { get; } Assets/AnimationStation/Editor/Compilation/CinematicCleanOperation.cs:18: pu"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && for sev in error warning; do echo \"=== $sev ===\"; timeout 200 unity --format json command --project-path",
+    "Exit code 1 === error === Traceback (most recent call last): File \"<string>\", line 4, in <module> AttributeError: 'NoneType' object has no attribute 'get' === warning === Traceback (most recent call last): File \"<string>"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station\nrd=runs/2026-09-02-wp-d-2783126b/artifacts/AS-042\nls \"$rd\"\necho \"=== mutation harness report: structure ===",
+    "Exit code 1 AS042ReviewerProbeTest.cs.txt REQ-AS-042-GATE-final.json REQ-AS-042-TEST-full-run.json assets-root-listing.txt challenge-packet.md git-status-at-gate.txt hash-baseline-pre-mutation.json live-ground-truth-prob"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station\npython -c \"\nimport json\nd=json.load(open('runs/2026-09-02-wp-d-2783126b/artifacts/AS-043/mutation-evidence.",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 5, in <module> AttributeError: 'list' object has no attribute 'get' TOP-LEVEL keys: list len 5"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "SP=\"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/7634a8b5-e859-452d-82c7-15d34cd8ff6f/scratchpad\"\npython - \"$SP/bu",
+    "Exit code 1 Traceback (most recent call last): File \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\patch2.py\", line 39, in <module> assert s.count("
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && python -c \"\nimport json,io,os,sys\nRUN=r'C:\\Projects\\animation.station\\runs\\2026-09-02-wp-d-2783126b'\nHER",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 13, in <module> File \"C:\\Projects\\animation.station\\runs\\2026-09-02-wp-d-2783126b\\state_machine.py\", line 107, in sha256_file with path.open(\"rb\") as h"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station 2>/dev/null; python -c \"\nimport json\nls=[json.loads(l) for l in open('runs/2026-09-02-wp-d-2783126b/tasks.j",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 5, in <module> KeyError: 'definition'"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station 2>/dev/null; python -c \"\nimport json\nfor l in open('runs/2026-09-02-wp-d-2783126b/evidence.jsonl',encoding=",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 6, in <module> KeyError: 'agent_id'"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "SD=/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/81d92e38-b410-4cc1-be57-b3e356631408/scratchpad && cat > $SD/dec-w",
+    "Exit code 1 Traceback (most recent call last): File \"C:\\Projects\\animation.station\\runs\\2026-09-03-wp-i-da9735ab\\state_machine.py\", line 1806, in <module> raise SystemExit(main()) ^^^^^^ File \"C:\\Projects\\animation.stati"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "python - <<'PYEOF'\nimport io\np='Assets/AnimationStation/Editor/Command/RatifiedCommandSurface.cs'\ns=io.open(p,encoding='utf-8').read()\ns=s.r",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 12, in <module> AssertionError: [' if (!present.Contains(expected))']"
+   ]
+  ],
+  "file locked/in use": [
+   [
+    "-animation-station",
+    "Bash",
+    "sleep 240; cd C:/Projects/animation.station-wph && git status --porcelain | grep -v \"review-phase2\\|review-load\\|_baseline\\|/inbox/\\|/locks/",
+    "<tool_use_error>Blocked: sleep 240 followed by: cd C:/Projects/animation.station-wph git status --porcelain grep -v \"review-phase2\\|review-load\\|_baseline\\|/inbox/\\|/locks/\\|vscode\\|ProjectSettings\\|Generated.meta\" head "
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "sleep 25; cat \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/81d92e38-b410-4cc1-be57-b3e356631408/tasks/b9a5211eu.o",
+    "<tool_use_error>Blocked: sleep 25 followed by: cat \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/81d92e38-b410-4cc1-be57-b3e356631408/tasks/b9a5211eu.output\" head -40. To wait for a condition, u"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$probe = 'C:\\Projects\\animation.station-wpi\\Assets\\AnimationStation\\Editor\\ZzGuardProbe.cs'\n$g = 'C:\\Projects\\animation.station-wpi\\scripts\\",
+    "Remove-Item on system path '//' is blocked. This path is protected from removal."
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "Remove-Item 'C:\\Projects\\animation.station-wph\\Library\\EditorInstance.json' -ErrorAction SilentlyContinue\n$exe = 'C:\\Program Files\\Unity\\Hub",
+    "Remove-Item on system path ''C:\\Program' is blocked. This path is protected from removal."
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "git rev-parse HEAD; echo \"=== log -3 ===\"; git log --oneline -3; echo \"=== status incl ignored in inbox ===\"; git status --porcelain --ignor",
+    "Exit code 1 3fe5107a3c073c779dd554a588d36fa8c954b1ca === log -3 === 3fe5107 AS-043 rev 2, AS-044 rev 3: encode the SPEC MUSTs both contracts dropped 121c1ce AS-044 AC revision (rev 2): stop AC-1 pre-deciding AC-6's quest"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "sleep 30 && echo \"waited 30s\"",
+    "<tool_use_error>Blocked: sleep 30 followed by: echo \"waited 30s\". To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep 2; done`). To wait for a command you started, use run_in_background"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "sleep 200; cat \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/8fd5658e-d6e9-46e4-a29b-6d193cba9b46/tasks/b6wsz08sz.",
+    "<tool_use_error>Blocked: sleep 200 followed by: cat \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/8fd5658e-d6e9-46e4-a29b-6d193cba9b46/tasks/b6wsz08sz.output\". To wait for a condition, use Monit"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "sleep 240; tail -26 \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\8fd5658e-d6e9-46e4-a29b-6d193cba9b46\\tasks\\bx2tc",
+    "<tool_use_error>Blocked: sleep 240 followed by: tail -26 \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\8fd5658e-d6e9-46e4-a29b-6d193cba9b46\\tasks\\bx2tcclfj.output\" echo 'still running'. To wait "
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 60; tail -30 \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-android-scribe\\0231ee0d-0992-4d6d-8e95-5c6fdbe1656a\\tasks\\bk4fr",
+    "<tool_use_error>Blocked: sleep 60 followed by: tail -30 \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-android-scribe\\0231ee0d-0992-4d6d-8e95-5c6fdbe1656a\\tasks\\bk4frm9hl.output\". To wait for a condition, use "
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 60; cd /c/Projects/bws.android.scribe/runs/2026-09-23-m4-b3a-adk-agent && export PATH=\"/c/Android/Sdk/platform-tools:$PATH\" PYTHONIOEN",
+    "<tool_use_error>Blocked: sleep 60 followed by: cd /c/Projects/bws.android.scribe/runs/2026-09-23-m4-b3a-adk-agent export PATH=\"/c/Android/Sdk/platform-tools:$PATH\" PYTHONIOENCODING=utf-8 grep d4b0cae4 raw/t01-agent-logca"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 45; cat \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-android-scribe\\6e4a04b1-4302-488d-91da-b20c000460d6\\tasks\\bu63p3q1d.",
+    "<tool_use_error>Blocked: sleep 45 followed by: cat \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-android-scribe\\6e4a04b1-4302-488d-91da-b20c000460d6\\tasks\\bu63p3q1d.output\" tr '\\r' '\\n' tail -8. To wait for a"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 600; tail -5 /c/Projects/bws.android.scribe/runs/2026-09-24-m4-b8-images/evidence/corpus/run.log",
+    "<tool_use_error>Blocked: sleep 600 followed by: tail -5 /c/Projects/bws.android.scribe/runs/2026-09-24-m4-b8-images/evidence/corpus/run.log. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; d"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "Set-Content -Path \"C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\hello.txt\" -Value \"hello from the B0 worker\"",
+    "set-content targeting 'C:/Projects/bws.android.scribe/runs/2026-09-23-m4-harness/dryrun-b0/hello.txt' was blocked. For security, Claude Code may only access files in the allowed working directories for this session: 'C:\\"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 240; cat /c/Projects/bws.android.scribe/runs/2026-09-24-m4-b6-agent-threads/evidence/corpus/run.log",
+    "<tool_use_error>Blocked: sleep 240 followed by: cat /c/Projects/bws.android.scribe/runs/2026-09-24-m4-b6-agent-threads/evidence/corpus/run.log. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cat docs/M4-TRACKER.md && ls runs/2026-09-23-m4-b2-pil-runtime/ && cat runs/2026-09-23-m4-b2-pil-runtime/TASKS.md runs/2026-09-23-m4-b2-pil-",
+    "Exit code 1 # M4 AI Epic \u2014 Tracker **Read this first in every M4 session.** Protocol: `docs/SPEC-M4-AI.md` section 0. Update the bundle row and \"Next step\" at the end of **every** session, then commit. **Gate:** `docs/SP"
+   ]
+  ],
+  "timeout/killed": [
+   [
+    "-animation-station",
+    "Monitor",
+    "powershell -NoProfile -Command \"if (Get-Process -Id 65872 -ErrorAction SilentlyContinue) { 'ALIVE' } else { 'GONE' }\"",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issues: An unexpected parameter `timeout` was provided An unexpected parameter `until` was provided This tool's schema was not sent to the API \u2014 i"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && timeout 300 unity --format json command --project-path 'C:/Projects/animation.station-wph' --timeout 240",
+    "Exit code 1 { \"success\": false, \"command\": \"unity command recompile\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Pipeline command 'recompile' timed out after 240000ms\" } ], \"warnings\": [] } === con"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station\necho \"=== guard.ps1 line 47 region ===\"\nsed -n '44,52p' scripts/guard.ps1\necho\necho \"=== would the pattern ",
+    "Exit code 143 Command timed out after 2m 0s === guard.ps1 line 47 region === Report 'No vendor references in product sources' $hits # 3. Forbidden third-party dependencies (AGENTS.md standing invariant). # `(?<!has)RootM"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station\necho \"=== per-ID census, ASR-DEP007..019, ALL paths, no head/-l ===\"\nfor n in 007 008 009 010 011 012 013 0",
+    "Exit code 143 Command timed out after 2m 0s === per-ID census, ASR-DEP007..019, ALL paths, no head/-l ==="
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$L = \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\gate-lock.ps1\"\n",
+    "Exit code 1 GATE LOCK: acquired by test-A GATE LOCK: held by test-A for -14399s (since 09/02/2026 12:13:21 UTC) --- age must now be a small POSITIVE number, not ~-14400 --- --- prove the STALE path fires (StaleSeconds=1,"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "python - <<'EOF'\nimport json,re,subprocess,os\nd=json.load(open('Assets/AnimationStation/Validation/RuleCatalog/rule-registry.json',encoding=",
+    "Exit code 1 File \"<stdin>\", line 6 if '/Tests/' in root.replace('\\','/'): continue ^ SyntaxError: unterminated string literal (detected at line 6)"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\eval4.ps1\"",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command eval\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Pipeline server returned 400 Bad Request: Internal Server Error. Main thread operation ti"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "python - <<'PY'\nimport os, re, collections\nroots = ['Assets/Synty','Assets/Kevin Iglesias','Assets/AnimationStationDev/Fixture']\nexts = coll",
+    "Exit code 1 File \"<stdin>\", line 12 names.append(os.path.join(dp,f).replace('\\','/')) ^ SyntaxError: unterminated string literal (detected at line 12)"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cat > \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/7634a8b5-e859-452d-82c7-15d34cd8ff6f/scratchpad/runtests.ps1\" ",
+    "Exit code 143 Command timed out after 2m 0s PRE console errors=0 warnings=0"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\eval4.ps1\"",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command eval\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Pipeline server returned 400 Bad Request: Internal Server Error. Main thread operation ti"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\gate-lock.ps1\" -Ac",
+    "Exit code 1 GATE LOCK: busy (held by author-as043, 128s) -- waiting... GATE LOCK: busy (held by author-as043, 148s) -- waiting... GATE LOCK: busy (held by author-as043, 168s) -- waiting... GATE LOCK: busy (held by author"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli = 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\n$P = 'C:\\Projects\\animation.station'\n& $cli -UnityArguments @('",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command run_tests\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Pipeline command 'run_tests' timed out after 30000ms\" } ], \"warnings\": [] }"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli = 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\n$P = 'C:\\Projects\\animation.station'\n& $cli -UnityArguments @('",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command run_tests\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Pipeline command 'run_tests' timed out after 30000ms\" } ], \"warnings\": [] }"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli = 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\n$P = 'C:\\Projects\\animation.station'\n& $cli -UnityArguments @('",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command test_status\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Pipeline command 'test_status' timed out after 30000ms\" } ], \"warnings\": [] }"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli = 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\n$P = 'C:\\Projects\\animation.station'\n& $cli -UnityArguments @('",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command cancel_tests\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Pipeline command 'cancel_tests' timed out after 30000ms\" } ], \"warnings\": [] }"
+   ]
+  ],
+  "path quoting": [
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station-wph && python - <<'PY'\nimport pathlib\np = pathlib.Path(\"Assets/AnimationStation/Editor/Facade/Projection/Ci",
+    "Exit code 2 /usr/bin/bash: -c: line 93: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "python - <<'PY'\np=r\"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\6ae1779b-d87d-4b43-97f2-38884bc2ff80\\scratchpad\\w",
+    "Exit code 2 OLD: | grep -vE '^Assets/AnimationStation/(Editor/(Inspection|Resolvers)(/|.meta)|Tests/)' \\ NEW: | grep -vE '^Assets/AnimationStation/(Editor/(Inspection|Resolvers)(/|\\.meta)|Tests/)' \\\\ /c/Users/bsmi0/AppDa"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd \"C:\\Projects\\animation.station\" && cli='C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\npowershell -File \"$cli\" -Uni",
+    "Exit code 2 /usr/bin/bash: eval: line 6: syntax error near unexpected token `(' /usr/bin/bash: eval: line 6: `powershell -File \"$cli\" -UnityArguments @('--format','json','status') 2>&1 | head -60'"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cat > \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\build_mutation",
+    "Exit code 2 /usr/bin/bash: -c: line 85: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "ls \"C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\\" 2>/dev/null\necho \"---\"\nhead -60 \"C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invok",
+    "Exit code 2 /usr/bin/bash: eval: line 7: unexpected EOF while looking for matching `\"'"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "ls -la \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\\" | grep -i l",
+    "Exit code 2 /usr/bin/bash: eval: line 5: unexpected EOF while looking for matching `\"'"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station-wph/runs/2026-09-03-wp-h-a1319c85 && python - <<'PY'\nimport json, datetime, os\n\nbase = 'artifacts/AS-081C'\n",
+    "Exit code 2 /usr/bin/bash: -c: line 27: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "git mv core/model/src/main/kotlin/com/bws/inkwell/core/model/Ids.kt core/model/src/main/kotlin/com/bws/inkwell/core/model/OpId.kt 2>/dev/nul",
+    "Exit code 2 /usr/bin/bash: -c: line 158: unexpected EOF while looking for matching `\"'"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'PYEOF'\nimport pathlib\np = pathlib.Path(\"docs/PLATFORM-NOTES.md\")\ns = p.read_text(encoding=\"utf-8\")\n\n# Update the establishment h",
+    "Exit code 2 /usr/bin/bash: -c: line 134: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "mkdir -p \"C:/Projects/bws.android.scribe/docs\" && cat > \"C:/Projects/bws.android.scribe/docs/SPEC.md\" <<'SPECEOF'\n# Inkwell \u2014 Functional Spe",
+    "Exit code 2 /usr/bin/bash: -c: line 120: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'EOF'\np='InkPage.kt'\ns=open(p,encoding='utf-8').read()\nstart=s.index('public class InkPage(')\nheader=s[:start]\nheader=header.repl",
+    "Exit code 2 /usr/bin/bash: -c: line 136: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cat > core/pil/src/main/kotlin/com/bws/inkwell/core/pil/SketchAnswer.kt <<'EOF'\npackage com.bws.inkwell.core.pil\n\nimport kotlinx.serializati",
+    "Exit code 2 /usr/bin/bash: -c: line 152: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'EOF'\np='feature/editor/src/main/kotlin/com/bws/inkwell/feature/editor/ImagesPane.kt'\ns=open(p,encoding='utf-8').read()\nold=s[s.i",
+    "Exit code 2 /usr/bin/bash: -c: line 163: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "ls -la \"C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\\" 2>&1 | head -20",
+    "Exit code 2 /usr/bin/bash: eval: line 1: unexpected EOF while looking for matching `\"'"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'PYEOF'\np='core/pil/src/main/kotlin/com/bws/inkwell/core/pil/InkwellAgent.kt'\ns=open(p,encoding='utf-8').read()\ns=s.replace('''im",
+    "Exit code 2 /usr/bin/bash: -c: line 54: unexpected EOF while looking for matching `''"
+   ]
+  ],
+  "edit mismatch": [
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: Names.DiagnosticsFilter = \"diagnostics-filter\";</tool_use_error>"
+   ],
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: \"description\": \"Fixture inventory golden test against the WP-B Smithy.unity scene, with expected counts reconciled against the independently derived live censu"
+   ],
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: - **`failing_assertion` is what makes RED mean anything**: `failed: 1` alone cannot distinguish your mutation from an unrelated failure.</tool_use_error>"
+   ],
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: Note there are now several Unity Editors running on this machine, including one on `C:\\Projects\\animation.station-wpi` for the concurrent WP-I run. Matching th"
+   ],
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: \"pathChar = ? any character except \\\"/\\\" \\\":\\\" \\\"|\\\" \\\"\\\\\\\\\\\" ? ;\\n\" \"extChar = ? any character except \\\"/\\\" \\\":\\\" \\\"|\\\" \\\"\\\\\\\\\\\" \\\".\\\" ? ;\\n\"</tool_use_error>"
+   ],
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: [UnityTest] public IEnumerator AddingToANonEmptyCollection_AlsoDefaultConstructs_ReplacingUnitysCopySemantics() { // The deliberate behaviour change, asserted "
+   ],
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: `population.matches_run_total` is *assigned* `true` at `run-tier1-gate.ps1:254` on any `-TestFilter` run and fed straight into `pass` at line 272, so on a filt"
+   ],
+   [
+    "-bws-android-scribe",
+    "Write",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-bws-android-scribe",
+    "Write",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-bws-frisbee",
+    "Edit",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-bws-frisbee",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: _FIT_PATH = SCRIPTS + r\"it_params.json\"</tool_use_error>"
+   ],
+   [
+    "-bws-frisbee",
+    "Write",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-bws-game-axo",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: RUNP = r\"C:\\Projectsws.game.axouns6-09-28-axo-blender-rig\\workake\" uns6-09-28-axo-blender-rig\\workake\" </tool_use_error>"
+   ],
+   [
+    "-bws-game-axo",
+    "Write",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-bws-game-tms",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: - [~] T02 [BUILD] Implement exactly the approved spec: rules in C++ and data assets, Blueprints for glue and visuals only (TEC-03). Compile with Live Coding (T"
+   ]
+  ],
+  "command not found": [
+   [
+    "-animation-station",
+    "Bash",
+    "cd /c/Projects/animation.station\ngit show --stat --format=\"%h %s\" 88413a5 | head -5\necho \"=== content ===\"; git show 88413a5 | grep \"^+\" | g",
+    "Exit code 127 88413a5 EBC_HANDOFF: a consequential message is unconfirmed until echoed back docs/handoff/EBC_HANDOFF.md | 20 ++++++++++++++++++++ 1 file changed, 20 insertions(+) === content === +**A consequential messag"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cd /c/Projects/bws.android.scribe && python \"/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-android-scribe/0231ee0d-0992-4d6d-8e95",
+    "Exit code 127 Traceback (most recent call last): File \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-android-scribe\\0231ee0d-0992-4d6d-8e95-5c6fdbe1656a\\scratchpad\\runlog_final.py\", line 14, in <module> sub( T"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    ".\\gradlew.bat ktlintFormat ktlintCheck detekt build test --console=plain *> runs/2026-09-28-toolbar-layout/gates-4.log; \"exit $LASTEXITCODE\"",
+    "Exit code 1 .\\gradlew.bat: The term '.\\gradlew.bat' is not recognized as a name of a cmdlet, function, script file, or executable program. Check the spelling of the name, or if a path was included, verify that the path i"
+   ],
+   [
+    "-bws-annotations",
+    "Bash",
+    "python - <<'PY'\nimport io\np='apps/windows/src/connection.cpp'\ns=io.open(p,encoding='utf-8').read()\na=\"constexpr auto kFrameInterval = std::c",
+    "Exit code 1 ok 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. [1/4] Building CXX object apps\\windows\\CMakeFiles\\bws_host.dir\\src\\connection.cpp.obj [2/4] Building CXX "
+   ],
+   [
+    "-bws-annotations",
+    "Bash",
+    "pwsh -NoProfile -Command \". build-support/native/vsenv.ps1; cmake --build out/windows-x64 --target bws_host 2>&1 | Select-String -Pattern 'e",
+    "Exit code 1 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. [1/5] \u001b[7mBuilding CXX object apps\u001b[0m\\windows\\CMakeFiles\\bws_host.dir\\src\\firewall.cpp.obj [2/5] \u001b[7mBuildi"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "Get-Process bws_host -ErrorAction SilentlyContinue | Select-Object Id,StartTime,Path | Format-List; & \"$env:LOCALAPPDATA\\Android\\Sdk\\platfor",
+    "Exit code 1 Id : 44464 StartTime : 9/14/2026 10:33:01 AM Path : C:\\Projects\\bws.annotations\\out\\windows-x64\\apps\\windows\\bws_host.exe &: The term 'C:\\Users\\bsmi0\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe' is not r"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "pwsh -NoProfile -File C:\\Projects\\bws.annotations\\build-support\\native\\build.ps1 -Preset windows-x64 2>&1 | Select-String -Pattern 'error|FA",
+    "Exit code 1 FAILED: tests/storage/CMakeFiles/bws_storage_tests.dir/storage_tests.cpp.obj C:\\Projects\\bws.annotations\\tests\\storage\\storage_tests.cpp(295): error C2665: 'bws::storage::CheckpointStore::CheckpointStore': no"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "$r='C:\\Projects\\bws.annotations'; & \"$r\\build-support\\native\\build.ps1\" -Preset windows-x64 *>&1 | Select-String -Pattern 'error|FAILED|LNK|",
+    "Exit code 1 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. FAILED: tests/transport/CMakeFiles/bws_transport_loopback.dir/transport_loopback.cpp.obj C:\\Projects\\bws.ann"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "$r='C:\\Projects\\bws.annotations'; $run=\"$r\\runs\\2026-09-11-p1-transport\"; New-Item -ItemType Directory -Force $run | Out-Null; & \"$r\\build-s",
+    "Exit code 1 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. FAILED: tests/transport/bws_transport_loopback.exe LINK: command \"C:\\PROGRA~2\\MICROS~3\\2022\\BUILDT~1\\VC\\Tool"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "$r='C:\\Projects\\bws.annotations'; $run=\"$r\\runs\\2026-09-11-p1-transport\"; $avts='C:\\wrtc\\win\\src\\out\\win-x64-release\\obj\\api\\video\\adapted_v",
+    "Exit code 1 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. FAILED: tests/transport/bws_transport_loopback.exe LINK: command \"C:\\PROGRA~2\\MICROS~3\\2022\\BUILDT~1\\VC\\Tool"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    ". C:\\Projects\\bws.annotations\\build-support\\native\\vsenv.ps1 2>$null; cmake --build C:\\Projects\\bws.annotations\\out\\windows-x64 2>&1 | Selec",
+    "Exit code 1 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. FAILED: tests/transport/bws_signaling_harness.exe LINK: command \"C:\\PROGRA~2\\MICROS~3\\2022\\BUILDT~1\\VC\\Tools"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    ". C:\\Projects\\bws.annotations\\build-support\\native\\vsenv.ps1 2>$null; cmake --build C:\\Projects\\bws.annotations\\out\\windows-x64 --target bws",
+    "Exit code 1 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. FAILED: apps/windows/CMakeFiles/bws_host.dir/src/selftest_platform.cpp.obj C:\\Projects\\bws.annotations\\apps\\"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "pwsh -NoProfile -File C:\\Projects\\bws.annotations\\build-support\\webrtc\\generate-licenses-win.ps1 2>&1 | Select-Object -Last 25",
+    "Exit code 1 &: C:\\Projects\\bws.annotations\\build-support\\webrtc\\generate-licenses-win.ps1:19 Line | 19 | & \"$Root\\depot_tools\\python3.bat\" tools_webrtc\\libs\\generate_lice \u2026 | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ | The term 'C"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    ". C:\\Projects\\bws.annotations\\build-support\\native\\vsenv.ps1 2>$null; cmake --build C:\\Projects\\bws.annotations\\out\\windows-x64 --target bws",
+    "Exit code 1 'vswhere.exe' is not recognized as an internal or external command, operable program or batch file. build_exit=0 ParentContainsErrorRecordException: C:\\Projects\\bws.annotations\\runs\\2026-09-11-p7-accessibilit"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "cmake --build C:\\Projects\\bws.annotations\\out\\windows-x64 --target bws_fake_tablet 2>&1 | Select-Object -Last 15",
+    "Exit code 1 cmake: The term 'cmake' is not recognized as a name of a cmdlet, function, script file, or executable program. Check the spelling of the name, or if a path was included, verify that the path is correct and tr"
+   ]
+  ],
+  "permission/denied": [
+   [
+    "-animation-station",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: ### 1. OPEN \u2014 \u00a79.4's `substitute` policy has no field to key on (AS-044) **This is a genuine contract gap, found while authoring this plan, and it changes AS-0"
+   ],
+   [
+    "-bws-android-scribe",
+    "AskUserQuestion",
+    "",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said: The user wants to clarify"
+   ],
+   [
+    "-bws-android-scribe",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\hello.txt, but you haven't granted it yet."
+   ],
+   [
+    "-bws-android-scribe",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\hello.txt, but you haven't granted it yet."
+   ],
+   [
+    "-bws-android-scribe",
+    "Edit",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\TASKS.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-android-scribe",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\hello.txt, but you haven't granted it yet."
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "mv .git/hooks/pre-push .git/hooks/pre-push.harness-disabled && git push -u origin feat/m5-agents 2>&1 | tail -4; mv .git/hooks/pre-push.harn",
+    "Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Security Weaken]. If you have other tasks that don't depend on this action, continue working on those. IMPORTANT: You *may* attempt "
+   ],
+   [
+    "-bws-android-scribe",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.android.scribe\\runs\\2026-09-23-m4-harness\\dryrun-b0\\hello.txt, but you haven't granted it yet."
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude-in-chrome__navigate",
+    "",
+    "This site is blocked by your organization\u2019s policy."
+   ],
+   [
+    "-bws-android-scribe",
+    "Skill",
+    "",
+    "Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Self-Modification]. If you have other tasks that don't depend on this action, continue working on those. IMPORTANT: You *may* attemp"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "git push --dry-run origin HEAD",
+    "Permission to use Bash with command git push --dry-run origin HEAD has been denied."
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "gh pr create --help",
+    "Permission to use Bash with command gh pr create --help has been denied."
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to pro"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "export MSYS_NO_PATHCONV=1 && adb push pinch.sh /data/local/tmp/pinch.sh >/dev/null && adb shell sh /data/local/tmp/pinch.sh 1014 1498 60 420",
+    "Exit code 1 pinch.sh: 1 file pushed, 0 skipped. 1.1 MB/s (919 bytes in 0.001s) sendevent: /dev/input/event2: Permission denied sendevent: /dev/input/event2: Permission denied sendevent: /dev/input/event2: Permission deni"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "git push --dry-run origin HEAD",
+    "Permission to use Bash with command git push --dry-run origin HEAD has been denied."
+   ]
+  ],
+  "file not found": [
+   [
+    "-animation-station",
+    "PowerShell",
+    "& 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1' editors running 2>&1 | Select-Object -First 40",
+    "Exit code 1 Exception: C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1:18 Line | 18 | throw \"The explicitly requested Unity CLI path does not e \u2026 | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "sed -n '464,468p' Assets/AnimationStation/Tests/Editor/CinematicSpecContractTest.cs; echo \"---- SpecProjectionFixtures 206-210 ----\"; sed -n",
+    "Exit code 2 sed: can't read Assets/AnimationStation/Tests/Editor/CinematicSpecContractTest.cs: No such file or directory ---- SpecProjectionFixtures 206-210 ---- sed: can't read Assets/AnimationStation/Tests/Editor/SpecP"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& 'C:\\Projects\\animation.station-wpi\\scripts\\ebc\\run-tier1-gate.ps1' -TestFilter BatchEntryPointTest 2>&1 | Select-Object -Last 18",
+    "Exit code 1 [1/8] pipeline list (reachability preflight) [2/8] clear_console [3/8] recompile [4/8] wait for editor idle (domain reload / asset refresh settle) [5/8] console logs (error, warning) [6/8] list_tests (enumera"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\eval4.ps1\"",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command eval\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Compilation Failed\\n Argument 1: cannot convert from 'string' to 'UnityEngine.Object' (li"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "ls -la runs/2026-09-02-wp-d-2783126b/artifacts/AS-040/; echo \"=== sha256 of each ===\"; cd runs/2026-09-02-wp-d-2783126b/artifacts/AS-040 && ",
+    "Exit code 1 ls: cannot access 'runs/2026-09-02-wp-d-2783126b/artifacts/AS-040/': No such file or directory === sha256 of each === /usr/bin/bash: line 3: cd: runs/2026-09-02-wp-d-2783126b/artifacts/AS-040: No such file or"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cat > \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/7634a8b5-e859-452d-82c7-15d34cd8ff6f/scratchpad/recompile.ps1\"",
+    "Exit code 1 \u001b[31;1mClear-Item: \u001b[0mC:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\recompile.ps1:5\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\eval4.ps1\"",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command eval\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Compilation Failed\\n Argument 1: cannot convert from 'string' to 'UnityEngine.Object' (li"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli = 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\n$P   = 'C:\\Projects\\animation.station'\n$code = @'\nvar go = new ",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command eval\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Compilation Failed\\n The type or namespace name 'AvatarBuilder' does not exist in the nam"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli = 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\n$P   = 'C:\\Projects\\animation.station'\n$code = @'\nvar go = new ",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command eval\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Compilation Failed\\n The type or namespace name 'AvatarBuilder' does not exist in the nam"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "cd \"C:\\Projects\\animation.station\"\nmkdir -p \"runs/2026-09-02-wp-d-2783126b/artifacts/AS-043\"\npowershell -File scripts/ebc/hash-baseline.ps1 ",
+    "Exit code 1 C:\\Projects\\animation.station\\scripts\\ebc\\hash-baseline.ps1 : Cannot bind parameter 'Encoding'. Cannot convert value \"utf8NoBOM\" to type \"Microsoft.PowerShell.Commands.FileSystemCmdletProviderEncoding\". Error"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "tail -5 \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\tasks\\btnz6wnax.output\"",
+    "Exit code 1 GATE LOCK: busy (held by author-as043, 2715s) -- waiting... GATE LOCK: busy (held by author-as043, 2735s) -- waiting... GATE LOCK: acquired by author-as044 [exited with code 0] ---current lock--- cat: 'C:\\Use"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "wc -l docs/handoff/EBC_HANDOFF.md AGENTS.md DECISIONS.jsonl docs/plans/PLANS_ANIMSTATION_V1.md docs/plans/PLANS_WPD.md 2>&1",
+    "Exit code 1 210 docs/handoff/EBC_HANDOFF.md 367 AGENTS.md 95 DECISIONS.jsonl 538 docs/plans/PLANS_ANIMSTATION_V1.md wc: docs/plans/PLANS_WPD.md: No such file or directory 1210 total"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "ls -la runs/2026-09-02-wp-d-2783126b/inbox/ 2>&1; echo \"---AS-040 inbox---\"; ls -la runs/2026-09-02-wp-d-2783126b/inbox/AS-040/ 2>&1",
+    "Exit code 2 total 4 drwxr-xr-x 1 bsmi0 197609 0 Sep 1 23:15 ./ drwxr-xr-x 1 bsmi0 197609 0 Sep 1 23:17 ../ ---AS-040 inbox--- ls: cannot access 'runs/2026-09-02-wp-d-2783126b/inbox/AS-040/': No such file or directory"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "wc -l DECISIONS.jsonl\ntail -1 DECISIONS.jsonl | python -c \"import json,sys; print(json.loads(sys.stdin.read())['id'])\"\necho \"--- working tre",
+    "Exit code 2 99 DECISIONS.jsonl DEC-067 --- working tree status --- M Packages/manifest.json M Packages/packages-lock.json M ProjectSettings/ProjectSettings.asset ?? Assets/AnimationStation/Editor/Resolvers.meta ?? Assets"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "python \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\8fd5658e-d6e9-46e4-a29b-6d193cba9b46\\scratchpad\\mutate.py\" M1",
+    "Exit code 1 GATE LOCK: acquired by author-as080 mutated: 30d9daa4fe0e [1/8] pipeline list (reachability preflight) C:\\Projects\\animation.station-wph\\scripts\\ebc\\run-tier1-gate.ps1 : Pipeline unreachable. Confirm the Edit"
+   ]
+  ],
+  "python error": [
+   [
+    "-animation-station",
+    "PowerShell",
+    "$run = 'C:\\Projects\\animation.station\\runs\\2026-09-02-wp-d-2783126b'\n$note = @'\nRun bootstrap and pre-execution baseline (lead).\n\nEBC_HANDOF",
+    "Exit code 2 usage: state_machine.py runlog-add [-h] [--run-dir RUN_DIR] --kind {objective,activity,outcome,blocker} --message MESSAGE state_machine.py runlog-add: error: the following arguments are required: --kind, --me"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "SD=\"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/81d92e38-b410-4cc1-be57-b3e356631408/scratchpad\"; RD=\"C:/Projects",
+    "Exit code 2 wrote worktree-veto usage: state_machine.py [-h] {init,task-lock,status,verify,report,task-add,task-revise,task-supersede,task-cancel,evidence-add,decision-add,authority-register,runlog-add,configure} ... sta"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "powershell -File \"C:\\Projects\\animation.station\\scripts\\decisions\\append-decision.ps1\" -RecordsFile \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claud",
+    "Exit code 1 C:\\Projects\\animation.station\\scripts\\decisions\\append-decision.ps1 : Cannot bind parameter 'Encoding'. Cannot convert value \"utf8NoBOM\" to type \"Microsoft.PowerShell.Commands.FileSystemCmdletProviderEncoding"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "& \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\run_mutation.ps1\" ",
+    "Exit code 1 ParserError: C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-animation-station\\7634a8b5-e859-452d-82c7-15d34cd8ff6f\\scratchpad\\run_mutation.ps1:25 Line | 25 | throw \"$MutationId: Find text not present in"
+   ],
+   [
+    "-animation-station",
+    "PowerShell",
+    "$cli = 'C:\\Users\\bsmi0\\.claude\\skills\\unity-cli\\scripts\\Invoke-UnityCli.ps1'\n$P = 'C:\\Projects\\animation.station'\n& $cli -UnityArguments @('",
+    "Exit code 6 { \"success\": false, \"command\": \"unity command run_tests\", \"data\": null, \"errors\": [ { \"code\": \"COMMAND_FAILED\", \"message\": \"Failed to execute command 'run_tests': Network error: An error occurred while sendin"
+   ],
+   [
+    "-animation-station",
+    "Read",
+    "",
+    "<tool_use_error>InputValidationError: Read was called with input that could not be parsed as JSON. You sent (first 139 of 139 bytes): {\"file_path\": \"C:\\\\Projects\\\\animation.station\\\\runs\\\\2026-09-02-wp-d-2783126b\\\\artifa"
+   ],
+   [
+    "-animation-station",
+    "Bash",
+    "f=\"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-animation-station/8fd5658e-d6e9-46e4-a29b-6d193cba9b46/tasks/bq22dym3v.output\"; unti",
+    "Exit code 1 === task output === focused; starting standard gate GATE LOCK: acquired by author-as082 GATE LOCK: released by author-as082 Write-Error: C:\\Projects\\animation.station-wph\\runs\\2026-09-03-wp-h-a1319c85\\artifac"
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "TypeError: cannot read property 'findAll' of null at btn (PLUGIN_1_SOURCE:15:206) at <anonymous> (PLUGIN_1_SOURCE:55:26) Figma Debug UUID: 56047bf8-7757-4234-a386-c7810e399e13"
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "Error: in set_textAutoResize: Cannot write to node with unloaded font \"Roboto Regular\". Please call figma.loadFontAsync({ family: \"Roboto\", style: \"Regular\" }) and await the returned promise first. at set (<input>:75:11)"
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "Error: in set_vectorPaths: Failed to convert path. Invalid command at S at set (<input>:75:11) at vec (PLUGIN_1_SOURCE:14:117) at <anonymous> (PLUGIN_1_SOURCE:78:56) Figma Debug UUID: da891e49-f464-41b5-b70a-a761c370e3f0"
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__get_screenshot",
+    "",
+    "Input validation error: Invalid arguments for tool get_screenshot: nodeId: Node ID must be in the format \"123:456\" or \"123-456\""
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "TypeError: cannot read property 'findAll' of null at recolor (PLUGIN_1_SOURCE:12:47) at btn (PLUGIN_1_SOURCE:13:379) at <anonymous> (PLUGIN_1_SOURCE:47:67) Figma Debug UUID: 49414cc8-fa60-4428-8a88-41cad8b85bce"
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "Error: in get_componentPropertyDefinitions: Can only get component property definitions of a component set or non-variant component at get (<input>:52:11) at owner (PLUGIN_3_SOURCE:15:196) at <anonymous> (PLUGIN_3_SOURCE"
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "Error: in setPluginData: figma.setPluginData is not supported in this host runtime (only private plugins on web can use it). Use figma.setSharedPluginData(namespace, key, value) instead \u2014 shared plugin data works across "
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "Error: in findAll: \"findAll\" callback crashed: TypeError: cannot convert symbol to number at <anonymous> (PLUGIN_1_SOURCE:9:28) Figma Debug UUID: 30c18d8d-7a49-405b-a9bf-975da96db5d3"
+   ]
+  ],
+  "exit code only": [
+   [
+    "-animation-station",
+    "Bash",
+    "cd C:/Projects/animation.station && grep -n \"def cmd_authority_register\" -A 25 runs/2026-09-02-wp-d-2783126b/state_machine.py && echo \"=== l",
+    "Exit code 1"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "grep -E \"ERROR|Missing\" /c/Projects/bws.android.scribe/runs/2026-09-23-m4-b3a-adk-agent/raw/baseline-r8-build.log | head; cat /c/Projects/sc",
+    "Exit code 1"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "export ANDROID_SERIAL=47171HFH80BF5R MSYS_NO_PATHCONV=1 && adb shell 'uiautomator dump /sdcard/ui.xml; echo rc=$?'",
+    "Exit code 127"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "curl -s -X POST -F \"file=@/c/Projects/bws.android.scribe/design/assets/agents/reader_owl.png;type=image/png\" \"https://mcp.figma.com/mcp/uplo",
+    "Exit code 26"
+   ],
+   [
+    "-bws-annotations",
+    "Bash",
+    "cd /c/Projects/bws.annotations/runs/2026-09-14-ruler && adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb pull /sdcard/ui.xml",
+    "Exit code 1"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "Get-ChildItem \"$env:USERPROFILE\\Pictures\\BWS Annotations\" -Filter *.png -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descendin",
+    "Exit code 1"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "& C:\\Android\\Sdk\\platform-tools\\adb.exe -s 47171HFH80BF5R shell debuggerd -j 17434 2>&1 | Select-String -Pattern '^\"main\" ' -Context 0,30 | ",
+    "Exit code 1"
+   ],
+   [
+    "-bws-annotations",
+    "PowerShell",
+    "wsl bash -lc \"cd ~/wrtc/android/src && grep -n -A24 'AndroidNetworkMonitor::IsAdapterAvailable' sdk/android/src/jni/android_network_monitor.",
+    "Exit code 1"
+   ],
+   [
+    "-bws-frisbee",
+    "PowerShell",
+    "Get-Process UnrealEditor -ErrorAction SilentlyContinue | Select-Object Id,StartTime,@{n='cmd';e={((Get-CimInstance Win32_Process -Filter \"Pr",
+    "Exit code 1"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "f=$(ls -t Saved/Harness/telemetry/*actions-block* 2>/dev/null | head -1); echo $f; [ -n \"$f\" ] && cut -d, -f1-9 \"$f\" | grep -v \"Cue\" | head ",
+    "Exit code 1"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "ls \"C:/Users/bsmi0/.claude/projects/C--Projects-bws-game-tms/memory/\" 2>/dev/null; cat \"C:/Users/bsmi0/.claude/projects/C--Projects-bws-game",
+    "Exit code 1"
+   ],
+   [
+    "-bws-game-tms",
+    "PowerShell",
+    "Stop-Process -Id 197700,185556 -Force -Confirm:$false; Start-Sleep 2; Get-Process -Id 197700,185556 -ErrorAction SilentlyContinue",
+    "Exit code 1"
+   ],
+   [
+    "-bws-iron-canopy",
+    "PowerShell",
+    "(unity command eval_file --file \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-iron-canopy\\1a405495-6a7c-4999-9459-b296c4c51884\\s",
+    "Exit code 6"
+   ],
+   [
+    "-bws-portfolio",
+    "Bash",
+    "netstat -ano | grep -E \":3310 .*LISTEN\"; pid=$(netstat -ano | grep -E \":3310 .*LISTEN\" | awk '{print $5}' | head -1); [ -n \"$pid\" ] && power",
+    "Exit code 1"
+   ],
+   [
+    "-bws-portfolio-fabricato",
+    "Bash",
+    "sed -i 's#  assert.match(decisions, /Geist Mono\\[^\\\\n\\]\\*measured/i);#  assert.match(decisions, /Measured at T-91: one static weight \\\\(500\\",
+    "Exit code 1"
+   ]
+  ],
+  "glob/grep timeout": [
+   [
+    "-bws-annotations",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-bws-game-tms",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-street-war",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-street-war",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-street-war",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-street-war",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "-tms-heim",
+    "Grep",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ]
+  ],
+  "unreal editor": [
+   [
+    "-bws-frisbee",
+    "Bash",
+    "ls -la /c/Projects/tmsUnreal/Plugins/ 2>/dev/null | head; echo \"=== tripo lib dirs ===\"; find /c/Projects/tmsUnreal/Plugins/Tripo3DUEBridge-",
+    "Exit code 2 total 12 drwxr-xr-x 1 bsmi0 197609 0 Sep 15 05:53 ./ drwxr-xr-x 1 bsmi0 197609 0 Sep 15 05:52 ../ drwxr-xr-x 1 bsmi0 197609 0 Sep 15 05:53 Tripo3DUEBridge-UE5.8-Win64/ === tripo lib dirs === /c/Projects/tmsUn"
+   ],
+   [
+    "-bws-frisbee",
+    "Bash",
+    "cd /c/Projects/tmsUnreal/runs/2026-09-13-character-configurations && cat launch-editor.ps1 | head -30; powershell -NoProfile -Command \"Get-N",
+    "Exit code 1 param([string]$Map = '/Game/Heim/Maps/L_World', [string]$Label = 'editor-01') $ErrorActionPreference = 'Stop' $root = 'C:\\Projects\\tmsUnreal' $run = Join-Path $root 'runs\\2026-09-13-character-configurations' "
+   ],
+   [
+    "-bws-game-axo",
+    "mcp__unreal-mcp__describe_toolset",
+    "",
+    "Toolset 'LiveCodingToolset' not found. Available toolsets: ToolsetRegistry.AgentSkillToolset, AutomationTestToolset.AutomationTestToolset, ConfigSettingsToolset.ConfigSettingsToolset, LiveCodingToolset.LiveCodingToolset,"
+   ],
+   [
+    "-bws-game-tms",
+    "mcp__unreal-mcp__call_tool",
+    "",
+    "ECONNREFUSED: Unable to connect. Is the computer able to access the url?"
+   ],
+   [
+    "-bws-game-tms",
+    "PowerShell",
+    "$os = Get-CimInstance Win32_OperatingSystem; \"RAM free: {0:N1} GB of {1:N1} GB\" -f ($os.FreePhysicalMemory/1MB), ($os.TotalVisibleMemorySize",
+    "Exit code 1 RAM free: 4.8 GB of 63.6 GB Name Id GB ---- -- -- Memory Compression 4588 9.11 blender 199824 5.26 Unity 53000 4.21 UnrealEditor 210896 4.01 java 184332 3.71 Unity 45428 1.61 Unity 181620 1.40 java 53872 1.26"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cat runs/2026-09-28-m1-u15-dungeon-feel/TASKS.md; ls runs/2026-09-28-m1-u15-dungeon-feel/; cat runs/2026-09-28-m1-u15-dungeon-feel/HANDOFF.m",
+    "Exit code 1 # U15 \u2014 Dungeon feel: mixed camps and a patrol Status: IN_PROGRESS Session: 1 ## Tasks - [ ] T01 [SPEC] Extend SPEC-PLAYTEST and SPEC-ENEMY-GROUPS for this unit's scope (P2: L_Playtest grows into a short bloc"
+   ],
+   [
+    "-bws-game-tms",
+    "PowerShell",
+    "python Tools/Harness/editor.py --help; Select-String -Path Saved/Logs/TMS.log -Pattern \"Possession|PIE|Automation.*(Stop|Complete|Finished)\"",
+    "Exit code 2 Operate the one live TMS editor (live-editor-first; crash-causes memory). python Tools/Harness/editor.py status # exit 0 when the TMS editor is open and its MCP server answers python Tools/Harness/editor.py c"
+   ],
+   [
+    "-bws-portfolio-fabricato",
+    "Bash",
+    "cd /c/Projects/bws.portfolio-fabricator && mkdir -p runs/2026-10-01-fabricator-t-93-laser-carry-through/perf && cp runs/2026-09-30-fabricato",
+    "Exit code 1 ProcessName Id ----------- -- blender 47260 blender-mcp 5228 blender-mcp 30188 blender-mcp 31860 blender-mcp 38040 blender-mcp 46964 blender-mcp 54112 chrome 3292 chrome 3868 chrome 6352 chrome 13176 chrome 1"
+   ],
+   [
+    "-street-war",
+    "Bash",
+    "for f in C:/Projects/tmsUnreal/AGENTS.md C:/Projects/xwing/XvT/AGENTS.md C:/Projects/xwing/XvT/CLAUDE.md; do echo \"=== $f ($(wc -l < $f) lin",
+    "Exit code 2 === C:/Projects/tmsUnreal/AGENTS.md (22 lines) 1:# The Monastery's Shadow 5:## Every task 14:## Map === C:/Projects/xwing/XvT/AGENTS.md (43 lines) 1:# AGENTS.md 5:## What this is 11:## Layout and milestone st"
+   ],
+   [
+    "-street-war",
+    "mcp__unreal-mcp__call_tool",
+    "",
+    "ECONNREFUSED: Unable to connect. Is the computer able to access the url?"
+   ],
+   [
+    "-street-war",
+    "mcp__unreal-mcp__call_tool",
+    "",
+    "ECONNREFUSED: Unable to connect. Is the computer able to access the url?"
+   ],
+   [
+    "-tmsUnreal",
+    "Bash",
+    "cd /c/Projects/tmsUnreal-aquatic/Source/tmsUnreal/Alrec/Tests && python - <<'EOF'\np='AlrecAquaticTests.cpp'; s=open(p,encoding='utf-8').read",
+    "Exit code 1 ok BUILD aquatic-3: ok=True tmsUnrealEditor exit=0 8s binary=2026-09-08T06:11:48.3322416-04:00 TESTS aquatic-3 filter=Heim.Alrec.Aquatic: valid=True passed=11 failed=0 exit= ordering_ok=True source=index.json"
+   ],
+   [
+    "-tmsUnreal",
+    "Bash",
+    "for d in 2026-09-07-parity-adversarial-review 2026-09-07-parity-independent-review 2026-09-07-unity-unreal-parity-implementation; do echo \"=",
+    "Exit code 1 === runs/2026-09-07-parity-adversarial-review Sep 7 22:34 0 ./ Sep 7 22:36 0 ../ Sep 7 22:34 67101 prerun-gitstatus.txt === runs/2026-09-07-parity-independent-review Sep 7 22:51 0 ./ Sep 7 22:36 0 ../ Sep 7 2"
+   ],
+   [
+    "-tmsUnreal",
+    "Bash",
+    "cat *.uproject | head -60; echo ---; ls -la Binaries/Win64 2>/dev/null | head -40; echo ---; cat Binaries/Win64/*.modules 2>/dev/null; echo ",
+    "Exit code 2 { \"FileVersion\": 3, \"EngineAssociation\": \"5.8\", \"Category\": \"\", \"Description\": \"The Monastery's Shadow\", \"Modules\": [ { \"Name\": \"tmsUnreal\", \"Type\": \"Runtime\", \"LoadingPhase\": \"Default\", \"AdditionalDependenci"
+   ],
+   [
+    "-tmsUnreal",
+    "Bash",
+    "echo \"=== main project .mcp.json ===\"; cat C:/Projects/tmsUnreal/.mcp.json 2>/dev/null\necho\necho \"=== netstat for common MCP ports ===\"\nnets",
+    "Exit code 7 === main project .mcp.json === { \"mcpServers\": { \"blender\": { \"type\": \"stdio\", \"command\": \"uvx\", \"args\": [ \"--with\", \"mcp[cli]>=1.2.0,<2\", \"--from\", \"git+https://projects.blender.org/lab/blender_mcp.git@98b0e"
+   ]
+  ]
+ },
+ "build_cmds": [
+  [
+   [
+    "C--Projects-tmsUnreal",
+    "unity"
+   ],
+   1553
+  ],
+  [
+   [
+    "C--Projects-bws-android-scribe",
+    "adb"
+   ],
+   874
+  ],
+  [
+   [
+    "C--Projects-tms-heim",
+    "unity"
+   ],
+   859
+  ],
+  [
+   [
+    "C--Projects-skiball-hoops",
+    "unity"
+   ],
+   826
+  ],
+  [
+   [
+    "C--Projects-bws-iron-canopy",
+    "unity"
+   ],
+   808
+  ],
+  [
+   [
+    "C--Projects-bws-android-scribe",
+    "gradlew"
+   ],
+   798
+  ],
+  [
+   [
+    "C--Projects-bws-frisbee",
+    "unity"
+   ],
+   446
+  ],
+  [
+   [
+    "C--Projects-animation-station",
+    "unity"
+   ],
+   404
+  ],
+  [
+   [
+    "C--Projects-bws-game-tms",
+    "unity"
+   ],
+   249
+  ],
+  [
+   [
+    "C--Projects-bws-annotations",
+    "adb"
+   ],
+   185
+  ],
+  [
+   [
+    "C--Projects-bws-motion-library",
+    "npm run build"
+   ],
+   136
+  ],
+  [
+   [
+    "C--Projects-bws-game-tms",
+    "unrealeditor-cmd"
+   ],
+   132
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio",
+    "npx playwright"
+   ],
+   116
+  ],
+  [
+   [
+    "C--Projects-pil-agent-plugin-pil-agent-plugin",
+    "pytest"
+   ],
+   95
+  ],
+  [
+   [
+    "C--Projects-prototype-pit-manuever",
+    "npm test"
+   ],
+   93
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio-fabricator",
+    "npx playwright"
+   ],
+   92
+  ],
+  [
+   [
+    "C--Projects-street-war",
+    "unrealeditor.exe"
+   ],
+   83
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio",
+    "npm run build"
+   ],
+   74
+  ],
+  [
+   [
+    "C--Projects-tmsUnreal",
+    "msbuild"
+   ],
+   71
+  ],
+  [
+   [
+    "C--Projects-bws-iron-canopy",
+    "adb"
+   ],
+   67
+  ],
+  [
+   [
+    "C--Projects-street-war",
+    "unrealeditor-cmd"
+   ],
+   62
+  ],
+  [
+   [
+    "C--Projects-tms-heim",
+    "msbuild"
+   ],
+   56
+  ],
+  [
+   [
+    "C--Projects-tmsUnreal",
+    "unrealeditor-cmd"
+   ],
+   56
+  ],
+  [
+   [
+    "C--Projects-bws-game-axo",
+    "unrealeditor-cmd"
+   ],
+   51
+  ],
+  [
+   [
+    "C--Projects-harness-test",
+    "npm test"
+   ],
+   51
+  ],
+  [
+   [
+    "C--Projects-tmsUnreal",
+    "unrealbuildtool"
+   ],
+   51
+  ],
+  [
+   [
+    "C--Projects-bws-game-tms",
+    "build.bat"
+   ],
+   50
+  ],
+  [
+   [
+    "C--Projects-bws-game-tms",
+    "unrealeditor.exe"
+   ],
+   48
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio-fabricator",
+    "npm test"
+   ],
+   44
+  ],
+  [
+   [
+    "C--Projects-street-war",
+    "unity"
+   ],
+   43
+  ],
+  [
+   [
+    "C--Projects-xwing-XvT",
+    "livecoding"
+   ],
+   41
+  ],
+  [
+   [
+    "C--Projects-bws-annotations",
+    "gradlew"
+   ],
+   39
+  ],
+  [
+   [
+    "C--Projects-bws-motion-library",
+    "npm run test"
+   ],
+   39
+  ],
+  [
+   [
+    "C--Projects-street-war",
+    "livecoding"
+   ],
+   39
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio-fabricator",
+    "npm run build"
+   ],
+   37
+  ],
+  [
+   [
+    "C--Users-bsmi0",
+    "unity"
+   ],
+   32
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio",
+    "npm test"
+   ],
+   31
+  ],
+  [
+   [
+    "C--Projects-tmsUnreal",
+    "unrealeditor.exe"
+   ],
+   30
+  ],
+  [
+   [
+    "C--Projects-bws-frisbee",
+    "unrealeditor.exe"
+   ],
+   29
+  ],
+  [
+   [
+    "C--Projects-mcp-ai-nlm",
+    "pytest"
+   ],
+   28
+  ],
+  [
+   [
+    "C--Projects-bws-game-axo",
+    "unrealeditor.exe"
+   ],
+   27
+  ],
+  [
+   [
+    "C--Users-bsmi0--agents-skills",
+    "unity"
+   ],
+   26
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio",
+    "unity"
+   ],
+   23
+  ],
+  [
+   [
+    "C--Projects-tmsUnreal",
+    "livecoding"
+   ],
+   23
+  ],
+  [
+   [
+    "C--Projects-harness-test",
+    "npx vite"
+   ],
+   22
+  ],
+  [
+   [
+    "C--Projects-pil-agent-plugin",
+    "pytest"
+   ],
+   22
+  ],
+  [
+   [
+    "C--Projects-bws-game-axo",
+    "build.bat"
+   ],
+   20
+  ],
+  [
+   [
+    "C--Projects-bws-game-tms",
+    "livecoding"
+   ],
+   18
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio-fabricator",
+    "npx tsc"
+   ],
+   16
+  ],
+  [
+   [
+    "C--Users-bsmi0",
+    "unrealeditor.exe"
+   ],
+   15
+  ],
+  [
+   [
+    "C--Projects-street-war",
+    "unrealbuildtool"
+   ],
+   14
+  ],
+  [
+   [
+    "C--Projects-harness-test",
+    "npm run build"
+   ],
+   12
+  ],
+  [
+   [
+    "C--Users-bsmi0--codex-worktrees-procedural-world-exit-harness-tmsUnreal",
+    "unrealeditor.exe"
+   ],
+   12
+  ],
+  [
+   [
+    "C--Projects-bws-game-axo",
+    "unrealbuildtool"
+   ],
+   11
+  ],
+  [
+   [
+    "C--Projects-bws-game-tms",
+    "unrealbuildtool"
+   ],
+   11
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio",
+    "npm run test"
+   ],
+   11
+  ],
+  [
+   [
+    "C--Projects-xwing-XvT",
+    "build.bat"
+   ],
+   11
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio",
+    "npm run dev"
+   ],
+   10
+  ],
+  [
+   [
+    "C--Projects-bws-portfolio",
+    "npx tsc"
+   ],
+   9
+  ],
+  [
+   [
+    "C--Projects-street-war",
+    "build.bat"
+   ],
+   9
+  ]
+ ],
+ "polls": [
+  [
+   "C--Projects-bws-android-scribe",
+   958
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   744
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   621
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   343
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   279
+  ],
+  [
+   "C--Projects-animation-station",
+   238
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   195
+  ],
+  [
+   "C--Projects-street-war",
+   193
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   178
+  ],
+  [
+   "C--Projects-bws-annotations",
+   147
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   146
+  ],
+  [
+   "C--Projects-tms-heim",
+   142
+  ],
+  [
+   "C--Projects-skiball-hoops",
+   122
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   109
+  ],
+  [
+   "C--Users-bsmi0",
+   85
+  ],
+  [
+   "C--Projects-bws-motion-library",
+   74
+  ],
+  [
+   "C--Projects-prototype-pit-manuever",
+   59
+  ],
+  [
+   "C--Projects-bws-portfolio-fabricator",
+   46
+  ],
+  [
+   "C--Projects-pil-agent-plugin-pil-agent-plugin",
+   29
+  ],
+  [
+   "C--Users-bsmi0--codex-worktrees-procedural-world-exit-harness-tmsUnreal",
+   17
+  ]
+ ],
+ "bash_read_like": [
+  [
+   "grep",
+   11888
+  ],
+  [
+   "sed",
+   8333
+  ],
+  [
+   "cat",
+   6221
+  ],
+  [
+   "ls",
+   3444
+  ],
+  [
+   "find",
+   1094
+  ],
+  [
+   "tail",
+   515
+  ],
+  [
+   "head",
+   434
+  ],
+  [
+   "Get-Content",
+   167
+  ],
+  [
+   "Get-ChildItem",
+   116
+  ],
+  [
+   "Select-String",
+   74
+  ]
+ ],
+ "unreal_tool_calls": [
+  [
+   "?.",
+   876
+  ]
+ ],
+ "ue_errors": [
+  [
+   "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):?? File \"",
+   12
+  ],
+  [
+   "Unable to connect. Is the computer able to access the url?",
+   10
+  ],
+  [
+   "Missing required parameter: toolset_name",
+   4
+  ],
+  [
+   "Function \"get_properties\", input param \"instance\" is required by the function input schema",
+   3
+  ],
+  [
+   "ECONNREFUSED: Unable to connect. Is the computer able to access the url?",
+   3
+  ],
+  [
+   "Function \"CaptureViewport\", input param \"captureTransform\" needs a default value.Function ",
+   3
+  ],
+  [
+   "Function \"CaptureViewport\", input param \"annotations\" needs a default value.Function input",
+   3
+  ],
+  [
+   "MCP server \"unreal-mcp\" session expired",
+   3
+  ],
+  [
+   "empty reply from the TMS editor MCP server",
+   2
+  ],
+  [
+   "The operation timed out.",
+   2
+  ],
+  [
+   "Unknown tool editor_toolset.toolsets.scene.SceneTools.get_current_level",
+   2
+  ],
+  [
+   "Failed to capture any editor windows.",
+   2
+  ],
+  [
+   "Asset does not exist: /Game/Alrec/Animation/Clips/AN_Idle",
+   2
+  ],
+  [
+   "Function \"RunTestsByFilter\", input param \"filterExpression\" is required by the function in",
+   2
+  ],
+  [
+   "Function \"is_dirty\", input param \"asset_path\" is required by the function input schema Jso",
+   2
+  ],
+  [
+   "Toolset 'LiveCodingToolset' not found. Available toolsets: ToolsetRegistry.AgentSkillTools",
+   1
+  ],
+  [
+   "No automation tests matched filter 'StartsWith:TMS.Full.Maps.Route'",
+   1
+  ],
+  [
+   "Unknown tool describe",
+   1
+  ],
+  [
+   "GetObjectProperties on '/Game/StreetWar/Data/AI/ST_SWEnemyCombat.ST_SWEnemyCombat' (StateT",
+   1
+  ],
+  [
+   "Unknown tool LoadLevel",
+   1
+  ],
+  [
+   "Tool 'help' not found",
+   1
+  ],
+  [
+   "Unknown tool ToolsetRegistry.AgentSkillToolset.ListSkills",
+   1
+  ],
+  [
+   "Path \"c:\\projects\\tmsunreal\\tools\\syntyport\\export\\collision_wire.json\" is not within an a",
+   1
+  ],
+  [
+   "line 11: RuntimeError: Script error in editor_toolset.toolsets.scene.SceneTools.find_actor",
+   1
+  ],
+  [
+   "line 57: RuntimeError: Script error in editor_toolset.toolsets.scene.SceneTools.add_to_sce",
+   1
+  ],
+  [
+   "line 36: KeyError: \"'emitterSummaries' not found. Available keys: ['emitters', 'systemName",
+   1
+  ],
+  [
+   "line 51: RuntimeError: Script error in NiagaraToolsets.NiagaraToolset_System.GetEmitterTop",
+   1
+  ],
+  [
+   "line 78: KeyError: \"'ParticleUpdateScript' not found. Available keys: ['bEnabled', 'emitte",
+   1
+  ],
+  [
+   "line 30: RuntimeError: Script error in NiagaraToolsets.NiagaraToolset_System.ApplyStackIss",
+   1
+  ],
+  [
+   "call_tool cannot dispatch to itself",
+   1
+  ]
+ ],
+ "ue_err_ex": {
+  "Toolset 'LiveCodingToolset' not found. Available toolsets: ToolsetRegistry.AgentSkillTools": [
+   "{\"toolset_name\": \"LiveCodingToolset\"}"
+  ],
+  "Missing required parameter: toolset_name": [
+   "{\"toolset\": \"editor_toolset.toolsets.skeletal_mesh.SkeletalMeshTools\"}",
+   "{\"toolset\": \"editor_toolset.toolsets.object.ObjectTools\"}"
+  ],
+  "Function \"get_properties\", input param \"instance\" is required by the function input schema": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"tool_name\": \"get_properties\", \"arguments\": {\"obj\": \"/Game/StandIns/Anselm/SK_Anselm_Monk.SK_Anselm_Monk\", \"property_names\": [\"physics_as",
+   "{\"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"tool_name\": \"get_properties\", \"arguments\": {\"obj\": \"/Game/Characters/Anselm/SK_Anselm.SK_Anselm\", \"property_names\": [\"physics_asset\"]}}"
+  ],
+  "empty reply from the TMS editor MCP server": [
+   "{}",
+   "{}"
+  ],
+  "ECONNREFUSED: Unable to connect. Is the computer able to access the url?": [
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"SearchCVars\", \"arguments\": {\"name\": \"tms.\"}}",
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"IsPIERunning\", \"arguments\": {}}"
+  ],
+  "Function \"CaptureViewport\", input param \"captureTransform\" needs a default value.Function ": [
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"CaptureViewport\", \"arguments\": {}}",
+   "{\"tool_name\": \"CaptureViewport\", \"toolset_name\": \"EditorToolset.EditorAppToolset\", \"arguments\": {\"bShowUI\": false}}"
+  ],
+  "Function \"CaptureViewport\", input param \"annotations\" needs a default value.Function input": [
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"CaptureViewport\", \"arguments\": {\"captureTransform\": {\"location\": {\"x\": 75201.9, \"y\": 85553, \"z\": 44621}, \"rotation\": {\"pitch\": -24.2, \"",
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"CaptureViewport\", \"arguments\": {\"captureTransform\": {\"location\": {\"x\": -400, \"y\": -150, \"z\": 145}, \"rotation\": {\"pitch\": 0, \"yaw\": 0, \""
+  ],
+  "The operation timed out.": [
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"CaptureEditorImage\", \"arguments\": {}}",
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"IsPIERunning\", \"arguments\": {}}"
+  ],
+  "No automation tests matched filter 'StartsWith:TMS.Full.Maps.Route'": [
+   "{\"toolset_name\": \"AutomationTestToolset.AutomationTestToolset\", \"tool_name\": \"RunTestsByFilter\", \"arguments\": {\"filterExpression\": \"StartsWith:TMS.Full.Maps.Route\"}}"
+  ],
+  "Unknown tool describe": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"tool_name\": \"describe\", \"arguments\": {}}"
+  ],
+  "MCP server \"unreal-mcp\" session expired": [
+   "{\"toolset\": \"editor_toolset.toolsets.object.ObjectTools\"}",
+   "{\"toolset_name\": \"AutomationTestToolset.AutomationTestToolset\", \"tool_name\": \"DiscoverTests\", \"arguments\": {}}"
+  ],
+  "GetObjectProperties on '/Game/StreetWar/Data/AI/ST_SWEnemyCombat.ST_SWEnemyCombat' (StateT": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"tool_name\": \"get_properties\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/StreetWar/Data/AI/ST_SWEnemyCombat.ST_SWEnemyCombat\"}, \"prope"
+  ],
+  "Unknown tool LoadLevel": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.scene.SceneTools\", \"tool_name\": \"LoadLevel\", \"arguments\": {\"levelPath\": \"/Game/StreetWar/Maps/M_F8_WeaponProof\"}}"
+  ],
+  "Unable to connect. Is the computer able to access the url?": [
+   "{\"tool_name\": \"OpenEditorForAsset\", \"toolset_name\": \"EditorToolset.EditorAppToolset\", \"arguments\": {\"assetPath\": \"/Game/StreetWar/Maps/M_AnimQA_Isolated\"}}",
+   "{\"toolset_name\": \"NiagaraToolsets.NiagaraToolset_Info\"}"
+  ],
+  "Unknown tool editor_toolset.toolsets.scene.SceneTools.get_current_level": [
+   "{\"tool_name\": \"editor_toolset.toolsets.scene.SceneTools.get_current_level\", \"toolset_name\": \"editor_toolset.toolsets.scene.SceneTools\"}",
+   "{\"tool_name\": \"editor_toolset.toolsets.scene.SceneTools.get_current_level\", \"toolset_name\": \"editor_toolset.toolsets.scene.SceneTools\", \"arguments\": {}}"
+  ],
+  "Tool 'help' not found": [
+   "{\"tool_name\": \"help\"}"
+  ],
+  "Unknown tool ToolsetRegistry.AgentSkillToolset.ListSkills": [
+   "{\"tool_name\": \"ToolsetRegistry.AgentSkillToolset.ListSkills\", \"toolset_name\": \"ToolsetRegistry.AgentSkillToolset\"}"
+  ],
+  "Path \"c:\\projects\\tmsunreal\\tools\\syntyport\\export\\collision_wire.json\" is not within an a": [
+   "{\"tool_name\": \"read_file\", \"toolset_name\": \"editor_toolset.toolsets.asset.AssetTools\", \"arguments\": {\"file_path\": \"C:/Projects/tmsUnreal/Tools/SyntyPort/export/collision_wire.json\"}}"
+  ],
+  "line 11: RuntimeError: Script error in editor_toolset.toolsets.scene.SceneTools.find_actor": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nBP = \\\"/Game/Synty/PolygonDarkFantasy/Blueprint"
+  ],
+  "line 57: RuntimeError: Script error in editor_toolset.toolsets.scene.SceneTools.add_to_sce": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\n\\ndef find_actors(name):\\n    return execute_to"
+  ],
+  "line 36: KeyError: \"'emitterSummaries' not found. Available keys: ['emitters', 'systemName": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nFX_DIR = \\\"/Game/Synty/PolygonDarkFantasy/FX\\\"\\"
+  ],
+  "line 51: RuntimeError: Script error in NiagaraToolsets.NiagaraToolset_System.GetEmitterTop": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nSYS = {\\\"refPath\\\": \\\"/Game/Synty/PolygonDarkFa"
+  ],
+  "line 78: KeyError: \"'ParticleUpdateScript' not found. Available keys: ['bEnabled', 'emitte": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nSYS = {\\\"refPath\\\": \\\"/Game/Synty/PolygonDarkFa"
+  ],
+  "line 30: RuntimeError: Script error in NiagaraToolsets.NiagaraToolset_System.ApplyStackIss": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nSYS = {\\\"refPath\\\": \\\"/Game/Synty/PolygonDarkFa"
+  ],
+  "call_tool cannot dispatch to itself": [
+   "{\"tool_name\": \"call_tool\", \"arguments\": {\"tool_name\": \"StartPIE\", \"toolset_name\": \"EditorToolset.EditorAppToolset\", \"arguments\": {\"options\": {\"bSimulate\": true, \"playMode\": \"PlayMode_Simulate\", \"warmu"
+  ],
+  "line 11: RuntimeError: Script error in editor_toolset.toolsets.object.ObjectTools.get_prop": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\n\\ndef find_actors(name):\\n    return execute_to"
+  ],
+  "line 26: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.find_asset": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\nimport time\\n\\nMAT = \\\"/Niagara/DefaultAssets/Def"
+  ],
+  "GetObjectProperties on '/Engine/EngineMaterials/OrientParticle.OrientParticle' (Texture2D)": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nC = [\\\"/Engine/EngineMaterials/DefaultParticle."
+  ],
+  "line 80: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.save_asset": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nMATP = \\\"/Game/Synty/PolygonDarkFantasy/FX/M_Sm"
+  ],
+  "Asset does not exist: /Game/Synty/PolygonDarkFantasy/FX/M_Smoke.M_Smoke Asset does not exi": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nMATP = \\\"/Game/Synty/PolygonDarkFantasy/FX/M_Sm"
+  ],
+  "line 7: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.save_assets": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nMATP = \\\"/Game/Synty/PolygonDarkFantasy/FX/M_Sm"
+  ],
+  "line 15: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.save_asset": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\nSRC = \\\"/Niagara/DefaultAssets/DefaultSpriteMat"
+  ],
+  "Toolset 'ObjectTools' not found": [
+   "{\"toolset_name\": \"ObjectTools\", \"tool_name\": \"get_properties\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Alrec/Inventory/DA_AlrecLoadout.DA_AlrecLoadout\"}, \"names\": [\"Items\", \"PackSlots\"]}}"
+  ],
+  "Function \"get_properties\", input param \"properties\" is required by the function input sche": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"tool_name\": \"get_properties\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Alrec/Inventory/DA_AlrecLoadout.DA_AlrecLoadout\"}, \"names\": ["
+  ],
+  "Function \"ListTests\", input param \"nameFilter\" is required by the function input schema Js": [
+   "{\"toolset_name\": \"AutomationTestToolset.AutomationTestToolset\", \"tool_name\": \"ListTests\", \"arguments\": {\"filter\": \"Inventory\"}}"
+  ],
+  "Failed to capture any editor windows.": [
+   "{\"toolset_name\": \"EditorToolset.EditorAppToolset\", \"tool_name\": \"CaptureEditorImage\", \"arguments\": {}}",
+   "{\"tool_name\": \"CaptureEditorImage\", \"toolset_name\": \"EditorToolset.EditorAppToolset\"}"
+  ],
+  "GetObjectProperties on '/Game/Alrec/Animation/AM_Heavy.AM_Heavy' (AnimMontage): the follow": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"tool_name\": \"get_properties\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Alrec/Animation/AM_Heavy.AM_Heavy\"}, \"properties\": [\"Skeleton"
+  ],
+  "Tool 'editor_toolset.toolsets.asset.AssetTools.find_assets' not found": [
+   "{\"tool_name\": \"editor_toolset.toolsets.asset.AssetTools.find_assets\", \"tool_args\": \"{\\\"folder_path\\\": \\\"/Game/Alrec\\\", \\\"name\\\": \\\"Idle\\\", \\\"recursive\\\": true}\"}"
+  ],
+  "Function \"find_assets\", input params are required by the function input schema Json, but i": [
+   "{\"tool_name\": \"find_assets\", \"toolset_name\": \"editor_toolset.toolsets.asset.AssetTools\", \"tool_args\": \"{\\\"folder_path\\\": \\\"/Game/Alrec\\\", \\\"name\\\": \\\"Idle\\\", \\\"recursive\\\": true}\"}"
+  ],
+  "Asset does not exist: /Game/Alrec/Animation/Clips/AN_Idle": [
+   "{\"tool_name\": \"get_asset_tags\", \"toolset_name\": \"editor_toolset.toolsets.asset.AssetTools\", \"arguments\": {\"asset_path\": \"/Game/Alrec/Animation/Clips/AN_Idle\"}}",
+   "{\"tool_name\": \"get_asset_tags\", \"toolset_name\": \"editor_toolset.toolsets.asset.AssetTools\", \"arguments\": {\"asset_path\": \"/Game/Alrec/Animation/Clips/AN_Idle.AN_Idle\"}}"
+  ],
+  "Asset does not exist: /Game/Alrec/Animation/Clips/AN_Idle Asset does not exist: /Game/Alre": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\ndef find(folder, name):\\n    return execute_too"
+  ],
+  "Asset does not exist: /Game/Alrec/Revision3/ValidationClips/V3_AN_Idle": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\ndef safe(fn, *a):\\n    try:\\n        return fn("
+  ],
+  "line 4: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.get_depende": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\ndef deps(p):\\n    return execute_tool(\\\"editor_"
+  ],
+  "Asset does not exist: /Game/Alrec/Animation/ABP_Alrec": [
+   "{\"tool_name\": \"get_dependencies\", \"toolset_name\": \"editor_toolset.toolsets.asset.AssetTools\", \"arguments\": {\"asset_path\": \"/Game/Alrec/Animation/ABP_Alrec.ABP_Alrec\"}}"
+  ],
+  "line 4: RuntimeError: Script error in editor_toolset.toolsets.object.ObjectTools.get_prope": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\n\\ndef getp(obj, names):\\n    return execute_tool("
+  ],
+  "Import of \"C:/Projects/tmsUnreal/SourceArt/Alrec/Animations/IdleConcept.fbx\" produced no a": [
+   "{\"tool_name\": \"import_file\", \"toolset_name\": \"editor_toolset.toolsets.skeletal_mesh.SkeletalMeshTools\", \"arguments\": {\"folder_path\": \"/Game/Alrec/Source/Animations\", \"asset_name\": \"SRC_IdleConcept\", \""
+  ],
+  "Function \"RunTestsByFilter\", input param \"filterExpression\" is required by the function in": [
+   "{\"toolset_name\": \"AutomationTestToolset.AutomationTestToolset\", \"tool_name\": \"RunTestsByFilter\", \"arguments\": {\"filter\": \"StartsWith:Heim\"}}",
+   "{\"tool_name\": \"RunTestsByFilter\", \"toolset_name\": \"AutomationTestToolset.AutomationTestToolset\", \"arguments\": {\"filter\": \"Heim.\"}}"
+  ],
+  "Unknown tool Find": [
+   "{\"toolset_name\": \"SlateInspectorToolset.SlateInspectorToolset\", \"tool_name\": \"Find\", \"arguments\": {\"role\": \"textbox\"}}"
+  ],
+  "Function \"WaitFor\", input param \"textGone\" is required by the function input schema Json, ": [
+   "{\"tool_name\": \"WaitFor\", \"toolset_name\": \"SlateInspectorToolset.SlateInspectorToolset\", \"arguments\": {\"text\": \"Dock in Layout\", \"timeoutSeconds\": 15}}"
+  ],
+  "line 13: RuntimeError: Script error in editor_toolset.toolsets.asset.AssetTools.write_file": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"tool_name\": \"execute_tool_script\", \"arguments\": {\"script\": \"import json\\nAT='editor_toolset.toolsets.asset.AssetTools.'\\nd"
+  ],
+  "Error [INVALID_ARGUMENT]: Invalid screenshot mode. Supported modes: editor_viewport, game_": [
+   "{\"operation\": \"execute\", \"tool\": \"control_editor\", \"action\": \"screenshot\", \"params\": {\"mode\": \"game\", \"path\": \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-xwing-XvT/57011911-f287-42ea-8ec3-31"
+  ],
+  "Error [SECURITY_VIOLATION]: Invalid or unsafe screenshot path: [path redacted]": [
+   "{\"operation\": \"execute\", \"tool\": \"control_editor\", \"action\": \"screenshot\", \"params\": {\"mode\": \"game_viewport\", \"path\": \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-xwing-XvT/57011911-f287-42e"
+  ],
+  "Error [PYTHON_ERROR]: Python execution failed: Traceback (most recent call last):?? File \"": [
+   "{\"operation\": \"execute\", \"tool\": \"system_control\", \"action\": \"execute_python\", \"params\": {\"code\": \"import unreal\\nw = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_game_world()\\nPawn =",
+   "{\"operation\": \"execute\", \"tool\": \"system_control\", \"action\": \"execute_python\", \"params\": {\"code\": \"import unreal\\nw = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_game_world()\\nPawn ="
+  ],
+  "Error [SECURITY_VIOLATION]: Invalid or unsafe file path: [path redacted]": [
+   "{\"operation\": \"execute\", \"tool\": \"system_control\", \"action\": \"execute_python\", \"params\": {\"file\": \"C:\\\\Projects\\\\xwing\\\\XvT\\\\runs\\\\2026-09-05-starfighter-01-model\\\\harness\\\\ue_import.py\"}}"
+  ],
+  "Asset does not exist: /Game/__ExternalActors__/Heim/Maps/L_World/0/GP/WIGQMVH74NZZ6I63W71F": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\nA='editor_toolset.toolsets.asset.AssetTools.'\\nde"
+  ],
+  "GetObjectProperties on '/Game/Heim/Maps/L_World.L_World:PersistentLevel.WorldPartitionMini": [
+   "{\"tool_name\": \"get_properties\", \"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Heim/Maps/L_World.L_World:PersistentLevel.WorldPartitionMiniM"
+  ],
+  "GetObjectProperties on '/Game/Heim/Maps/L_World.L_World:PersistentLevel.WorldSettings' (Wo": [
+   "{\"tool_name\": \"get_properties\", \"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Heim/Maps/L_World.L_World:PersistentLevel.WorldSettings\"}, \"p"
+  ],
+  "Parameter error: /Game/Heim/Maps/L_World.L_World:PersistentLevel.WorldPartition is not val": [
+   "{\"tool_name\": \"get_properties\", \"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Heim/Maps/L_World.L_World:PersistentLevel.WorldPartition\"}, \""
+  ],
+  "Parameter error: /Game/Heim/Maps/L_World.L_World:WorldPartition is not valid Object for pr": [
+   "{\"tool_name\": \"get_properties\", \"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Heim/Maps/L_World.L_World:WorldPartition\"}, \"properties\": [\"r"
+  ],
+  "Function \"GetLogEntries\", input params are required by the function input schema Json, but": [
+   "{\"tool_name\": \"GetLogEntries\", \"toolset_name\": \"EditorToolset.LogsToolset\", \"arguments\": {}}"
+  ],
+  "Function \"execute_tool_script\", input params are required by the function input schema Jso": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {}}"
+  ],
+  "Asset does not exist: /Game/__ExternalActors__/Heim/Maps/L_World/A/XP/LB6Q40K0BJ5IXOWT30UO": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\nSC='editor_toolset.toolsets.scene.SceneTools.'\\nA"
+  ],
+  "SetObjectProperties on '/Game/Heim/Maps/L_World.L_World:PersistentLevel.WorldPartitionMini": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\nOB='editor_toolset.toolsets.object.ObjectTools.'\\"
+  ],
+  "GetObjectProperties on '/Game/Heim/UI/Screens/WBP_HeimLargeMap.WBP_HeimLargeMap_C' (Widget": [
+   "{\"tool_name\": \"get_properties\", \"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Heim/UI/Screens/WBP_HeimLargeMap.WBP_HeimLargeMap_C\"}, \"prope"
+  ],
+  "GetObjectProperties on '/Game/Heim/Maps/L_World.L_World:PersistentLevel' (Level): the foll": [
+   "{\"tool_name\": \"get_properties\", \"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"arguments\": {\"instance\": {\"refPath\": \"/Game/Heim/Maps/L_World.L_World:PersistentLevel\"}, \"properties\": [\""
+  ],
+  "'route-r1.entrance.camp-gate'": [
+   "{\"tool_name\": \"execute_tool_script\", \"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"arguments\": {\"script\": \"import json\\nSC='editor_toolset.toolsets.scene.SceneTools.'\\nA"
+  ],
+  "Toolset 'SceneTools' not found": [
+   "{\"toolset_name\": \"SceneTools\", \"tool_name\": \"get_current_level\", \"arguments\": {}}"
+  ],
+  "Function \"is_dirty\", input param \"asset_path\" is required by the function input schema Jso": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.asset.AssetTools\", \"tool_name\": \"is_dirty\", \"arguments\": {\"assetPath\": \"/Game/Heim/Maps/L_World\"}}",
+   "{\"toolset_name\": \"editor_toolset.toolsets.asset.AssetTools\", \"tool_name\": \"is_dirty\", \"arguments\": {\"assetPath\": \"/Game/Heim/Maps/L_World\"}}"
+  ],
+  "Function \"set_properties\", input param \"instance\" is required by the function input schema": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.object.ObjectTools\", \"tool_name\": \"set_properties\", \"arguments\": {\"object\": {\"refPath\": \"/Game/Heim/Maps/L_World.L_World:PersistentLevel.TmsAreaVolume_UAID_60"
+  ],
+  "line 13: RuntimeError: Script error in editor_toolset.toolsets.object.ObjectTools.set_prop": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"tool_name\": \"execute_tool_script\", \"arguments\": {\"script\": \"import json\\n\\nSCENE = 'editor_toolset.toolsets.scene.SceneToo"
+  ],
+  "line 16: RuntimeError: Script error in editor_toolset.toolsets.object.ObjectTools.get_prop": [
+   "{\"toolset_name\": \"editor_toolset.toolsets.programmatic.ProgrammaticToolset\", \"tool_name\": \"execute_tool_script\", \"arguments\": {\"script\": \"import json\\n\\nSCENE = 'editor_toolset.toolsets.scene.SceneToo"
+  ]
+ },
+ "long_runs_top": [
+  [
+   "C--Users-bsmi0--agents-skills-notebooklm-cli",
+   17693,
+   "cd /c/projects && rm -rf \"C:/Users/bsmi0/.agents/skills/notebooklm-cli\" && ls \"C:/Users/bsmi0/.agents/skills/\" | grep -c notebooklm; gh api repos/bsmi021/google"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   9907,
+   "until [ -f /c/Projects/tmsUnreal/runs/2026-09-13-character-configurations/receipts/scenario-social-final-01.txt ]; do sleep 40; done; cd /c/Projects/tmsUnreal/r"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   5035,
+   "cd /c/Projects/tmsUnreal && python -c \"\nimport pathlib\np=pathlib.Path('Source/tmsUnreal/Tests/Qualification/TmsCharacterScenarioSocialTests.cpp')\nt=p.read_bytes"
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   4758,
+   "R=runs/2026-09-29-contact-in-pond && node - <<'EOF'\nconst fs = require(\"fs\");\nconst f = \"runs/2026-09-29-contact-in-pond/capture.mjs\"; let s = fs.readFileSync(f"
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   1339,
+   "R=runs/2026-09-30-axo-reactions && python - <<'EOF'\nfrom pathlib import Path\np = Path(\"runs/2026-09-30-axo-reactions/reactions.py\"); t = p.read_text(encoding=\"u"
+  ],
+  [
+   "C--Projects-tms-heim",
+   1269,
+   "M=~/.claude/projects/C--Projects-tms-heim/memory\nS=\"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-tms-heim/1b354589-ef1d-4669-b89b-6b59b5cce45d/scratchpa"
+  ],
+  [
+   "C--Projects-street-war",
+   1010,
+   "timeout 600 python runs/2026-09-21-w1-w7-wanted/tools/build_streetwar.py 2>&1 | tail -60"
+  ],
+  [
+   "C--Projects-bws-annotations",
+   708,
+   "$r='C:\\Projects\\bws.annotations\\runs\\2026-09-14-ruler'; $adb='C:\\Android\\Sdk\\platform-tools\\adb.exe'; pwsh -File \"$r\\clear.ps1\"; pwsh -File \"$r\\stroke.ps1\" -Poi"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   611,
+   "python runs/2026-09-24-canopy-g2.5-gamepad/scratch/rt.py PlayMode \"IronCanopy.Tests.PlayMode.GamepadTests|IronCanopy.Tests.PlayMode.InputRouterTests\" 2>&1 | cut"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   610,
+   "cd /c/Projects/bws.iron-canopy; for i in $(seq 1 100); do if grep -q \"GATE\" \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-iron-canopy/76260dad-1c9e-"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   607,
+   "for i in $(seq 1 30); do\n  R=$(unity command eval --code \"return 1;\" --project-path \"C:/Projects/bws.iron-canopy\" --format json --timeout 15 2>&1)\n  if echo \"$R"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   606,
+   "cd /c/Projects/bws.iron-canopy && python runs/2026-09-23-canopy-g2-combat-ai/ue.py 'UnityEditor.EditorApplication.isPlaying = false; return \"off\";' | grep -o \"'"
+  ],
+  [
+   "C--Projects-pil-agent-plugin-pil-agent-plugin",
+   606,
+   "uv run --extra reconstruction --extra embedding pytest -q -p no:cacheprovider tests plugins/blender-inspect/tests 2>&1 | tail -6; uv lock --check 2>&1 | tail -2"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   605,
+   "cd /c/Projects/bws.android.scribe/runs/2026-09-24-m4-b8-images && until ! tasklist 2>/dev/null | grep -q \"^python.exe\" || grep -q \"page 12.*\\(DONE\\|FAILED\\|done"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   605,
+   "until grep -q \"corpus page 11: finished\" evidence/b3-flow-marks.log || ! tasklist 2>/dev/null | grep -qi python; do sleep 10; done; grep corpus evidence/b3-flow"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   604,
+   "cd /c/Projects/bws.iron-canopy; for i in $(seq 1 30); do if python tools/unity-gate.py --ping >/dev/null 2>&1; then echo \"REACHABLE $(date +%T)\"; exit 0; fi; sl"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   603,
+   "until grep -q \"^done\" evidence/regression/nbk02-ab.txt 2>/dev/null; do sleep 20; done; cat evidence/regression/nbk02-ab.txt; git -C ../.. worktree list"
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   603,
+   "cd /c/Projects/tmsUnreal/runs/2026-09-13-character-configurations && ls receipts/static-materials-02.request.json && MSYS_NO_PATHCONV=1 python run_tests.py stat"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   603,
+   "F=/c/Projects/bws.game.tms/runs/2026-09-28-m1-u14-playable/full1.log; until grep -q \"TMS harness full\" $F 2>/dev/null; do sleep 15; done; grep -E \"TMS harness f"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   603,
+   "python Tools/Harness/run.py full --no-build > runs/2026-09-27-m1-u8-revive/full1.log 2>&1; echo exit $?; tail -30 runs/2026-09-27-m1-u8-revive/full1.log"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   603,
+   "for i in $(seq 1 60); do\n  sleep 10\n  if [ -f \"C:/Projects/bws.iron-canopy/Temp/pipeline_test_status.json\" ]; then\n    ST=$(python3 -c \"import json;print(json.l"
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   603,
+   "sed -i 's/            StringAssert.Contains(\"ESEnemyShot\".Substring(1), all);/            StringAssert.Contains(\"EEnemyShot\", all, \"the rifleman fired\");/' Asse"
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   603,
+   "& \"C:\\Projects\\tmsUnreal\\runs\\2026-09-07-unity-unreal-parity-implementation\\tools\\compile_file.ps1\" -Label shell-s4 -Files \"Source\\tmsUnreal\\UI\\Editor\\TmsShellC"
+  ],
+  [
+   "C--Projects-animation-station",
+   602,
+   "& 'C:\\Projects\\animation.station-wph\\runs\\2026-09-03-wp-h-a1319c85\\artifacts\\AS-082\\run-gate.ps1' -OutPrefix 'C:\\Projects\\animation.station-wph\\runs\\2026-09-03-"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   602,
+   "cat > runs/2026-09-24-m4-b7-quick-actions/scratch/nbk02.sh <<'EOF'\n#!/bin/bash\n# nbk02.sh <repo dir> <label> : one AC-NBK-02 run (release test build) in <repo d"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "git add Source/TMSTests/Private/Playtest/TmsDungeonVisualTests.cpp && git commit -q -m \"U15 T04: the Observe.Hall capture views from Alrec's eye height at the m"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "until grep -q \"^exit \" C:/Projects/bws.game.tms/runs/2026-09-28-m1-u15-dungeon-feel/gate_s11.log 2>/dev/null; do sleep 20; done; tail -25 C:/Projects/bws.game.t"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "f=\"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-tms/13186253-b59e-45de-bb90-a50af6c7adf6/tasks/b9mtkytnq.output\"; until grep -q \"gate rc=\" \"$f\""
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "python runs/2026-09-28-m1-u15-dungeon-feel/scratch/run_live.py TMS.Fast.Playtest TMS.Full.Playtest.Dungeon > runs/2026-09-28-m1-u15-dungeon-feel/scratch/dungeon"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "grep -c \"Test Started\" Saved/Logs/TMS.log; python Tools/Harness/run.py visual --only TMS.Full.Playtest 2>&1 | tail -30"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "until tail -n +24909 Saved/Logs/TMS.log | grep -q \"Path={TMS.Full.Visual.SelfTest}\" || ! tasklist //FI \"PID eq 185420\" | grep -q UnrealEditor; do sleep 15; done"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "until grep -q \"^exit\" runs/2026-09-26-m1-u2-follow/gate2.log; do sleep 15; done; tail -30 runs/2026-09-26-m1-u2-follow/gate2.log"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "python Tools/Harness/run.py full --no-build --skip-soak > runs/2026-09-27-m1-u8-revive/full3.log 2>&1; echo exit $?; tail -30 runs/2026-09-27-m1-u8-revive/full3"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "until grep -q \"report:\" /c/Projects/bws.game.tms/runs/2026-09-27-m1-u8-revive/full4.log 2>/dev/null && ! pgrep -f \"run.py full\" >/dev/null 2>&1 && grep -q \"harn"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "python Tools/Harness/run.py review B1 pass \"065534-visual on 9aeec39 (U5b T08 ring floor mask): stray-windup lamp glyph over the stray and the amber ring flat o"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "python Tools/Harness/run.py visual 2>&1 | tail -12"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "python runs/2026-09-28-m1-u15-dungeon-feel/scratch/run_live.py TMS.Fast TMS.Full.Playtest TMS.Full.Groups 2>&1 | grep -v \"^Success\" | tail -15"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "until grep -q \"TMS harness full\" runs/2026-09-27-m1-u10-fetch/full1.log 2>/dev/null; do sleep 15; done; tail -3 runs/2026-09-27-m1-u10-fetch/full1.log"
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "python - <<'PYEOF'\np='runs/2026-09-27-m1-u10-fetch/TASKS.md'\ns=open(p,encoding='utf-8').read()\ns=s.replace(\"- [~] T03 [GREEN]\",\"- [x] T03 [GREEN]\")\ns=s.replace("
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   602,
+   "until grep -q \"^exit \" runs/2026-09-27-m1-u10-fetch/gate1.log 2>/dev/null; do sleep 20; done; tail -15 runs/2026-09-27-m1-u10-fetch/gate1.log"
+  ]
+ ],
+ "long_run_secs_by_proj": [
+  [
+   "C--Projects-bws-game-tms",
+   91674
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   24428
+  ],
+  [
+   "C--Projects-tmsUnreal",
+   21787
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   19232
+  ],
+  [
+   "C--Projects-bws-iron-canopy",
+   18156
+  ],
+  [
+   "C--Users-bsmi0--agents-skills-notebooklm-cli",
+   17693
+  ],
+  [
+   "C--Projects-animation-station",
+   17629
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   14355
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   6208
+  ],
+  [
+   "C--Projects-skiball-hoops",
+   5183
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   4910
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   4770
+  ],
+  [
+   "C--Projects-street-war",
+   4230
+  ],
+  [
+   "C--Projects-tms-heim",
+   3805
+  ],
+  [
+   "C--Users-bsmi0",
+   1924
+  ],
+  [
+   "C--Projects-prototype-pit-manuever",
+   1404
+  ],
+  [
+   "C--Projects-pil-agent-plugin",
+   1066
+  ],
+  [
+   "C--Projects-pil-agent-plugin-pil-agent-plugin",
+   937
+  ],
+  [
+   "C--Projects-mcp-ai-nlm",
+   902
+  ],
+  [
+   "C--Projects-bws-annotations",
+   708
+  ]
+ ],
+ "n_long_runs": 462
+}

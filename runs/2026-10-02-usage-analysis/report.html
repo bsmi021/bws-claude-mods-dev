@@ -1,0 +1,183 @@
+<title>Claude Code Usage Review</title>
+<link rel="stylesheet" href="precog.css">
+<style>
+  .mods-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 860px; }
+  .mods-table th { text-align: left; font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 500; padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--line); letter-spacing: .04em; text-transform: uppercase; }
+  .mods-table td { padding: var(--space-2); border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text); }
+  .mods-table td code { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+  .mods-table .pc-num { font-family: var(--font-mono); color: var(--accent); }
+  .tbl-wrap { overflow-x: auto; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--space-3); }
+  .ask { display: grid; gap: var(--space-1); }
+  .ask li { color: var(--text); }
+</style>
+<main class="pc-page">
+
+  <header class="pc-hero">
+    <div class="pc-hero__eyebrow"><span class="pc-chip is-info">30 days</span> <span class="pc-chip is-idle">Sep 2 – Oct 2, 2026</span></div>
+    <h1 class="pc-display-xl">Resume, editors and early stops cost most</h1>
+    <p class="pc-lead">The code mostly lands. Time goes to rebuilding context after crashes, babysitting UE, Unity and device state, and pushing agents past "done".</p>
+    <div class="pc-hero__meta"><span class="pc-label">2,033 transcripts · 3.8 GB</span><span class="pc-label">Claude Code 2.1.287</span><span class="pc-label">Run folder: runs/2026-10-02-usage-analysis</span></div>
+  </header>
+
+  <section class="pc-section">
+    <div class="pc-stats">
+      <div class="pc-stat"><span class="pc-stat__value" data-count="357">357</span><span class="pc-label">Interactive sessions (all terminal)</span><span class="pc-stat__delta is-good">1,176 prompts typed</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="398">398</span><span class="pc-label">Harness / headless sessions</span><span class="pc-stat__delta is-warn">+455 skill evals</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="104.6" data-decimals="1" data-suffix="k">104.6k</span><span class="pc-label">Tool calls</span><span class="pc-stat__delta is-warn">3,002 errors · 2.9%</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="12.9" data-decimals="1" data-prefix="$" data-suffix="k">$12.9k</span><span class="pc-label">API-equivalent cost</span></div>
+    </div>
+  </section>
+
+  <section class="pc-section">
+    <div class="pc-tldr">
+      <div>
+        <span class="pc-label">Answer</span>
+        <p class="pc-tldr__answer">Build three mods first: a Run Cockpit band, an Editor &amp; Device Guard, and a Windows shell lint.</p>
+      </div>
+      <ul>
+        <li><span class="pc-chip is-bad">resume</span><span>94 resume/continue prompts and 47 "where are we" asks, mostly after crashes.</span></li>
+        <li><span class="pc-chip is-warn">editors</span><span>95 unreal-mcp failures, 42 Unity pipeline timeouts and 37 "use the MCP" reminders.</span></li>
+        <li><span class="pc-chip is-warn">shell</span><span>201 quoting/heredoc failures and 351 Glob/Grep timeouts, all avoidable.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="pc-section">
+    <div class="pc-callout pc-brackets">
+      <span class="pc-label">Check this today</span>
+      <p>The AGENTS.md loader (<code>cc-plugin-agents-md</code>) was switched off this morning, between 02:02 and 06:40, most likely by the /doctor run (its backup file has no such entry). tmsUnreal, animation.station, iron-canopy, android-scribe, axo and pinkgill have only an AGENTS.md, so their project rules stop loading. Was that intended?</p>
+    </div>
+  </section>
+
+  <section class="pc-section two">
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">Unreal and Unity take three quarters of the work</h2><span class="pc-label">Tool calls by domain</span></div>
+      <div class="pc-frame__canvas" id="c-domain"></div>
+      <figcaption class="pc-frame__caption">Cost per domain: Unreal $5.0k, Unity $4.9k, apps/tools $1.5k, web $1.3k. All API-equivalent.</figcaption>
+    </figure>
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">What you keep typing</h2><span class="pc-label">Interactive prompts, by theme</span></div>
+      <div class="pc-frame__canvas" id="c-prompts"></div>
+      <figcaption class="pc-frame__caption">Regex buckets over 1,176 typed prompts. Buckets overlap.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">Search timeouts and shell quoting cause most avoidable errors</h2><span class="pc-label">Tool errors, clean buckets only</span></div>
+      <div class="pc-frame__canvas" id="c-errors"></div>
+      <figcaption class="pc-frame__caption">Most Glob timeouts come from home-folder sessions scanning all of C:\Projects for *.uproject. Build failures and test failures are left out because they are expected.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Findings</h2>
+    <ol class="pc-findings">
+      <li class="pc-finding"><span class="pc-chip is-bad">high</span><div><h3 class="pc-finding__title">Crash, resume, then "where are we?"</h3><p>36 crash prompts, 41 bare "resume" prompts and 47 status asks. The state is in RUNLOG and loop files, but nothing puts it in front of you or the agent.</p>
+        <details class="pc-details"><summary>Quotes</summary><div class="pc-details__body"><p>"we had a crash and lost where we were at, please resume" (axo). "are we resumed?" ×3. Compactions: 76, including 31 in tmsUnreal. Your PreCompact/PostCompact tail-file hook is a workaround for the same problem.</p></div></details></li>
+      <li class="pc-finding"><span class="pc-chip is-bad">high</span><div><h3 class="pc-finding__title">Agents stop with open items</h3><p>About 19 "don't stop / make the decisions" orders and about 10 "do we trust it's done?" checks. Some harness units took 11–12 worker sessions.</p>
+        <details class="pc-details"><summary>Quotes</summary><div class="pc-details__body"><p>"I do not understand why you keep stopping with open items" (frisbee). Android-scribe: "Why the fuck didn't you tell me we weren't done". "you ran for 47m with no action". "This loop is very inefficient and has taken well over 10 hours."</p></div></details></li>
+      <li class="pc-finding"><span class="pc-chip is-warn">medium</span><div><h3 class="pc-finding__title">Editors and devices need handholding</h3><p>unreal-mcp: 95 errors (connection refused, session expired, schema defaults). Unity pipeline: 22 "main thread timed out" and about 20 command timeouts. About 35 "tablet is back" handshakes.</p>
+        <details class="pc-details"><summary>Details</summary><div class="pc-details__body"><p>37 prompts tell the agent to use unreal-mcp, the port or live coding. 5 ask for a reduced-VRAM UE launch. 5 repeat Unity <code>-automated</code>. 33 sessions ran nvidia-smi by hand. The Blender MCP ran in about 57 sessions inside UE projects, which is the 8 GB VRAM collision. "you have crashed the editor multiple times trying to run python on unreal instead of using the mcp" (street-war).</p></div></details></li>
+      <li class="pc-finding"><span class="pc-chip is-warn">medium</span><div><h3 class="pc-finding__title">Polling instead of watching</h3><p>About 4,700 shell calls used sleep/until loops. 462 commands ran longer than 5 minutes, mostly UE builds, Gradle/adb and Unity test runs.</p></div></li>
+      <li class="pc-finding"><span class="pc-chip is-warn">medium</span><div><h3 class="pc-finding__title">Repeated boilerplate</h3><p>21 handoff-prompt requests followed by 12 paste-backs. 122 commit/push/PR prompts. 47 canonicalize/approve prompts. 26 role preambles.</p></div></li>
+      <li class="pc-finding"><span class="pc-chip is-idle">low</span><div><h3 class="pc-finding__title">Slow bash hooks get cancelled</h3><p><code>unreal-context.sh</code> on SessionStart was cancelled 56 times and <code>codegraph prompt-hook</code> 15 times. On Windows, Git Bash startup uses up the hook budget.</p></div></li>
+    </ol>
+  </section>
+
+  <section class="pc-section">
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">Run Cockpit: one band above the prompt</h2><span class="pc-label">Mockup, mod #1 + #2</span></div>
+      <div class="pc-frame__canvas">
+        <svg viewBox="0 0 960 250" role="img" aria-label="Mockup of a status band above the Claude Code prompt">
+          <rect class="pc-d-node" x="10" y="10" width="940" height="230" rx="10"/>
+          <text class="pc-d-label" x="34" y="48">RUN  2026-09-30-bow-fix · step 4/7 · next: verify draw anim in PIE</text>
+          <rect class="pc-d-node is-key" x="34" y="66" width="270" height="62" rx="8"/>
+          <text class="pc-d-label" x="50" y="94">UE  TMS  :8090  up</text>
+          <text class="pc-d-small" x="50" y="116">live coding ok · 6.1/8 GB VRAM</text>
+          <rect class="pc-d-node" x="320" y="66" width="200" height="62" rx="8"/>
+          <text class="pc-d-label" x="336" y="94">Blender  idle</text>
+          <text class="pc-d-small" x="336" y="116">MCP connected</text>
+          <rect class="pc-d-node" x="536" y="66" width="190" height="62" rx="8"/>
+          <text class="pc-d-label" x="552" y="94">adb  tablet</text>
+          <text class="pc-d-small" x="552" y="116">offline · waiting</text>
+          <rect class="pc-d-node" x="742" y="66" width="184" height="62" rx="8"/>
+          <text class="pc-d-label" x="758" y="94">Build  UBT</text>
+          <text class="pc-d-small" x="758" y="116">running 4m12s</text>
+          <text class="pc-d-small" x="34" y="160">Open items: 3   [1] Resume run   [2] Show RUNLOG   [3] Open loop board   [4] Mark finish line</text>
+          <line class="pc-d-edge" x1="34" y1="180" x2="926" y2="180"/>
+          <text class="pc-d-small" x="34" y="212">&gt; prompt box</text>
+        </svg>
+      </div>
+      <figcaption class="pc-frame__caption">Digit hotkeys work from an empty prompt. The band draws only in the terminal and Desktop. Context injection and guards also run headless.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Mod shortlist</h2>
+    <p class="pc-lead">Ranked by measured pain. The last column notes when a plain settings hook or skill would do.</p>
+    <figure class="pc-frame">
+      <div class="tbl-wrap">
+      <table class="mods-table">
+        <thead><tr><th>#</th><th>Mod</th><th>Pain it hits</th><th>Events / APIs</th><th>Headless?</th><th>Why a mod</th></tr></thead>
+        <tbody>
+          <tr><td class="pc-num">1</td><td><b>Run Cockpit</b><br>band + <code>/resume-run</code></td><td>94 resume, 47 status asks, 76 compactions</td><td><code>session.start</code>, <code>prompt.context</code>, <code>session.compact</code>, <code>ui.render AbovePrompt</code>, <code>$.fs.read</code> RUNLOG/loop.json, <code>$.command.register</code></td><td>Context injection yes; band no (all 161 interactive starts were in the terminal, so the band will show)</td><td>Needs a live band and in-process state. Probably replaces the PreCompact/PostCompact tail-file hack. Check the route that re-injects after compaction (prompt.attachment / prompt context) against the local types.</td></tr>
+          <tr><td class="pc-num">2</td><td><b>Editor &amp; Device Guard</b><br>UE · Unity · Blender · adb · dev servers</td><td>95 unreal-mcp errors, 42 Unity timeouts, 37 "use MCP" reminders, 35 device handshakes, 5 low-VRAM asks</td><td><code>tool.call</code> on <code>mcp__unreal-mcp__*</code>, <code>unity</code>, <code>adb</code>, UnrealEditor launches; <code>$.http.fetch</code> port probe; <code>$.process.run</code> nvidia-smi / tasklist; <code>$.clock.every</code></td><td>Guards yes</td><td>Preflight-denies with a fix hint instead of a 30 s failure. Rewrites launches to add <code>-automated</code> and low-VRAM flags. Feeds the band.</td></tr>
+          <tr><td class="pc-num">3</td><td><b>Windows Shell Lint</b></td><td>201 quoting/heredoc failures; 66k Bash calls/month</td><td><code>tool.call</code> {tool: Bash}; deny with the corrected command</td><td>Yes</td><td>A PreToolUse script would spawn a process per call (66k/month, and those hooks already get cancelled). In-process costs almost nothing.</td></tr>
+          <tr><td class="pc-num">4</td><td><b>Finish-Line Guard</b></td><td>~19 "don't stop", ~10 trust checks</td><td><code>turn.complete</code> reads TASKS/RUNLOG open items; shows a line or <code>$.prompt.submit</code> "continue: X"</td><td>Yes (verify)</td><td>A Stop settings hook can block a stop. The mod adds a checklist pane and an evidence check: a "done" claim must name a receipt path.</td></tr>
+          <tr><td class="pc-num">5</td><td><b>Loop Watch</b> pane</td><td>Units with 11–12 sessions, 18 stuck prompts, "47m no action"</td><td><code>$.clock.every</code> on harness state; <code>Pane</code> with pause/escalate buttons; <code>$.ui.toast</code> on stall</td><td>Pane no</td><td>Puts the browser status board inside the terminal and alerts on a stall. The budget and watchdog logic still belong in harness-loop itself.</td></tr>
+          <tr><td class="pc-num">6</td><td><b>Project Locator</b> tool</td><td>351 Glob/Grep timeouts</td><td><code>$.tool.register</code> find_project; index in <code>$.store</code></td><td>Yes</td><td>Cheap alternative: a project list in the global CLAUDE.md fixes most of it with no code.</td></tr>
+          <tr><td class="pc-num">7</td><td><b>/handoff</b> + worker model pin</td><td>21 handoffs + 12 paste-backs; Sonnet 5.5 for workers restated 4 times</td><td><code>$.command.register</code>, <code>$.model.complete</code>, <code>agent.spawn</code> {model}</td><td>Yes</td><td>/ship and /canonicalize are judgment calls and fit better as skills.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <figcaption class="pc-frame__caption">Per domain: Unreal → 1, 2, 4. Unity → 1, 2 (Unity pipeline, -automated). Web → 2 (dev-server ports, "where is the page running"). Local apps → 2 (adb), 7.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Decide</h2>
+    <ol class="ask">
+      <li>Which 2–3 mods should I build first? I recommend 1 + 2 together (they share the band), then 3.</li>
+      <li>Was turning off the AGENTS.md loader intentional?</li>
+      <li>Should Editor &amp; Device Guard only warn, or deny and auto-rewrite? (low-VRAM flags, <code>-automated</code>, blocking editor Python over Bash)</li>
+    </ol>
+  </section>
+
+  <section class="pc-section">
+    <details class="pc-details"><summary>How I measured</summary><div class="pc-details__body">
+      <p><b>Data:</b> every <code>~/.claude/projects/**/*.jsonl</code> modified after 2026-09-02, including subagent logs. Python scripts <code>analyze.py</code> and <code>errors.py</code>, with outputs in the run folder.</p>
+      <p><b>Sessions:</b> 1,210 top-level sessions. About 357 interactive and 853 headless (SDK/<code>claude -p</code>). 455 of the headless ones are skill-trigger evals. There are about 1,000 more subagent logs.</p>
+      <p><b>Prompt themes:</b> a subagent read all 1,176 typed prompts, excluding 302 relayed teammate messages and the eval prompts.</p>
+      <p><b>Cost:</b> the <code>cost-state</code> totals. These are API-equivalent and cumulative for sessions that started before the window.</p>
+      <p><b>Limits:</b> error buckets are regex-based. Build, test and Python failures are noisy and left out of the chart. The 7 corrections are a regex undercount; the subagent counts are better.</p>
+      <p>Mod feasibility was checked against the online mods reference (2.1.287). Any build will be checked against the locally generated <code>.claude-plugin/types</code> first.</p>
+    </div></details>
+  </section>
+</main>
+<script src="precog.js"></script>
+<script>
+  (function () {
+    function draw() {
+      if (!window.Precog) return;
+      Precog.bars(document.getElementById('c-domain'), [
+        {label: 'Unreal', value: 48578}, {label: 'Unity', value: 27727},
+        {label: 'Apps / tools', value: 14889}, {label: 'Web', value: 12346}
+      ], {unit: ' calls', highlight: 0});
+      Precog.bars(document.getElementById('c-prompts'), [
+        {label: 'Commit / push / PR', value: 122}, {label: 'Resume / continue', value: 94},
+        {label: 'Status asks', value: 47}, {label: 'Canonicalize / approve', value: 47},
+        {label: 'Open / show me', value: 45}, {label: 'Use MCP / port', value: 37},
+        {label: 'Crash mentions', value: 36}, {label: 'Device handshakes', value: 35},
+        {label: 'Handoff prompts', value: 21}, {label: "Don't stop", value: 19}
+      ], {unit: '', highlight: 1});
+      Precog.bars(document.getElementById('c-errors'), [
+        {label: 'Glob / Grep timeout', value: 351}, {label: 'Shell quoting / heredoc', value: 201},
+        {label: 'unreal-mcp', value: 95}, {label: 'Edit mismatch', value: 56},
+        {label: 'Unity pipeline', value: 42}, {label: 'claude-in-chrome', value: 38}
+      ], {unit: '', highlight: 0});
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', draw); else draw();
+  })();
+</script>

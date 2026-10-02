@@ -1,0 +1,4293 @@
+{
+ "n_files": 2033,
+ "n_sessions": 2210,
+ "projects": [
+  {
+   "project": "C--Projects-tmsUnreal",
+   "domain": "unreal",
+   "sessions": 61,
+   "subagent_logs": 191,
+   "headless": 0,
+   "prompts": 271,
+   "tools": 18729,
+   "tool_errors": 525,
+   "cost_usd": 2558.04,
+   "lines_added": 142680,
+   "lines_removed": 3874,
+   "compacts": 31,
+   "interrupts": 11,
+   "active_days": 14,
+   "span_hours": 253.4,
+   "out_tokens": 33289574,
+   "top_exts": [
+    [
+     ".cpp",
+     942
+    ],
+    [
+     ".py",
+     724
+    ],
+    [
+     ".h",
+     495
+    ],
+    [
+     ".md",
+     432
+    ],
+    [
+     ".json",
+     48
+    ],
+    [
+     ".html",
+     42
+    ],
+    [
+     ".ps1",
+     42
+    ],
+    [
+     ".ini",
+     29
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-game-tms",
+   "domain": "unreal",
+   "sessions": 121,
+   "subagent_logs": 114,
+   "headless": 112,
+   "prompts": 255,
+   "tools": 14187,
+   "tool_errors": 334,
+   "cost_usd": 1275.55,
+   "lines_added": 84522,
+   "lines_removed": 2546,
+   "compacts": 4,
+   "interrupts": 6,
+   "active_days": 8,
+   "span_hours": 138.2,
+   "out_tokens": 27769517,
+   "top_exts": [
+    [
+     ".cpp",
+     440
+    ],
+    [
+     ".md",
+     385
+    ],
+    [
+     ".py",
+     231
+    ],
+    [
+     ".h",
+     196
+    ],
+    [
+     ".txt",
+     15
+    ],
+    [
+     ".csv",
+     13
+    ],
+    [
+     ".json",
+     5
+    ],
+    [
+     ".html",
+     5
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-tms-heim",
+   "domain": "unreal",
+   "sessions": 34,
+   "subagent_logs": 364,
+   "headless": 0,
+   "prompts": 141,
+   "tools": 13078,
+   "tool_errors": 279,
+   "cost_usd": 1491.61,
+   "lines_added": 24617,
+   "lines_removed": 518,
+   "compacts": 4,
+   "interrupts": 10,
+   "active_days": 10,
+   "span_hours": 125.8,
+   "out_tokens": 17066151,
+   "top_exts": [
+    [
+     ".py",
+     184
+    ],
+    [
+     ".md",
+     66
+    ],
+    [
+     ".cs",
+     58
+    ],
+    [
+     ".ps1",
+     12
+    ],
+    [
+     ".html",
+     8
+    ],
+    [
+     ".mjs",
+     2
+    ],
+    [
+     ".txt",
+     2
+    ],
+    [
+     ".sh",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-animation-station",
+   "domain": "unity",
+   "sessions": 10,
+   "subagent_logs": 30,
+   "headless": 0,
+   "prompts": 183,
+   "tools": 7472,
+   "tool_errors": 187,
+   "cost_usd": 1883.45,
+   "lines_added": 76136,
+   "lines_removed": 2841,
+   "compacts": 4,
+   "interrupts": 2,
+   "active_days": 2,
+   "span_hours": 107.6,
+   "out_tokens": 12199533,
+   "top_exts": [
+    [
+     ".cs",
+     418
+    ],
+    [
+     ".md",
+     320
+    ],
+    [
+     ".py",
+     232
+    ],
+    [
+     ".ps1",
+     134
+    ],
+    [
+     ".json",
+     74
+    ],
+    [
+     ".txt",
+     20
+    ],
+    [
+     ".uss",
+     7
+    ],
+    [
+     ".asmdef",
+     4
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-android-scribe",
+   "domain": "android",
+   "sessions": 76,
+   "subagent_logs": 11,
+   "headless": 41,
+   "prompts": 182,
+   "tools": 7362,
+   "tool_errors": 198,
+   "cost_usd": 681.59,
+   "lines_added": 42186,
+   "lines_removed": 1691,
+   "compacts": 4,
+   "interrupts": 6,
+   "active_days": 8,
+   "span_hours": 197.8,
+   "out_tokens": 15455663,
+   "top_exts": [
+    [
+     ".kt",
+     523
+    ],
+    [
+     ".md",
+     210
+    ],
+    [
+     ".py",
+     109
+    ],
+    [
+     ".html",
+     29
+    ],
+    [
+     ".sh",
+     15
+    ],
+    [
+     ".txt",
+     11
+    ],
+    [
+     ".skill",
+     8
+    ],
+    [
+     ".json",
+     8
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-frisbee",
+   "domain": "python/tools",
+   "sessions": 14,
+   "subagent_logs": 26,
+   "headless": 0,
+   "prompts": 41,
+   "tools": 5424,
+   "tool_errors": 106,
+   "cost_usd": 289.95,
+   "lines_added": 15254,
+   "lines_removed": 867,
+   "compacts": 12,
+   "interrupts": 5,
+   "active_days": 6,
+   "span_hours": 63.5,
+   "out_tokens": 9283095,
+   "top_exts": [
+    [
+     ".py",
+     328
+    ],
+    [
+     ".cpp",
+     265
+    ],
+    [
+     ".md",
+     86
+    ],
+    [
+     ".cs",
+     41
+    ],
+    [
+     ".txt",
+     20
+    ],
+    [
+     ".ps1",
+     14
+    ],
+    [
+     ".h",
+     8
+    ],
+    [
+     ".html",
+     4
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-game-axo",
+   "domain": "python/tools",
+   "sessions": 32,
+   "subagent_logs": 24,
+   "headless": 23,
+   "prompts": 78,
+   "tools": 3997,
+   "tool_errors": 123,
+   "cost_usd": 253.27,
+   "lines_added": 19926,
+   "lines_removed": 620,
+   "compacts": 2,
+   "interrupts": 5,
+   "active_days": 3,
+   "span_hours": 70.8,
+   "out_tokens": 9913164,
+   "top_exts": [
+    [
+     ".py",
+     161
+    ],
+    [
+     ".cpp",
+     53
+    ],
+    [
+     ".md",
+     46
+    ],
+    [
+     ".h",
+     18
+    ],
+    [
+     ".html",
+     7
+    ],
+    [
+     ".txt",
+     4
+    ],
+    [
+     ".json",
+     3
+    ],
+    [
+     ".ps1",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-street-war",
+   "domain": "python/tools",
+   "sessions": 15,
+   "subagent_logs": 80,
+   "headless": 0,
+   "prompts": 61,
+   "tools": 3938,
+   "tool_errors": 98,
+   "cost_usd": 385.82,
+   "lines_added": 9618,
+   "lines_removed": 169,
+   "compacts": 1,
+   "interrupts": 4,
+   "active_days": 3,
+   "span_hours": 108.9,
+   "out_tokens": 7410742,
+   "top_exts": [
+    [
+     ".py",
+     110
+    ],
+    [
+     ".md",
+     70
+    ],
+    [
+     ".cpp",
+     45
+    ],
+    [
+     ".h",
+     26
+    ],
+    [
+     ".html",
+     13
+    ],
+    [
+     ".cs",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-iron-canopy",
+   "domain": "unity",
+   "sessions": 36,
+   "subagent_logs": 12,
+   "headless": 30,
+   "prompts": 90,
+   "tools": 3915,
+   "tool_errors": 117,
+   "cost_usd": 254.52,
+   "lines_added": 19940,
+   "lines_removed": 538,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 5,
+   "span_hours": 72.2,
+   "out_tokens": 6713004,
+   "top_exts": [
+    [
+     ".cs",
+     233
+    ],
+    [
+     ".md",
+     86
+    ],
+    [
+     ".py",
+     35
+    ],
+    [
+     ".txt",
+     10
+    ],
+    [
+     ".ps1",
+     8
+    ],
+    [
+     ".json",
+     6
+    ],
+    [
+     ".asmdef",
+     4
+    ],
+    [
+     ".html",
+     3
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-motion-library",
+   "domain": "web",
+   "sessions": 11,
+   "subagent_logs": 36,
+   "headless": 3,
+   "prompts": 44,
+   "tools": 3184,
+   "tool_errors": 92,
+   "cost_usd": 555.23,
+   "lines_added": 18506,
+   "lines_removed": 1766,
+   "compacts": 1,
+   "interrupts": 0,
+   "active_days": 3,
+   "span_hours": 24.3,
+   "out_tokens": 7534960,
+   "top_exts": [
+    [
+     ".ts",
+     304
+    ],
+    [
+     ".md",
+     285
+    ],
+    [
+     ".html",
+     79
+    ],
+    [
+     ".mjs",
+     45
+    ],
+    [
+     ".py",
+     31
+    ],
+    [
+     ".css",
+     31
+    ],
+    [
+     ".js",
+     23
+    ],
+    [
+     ".svg",
+     19
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-skiball-hoops",
+   "domain": "unity",
+   "sessions": 2,
+   "subagent_logs": 46,
+   "headless": 0,
+   "prompts": 16,
+   "tools": 3155,
+   "tool_errors": 59,
+   "cost_usd": 1291.22,
+   "lines_added": 94194,
+   "lines_removed": 5362,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 12.0,
+   "out_tokens": 3154904,
+   "top_exts": [
+    [
+     ".cs",
+     397
+    ],
+    [
+     ".py",
+     39
+    ],
+    [
+     ".md",
+     24
+    ],
+    [
+     ".ps1",
+     18
+    ],
+    [
+     ".asmdef",
+     3
+    ],
+    [
+     ".sh",
+     3
+    ],
+    [
+     ".csproj",
+     1
+    ],
+    [
+     ".notused",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-portfolio",
+   "domain": "web",
+   "sessions": 19,
+   "subagent_logs": 36,
+   "headless": 0,
+   "prompts": 72,
+   "tools": 2981,
+   "tool_errors": 76,
+   "cost_usd": 335.64,
+   "lines_added": 7209,
+   "lines_removed": 588,
+   "compacts": 2,
+   "interrupts": 2,
+   "active_days": 7,
+   "span_hours": 116.3,
+   "out_tokens": 6017780,
+   "top_exts": [
+    [
+     ".md",
+     123
+    ],
+    [
+     ".mjs",
+     109
+    ],
+    [
+     ".html",
+     35
+    ],
+    [
+     ".css",
+     29
+    ],
+    [
+     ".ts",
+     22
+    ],
+    [
+     ".tsx",
+     21
+    ],
+    [
+     ".py",
+     19
+    ],
+    [
+     ".ps1",
+     9
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0",
+   "domain": "python/tools",
+   "sessions": 121,
+   "subagent_logs": 3,
+   "headless": 83,
+   "prompts": 136,
+   "tools": 2557,
+   "tool_errors": 364,
+   "cost_usd": 379.27,
+   "lines_added": 9435,
+   "lines_removed": 505,
+   "compacts": 1,
+   "interrupts": 1,
+   "active_days": 15,
+   "span_hours": 40.0,
+   "out_tokens": 5247962,
+   "top_exts": [
+    [
+     ".py",
+     131
+    ],
+    [
+     ".md",
+     106
+    ],
+    [
+     ".txt",
+     18
+    ],
+    [
+     ".html",
+     14
+    ],
+    [
+     ".ps1",
+     12
+    ],
+    [
+     ".json",
+     2
+    ],
+    [
+     ".mjs",
+     2
+    ],
+    [
+     ".sh",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-annotations",
+   "domain": "unreal",
+   "sessions": 8,
+   "subagent_logs": 3,
+   "headless": 0,
+   "prompts": 14,
+   "tools": 2127,
+   "tool_errors": 54,
+   "cost_usd": 268.01,
+   "lines_added": 29976,
+   "lines_removed": 691,
+   "compacts": 3,
+   "interrupts": 1,
+   "active_days": 3,
+   "span_hours": 48.9,
+   "out_tokens": 16052164,
+   "top_exts": [
+    [
+     ".cpp",
+     267
+    ],
+    [
+     ".kt",
+     124
+    ],
+    [
+     ".md",
+     103
+    ],
+    [
+     ".h",
+     101
+    ],
+    [
+     ".ps1",
+     68
+    ],
+    [
+     ".txt",
+     54
+    ],
+    [
+     ".py",
+     21
+    ],
+    [
+     ".kts",
+     8
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-web-pinkgill",
+   "domain": "web",
+   "sessions": 4,
+   "subagent_logs": 4,
+   "headless": 0,
+   "prompts": 60,
+   "tools": 2017,
+   "tool_errors": 56,
+   "cost_usd": 103.73,
+   "lines_added": 3317,
+   "lines_removed": 288,
+   "compacts": 4,
+   "interrupts": 6,
+   "active_days": 3,
+   "span_hours": 24.0,
+   "out_tokens": 5052754,
+   "top_exts": [
+    [
+     ".py",
+     30
+    ],
+    [
+     ".md",
+     20
+    ],
+    [
+     ".ts",
+     16
+    ],
+    [
+     ".html",
+     10
+    ],
+    [
+     ".mjs",
+     9
+    ],
+    [
+     ".tsx",
+     3
+    ],
+    [
+     ".part",
+     1
+    ],
+    [
+     ".css",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-prototype-pit-manuever",
+   "domain": "web",
+   "sessions": 31,
+   "subagent_logs": 2,
+   "headless": 25,
+   "prompts": 35,
+   "tools": 1793,
+   "tool_errors": 42,
+   "cost_usd": 122.54,
+   "lines_added": 3075,
+   "lines_removed": 134,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 2,
+   "span_hours": 35.9,
+   "out_tokens": 3629413,
+   "top_exts": [
+    [
+     ".md",
+     41
+    ],
+    [
+     ".js",
+     32
+    ],
+    [
+     ".py",
+     20
+    ],
+    [
+     ".html",
+     2
+    ],
+    [
+     ".txt",
+     1
+    ],
+    [
+     ".json",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-xwing-XvT",
+   "domain": "unreal",
+   "sessions": 16,
+   "subagent_logs": 4,
+   "headless": 0,
+   "prompts": 25,
+   "tools": 1197,
+   "tool_errors": 29,
+   "cost_usd": 168.89,
+   "lines_added": 13136,
+   "lines_removed": 141,
+   "compacts": 3,
+   "interrupts": 0,
+   "active_days": 3,
+   "span_hours": 41.3,
+   "out_tokens": 4938683,
+   "top_exts": [
+    [
+     ".cpp",
+     51
+    ],
+    [
+     ".md",
+     43
+    ],
+    [
+     ".h",
+     40
+    ],
+    [
+     ".py",
+     25
+    ],
+    [
+     "",
+     3
+    ],
+    [
+     ".example",
+     1
+    ],
+    [
+     ".cs",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-portfolio-fabricator",
+   "domain": "web",
+   "sessions": 13,
+   "subagent_logs": 1,
+   "headless": 13,
+   "prompts": 13,
+   "tools": 1064,
+   "tool_errors": 23,
+   "cost_usd": 58.85,
+   "lines_added": 5940,
+   "lines_removed": 572,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 3,
+   "span_hours": 7.1,
+   "out_tokens": 2057275,
+   "top_exts": [
+    [
+     ".ts",
+     86
+    ],
+    [
+     ".mjs",
+     31
+    ],
+    [
+     ".md",
+     22
+    ],
+    [
+     ".css",
+     12
+    ],
+    [
+     ".py",
+     9
+    ],
+    [
+     ".tsx",
+     3
+    ],
+    [
+     ".html",
+     1
+    ],
+    [
+     ".txt",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-motion-library-9f6451d6-1651-4366-a973-c8b9fed875fc-scratchpad-trigger-root",
+   "domain": "other",
+   "sessions": 445,
+   "subagent_logs": 0,
+   "headless": 445,
+   "prompts": 445,
+   "tools": 1040,
+   "tool_errors": 49,
+   "cost_usd": 0.0,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 4.3,
+   "out_tokens": 803915,
+   "top_exts": []
+  },
+  {
+   "project": "C--Users-bsmi0--codex-worktrees-procedural-world-exit-harness-tmsUnreal",
+   "domain": "unreal",
+   "sessions": 16,
+   "subagent_logs": 1,
+   "headless": 14,
+   "prompts": 15,
+   "tools": 1034,
+   "tool_errors": 37,
+   "cost_usd": 86.37,
+   "lines_added": 7757,
+   "lines_removed": 242,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 12.8,
+   "out_tokens": 2505157,
+   "top_exts": [
+    [
+     ".md",
+     47
+    ],
+    [
+     ".py",
+     44
+    ],
+    [
+     ".cpp",
+     18
+    ],
+    [
+     ".json",
+     11
+    ],
+    [
+     ".h",
+     7
+    ],
+    [
+     ".txt",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-pil-agent-plugin-pil-agent-plugin",
+   "domain": "python/tools",
+   "sessions": 28,
+   "subagent_logs": 1,
+   "headless": 21,
+   "prompts": 40,
+   "tools": 853,
+   "tool_errors": 33,
+   "cost_usd": 49.3,
+   "lines_added": 12571,
+   "lines_removed": 236,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 3,
+   "span_hours": 18.0,
+   "out_tokens": 2058871,
+   "top_exts": [
+    [
+     ".py",
+     84
+    ],
+    [
+     ".md",
+     37
+    ],
+    [
+     ".yml",
+     5
+    ],
+    [
+     ".json",
+     2
+    ],
+    [
+     ".yaml",
+     1
+    ],
+    [
+     ".txt",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-harness-test",
+   "domain": "web",
+   "sessions": 11,
+   "subagent_logs": 1,
+   "headless": 9,
+   "prompts": 14,
+   "tools": 544,
+   "tool_errors": 10,
+   "cost_usd": 34.16,
+   "lines_added": 5300,
+   "lines_removed": 297,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 5.2,
+   "out_tokens": 1335364,
+   "top_exts": [
+    [
+     ".ts",
+     130
+    ],
+    [
+     ".md",
+     65
+    ],
+    [
+     ".json",
+     6
+    ],
+    [
+     ".sh",
+     5
+    ],
+    [
+     ".mts",
+     2
+    ],
+    [
+     ".mjs",
+     1
+    ],
+    [
+     ".txt",
+     1
+    ],
+    [
+     "",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-hyperframes-testing",
+   "domain": "web",
+   "sessions": 2,
+   "subagent_logs": 3,
+   "headless": 0,
+   "prompts": 9,
+   "tools": 357,
+   "tool_errors": 16,
+   "cost_usd": 53.98,
+   "lines_added": 1430,
+   "lines_removed": 95,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.9,
+   "out_tokens": 425839,
+   "top_exts": [
+    [
+     ".html",
+     36
+    ],
+    [
+     ".md",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-slop-bnd-exercise-1",
+   "domain": "python/tools",
+   "sessions": 2,
+   "subagent_logs": 2,
+   "headless": 0,
+   "prompts": 6,
+   "tools": 337,
+   "tool_errors": 9,
+   "cost_usd": 0.0,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 7.0,
+   "out_tokens": 1196716,
+   "top_exts": [
+    [
+     ".py",
+     66
+    ],
+    [
+     ".md",
+     3
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-pil-agent-plugin",
+   "domain": "python/tools",
+   "sessions": 13,
+   "subagent_logs": 2,
+   "headless": 0,
+   "prompts": 13,
+   "tools": 319,
+   "tool_errors": 11,
+   "cost_usd": 42.44,
+   "lines_added": 1222,
+   "lines_removed": 11,
+   "compacts": 0,
+   "interrupts": 2,
+   "active_days": 6,
+   "span_hours": 8.5,
+   "out_tokens": 649792,
+   "top_exts": [
+    [
+     ".md",
+     7
+    ],
+    [
+     ".sh",
+     5
+    ],
+    [
+     ".py",
+     3
+    ],
+    [
+     ".json",
+     1
+    ],
+    [
+     ".yml",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-skills-harness-loop",
+   "domain": "python/tools",
+   "sessions": 8,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 5,
+   "tools": 276,
+   "tool_errors": 10,
+   "cost_usd": 15.83,
+   "lines_added": 524,
+   "lines_removed": 9,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 3,
+   "span_hours": 22.0,
+   "out_tokens": 677383,
+   "top_exts": [
+    [
+     ".py",
+     40
+    ],
+    [
+     ".md",
+     12
+    ],
+    [
+     ".html",
+     5
+    ],
+    [
+     ".txt",
+     4
+    ],
+    [
+     ".json",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-mcp-ai-nlm",
+   "domain": "python/tools",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 5,
+   "tools": 266,
+   "tool_errors": 14,
+   "cost_usd": 22.93,
+   "lines_added": 3396,
+   "lines_removed": 118,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 10.8,
+   "out_tokens": 672570,
+   "top_exts": [
+    [
+     ".py",
+     90
+    ],
+    [
+     ".md",
+     11
+    ],
+    [
+     ".toml",
+     1
+    ],
+    [
+     ".json",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-bws-portfolio--claude-worktrees-perf-chapter-1",
+   "domain": "web",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 3,
+   "tools": 234,
+   "tool_errors": 12,
+   "cost_usd": 39.09,
+   "lines_added": 797,
+   "lines_removed": 91,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 3.3,
+   "out_tokens": 322385,
+   "top_exts": [
+    [
+     ".mjs",
+     17
+    ],
+    [
+     ".js",
+     14
+    ],
+    [
+     ".ts",
+     10
+    ],
+    [
+     ".md",
+     7
+    ],
+    [
+     ".tsx",
+     6
+    ],
+    [
+     ".sh",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents",
+   "domain": "python/tools",
+   "sessions": 6,
+   "subagent_logs": 1,
+   "headless": 0,
+   "prompts": 7,
+   "tools": 211,
+   "tool_errors": 6,
+   "cost_usd": 19.34,
+   "lines_added": 696,
+   "lines_removed": 53,
+   "compacts": 0,
+   "interrupts": 2,
+   "active_days": 2,
+   "span_hours": 7.1,
+   "out_tokens": 367043,
+   "top_exts": [
+    [
+     ".py",
+     14
+    ],
+    [
+     ".md",
+     10
+    ],
+    [
+     ".html",
+     3
+    ],
+    [
+     ".json",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-design-systems",
+   "domain": "web",
+   "sessions": 2,
+   "subagent_logs": 1,
+   "headless": 0,
+   "prompts": 1,
+   "tools": 172,
+   "tool_errors": 12,
+   "cost_usd": 16.78,
+   "lines_added": 1221,
+   "lines_removed": 6,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 1.3,
+   "out_tokens": 324659,
+   "top_exts": [
+    [
+     ".md",
+     6
+    ],
+    [
+     ".js",
+     3
+    ],
+    [
+     ".py",
+     3
+    ],
+    [
+     ".html",
+     2
+    ],
+    [
+     ".css",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-skills",
+   "domain": "web",
+   "sessions": 4,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 5,
+   "tools": 118,
+   "tool_errors": 1,
+   "cost_usd": 25.5,
+   "lines_added": 1307,
+   "lines_removed": 116,
+   "compacts": 0,
+   "interrupts": 1,
+   "active_days": 1,
+   "span_hours": 0.8,
+   "out_tokens": 1037975,
+   "top_exts": [
+    [
+     ".md",
+     24
+    ],
+    [
+     ".py",
+     3
+    ],
+    [
+     ".html",
+     3
+    ],
+    [
+     ".yaml",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-tms-heim--agents-skills",
+   "domain": "unreal",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 3,
+   "tools": 107,
+   "tool_errors": 1,
+   "cost_usd": 28.64,
+   "lines_added": 1129,
+   "lines_removed": 82,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 3.0,
+   "out_tokens": 262455,
+   "top_exts": [
+    [
+     ".md",
+     35
+    ],
+    [
+     ".py",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-slop-hyperwave",
+   "domain": "web",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 5,
+   "tools": 93,
+   "tool_errors": 1,
+   "cost_usd": 21.18,
+   "lines_added": 2841,
+   "lines_removed": 1148,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 3.4,
+   "out_tokens": 636602,
+   "top_exts": [
+    [
+     ".html",
+     20
+    ],
+    [
+     ".md",
+     4
+    ],
+    [
+     ".js",
+     4
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab-s5-high",
+   "domain": "python/tools",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 2,
+   "prompts": 2,
+   "tools": 88,
+   "tool_errors": 2,
+   "cost_usd": 4.24,
+   "lines_added": 1025,
+   "lines_removed": 31,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.3,
+   "out_tokens": 93527,
+   "top_exts": [
+    [
+     ".md",
+     27
+    ],
+    [
+     ".py",
+     17
+    ],
+    [
+     "",
+     1
+    ],
+    [
+     ".csv",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Projects-xwing",
+   "domain": "other",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 1,
+   "tools": 72,
+   "tool_errors": 1,
+   "cost_usd": 13.06,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.7,
+   "out_tokens": 120014,
+   "top_exts": []
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab2-s5-high",
+   "domain": "python/tools",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 64,
+   "tool_errors": 0,
+   "cost_usd": 2.13,
+   "lines_added": 865,
+   "lines_removed": 31,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.2,
+   "out_tokens": 156748,
+   "top_exts": [
+    [
+     ".md",
+     20
+    ],
+    [
+     ".py",
+     20
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab2-o55-high",
+   "domain": "python/tools",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 44,
+   "tool_errors": 0,
+   "cost_usd": 2.53,
+   "lines_added": 763,
+   "lines_removed": 7,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.1,
+   "out_tokens": 95924,
+   "top_exts": [
+    [
+     ".py",
+     15
+    ],
+    [
+     ".md",
+     3
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab-o55-high",
+   "domain": "python/tools",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 31,
+   "tool_errors": 0,
+   "cost_usd": 2.45,
+   "lines_added": 642,
+   "lines_removed": 3,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.1,
+   "out_tokens": 71703,
+   "top_exts": [
+    [
+     ".py",
+     10
+    ],
+    [
+     ".md",
+     3
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab-s55-high",
+   "domain": "python/tools",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 2,
+   "prompts": 2,
+   "tools": 25,
+   "tool_errors": 1,
+   "cost_usd": 0.82,
+   "lines_added": 552,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.1,
+   "out_tokens": 74629,
+   "top_exts": [
+    [
+     ".py",
+     6
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab2-s55-high",
+   "domain": "python/tools",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 20,
+   "tool_errors": 1,
+   "cost_usd": 0.72,
+   "lines_added": 202,
+   "lines_removed": 16,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.1,
+   "out_tokens": 56719,
+   "top_exts": [
+    [
+     ".py",
+     2
+    ],
+    [
+     ".md",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab-s55-low",
+   "domain": "python/tools",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 2,
+   "prompts": 2,
+   "tools": 19,
+   "tool_errors": 2,
+   "cost_usd": 0.55,
+   "lines_added": 309,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 74409,
+   "top_exts": [
+    [
+     ".py",
+     9
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-android-scribe-c980ceda-2e88-4434-b85a-99a51f548b22-scratchpad-hl-demo",
+   "domain": "other",
+   "sessions": 3,
+   "subagent_logs": 1,
+   "headless": 3,
+   "prompts": 3,
+   "tools": 17,
+   "tool_errors": 0,
+   "cost_usd": 0.88,
+   "lines_added": 69,
+   "lines_removed": 24,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 13758,
+   "top_exts": [
+    [
+     ".md",
+     9
+    ],
+    [
+     ".txt",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab2-s55-med",
+   "domain": "python/tools",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 16,
+   "tool_errors": 1,
+   "cost_usd": 0.44,
+   "lines_added": 268,
+   "lines_removed": 2,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 55268,
+   "top_exts": [
+    [
+     ".py",
+     6
+    ],
+    [
+     ".md",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-skills-notebooklm-cli",
+   "domain": "other",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 2,
+   "tools": 16,
+   "tool_errors": 1,
+   "cost_usd": 4.03,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 5.4,
+   "out_tokens": 20250,
+   "top_exts": []
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp-precog-clean-test2",
+   "domain": "web",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 15,
+   "tool_errors": 0,
+   "cost_usd": 3.07,
+   "lines_added": 242,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.1,
+   "out_tokens": 33842,
+   "top_exts": [
+    [
+     ".html",
+     1
+    ],
+    [
+     ".md",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab-s55-med",
+   "domain": "python/tools",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 14,
+   "tool_errors": 1,
+   "cost_usd": 0.42,
+   "lines_added": 223,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 52181,
+   "top_exts": [
+    [
+     ".py",
+     4
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp-precog-clean-test",
+   "domain": "other",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 13,
+   "tool_errors": 0,
+   "cost_usd": 1.69,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 13521,
+   "top_exts": []
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-dry",
+   "domain": "other",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 2,
+   "prompts": 2,
+   "tools": 12,
+   "tool_errors": 2,
+   "cost_usd": 0.4,
+   "lines_added": 8,
+   "lines_removed": 8,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 7138,
+   "top_exts": [
+    [
+     ".md",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-24-harness-loop-model-routing-tr-demo",
+   "domain": "other",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 2,
+   "prompts": 2,
+   "tools": 11,
+   "tool_errors": 5,
+   "cost_usd": 0.39,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 4315,
+   "top_exts": []
+  },
+  {
+   "project": "C--Projects-bws-mods-claude-code",
+   "domain": "python/tools",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 1,
+   "tools": 9,
+   "tool_errors": 1,
+   "cost_usd": 0.0,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 26982,
+   "top_exts": [
+    [
+     ".py",
+     1
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-ab2-s55-low",
+   "domain": "other",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 7,
+   "tool_errors": 0,
+   "cost_usd": 0.29,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 14309,
+   "top_exts": []
+  },
+  {
+   "project": "C--Projects-bws-motion-library-runs-2026-09-03-skill-creator-trigger-root",
+   "domain": "other",
+   "sessions": 3,
+   "subagent_logs": 0,
+   "headless": 3,
+   "prompts": 3,
+   "tools": 2,
+   "tool_errors": 0,
+   "cost_usd": 0.0,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 704,
+   "top_exts": []
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-probe",
+   "domain": "other",
+   "sessions": 5,
+   "subagent_logs": 0,
+   "headless": 5,
+   "prompts": 5,
+   "tools": 2,
+   "tool_errors": 0,
+   "cost_usd": 1.33,
+   "lines_added": 4,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 393,
+   "top_exts": [
+    [
+     ".txt",
+     2
+    ]
+   ]
+  },
+  {
+   "project": "C--Users-bsmi0--agents-runs-2026-09-28-harness-loop-sonnet-5-5-probe-fable",
+   "domain": "other",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 1,
+   "tool_errors": 0,
+   "cost_usd": 0.91,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 110,
+   "top_exts": []
+  },
+  {
+   "project": "C--Projects-bws-android-post-it",
+   "domain": "other",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 0,
+   "prompts": 0,
+   "tools": 0,
+   "tool_errors": 0,
+   "cost_usd": 0.0,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 0,
+   "top_exts": []
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-game-axo-06c2ec03-bb5c-4a27-83a5-5e78d4d231af-scratchpad",
+   "domain": "other",
+   "sessions": 2,
+   "subagent_logs": 0,
+   "headless": 2,
+   "prompts": 2,
+   "tools": 0,
+   "tool_errors": 0,
+   "cost_usd": 0.3,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 8,
+   "top_exts": []
+  },
+  {
+   "project": "C--Users-bsmi0-Documents-Codex-2026-09-26-i-want-to-add-a-new-work-runs-2026-09-26-codex-harness-skill-live-fixture",
+   "domain": "other",
+   "sessions": 1,
+   "subagent_logs": 0,
+   "headless": 1,
+   "prompts": 1,
+   "tools": 0,
+   "tool_errors": 0,
+   "cost_usd": 0.21,
+   "lines_added": 0,
+   "lines_removed": 0,
+   "compacts": 0,
+   "interrupts": 0,
+   "active_days": 1,
+   "span_hours": 0.0,
+   "out_tokens": 17,
+   "top_exts": []
+  }
+ ],
+ "tools": [
+  [
+   "Bash",
+   66356
+  ],
+  [
+   "Read",
+   10234
+  ],
+  [
+   "Write",
+   6642
+  ],
+  [
+   "Edit",
+   6035
+  ],
+  [
+   "PowerShell",
+   5130
+  ],
+  [
+   "Grep",
+   1968
+  ],
+  [
+   "SendMessage",
+   987
+  ],
+  [
+   "mcp__unreal-mcp__call_tool",
+   876
+  ],
+  [
+   "Glob",
+   714
+  ],
+  [
+   "ToolSearch",
+   694
+  ],
+  [
+   "StructuredOutput",
+   632
+  ],
+  [
+   "mcp__blender__execute_blender_code",
+   590
+  ],
+  [
+   "AskUserQuestion",
+   405
+  ],
+  [
+   "Agent",
+   391
+  ],
+  [
+   "Skill",
+   368
+  ],
+  [
+   "Artifact",
+   257
+  ],
+  [
+   "mcp__unreal-engine__unreal",
+   240
+  ],
+  [
+   "Monitor",
+   235
+  ],
+  [
+   "mcp__claude_ai_Figma__use_figma",
+   176
+  ],
+  [
+   "WebFetch",
+   172
+  ],
+  [
+   "mcp__codegraph__codegraph_explore",
+   167
+  ],
+  [
+   "WebSearch",
+   165
+  ],
+  [
+   "mcp__claude_ai_Figma__get_screenshot",
+   156
+  ],
+  [
+   "TaskStop",
+   123
+  ],
+  [
+   "mcp__claude-in-chrome__computer",
+   105
+  ],
+  [
+   "mcp__unreal-mcp__describe_toolset",
+   105
+  ],
+  [
+   "mcp__claude-in-chrome__javascript_tool",
+   81
+  ],
+  [
+   "ListAgents",
+   77
+  ],
+  [
+   "mcp__unreal-mcp__list_toolsets",
+   72
+  ],
+  [
+   "SubagentHandback",
+   65
+  ],
+  [
+   "mcp__claude-in-chrome__browser_batch",
+   59
+  ],
+  [
+   "mcp__claude-in-chrome__navigate",
+   49
+  ],
+  [
+   "DesignSync",
+   46
+  ],
+  [
+   "mcp__claude-in-chrome__tabs_close_mcp",
+   27
+  ],
+  [
+   "mcp__claude-in-chrome__tabs_context_mcp",
+   25
+  ],
+  [
+   "TaskOutput",
+   23
+  ],
+  [
+   "mcp__blender__get_screenshot_of_window_as_image",
+   19
+  ],
+  [
+   "mcp__blender__get_blendfile_summary_path_info",
+   19
+  ],
+  [
+   "Workflow",
+   17
+  ],
+  [
+   "ScheduleWakeup",
+   15
+  ],
+  [
+   "components",
+   14
+  ],
+  [
+   "PushNotification",
+   9
+  ],
+  [
+   "mcp__claude_ai_Figma__get_figma_skill",
+   9
+  ],
+  [
+   "mcp__blender__get_objects_summary",
+   7
+  ],
+  [
+   "mcp__claude-in-chrome__resize_window",
+   6
+  ],
+  [
+   "mcp__blender__search_manual_docs",
+   6
+  ],
+  [
+   "mcp__blender__get_object_detail_summary",
+   6
+  ],
+  [
+   "mcp__blender__get_screenshot_of_area_as_image",
+   5
+  ],
+  [
+   "mcp__claude_ai_Claude_Docs__update",
+   5
+  ],
+  [
+   "mcp__claude-in-chrome__read_console_messages",
+   4
+  ],
+  [
+   "SendFeedback",
+   4
+  ],
+  [
+   "mcp__claude_ai_Figma__get_metadata",
+   3
+  ],
+  [
+   "mcp__claude-in-chrome__get_page_text",
+   3
+  ],
+  [
+   "mcp__claude-in-chrome__find",
+   3
+  ],
+  [
+   "mcp__plugin_vercel_vercel__search_vercel_documentation",
+   3
+  ],
+  [
+   "mcp__blender__get_blendfile_summary_datablocks",
+   3
+  ],
+  [
+   "mcp__claude_ai_Figma__create_new_file",
+   2
+  ],
+  [
+   "mcp__blender__search_api_docs",
+   2
+  ],
+  [
+   "mcp__unreal-engine__list_toolsets",
+   2
+  ],
+  [
+   "ExitPlanMode",
+   2
+  ],
+  [
+   "mcp__claude_ai_Figma__whoami",
+   1
+  ],
+  [
+   "mcp__claude_ai_Figma__upload_assets",
+   1
+  ],
+  [
+   "mcp__claude-in-chrome__read_page",
+   1
+  ],
+  [
+   "mcp__plugin_vercel_vercel__list_teams",
+   1
+  ],
+  [
+   "mcp__plugin_vercel_vercel__list_projects",
+   1
+  ],
+  [
+   "mcp__plugin_vercel_vercel__list_deployments",
+   1
+  ],
+  [
+   "EnterWorktree",
+   1
+  ],
+  [
+   "mcp__claude-in-chrome__read_network_requests",
+   1
+  ],
+  [
+   "bash",
+   1
+  ],
+  [
+   "mcp__blender__jump_to_view3d_object_by_name",
+   1
+  ],
+  [
+   "order_constraints",
+   1
+  ],
+  [
+   "blockers",
+   1
+  ],
+  [
+   "minimal_test_reference",
+   1
+  ],
+  [
+   "mcp__unreal-engine__describe_toolset",
+   1
+  ],
+  [
+   "ListMcpResourcesTool",
+   1
+  ],
+  [
+   "CronCreate",
+   1
+  ],
+  [
+   "CronDelete",
+   1
+  ],
+  [
+   "mcp__blender__get_blendfile_summary_missing_files",
+   1
+  ],
+  [
+   "Get-ChildItem",
+   1
+  ],
+  [
+   "mcp__claude_ai_Claude_Docs__batch",
+   1
+  ],
+  [
+   "mcp__claude_ai_Claude_Docs__guide",
+   1
+  ]
+ ],
+ "tool_errors": [
+  [
+   "Bash",
+   1571
+  ],
+  [
+   "PowerShell",
+   561
+  ],
+  [
+   "Glob",
+   346
+  ],
+  [
+   "mcp__unreal-mcp__call_tool",
+   86
+  ],
+  [
+   "Read",
+   82
+  ],
+  [
+   "Edit",
+   65
+  ],
+  [
+   "Grep",
+   63
+  ],
+  [
+   "Write",
+   27
+  ],
+  [
+   "StructuredOutput",
+   23
+  ],
+  [
+   "Agent",
+   17
+  ],
+  [
+   "mcp__unreal-engine__unreal",
+   15
+  ],
+  [
+   "mcp__claude-in-chrome__navigate",
+   14
+  ],
+  [
+   "components",
+   14
+  ],
+  [
+   "Artifact",
+   13
+  ],
+  [
+   "AskUserQuestion",
+   12
+  ],
+  [
+   "mcp__claude-in-chrome__browser_batch",
+   12
+  ],
+  [
+   "Skill",
+   11
+  ],
+  [
+   "mcp__claude_ai_Figma__use_figma",
+   9
+  ],
+  [
+   "Monitor",
+   8
+  ],
+  [
+   "TaskStop",
+   7
+  ],
+  [
+   "mcp__unreal-mcp__describe_toolset",
+   7
+  ],
+  [
+   "mcp__claude-in-chrome__computer",
+   6
+  ],
+  [
+   "mcp__claude-in-chrome__javascript_tool",
+   5
+  ],
+  [
+   "DesignSync",
+   3
+  ],
+  [
+   "mcp__blender__execute_blender_code",
+   3
+  ],
+  [
+   "mcp__blender__get_blendfile_summary_path_info",
+   3
+  ],
+  [
+   "mcp__claude_ai_Figma__get_figma_skill",
+   2
+  ],
+  [
+   "mcp__unreal-mcp__list_toolsets",
+   2
+  ],
+  [
+   "WebFetch",
+   2
+  ],
+  [
+   "TaskOutput",
+   2
+  ],
+  [
+   "mcp__claude_ai_Figma__get_screenshot",
+   1
+  ],
+  [
+   "ScheduleWakeup",
+   1
+  ],
+  [
+   "mcp__claude-in-chrome__get_page_text",
+   1
+  ],
+  [
+   "bash",
+   1
+  ],
+  [
+   "order_constraints",
+   1
+  ],
+  [
+   "blockers",
+   1
+  ],
+  [
+   "minimal_test_reference",
+   1
+  ],
+  [
+   "SendMessage",
+   1
+  ],
+  [
+   "mcp__unreal-engine__list_toolsets",
+   1
+  ],
+  [
+   "WebSearch",
+   1
+  ],
+  [
+   "Get-ChildItem",
+   1
+  ]
+ ],
+ "denials": [
+  [
+   "Bash",
+   40
+  ],
+  [
+   "AskUserQuestion",
+   7
+  ],
+  [
+   "PowerShell",
+   4
+  ],
+  [
+   "Grep",
+   4
+  ],
+  [
+   "Skill",
+   1
+  ],
+  [
+   "mcp__claude_ai_Figma__use_figma",
+   1
+  ]
+ ],
+ "cmd_first": [
+  [
+   [
+    "Bash",
+    "grep"
+   ],
+   11876
+  ],
+  [
+   [
+    "Bash",
+    "python"
+   ],
+   10686
+  ],
+  [
+   [
+    "Bash",
+    "sed"
+   ],
+   8330
+  ],
+  [
+   [
+    "Bash",
+    "cat"
+   ],
+   6217
+  ],
+  [
+   [
+    "Bash",
+    "ls"
+   ],
+   3521
+  ],
+  [
+   [
+    "Bash",
+    "echo"
+   ],
+   2838
+  ],
+  [
+   [
+    "Bash",
+    "cd"
+   ],
+   2731
+  ],
+  [
+   [
+    "Bash",
+    "git"
+   ],
+   2572
+  ],
+  [
+   [
+    "Bash",
+    "for"
+   ],
+   1318
+  ],
+  [
+   [
+    "Bash",
+    "find"
+   ],
+   1088
+  ],
+  [
+   [
+    "Bash",
+    "export"
+   ],
+   981
+  ],
+  [
+   [
+    "Bash",
+    "wc"
+   ],
+   635
+  ],
+  [
+   [
+    "Bash",
+    "node"
+   ],
+   566
+  ],
+  [
+   [
+    "Bash",
+    "unity"
+   ],
+   555
+  ],
+  [
+   [
+    "Bash",
+    "python3"
+   ],
+   546
+  ],
+  [
+   [
+    "Bash",
+    "tail"
+   ],
+   514
+  ],
+  [
+   [
+    "Bash",
+    "mkdir"
+   ],
+   506
+  ],
+  [
+   [
+    "Bash",
+    "timeout"
+   ],
+   481
+  ],
+  [
+   [
+    "Bash",
+    "head"
+   ],
+   433
+  ],
+  [
+   [
+    "PowerShell",
+    "python"
+   ],
+   287
+  ],
+  [
+   [
+    "Bash",
+    "sleep"
+   ],
+   275
+  ],
+  [
+   [
+    "Bash",
+    "awk"
+   ],
+   263
+  ],
+  [
+   [
+    "Bash",
+    "cp"
+   ],
+   243
+  ],
+  [
+   [
+    "Bash",
+    "until"
+   ],
+   242
+  ],
+  [
+   [
+    "Bash",
+    "rm"
+   ],
+   242
+  ],
+  [
+   [
+    "PowerShell",
+    "git"
+   ],
+   237
+  ],
+  [
+   [
+    "Bash",
+    "SP=\"C:/Users/bsmi0/AppData/Local/Temp/cl"
+   ],
+   224
+  ],
+  [
+   [
+    "Bash",
+    "npm"
+   ],
+   221
+  ],
+  [
+   [
+    "Bash",
+    "gh"
+   ],
+   218
+  ],
+  [
+   [
+    "Bash",
+    "npx"
+   ],
+   212
+  ],
+  [
+   [
+    "Bash",
+    "powershell"
+   ],
+   205
+  ],
+  [
+   [
+    "PowerShell",
+    "Set-Location"
+   ],
+   189
+  ],
+  [
+   [
+    "Bash",
+    "pwd"
+   ],
+   179
+  ],
+  [
+   [
+    "Bash",
+    "./gradlew"
+   ],
+   177
+  ],
+  [
+   [
+    "PowerShell",
+    "Get-Content"
+   ],
+   167
+  ],
+  [
+   [
+    "Bash",
+    "S=\"C:/Users/bsmi0/AppData/Local/Temp/cla"
+   ],
+   148
+  ],
+  [
+   [
+    "Bash",
+    "adb"
+   ],
+   147
+  ],
+  [
+   [
+    "Bash",
+    "MSYS_NO_PATHCONV=1"
+   ],
+   141
+  ],
+  [
+   [
+    "Bash",
+    "uv"
+   ],
+   138
+  ],
+  [
+   [
+    "Bash",
+    "S=Source/tmsUnreal"
+   ],
+   137
+  ],
+  [
+   [
+    "Bash",
+    "printf"
+   ],
+   134
+  ],
+  [
+   [
+    "Bash",
+    "R=/c/Projects/tmsUnreal/runs/2026-09-15-"
+   ],
+   129
+  ],
+  [
+   [
+    "PowerShell",
+    "Get-CimInstance"
+   ],
+   122
+  ],
+  [
+   [
+    "Bash",
+    "PYTHONIOENCODING=utf-8"
+   ],
+   121
+  ],
+  [
+   [
+    "Bash",
+    "E=\"C:/Program"
+   ],
+   120
+  ],
+  [
+   [
+    "PowerShell",
+    "Get-ChildItem"
+   ],
+   115
+  ],
+  [
+   [
+    "PowerShell",
+    "Add-Type"
+   ],
+   103
+  ],
+  [
+   [
+    "Bash",
+    "\"/c/Program"
+   ],
+   103
+  ],
+  [
+   [
+    "Bash",
+    "~/AppData/Local/Unity/bin/unity.exe"
+   ],
+   102
+  ],
+  [
+   [
+    "Bash",
+    "E=\"/c/Program"
+   ],
+   99
+  ],
+  [
+   [
+    "Bash",
+    "\"C:/Users/bsmi0/AppData/Local/Unity/bin/"
+   ],
+   99
+  ],
+  [
+   [
+    "Bash",
+    "curl"
+   ],
+   93
+  ],
+  [
+   [
+    "Bash",
+    "rtk"
+   ],
+   90
+  ],
+  [
+   [
+    "Bash",
+    "date"
+   ],
+   87
+  ],
+  [
+   [
+    "Bash",
+    "SP=\"/c/Users/bsmi0/AppData/Local/Temp/cl"
+   ],
+   86
+  ],
+  [
+   [
+    "PowerShell",
+    "Get-Process"
+   ],
+   84
+  ],
+  [
+   [
+    "PowerShell",
+    "$p"
+   ],
+   82
+  ],
+  [
+   [
+    "Bash",
+    "SP=/c/Users/bsmi0/AppData/Local/Temp/cla"
+   ],
+   74
+  ],
+  [
+   [
+    "PowerShell",
+    "Select-String"
+   ],
+   74
+  ],
+  [
+   [
+    "PowerShell",
+    "pwsh"
+   ],
+   69
+  ],
+  [
+   [
+    "PowerShell",
+    "Add-Content"
+   ],
+   69
+  ],
+  [
+   [
+    "PowerShell",
+    "$cli"
+   ],
+   68
+  ],
+  [
+   [
+    "Bash",
+    "OUT=\"C:/Users/bsmi0/AppData/Local/Temp/c"
+   ],
+   67
+  ],
+  [
+   [
+    "Bash",
+    "set"
+   ],
+   65
+  ],
+  [
+   [
+    "Bash",
+    "SCRATCH=\"/c/Users/bsmi0/AppData/Local/Te"
+   ],
+   60
+  ],
+  [
+   [
+    "PowerShell",
+    "$run='C:\\Projects\\tmsUnreal\\runs\\2026-09"
+   ],
+   60
+  ],
+  [
+   [
+    "PowerShell",
+    "$r"
+   ],
+   59
+  ],
+  [
+   [
+    "PowerShell",
+    "unity"
+   ],
+   58
+  ],
+  [
+   [
+    "Bash",
+    "S=/c/Users/bsmi0/AppData/Local/Temp/clau"
+   ],
+   56
+  ],
+  [
+   [
+    "PowerShell",
+    "$c"
+   ],
+   56
+  ],
+  [
+   [
+    "Bash",
+    "ADB=/c/Android/Sdk/platform-tools/adb.ex"
+   ],
+   55
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-09-22-s3-perf-followups"
+   ],
+   54
+  ],
+  [
+   [
+    "Bash",
+    "D=C:/Projects/bws.motion.library"
+   ],
+   52
+  ],
+  [
+   [
+    "Bash",
+    "bash"
+   ],
+   51
+  ],
+  [
+   [
+    "Bash",
+    "pwsh"
+   ],
+   48
+  ],
+  [
+   [
+    "Bash",
+    "UE=\"C:/Program"
+   ],
+   47
+  ],
+  [
+   [
+    "PowerShell",
+    "$R='C:\\Projects\\animation.station-wph\\ru"
+   ],
+   45
+  ],
+  [
+   [
+    "PowerShell",
+    "Start-Sleep"
+   ],
+   45
+  ],
+  [
+   [
+    "Bash",
+    "P=/c/Users/bsmi0/AppData/Local/Temp/clau"
+   ],
+   45
+  ],
+  [
+   [
+    "Bash",
+    "py"
+   ],
+   45
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-09-09-npc-ai-completion"
+   ],
+   45
+  ],
+  [
+   [
+    "PowerShell",
+    "wsl"
+   ],
+   44
+  ],
+  [
+   [
+    "PowerShell",
+    "$sp"
+   ],
+   44
+  ],
+  [
+   [
+    "PowerShell",
+    "$run"
+   ],
+   42
+  ],
+  [
+   [
+    "Bash",
+    "f=\"C:/Users/bsmi0/AppData/Local/Temp/cla"
+   ],
+   42
+  ],
+  [
+   [
+    "Bash",
+    "S=\"/c/Users/bsmi0/AppData/Local/Temp/cla"
+   ],
+   41
+  ],
+  [
+   [
+    "PowerShell",
+    "$r='C:\\Projects\\bws.annotations\\runs\\202"
+   ],
+   41
+  ],
+  [
+   [
+    "Bash",
+    "SCRATCH=\"C:/Users/bsmi0/AppData/Local/Te"
+   ],
+   41
+  ],
+  [
+   [
+    "PowerShell",
+    "Get-Date"
+   ],
+   40
+  ],
+  [
+   [
+    "Bash",
+    "f=$(grep"
+   ],
+   37
+  ],
+  [
+   [
+    "Bash",
+    "P=\"/c/Program"
+   ],
+   37
+  ],
+  [
+   [
+    "Bash",
+    "R=C:/Projects/bws.game.axo/runs/2026-09-"
+   ],
+   37
+  ],
+  [
+   [
+    "Bash",
+    "diff"
+   ],
+   36
+  ],
+  [
+   [
+    "Bash",
+    "SCRATCH=/c/Users/bsmi0/AppData/Local/Tem"
+   ],
+   36
+  ],
+  [
+   [
+    "Bash",
+    "sha256sum"
+   ],
+   35
+  ],
+  [
+   [
+    "PowerShell",
+    "powershell"
+   ],
+   34
+  ],
+  [
+   [
+    "Bash",
+    "tasklist"
+   ],
+   34
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-09-29-pitm-u1-blockers"
+   ],
+   34
+  ],
+  [
+   [
+    "Bash",
+    "which"
+   ],
+   33
+  ],
+  [
+   [
+    "Bash",
+    "B=\"/c/Program"
+   ],
+   33
+  ]
+ ],
+ "mcp_servers": [
+  [
+   "unreal-mcp",
+   1053
+  ],
+  [
+   "blender",
+   659
+  ],
+  [
+   "claude-in-chrome",
+   364
+  ],
+  [
+   "claude_ai_Figma",
+   348
+  ],
+  [
+   "unreal-engine",
+   243
+  ],
+  [
+   "codegraph",
+   167
+  ],
+  [
+   "claude_ai_Claude_Docs",
+   7
+  ],
+  [
+   "plugin_vercel_vercel",
+   6
+  ]
+ ],
+ "mcp_errors": [
+  [
+   "unreal-mcp",
+   95
+  ],
+  [
+   "claude-in-chrome",
+   38
+  ],
+  [
+   "unreal-engine",
+   16
+  ],
+  [
+   "claude_ai_Figma",
+   12
+  ],
+  [
+   "blender",
+   6
+  ]
+ ],
+ "skills": [
+  [
+   "motion-contract-skill-01387786",
+   50
+  ],
+  [
+   "unreal-mcp",
+   37
+  ],
+  [
+   "motion-contract",
+   29
+  ],
+  [
+   "precog",
+   19
+  ],
+  [
+   "artifact-design",
+   18
+  ],
+  [
+   "unity-cli",
+   18
+  ],
+  [
+   "interview",
+   13
+  ],
+  [
+   "pil-agent-plugin:image-measurement",
+   7
+  ],
+  [
+   "harness-loop",
+   6
+  ],
+  [
+   "blender-lowpoly-medieval",
+   6
+  ],
+  [
+   "drive-screen",
+   5
+  ],
+  [
+   "google-notebook-plugin:notebooklm-cli",
+   5
+  ],
+  [
+   "keep-tasks",
+   4
+  ],
+  [
+   "pil-agent-plugin:image-analysis",
+   4
+  ],
+  [
+   "claude-in-chrome",
+   4
+  ],
+  [
+   "motion-contract-skill-1317e150",
+   4
+  ],
+  [
+   "new-primitive-skill-011ceeb7",
+   4
+  ],
+  [
+   "new-primitive-skill-211cd5bc",
+   4
+  ],
+  [
+   "annotation-pairing-change",
+   3
+  ],
+  [
+   "skill-creator:skill-creator",
+   3
+  ],
+  [
+   "synty-asset-index-search",
+   3
+  ],
+  [
+   "claude-api",
+   3
+  ],
+  [
+   "new-primitive-skill-5348614b",
+   3
+  ],
+  [
+   "motion-contract-skill-0794ed28",
+   3
+  ],
+  [
+   "new-primitive-skill-1d0bf418",
+   3
+  ],
+  [
+   "new-primitive-skill-048b1fdc",
+   3
+  ],
+  [
+   "new-primitive-skill-01a2d869",
+   3
+  ],
+  [
+   "annotation-device-qualification",
+   2
+  ],
+  [
+   "annotation-raster-change",
+   2
+  ],
+  [
+   "design",
+   2
+  ],
+  [
+   "artifact-capabilities",
+   2
+  ],
+  [
+   "dataviz",
+   2
+  ],
+  [
+   "agent-planning:plans-md-orchestrator",
+   2
+  ],
+  [
+   "milestone-check",
+   2
+  ],
+  [
+   "motion-contract-skill-762704b0",
+   2
+  ],
+  [
+   "motion-contract-skill-4bf6650c",
+   2
+  ],
+  [
+   "motion-contract-skill-12d4e08e",
+   2
+  ],
+  [
+   "new-primitive-skill-0f0cff21",
+   2
+  ],
+  [
+   "new-primitive-skill-89390f33",
+   2
+  ],
+  [
+   "new-primitive-skill-2fe20a5a",
+   2
+  ],
+  [
+   "motion-contract-skill-356154fd",
+   2
+  ],
+  [
+   "motion-contract-skill-df0533b9",
+   2
+  ],
+  [
+   "motion-contract-skill-56782bae",
+   2
+  ],
+  [
+   "new-primitive-skill-96b5443e",
+   2
+  ],
+  [
+   "motion-contract-skill-c235dace",
+   2
+  ],
+  [
+   "agy-headless",
+   1
+  ],
+  [
+   "evidence-backed-completion",
+   1
+  ],
+  [
+   "planning",
+   1
+  ],
+  [
+   "evidence-backed-completion:evidence-backed-completion",
+   1
+  ],
+  [
+   "update-config",
+   1
+  ],
+  [
+   "artifact-diagramming",
+   1
+  ],
+  [
+   "inkwell-ui",
+   1
+  ],
+  [
+   "figma-use",
+   1
+  ],
+  [
+   "design-sync",
+   1
+  ],
+  [
+   "annotation-state-change",
+   1
+  ],
+  [
+   "unity:unity-cli",
+   1
+  ],
+  [
+   "warden-harness",
+   1
+  ],
+  [
+   "unity-package-management",
+   1
+  ],
+  [
+   "init",
+   1
+  ],
+  [
+   "hyperframes",
+   1
+  ],
+  [
+   "product-launch-video",
+   1
+  ],
+  [
+   "codex:rescue",
+   1
+  ],
+  [
+   "pil-agent-plugin:bootstrap",
+   1
+  ],
+  [
+   "pil-agent-plugin:multiview-reconstruction",
+   1
+  ],
+  [
+   "blender-synty-enforcement",
+   1
+  ],
+  [
+   "evaluate-instruction-stack",
+   1
+  ],
+  [
+   "ue-build",
+   1
+  ],
+  [
+   "new-primitive-skill-a27f3bfb",
+   1
+  ],
+  [
+   "motion-contract-skill-68b6820c",
+   1
+  ],
+  [
+   "motion-contract-skill-8ae5a438",
+   1
+  ],
+  [
+   "motion-contract-skill-07db89f7",
+   1
+  ],
+  [
+   "new-primitive-skill-a5f3e553",
+   1
+  ],
+  [
+   "new-primitive-skill-96b0d92c",
+   1
+  ],
+  [
+   "motion-contract-skill-5cff4361",
+   1
+  ],
+  [
+   "motion-contract-skill-2ca0cab5",
+   1
+  ],
+  [
+   "new-primitive-skill-1a14b978",
+   1
+  ],
+  [
+   "motion-contract-skill-650ab805",
+   1
+  ],
+  [
+   "new-primitive-skill-eddff2c5",
+   1
+  ],
+  [
+   "new-primitive-skill-4088579c",
+   1
+  ],
+  [
+   "new-primitive-skill-b63b02be",
+   1
+  ],
+  [
+   "new-primitive-skill-2d1dacb0",
+   1
+  ],
+  [
+   "motion-contract-skill-cb2d3715",
+   1
+  ],
+  [
+   "new-primitive-skill-f81c95a6",
+   1
+  ],
+  [
+   "motion-contract-skill-69def725",
+   1
+  ],
+  [
+   "new-primitive-skill-85d66319",
+   1
+  ],
+  [
+   "new-primitive-skill-4ee006d2",
+   1
+  ],
+  [
+   "new-primitive-skill-4b4b3c15",
+   1
+  ],
+  [
+   "new-primitive-skill-251e1a79",
+   1
+  ],
+  [
+   "new-primitive-skill-c9a3dfd2",
+   1
+  ],
+  [
+   "motion-contract-skill-53438b24",
+   1
+  ],
+  [
+   "new-primitive-skill-14c0285c",
+   1
+  ],
+  [
+   "new-primitive-skill-da710d3a",
+   1
+  ],
+  [
+   "new-primitive-skill-145c0cb9",
+   1
+  ],
+  [
+   "motion-contract-skill-2dc22457",
+   1
+  ],
+  [
+   "new-primitive-skill-0038e0d2",
+   1
+  ],
+  [
+   "new-primitive-skill-c9d949b6",
+   1
+  ],
+  [
+   "new-primitive-skill-ed42b7b0",
+   1
+  ],
+  [
+   "motion-contract-skill-b88c0511",
+   1
+  ],
+  [
+   "new-primitive-skill-c3970dd2",
+   1
+  ],
+  [
+   "motion-contract-skill-55a60287",
+   1
+  ],
+  [
+   "new-primitive-skill-64f512d7",
+   1
+  ],
+  [
+   "motion-contract-skill-cd60ea1f",
+   1
+  ],
+  [
+   "new-primitive-skill-16349df9",
+   1
+  ],
+  [
+   "motion-contract-skill-ebbdb78a",
+   1
+  ],
+  [
+   "new-primitive-skill-1a49e5c0",
+   1
+  ],
+  [
+   "motion-contract-skill-ebe576a0",
+   1
+  ],
+  [
+   "new-primitive-skill-d9348897",
+   1
+  ],
+  [
+   "new-primitive-skill-ef10909d",
+   1
+  ],
+  [
+   "new-primitive-skill-ac610f02",
+   1
+  ],
+  [
+   "new-primitive-skill-c247eec9",
+   1
+  ],
+  [
+   "new-primitive-skill-3c7179f8",
+   1
+  ],
+  [
+   "new-primitive-skill-cbe6cae6",
+   1
+  ],
+  [
+   "motion-contract-skill-a0353338",
+   1
+  ]
+ ],
+ "agents": [
+  [
+   "general-purpose",
+   245
+  ],
+  [
+   "fork",
+   66
+  ],
+  [
+   "Explore",
+   36
+  ],
+  [
+   "claude",
+   26
+  ],
+  [
+   "pil-agent-plugin:image-comparison-analyst",
+   7
+  ],
+  [
+   "claude-code-guide",
+   3
+  ],
+  [
+   "noop",
+   1
+  ],
+  [
+   "px1-core-engineer",
+   1
+  ],
+  [
+   "px1-tech-artist",
+   1
+  ],
+  [
+   "px1-qa-verifier",
+   1
+  ],
+  [
+   "px1-character-animator",
+   1
+  ],
+  [
+   "px1-gameplay-engineer",
+   1
+  ],
+  [
+   "codex:codex-rescue",
+   1
+  ],
+  [
+   "Plan",
+   1
+  ]
+ ],
+ "slash": [
+  [
+   "clear",
+   35
+  ],
+  [
+   "model",
+   33
+  ],
+  [
+   "plugin",
+   20
+  ],
+  [
+   "effort",
+   18
+  ],
+  [
+   "compact",
+   17
+  ],
+  [
+   "reload-plugins",
+   14
+  ],
+  [
+   "mcp",
+   12
+  ],
+  [
+   "reload-skills",
+   11
+  ],
+  [
+   "login",
+   9
+  ],
+  [
+   "resume",
+   8
+  ],
+  [
+   "goal",
+   4
+  ],
+  [
+   "synty-character-kitbash",
+   4
+  ],
+  [
+   "limit-reset",
+   3
+  ],
+  [
+   "design-sync",
+   3
+  ],
+  [
+   "interview",
+   3
+  ],
+  [
+   "harness-loop",
+   3
+  ],
+  [
+   "claude-api",
+   3
+  ],
+  [
+   "design-login",
+   2
+  ],
+  [
+   "keep-tasks",
+   2
+  ],
+  [
+   "m1-harness",
+   2
+  ],
+  [
+   "pitm-harness",
+   2
+  ],
+  [
+   "init",
+   2
+  ],
+  [
+   "plan",
+   2
+  ],
+  [
+   "m5-harness",
+   1
+  ],
+  [
+   "m4-harness",
+   1
+  ],
+  [
+   "rate-limit-options",
+   1
+  ],
+  [
+   "doctor",
+   1
+  ],
+  [
+   "warden-harness",
+   1
+  ],
+  [
+   "canopy-harness",
+   1
+  ],
+  [
+   "blender-inspect-harness",
+   1
+  ],
+  [
+   "sandbox",
+   1
+  ],
+  [
+   "claude-md-management:revise-claude-md",
+   1
+  ],
+  [
+   "blender-inspect:bootstrap",
+   1
+  ],
+  [
+   "blender-inspect:model-inspection",
+   1
+  ],
+  [
+   "blender-lowpoly-medieval",
+   1
+  ],
+  [
+   "add-dir",
+   1
+  ],
+  [
+   "procedural-world-exit-harness",
+   1
+  ]
+ ],
+ "interrupts": 64,
+ "compacts": [
+  [
+   "C--Projects-tmsUnreal",
+   31
+  ],
+  [
+   "C--Projects-bws-frisbee",
+   12
+  ],
+  [
+   "C--Projects-animation-station",
+   4
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   4
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   4
+  ],
+  [
+   "C--Projects-bws-web-pinkgill",
+   4
+  ],
+  [
+   "C--Projects-tms-heim",
+   4
+  ],
+  [
+   "C--Projects-bws-annotations",
+   3
+  ],
+  [
+   "C--Projects-xwing-XvT",
+   3
+  ],
+  [
+   "C--Projects-bws-game-axo",
+   2
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   2
+  ],
+  [
+   "C--Projects-bws-motion-library",
+   1
+  ],
+  [
+   "C--Projects-street-war",
+   1
+  ],
+  [
+   "C--Users-bsmi0",
+   1
+  ]
+ ],
+ "api_errors": [
+  [
+   "{'message': 'Connection error.', 'formatted': \"Can't reach the API server \u2014 check your internet or D",
+   37
+  ],
+  [
+   "{'message': 'Connection error.', 'formatted': 'Connection dropped (ECONNRESET)', 'connection': {'cod",
+   28
+  ],
+  [
+   "{'message': '401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"Invalid authentic",
+   2
+  ],
+  [
+   "{'message': 'Connection error.', 'formatted': 'No response from API', 'connection': {'code': 'Stream",
+   1
+  ],
+  [
+   "{'message': 'Connection error.', 'formatted': 'Connection refused \u2014 a firewall or proxy may be block",
+   1
+  ]
+ ],
+ "refusal_fallback": 2,
+ "hook_failures": [
+  [
+   [
+    "hook_cancelled",
+    "SessionStart:startup",
+    "bash ${CLAUDE_PLUGIN_ROOT}/hooks/unreal-context.sh"
+   ],
+   42
+  ],
+  [
+   [
+    "hook_cancelled",
+    "UserPromptSubmit",
+    "codegraph prompt-hook"
+   ],
+   14
+  ],
+  [
+   [
+    "hook_cancelled",
+    "SessionStart:resume",
+    "bash ${CLAUDE_PLUGIN_ROOT}/hooks/unreal-context.sh"
+   ],
+   11
+  ],
+  [
+   [
+    "hook_system_message",
+    "SessionStart:startup",
+    ""
+   ],
+   6
+  ],
+  [
+   [
+    "hook_cancelled",
+    "SessionStart:clear",
+    "bash ${CLAUDE_PLUGIN_ROOT}/hooks/unreal-context.sh"
+   ],
+   3
+  ],
+  [
+   [
+    "hook_cancelled",
+    "SessionStart:startup",
+    "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-lifecycle-hook.mjs\" Sessio"
+   ],
+   2
+  ],
+  [
+   [
+    "hook_non_blocking_error",
+    "UserPromptSubmit",
+    "codegraph prompt-hook"
+   ],
+   1
+  ]
+ ],
+ "model_out_tokens": [
+  [
+   "claude-opus-5",
+   87881467
+  ],
+  [
+   "claude-opus-5-5",
+   67790282
+  ],
+  [
+   "claude-fable-5-1",
+   21694654
+  ],
+  [
+   "claude-sonnet-5",
+   14473853
+  ],
+  [
+   "claude-sonnet-5-5",
+   13860740
+  ],
+  [
+   "claude-opus-4-8",
+   874315
+  ],
+  [
+   "claude-haiku-4-5-20251001",
+   474222
+  ]
+ ],
+ "model_turns": [
+  [
+   "claude-opus-5",
+   86513
+  ],
+  [
+   "claude-opus-5-5",
+   58688
+  ],
+  [
+   "claude-sonnet-5",
+   22401
+  ],
+  [
+   "claude-sonnet-5-5",
+   13420
+  ],
+  [
+   "claude-fable-5-1",
+   12772
+  ],
+  [
+   "claude-haiku-4-5-20251001",
+   1680
+  ],
+  [
+   "claude-opus-4-8",
+   579
+  ]
+ ],
+ "daily_sessions": [
+  [
+   "2026-09-02",
+   21
+  ],
+  [
+   "2026-09-03",
+   462
+  ],
+  [
+   "2026-09-05",
+   12
+  ],
+  [
+   "2026-09-06",
+   2
+  ],
+  [
+   "2026-09-07",
+   95
+  ],
+  [
+   "2026-09-08",
+   16
+  ],
+  [
+   "2026-09-09",
+   7
+  ],
+  [
+   "2026-09-10",
+   13
+  ],
+  [
+   "2026-09-11",
+   15
+  ],
+  [
+   "2026-09-12",
+   8
+  ],
+  [
+   "2026-09-13",
+   3
+  ],
+  [
+   "2026-09-14",
+   14
+  ],
+  [
+   "2026-09-15",
+   8
+  ],
+  [
+   "2026-09-17",
+   7
+  ],
+  [
+   "2026-09-18",
+   13
+  ],
+  [
+   "2026-09-19",
+   4
+  ],
+  [
+   "2026-09-20",
+   6
+  ],
+  [
+   "2026-09-21",
+   18
+  ],
+  [
+   "2026-09-22",
+   18
+  ],
+  [
+   "2026-09-23",
+   56
+  ],
+  [
+   "2026-09-24",
+   51
+  ],
+  [
+   "2026-09-25",
+   20
+  ],
+  [
+   "2026-09-26",
+   43
+  ],
+  [
+   "2026-09-27",
+   26
+  ],
+  [
+   "2026-09-28",
+   71
+  ],
+  [
+   "2026-09-29",
+   69
+  ],
+  [
+   "2026-09-30",
+   50
+  ],
+  [
+   "2026-10-01",
+   22
+  ],
+  [
+   "2026-10-02",
+   18
+  ]
+ ],
+ "n_prompts": 2331,
+ "n_corrections": 7
+}
