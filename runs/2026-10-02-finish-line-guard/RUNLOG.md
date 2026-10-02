@@ -53,3 +53,8 @@ Build mod #4 from the usage review inside `bws-cockpit` (version 0.3.0): keep Cl
   - Scan: clean apart from the already-scrubbed fixture paths and the manifest authors, which are kept by design.
   - Validate passes for both plugins; bws-cockpit 66/66 and bws-shell-lint 16/16, run from the publish tree.
   - Not pushed; no remote is configured.
+
+## ownerName set for Brian (2026-10-02)
+- `~/.claude/settings.json` now has `pluginConfigs["bws-cockpit"].options.ownerName = "Brian"`.
+  - Backup: `settings.json.bak-2026-10-02-ownername`. The diff against it is that one entry.
+- Verified live (`receipts/ownername-live.txt`) with a headless run that passed only `finishLineHeadless` through `--settings`. The block message read "...needs Brian...", so the user setting was read and merged with the `--settings` override.
