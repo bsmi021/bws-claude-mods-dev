@@ -1,0 +1,314 @@
+import { describe, expect, mock, test } from 'claude-code/testing'
+import type { On } from 'claude-code'
+
+import {
+  adbNeedsDevice,
+  countOpen,
+  findUeGuiLaunch,
+  fixUnityLaunch,
+  isUnityPipelineCommand,
+  parseAdb,
+  parseFinish,
+  parseNext,
+  parseProcs,
+  parseUnrealMcpUrl,
+} from '../hooks/lib'
+
+// ---------- the world beneath the plugin ----------
+
+type World = {
+  procs?: string // name|pid|cmdline lines
+  vram?: string
+  adb?: string | null // null: adb missing
+  mcpJson?: string
+  isMcpUp?: boolean
+  files?: Record<string, string>
+  dirs?: Record<string, { name: string; kind: 'file' | 'dir'; mtimeMs: number }[]>
+  surfaces?: string[]
+}
+
+const CWD = 'C:/proj'
+let clockStart = 1_000_000
+
+// Stubs every outside call the mod makes, and records the tool calls that reach the bottom.
+function world(on: On, w: World) {
+  clockStart += 1_000_000
+  const clock = mock.clock(on, { now: clockStart })
+  const reached: { tool: string; command?: string }[] = []
+  on('ui.toast', () => ({ value: undefined }))
+  on('session.cwd', () => ({ value: CWD }))
+  on('session.surfaces', () => ({ value: (w.surfaces ?? []) as never }))
+  on('process.run', ($, e) => {
+    const exe = String(e.argv[0])
+    const ok = (stdout: string) => ({ value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } })
+    if (exe === 'powershell') return ok(w.procs ?? '')
+    if (exe === 'nvidia-smi') return ok(w.vram ?? '1000, 8188')
+    if (w.adb === null) throw new Error('ENOENT adb')
+    return ok(w.adb ?? 'List of devices attached\n\n')
+  })
+  on('fs.read', ($, e) => {
+    const path = String(e.path).replace(/\\/g, '/')
+    if (path === `${CWD}/.mcp.json` && w.mcpJson !== undefined) return { value: w.mcpJson as never }
+    const hit = w.files?.[path]
+    if (hit !== undefined) return { value: hit as never }
+    throw new Error(`ENOENT ${path}`)
+  })
+  on('fs.list', ($, e) => {
+    const path = String(e.path).replace(/\\/g, '/')
+    const hit = w.dirs?.[path]
+    if (!hit) throw new Error(`ENOENT ${path}`)
+    return { value: hit.map(d => ({ ...d, size: 1, isLink: false })) }
+  })
+  on('http.fetch', () => {
+    if (w.isMcpUp) return { value: { status: 406, ok: false, headers: {}, text: '' } }
+    throw new Error('ECONNREFUSED')
+  })
+  on('tool.call', ($, e) => {
+    reached.push({ tool: String(e.tool), command: (e as { command?: string }).command })
+    return { result: { stdout: 'ran', stderr: '' } as never }
+  })
+  return Object.assign(reached, { clock })
+}
+
+const MCP_HTTP = JSON.stringify({ mcpServers: { 'unreal-mcp': { type: 'http', url: 'http://127.0.0.1:3091/mcp' } } })
+const UE = 'C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe'
+
+// ---------- pure helpers ----------
+
+describe('parsing', () => {
+  test('next step: last explicit Next line wins, else the bullet under a next heading', () => {
+    expect(parseNext('- Next: build band\nlater\n**Next step:** run tests')).toBe('run tests')
+    expect(parseNext('## Status / next step\n\n- Brian picks mods\n## Other\n- x')).toBe('Brian picks mods')
+    expect(parseNext('# nothing here')).toBeUndefined()
+  })
+  test('finish line, open items', () => {
+    expect(parseFinish('## Finish line (all true)\n1. validate passes\n2. tests')).toBe('validate passes')
+    expect(countOpen('- [ ] a\n- [x] b\n  * [ ] c\n[ ] not a bullet')).toBe(2)
+  })
+  test('probe output', () => {
+    expect(parseAdb('List of devices attached\nR5CT 	device\nemulator-5554\toffline\n')).toEqual({ ready: ['R5CT'], other: ['emulator-5554 offline'] })
+    expect(parseProcs('UnrealEditor.exe|42|"C:/UE/UnrealEditor.exe" "C:/p/TMS.uproject"\r\n\r\n')[0]?.pid).toBe(42)
+    const proxy = JSON.stringify({ mcpServers: { 'unreal-mcp': { type: 'stdio', command: 'python', args: ['proxy.py', 'http://127.0.0.1:3092/mcp'] } } })
+    expect(parseUnrealMcpUrl(proxy)).toBe('http://127.0.0.1:3092/mcp')
+    expect(parseUnrealMcpUrl(MCP_HTTP, 'unreal-engine')).toBeUndefined()
+    expect(parseUnrealMcpUrl('not json')).toBeUndefined()
+  })
+})
+
+describe('command classification', () => {
+  test('adb: device commands vs. safe ones', () => {
+    expect(adbNeedsDevice('adb shell input tap 1 2')).toBe(true)
+    expect(adbNeedsDevice('"C:\\Android\\Sdk\\platform-tools\\adb.exe" -s R5CT install app.apk')).toBe(true)
+    expect(adbNeedsDevice('adb devices -l')).toBe(false)
+    expect(adbNeedsDevice('adb kill-server && adb start-server')).toBe(false)
+    expect(adbNeedsDevice('grep -r loadbalancer src')).toBe(false)
+  })
+  test('unity pipeline commands', () => {
+    expect(isUnityPipelineCommand('unity --format json command --project-path C:/p recompile')).toBe(true)
+    expect(isUnityPipelineCommand('timeout 300 unity command eval --code "return 1;"')).toBe(true)
+    expect(isUnityPipelineCommand('unity open C:/p --args -automated')).toBe(false)
+    expect(isUnityPipelineCommand('echo community command')).toBe(false)
+  })
+  test('unity launches get -automated', () => {
+    expect(fixUnityLaunch('unity open C:/Projects/tms-heim && echo ok')).toEqual({
+      command: 'unity open C:/Projects/tms-heim --args -automated && echo ok',
+      note: 'added --args -automated to unity open',
+    })
+    expect(fixUnityLaunch("unity open 'C:/p' --args -logFile x.log")).toMatchObject({ command: "unity open 'C:/p' --args -automated -logFile x.log" })
+    expect(fixUnityLaunch('"C:/Unity/6000.6.0f1/Editor/Unity.exe" -projectPath C:/p -logFile -')).toMatchObject({
+      command: '"C:/Unity/6000.6.0f1/Editor/Unity.exe" -projectPath C:/p -logFile - -automated',
+    })
+    expect(fixUnityLaunch('Start-Process -FilePath "unity" -ArgumentList "open","C:\\p"')).toHaveProperty('deny')
+    expect(fixUnityLaunch('unity open C:/p --args -automated')).toBeUndefined()
+    expect(fixUnityLaunch('unity --format json command --project-path C:/p recompile')).toBeUndefined()
+  })
+  test('UE GUI launches only', () => {
+    expect(findUeGuiLaunch(`"${UE}" "C:/Projects/bws.game.tms/TMS.uproject" -log &`)?.uproject).toBe('C:/Projects/bws.game.tms/TMS.uproject')
+    expect(findUeGuiLaunch(`"${UE.replace('UnrealEditor.exe', 'UnrealEditor-Cmd.exe')}" C:/p/x.uproject -run=pythonscript`)).toBeUndefined()
+    expect(findUeGuiLaunch(`"${UE}" C:/p/x.uproject -run=pythonscript -script=a.py -nullrhi`)).toBeUndefined()
+    expect(findUeGuiLaunch('Get-Process UnrealEditor.exe -EA SilentlyContinue')).toBeUndefined()
+    expect(findUeGuiLaunch(`Start-Process -FilePath "${UE}" -ArgumentList '"C:/p/x.uproject"'`)?.isStartProcess).toBe(true)
+  })
+})
+
+// ---------- guard hooks ----------
+
+describe('guard', () => {
+  test('unreal-mcp call is blocked when the port is down', async ($, on) => {
+    const reached = world(on, { mcpJson: MCP_HTTP, isMcpUp: false })
+    const r = await $.tool.call({ tool: 'mcp__unreal-mcp__call_tool', toolset: 'x' } as never)
+    expect(r.deny ?? r.text ?? '').toMatch(/127\.0\.0\.1:3091.*not reachable/)
+    expect(reached.length).toBe(0)
+  })
+
+  test('unreal-mcp call passes when the port answers', async ($, on) => {
+    const reached = world(on, { mcpJson: MCP_HTTP, isMcpUp: true })
+    await $.tool.call({ tool: 'mcp__unreal-mcp__list_toolsets' } as never)
+    expect(reached.map(r => r.tool)).toEqual(['mcp__unreal-mcp__list_toolsets'])
+  })
+
+  test('unreal-mcp call passes when the project has no unreal-mcp config', async ($, on) => {
+    const reached = world(on, {})
+    await $.tool.call({ tool: 'mcp__unreal-mcp__list_toolsets' } as never)
+    expect(reached.length).toBe(1)
+  })
+
+  test('adb device command is blocked with no ready device; adb devices passes', async ($, on) => {
+    const reached = world(on, { adb: 'List of devices attached\nR5CT\tunauthorized\n' })
+    const r = await $.tool.call({ tool: 'Bash', command: 'adb shell screencap -p /sdcard/s.png' })
+    expect(r.deny ?? r.text ?? '').toMatch(/no Android device is ready.*R5CT unauthorized/)
+    await $.tool.call({ tool: 'Bash', command: 'adb devices' })
+    expect(reached.map(c => c.command)).toEqual(['adb devices'])
+  })
+
+  test('adb passes with a ready device, and when adb is missing', async ($, on) => {
+    const reached = world(on, { adb: 'List of devices attached\nR5CT\tdevice\n' })
+    await $.tool.call({ tool: 'Bash', command: 'adb shell echo hi' })
+    expect(reached.length).toBe(1)
+  })
+
+  test('unity open gets -automated and the model is told', async ($, on) => {
+    const reached = world(on, {})
+    const r = await $.tool.call({ tool: 'Bash', command: 'unity open C:/Projects/tms-heim' })
+    expect(reached[0]?.command).toBe('unity open C:/Projects/tms-heim --args -automated')
+    expect((r.context ?? []).join(' ')).toMatch(/added --args -automated/)
+  })
+
+  test('unity CLI pipeline command is blocked with no editor running', async ($, on) => {
+    const reached = world(on, { procs: '' })
+    const r = await $.tool.call({ tool: 'Bash', command: 'unity --format json command --project-path C:/p recompile' })
+    expect(r.deny ?? r.text ?? '').toMatch(/no Unity editor is running/)
+    expect(reached.length).toBe(0)
+  })
+
+  test('unity CLI pipeline command passes with an editor running', async ($, on) => {
+    const reached = world(on, { procs: 'Unity.exe|7|"C:/Unity/Unity.exe" -projectPath C:/p -automated' })
+    await $.tool.call({ tool: 'PowerShell', command: 'unity command eval --code "return 1;"' })
+    expect(reached.length).toBe(1)
+  })
+
+  test('UE launch under GPU pressure gets the low-VRAM -ini overrides', async ($, on) => {
+    const reached = world(on, { procs: 'blender.exe|9|blender', vram: '4662, 8188' })
+    const cmd = `"${UE}" "C:/Projects/bws.game.tms/TMS.uproject" -log > /dev/null 2>&1 &`
+    const r = await $.tool.call({ tool: 'Bash', command: cmd })
+    const ran = reached[0]?.command ?? ''
+    expect(ran).toContain('"C:/Projects/bws.game.tms/TMS.uproject" -log -ini:Engine:[SystemSettings]:t.MaxFPS=30,')
+    expect(ran).toContain('[SystemSettings]:r.ScreenPercentage=50')
+    expect(ran.endsWith('> /dev/null 2>&1 &')).toBe(true)
+    expect((r.context ?? []).join(' ')).toMatch(/low-VRAM/)
+  })
+
+  test('UE launch with no pressure is left alone', async ($, on) => {
+    const reached = world(on, { procs: '', vram: '900, 8188' })
+    const cmd = `"${UE}" "C:/p/x.uproject"`
+    await $.tool.call({ tool: 'Bash', command: cmd })
+    expect(reached[0]?.command).toBe(cmd)
+  })
+
+  test('a second editor for an open .uproject is blocked', async ($, on) => {
+    const reached = world(on, { procs: `UnrealEditor.exe|501|"${UE}" "C:\\Projects\\bws.game.tms\\TMS.uproject" -log` })
+    const r = await $.tool.call({ tool: 'PowerShell', command: `& "${UE}" "C:/Projects/bws.game.tms/TMS.uproject"` })
+    expect(r.deny ?? r.text ?? '').toMatch(/already open in UnrealEditor \(pid 501\)/)
+    expect(reached.length).toBe(0)
+  })
+
+  test('Start-Process UE launch under pressure is refused with the argument to add', async ($, on) => {
+    world(on, { procs: 'blender.exe|9|blender' })
+    const r = await $.tool.call({ tool: 'PowerShell', command: `Start-Process -FilePath "${UE}" -ArgumentList '"C:/p/x.uproject"','-log'` })
+    expect(r.deny ?? r.text ?? '').toMatch(/-ini:Engine:\[SystemSettings\]:t\.MaxFPS=30/)
+  })
+
+  test('unrelated tools and commands pass untouched', async ($, on) => {
+    const reached = world(on, { procs: 'blender.exe|9|blender', adb: 'List of devices attached\n\n' })
+    await $.tool.call({ tool: 'Bash', command: 'ls -la && git status' })
+    await $.tool.call({ tool: 'Read', file_path: 'C:/proj/README.md' } as never)
+    await $.tool.call({ tool: 'Bash', command: 'grep -rn "community" docs' })
+    expect(reached.map(c => c.tool)).toEqual(['Bash', 'Read', 'Bash'])
+    expect(reached[0]?.command).toBe('ls -la && git status')
+  })
+
+  test('guard off lets everything through', { options: { guard: false } }, async ($, on) => {
+    const reached = world(on, { adb: 'List of devices attached\n\n', mcpJson: MCP_HTTP, isMcpUp: false })
+    await $.tool.call({ tool: 'Bash', command: 'adb shell ls' })
+    await $.tool.call({ tool: 'Bash', command: 'unity open C:/p' })
+    expect(reached.map(c => c.command)).toEqual(['adb shell ls', 'unity open C:/p'])
+  })
+})
+
+// ---------- run cockpit ----------
+
+const RUN_WORLD: World = {
+  dirs: {
+    [`${CWD}/runs`]: [
+      { name: '2026-09-30-old', kind: 'dir', mtimeMs: 0 },
+      { name: '2026-10-02-bow-fix', kind: 'dir', mtimeMs: 0 },
+      { name: 'notes.md', kind: 'file', mtimeMs: 5 },
+    ],
+    [`${CWD}/runs/2026-09-30-old`]: [{ name: 'RUNLOG.md', kind: 'file', mtimeMs: 100 }],
+    [`${CWD}/runs/2026-10-02-bow-fix`]: [
+      { name: 'RUNLOG.md', kind: 'file', mtimeMs: 300 },
+      { name: 'PLAN.md', kind: 'file', mtimeMs: 200 },
+    ],
+  },
+  files: {
+    [`${CWD}/runs/2026-10-02-bow-fix/RUNLOG.md`]: '# RUNLOG\n- Next: verify the draw anim in PIE\n',
+    [`${CWD}/runs/2026-10-02-bow-fix/PLAN.md`]: '## Finish line\n- bow draws and fires in PIE\n- [ ] draw anim\n- [ ] projectile\n- [x] grip\n',
+  },
+}
+
+describe('cockpit', () => {
+  test('/cockpit reports the newest run and device status', async ($, on) => {
+    world(on, { ...RUN_WORLD, procs: 'blender.exe|9|blender', vram: '4662, 8188' })
+    const r = await $.command.run({ command: 'cockpit', args: '' } as never)
+    expect(r.text).toContain('Run: runs/2026-10-02-bow-fix')
+    expect(r.text).toContain('Finish line: bow draws and fires in PIE')
+    expect(r.text).toContain('Next: verify the draw anim in PIE')
+    expect(r.text).toContain('Open items: 2')
+    expect(r.text).toMatch(/Blender open.*VRAM 4\.6\/8\.0 GB.*pressure/)
+  })
+
+  test('/cockpit with no runs folder says so', async ($, on) => {
+    world(on, {})
+    const r = await $.command.run({ command: 'cockpit', args: '' } as never)
+    expect(r.text).toContain('No run folder')
+  })
+
+  test('/resume-run submits a resume prompt naming the run', async ($, on) => {
+    const w = world(on, RUN_WORLD)
+    const sent: string[] = []
+    on('prompt.submit', ($, e) => {
+      sent.push(e.text)
+      return { isQueued: true } as never
+    })
+    const r = await $.command.run({ command: 'resume-run', args: '' } as never)
+    expect(r.text).toContain('Resuming runs/2026-10-02-bow-fix')
+    await w.clock.advance(100)
+    expect(sent[0] ?? '').toMatch(/^Resume run runs\/2026-10-02-bow-fix\./)
+  })
+
+  test('prompt.context adds one cockpit block', async ($, on) => {
+    world(on, RUN_WORLD)
+    on('prompt.context', ($, e) => ({ blocks: e.blocks }))
+    const r = await $.prompt.context({ blocks: [{ name: 'currentDate', text: 'today' }] } as never)
+    const block = r.blocks.find(b => b.name === 'bwsCockpit')
+    expect(block?.text).toMatch(/runs\/2026-10-02-bow-fix; next step: verify the draw anim in PIE; 2 open items/)
+    expect(r.blocks.length).toBe(2)
+  })
+
+  test('band draws the run and device rows on terminal and desktop', async ($, on) => {
+    world(on, { ...RUN_WORLD, surfaces: ['terminal'], procs: '', vram: '1000, 8188' })
+    await $.command.run({ command: 'cockpit', args: '' } as never) // fills the view
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const ui = await $.ui.mount({
+        plugin: 'bws-cockpit',
+        surface,
+        component: 'AbovePrompt',
+        props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
+      })
+      expect(await ui.find({ type: 'Text', text: /RUN 2026-10-02-bow-fix .* 2 open .* next: verify the draw anim/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /UE off .* VRAM 1\.0\/8\.0 GB/ })).toBeDefined()
+      expect(await ui.find({ key: 'resume' })).toBeDefined()
+      await ui.unmount()
+    }
+  })
+})

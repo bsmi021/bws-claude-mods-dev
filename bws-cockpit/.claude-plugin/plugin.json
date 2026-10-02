@@ -1,0 +1,46 @@
+{
+  "name": "bws-cockpit",
+  "version": "0.1.0",
+  "description": "Run Cockpit band (active run, next step, open items, /resume-run) plus an Editor & Device Guard for Unreal, Unity, Blender and adb.",
+  "author": { "name": "Brian" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "guard": {
+      "type": "boolean",
+      "title": "Editor & Device Guard",
+      "description": "Block calls that cannot work (editor or device down) and add launch flags (Unity -automated, UE low-VRAM).",
+      "default": true
+    },
+    "lowVramMode": {
+      "type": "string",
+      "title": "UE low-VRAM flags",
+      "description": "auto: add them when another UE editor or Blender runs, or VRAM use is over the threshold. always / off.",
+      "options": ["auto", "always", "off"],
+      "default": "auto"
+    },
+    "vramThresholdMb": {
+      "type": "number",
+      "title": "VRAM threshold (MB)",
+      "description": "In auto mode, VRAM in use at or above this counts as pressure.",
+      "default": 4096
+    },
+    "lowVramCvars": {
+      "type": "string",
+      "title": "Low-VRAM cvars",
+      "description": "Comma-separated cvar=value pairs passed as -ini:Engine:[SystemSettings] overrides. Empty uses the built-in set.",
+      "default": ""
+    },
+    "adbPath": {
+      "type": "string",
+      "title": "adb executable",
+      "description": "Path or name of adb.",
+      "default": "adb"
+    },
+    "refreshSeconds": {
+      "type": "number",
+      "title": "Band refresh (seconds)",
+      "description": "How often the band re-probes editors and devices while a terminal or Desktop surface is attached.",
+      "default": 30
+    }
+  }
+}

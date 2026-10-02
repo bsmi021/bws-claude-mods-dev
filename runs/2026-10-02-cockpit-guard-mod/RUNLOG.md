@@ -1,0 +1,41 @@
+# RUNLOG — bws-cockpit (Run Cockpit band + Editor & Device Guard)
+
+## Objective
+Build mods #1 and #2 from the usage review as one plugin, `bws-cockpit/`. The finish line is in [PLAN.md](PLAN.md). Brian answered "Fix" to the guard question, so the guard runs in fix mode: it blocks and rewrites ([DECISIONS.md](DECISIONS.md)). Mod #3 (Shell Lint) went to a parallel subagent, with its own folder and run folder.
+
+## Actions
+- Re-enabled `cc-plugin-agents-md@builtin` in `~/.claude/settings.json`. The backup is `settings.json.bak-2026-10-02-agentsmd`.
+- Took the low-VRAM cvars and the Unity `-automated` rule from Brian's own transcripts and TMS's `Config/Harness/EditorLaunch.json`.
+- Ran a UE 5.8 commandlet to check `-ini:Engine:[SystemSettings]:…` overrides. All 5 cvars read back as set (`receipts/ue-ini-override-check.txt`).
+  - I chose `-ini:` over `-ExecCmds="…"` because it has no spaces or quotes.
+- Wrote the plugin: `hooks/lib.ts` (pure parsing and classification), `hooks/register.tsx` (hooks), `types/index.d.ts` (state), and `tests/cockpit.test.ts` (26 tests).
+- Bugs that tests caught and I fixed:
+  - Segment scanning started inside a quoted exe path, so the flags landed after the redirect.
+  - `/resume-run` called `prompt.submit` inside `command.run`, which the host refuses as a deadlock. It is now deferred with `clock.after`.
+- Live headless checks (`claude -p --plugin-dir`) are in `receipts/live-guard.txt`:
+  - adb with no device: blocked.
+  - Duplicate TMS editor: blocked. TMS really was open, pid 59468.
+  - `unity open`: rewritten to add `--args -automated`, with the note shown to the model.
+  - UE GUI launch of StreetWar under pressure (Blender plus UE running): rewritten with the low-VRAM `-ini` overrides. The launch was wrapped in `echo`, so nothing actually started.
+  - After Brian attached a device: adb was blocked because the device is `unauthorized`, which is correct behavior.
+- Interactive band: opened a new Windows Terminal with `claude --plugin-dir ./bws-cockpit`. It stopped at the workspace-trust prompt, which waits on Brian.
+
+## Finish line status
+
+| # | Item | Status |
+|---|---|---|
+| 1 | validate | ✅ `receipts/validate.txt` |
+| 2 | tests | ✅ 26/26, `receipts/test.txt`; tsc strict is clean |
+| 3 | band screenshot | ⏳ waiting on Brian to trust the folder in the "claude" window, then retake `receipts/band.png` |
+| 4 | live guard | ✅ two blocks and two rewrites, `receipts/live-guard.txt` |
+| 5 | README | ✅ |
+| 6 | RUNLOG + commit | ✅ (this commit) |
+
+## Next
+- After the folder is trusted: screenshot the band (row contents, the buttons).
+- After the device is authorized: re-run the adb pass-through check.
+- Brian decides whether to load the mod in every session through `CLAUDE_CODE_PLUGIN_DIRS`.
+- Parked:
+  - re-injecting the cockpit block after compaction (no clean route seen yet)
+  - Loop Watch pane
+  - dev-server tracker

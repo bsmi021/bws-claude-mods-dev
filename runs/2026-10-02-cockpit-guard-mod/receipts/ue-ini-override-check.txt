@@ -1,0 +1,16 @@
+[2026.10.02-11.58.44:627][  0]LogGameFeatures: Error: Asset manager settings do not include a rule for assets of type GameFeatureData, which is required for game feature plugins to function
+[2026.10.02-11.58.44:628][  0]LoadErrors: Error: Asset Manager settings do not include an entry for assets of type GameFeatureData, which is required for game feature plugins to function. Add entry to PrimaryAssetTypesToScan?
+[2026.10.02-11.58.45:786][  0]LogPython: Warning: CVARCHECK t.MaxFPS=30.0
+[2026.10.02-11.58.45:786][  0]LogPython: Warning: CVARCHECK r.ScreenPercentage=50.0
+[2026.10.02-11.58.45:786][  0]LogPython: Warning: CVARCHECK r.Streaming.PoolSize=768.0
+[2026.10.02-11.58.45:786][  0]LogPython: Warning: CVARCHECK sg.ShadowQuality=0.0
+[2026.10.02-11.58.45:786][  0]LogPython: Warning: CVARCHECK sg.TextureQuality=1.0
+[2026.10.02-11.58.45:786][  0]LogInit: Display: LogGameFeatures: Error: Asset manager settings do not include a rule for assets of type GameFeatureData, which is required for game feature plugins to function
+[2026.10.02-11.58.45:786][  0]LogInit: Display: LoadErrors: Error: Asset Manager settings do not include an entry for assets of type GameFeatureData, which is required for game feature plugins to function. Add entry to PrimaryAssetTypesToScan?
+[2026.10.02-11.58.45:786][  0]LogInit: Display: LogPython: Warning: CVARCHECK t.MaxFPS=30.0
+[2026.10.02-11.58.45:786][  0]LogInit: Display: LogPython: Warning: CVARCHECK r.ScreenPercentage=50.0
+[2026.10.02-11.58.45:786][  0]LogInit: Display: LogPython: Warning: CVARCHECK r.Streaming.PoolSize=768.0
+[2026.10.02-11.58.45:787][  0]LogInit: Display: LogPython: Warning: CVARCHECK sg.ShadowQuality=0.0
+[2026.10.02-11.58.45:787][  0]LogInit: Display: LogPython: Warning: CVARCHECK sg.TextureQuality=1.0
+
+[exited with code 0]

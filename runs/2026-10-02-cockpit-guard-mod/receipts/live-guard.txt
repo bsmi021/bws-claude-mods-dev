@@ -1,0 +1,55 @@
+TOOL_USE  adb shell echo hello
+
+RESULT (error) <tool_use_error>bws-cockpit: no Android device is ready (adb devices: none attached). Ask Brian to connect and unlock the device, then retry.</tool_use_error>
+
+TOOL_USE  echo "C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe" "C:/Projects/bws.game.tms/TMS.uproject" -log
+
+RESULT (error) <tool_use_error>bws-cockpit: C:/Projects/bws.game.tms/TMS.uproject is already open in UnrealEditor (pid 59468). Use the running editor (unreal-mcp), or close it first. A second instance fights over assets and VRAM.</tool_use_error>
+
+TOOL_USE  echo unity open C:/Projects/tms-heim
+
+RESULT unity open C:/Projects/tms-heim --args -automated
+
+ASSISTANT Results, in order:
+
+**1) `adb shell echo hello`** — blocked, not run:
+```
+bws-cockpit: no Android device is ready (adb devices: none attached). Ask Brian to connect and unlock the device, then retry.
+```
+
+**2) `echo "C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe" "C:/Projects/bws.game.tms/TMS.uproject" -log`** — blocked, not run:
+```
+bws-cockpit: C:/Projects/bws.game.tms/TMS.uproject is already open in UnrealEditor (pid 59468). Use the running editor (unreal-mcp), or close it first. A second instance fights over assets and VRAM.
+```
+
+**3) `echo unity open C:/Projects/tms-heim`** — ran, but the cockpit hook changed the command first:
+```
+unity open C:/Projects/tms-heim --args -automated
+```
+Extra note attached to the result: `bws-cockpit: added --args -automated to unity open; the command ran as: echo unity open C:/Projects/tms-heim --args -automated`
+
+The result also carried a long list of newly available deferred Figma and MCP-resource tools. Several claude.ai connectors (AINRI, Atlassian, Excalidraw, Gmail, Google Calendar, Google Drive, Hugging Face, Mermaid Chart, Three.js 3D Viewer, Vercel, byterover-mcp) still need authorization through your claude.ai connector settings. `copilot-bridge` failed to connect (`CONNECTION_CLOSED`).
+
+I did not retry or work around any of these.
+
+===== run 2: low-VRAM rewrite =====
+
+TOOL_USE  echo "C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe" "C:/Projects/street-war/StreetWar.uproject" -log
+
+RESULT C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe C:/Projects/street-war/StreetWar.uproject -log -ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPercentage=50,[SystemSettings]:r.Streaming.PoolSize=768,[SystemSettings]:sg.ViewDistanceQuality=0,[SystemSettings]:sg.TextureQuality=1,[SystemSettings]:sg.ShadowQuality=0,[SystemSettings]:sg.ShadingQuality=0,[SystemSettings]:sg.ReflectionQuality=0,[SystemSettings]:sg.PostProcessQuality=0,[SystemSettings]:sg.GlobalIlluminationQuality=0,[SystemSettings]:sg.FoliageQuality=0,[SystemSettings]:sg.EffectsQuality=0
+
+ASSISTANT The command ran, but the output isn't what I wrote. A bws-cockpit hook added low-VRAM `-ini` overrides to the command before it ran.
+
+**Tool result:**
+```
+C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe C:/Projects/street-war/StreetWar.uproject -log -ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPercentage=50,[SystemSettings]:r.Streaming.PoolSize=768,[SystemSettings]:sg.ViewDistanceQuality=0,[SystemSettings]:sg.TextureQuality=1,[SystemSettings]:sg.ShadowQuality=0,[SystemSettings]:sg.ShadingQuality=0,[SystemSettings]:sg.ReflectionQuality=0,[SystemSettings]:sg.PostProcessQuality=0,[SystemSettings]:sg.GlobalIlluminationQuality=0,[SystemSettings]:sg.FoliageQuality=0,[SystemSettings]:sg.EffectsQuality=0
+```
+
+**Note attached to the result (tool.call hook additional context):**
+> bws-cockpit: added low-VRAM -ini overrides to the UE launch (GPU pressu
+
+===== run 3: device attached, adb passes =====
+
+TOOL_USE  adb shell echo hello-from-device
+
+RESULT (error) <tool_use_error>bws-cockpit: no Android device is ready (adb devices: 57251FDCQ001LB unauthorized). Ask Brian to connect and unlock the device, then retry.</tool_use_error>
