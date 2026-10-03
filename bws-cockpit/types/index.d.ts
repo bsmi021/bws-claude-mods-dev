@@ -72,15 +72,19 @@ export type PeerView = {
   name: string
   status: string // busy, idle, shell, or whatever the registry says
   kind: string // interactive, or a headless kind
-  where: string // relative to the repo root; '' at the root
+  repo: string // its repo's folder name
+  where: string // relative to its repo root; '' at the root
   startedAt: number | null
   statusSince: number | null
+  prompt: string | null // first line of its latest prompt in history.jsonl (same-repo peers only)
+  promptAt: number | null
 }
 
 export type PeersView = {
   root: string // this session's repo root
   at: number // when it was scanned
   peers: PeerView[]
+  others: PeerView[] // live sessions in other repos, by repo name
 }
 
 declare module 'claude-code' {

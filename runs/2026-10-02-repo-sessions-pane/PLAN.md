@@ -16,3 +16,17 @@ Brian's ask: "show me any other claude code sessions open in the same repository
 ## Parked follow-ups
 - Last prompt / current activity per session (read the peer transcript tail).
 - Message button per peer ($.session.send to its sessionId).
+
+---
+
+# PLAN 2 (2026-10-02): latest prompt per peer + other repos section (bws-cockpit 0.7.0)
+
+Brian's ask: "show each peer's latest prompt under its row in the repo-sessions pane. As well add a section to the bottom to show all other sessions in different repos".
+
+## Finish line
+1. Each same-repo peer row gets a dim `› <latest prompt>` line: first line of its newest entry in `<config dir>/history.jsonl` (`display`, matched by `sessionId`), cut to the pane width. No line when the session has no prompt there (e.g. `-p` workers).
+   - history.jsonl (~5 MB) is read only when its mtime/size changes, scanned from the end; JSON parsed only for wanted ids.
+2. A bottom section "Other repos · N" lists every other live session not in this repo, grouped under its repo name: status mark, name, status + time; worker kind marked. No prompts there.
+3. Text fallback (`claude -p "/repo-sessions"`) carries both: prompt lines and the other-repos list.
+4. Auto-open still triggers only on same-repo interactive peers.
+5. Validate clean, tests green (new: prompt parsing, wanted-only scan, other-repos grouping, pane both surfaces, text), tsc strict clean, README + version 0.7.0, live receipts (headless text + Brian's eye on the pane).

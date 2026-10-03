@@ -28,6 +28,24 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
 - Live, interactive: `launch-peer.ps1` opened `repo-sessions-check` in a new maximized wt window, with no keystrokes sent.
   - `receipts/live-two-peers-p.jsonl`: headless `/repo-sessions` listed both interactive peers.
 
+- Brian confirmed the pane docked on the right in fullscreen.
+
+## Session 2: latest prompt per peer, plus an Other repos section (0.7.0)
+- Prompts come from `~/.claude/history.jsonl`, which has one `{display, timestamp, project, sessionId}` line per prompt.
+  - `latestPrompts` scans from the end and parses JSON only for the session ids it wants.
+  - It is cached by size and mtime.
+- The first live run showed no prompt. The cause: `$.fs.read` rejects files over 4 MiB, and the real history.jsonl is 4.99 MB.
+  - Fix: `readTail` reads the file whole when it is 4 MiB or less. Otherwise it takes the last 1 MiB through a PowerShell FileStream seek, opened read-shared, with a `tail -c` fallback.
+  - A test covers the big-file path and the cut first line.
+- Other repos: every other live session not in this repo, grouped under its repo's folder name, sorted by repo then status.
+  - Shown in the pane and in the text fallback.
+  - These rows have no prompt lines.
+- Evidence:
+  - `receipts/test.txt`: 114/114.
+  - `receipts/validate.txt` and `receipts/tsc.txt`: clean.
+  - `receipts/live-prompts-others-p.jsonl`: the real peer with its latest prompt, then 5 sessions in other repos.
+
 ## Next
-- Brian confirms by eye that the pane docked on the right, in the new window and in his own fullscreen session.
+- Brian checks the new prompt lines and the Other repos section in the docked pane.
+- Parked: a message button per peer.
 - Parked: a last-prompt line per session; a message button per peer.

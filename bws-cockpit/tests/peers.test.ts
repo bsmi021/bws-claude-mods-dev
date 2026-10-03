@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { isRecordFile, parseRecord, parseTasklist, peersText, repoKey, sortPeers, toPeer, whereIn } from '../hooks/peers'
+import { isRecordFile, latestPrompts, parseRecord, parseTasklist, peersText, promptLine, repoKey, sortOthers, sortPeers, toPeer, whereIn } from '../hooks/peers'
 import type { PeerView } from '../types'
 
 // The engine's session registry, shaped like the real <pid>.json files.
@@ -36,9 +36,20 @@ const RECS: Rec[] = [
   { pid: 60, sessionId: 's-dead', cwd: REPO, name: 'crashed', status: 'idle' },
 ]
 
+// The engine's prompt history: one line per prompt, newest last.
+const hist = (sessionId: string, display: string, at: number) => JSON.stringify({ display, pastedContents: {}, timestamp: at, project: 'C:\\repo', sessionId })
+const HISTORY = [
+  hist('s-busy', 'an older prompt', T0 - 600_000),
+  hist('s-other', 'a prompt in another repo', T0 - 500_000),
+  hist('s-wt', '\n  ship the   worktree fix\nsecond line', T0 - 400_000),
+  hist('s-busy', 'fix the flaky test', T0 - 300_000),
+  hist('self', 'my own prompt', T0 - 200_000),
+  'not json',
+].join('\n') + '\n'
+
 const norm = (p: unknown) => String(p).replace(/\\/g, '/')
 
-type World = { surfaces?: string[]; tasklist?: 'fail'; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
+type World = { surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
 
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: T0 })
@@ -58,6 +69,7 @@ function world(on: On, w: World = {}) {
   })
   on('fs.stat', ($, e) => {
     const path = norm(e.path)
+    if (path === `${CONFIG}/history.jsonl`) return { value: { kind: 'file', size: w.bigHistory ? 5_000_000 : HISTORY.length, mtimeMs: T0 - 1000, isLink: false } as never }
     if (path === `${REPO}/.git` || path === 'C:/other/.git') return { value: { kind: 'dir', size: 0, mtimeMs: 0, isLink: false } as never }
     if (path === 'C:/wt/feat/.git') return { value: { kind: 'file', size: 1, mtimeMs: 0, isLink: false } as never }
     throw new Error(`ENOENT ${path}`)
@@ -66,11 +78,17 @@ function world(on: On, w: World = {}) {
     const path = norm(e.path)
     reads.push(path)
     if (path === 'C:/wt/feat/.git') return { value: 'gitdir: C:/repo/.git/worktrees/feat\n' as never }
+    if (path === `${CONFIG}/history.jsonl`) return { value: HISTORY as never }
     const rec = RECS.find(r => path === `${CONFIG}/sessions/${r.pid}.json`)
     if (rec) return { value: recJson(rec) as never }
     throw new Error(`ENOENT ${path}`)
   })
   on('process.run', ($, e) => {
+    if (String(e.argv[0]) === 'powershell' && w.bigHistory) {
+      w.tails?.push({ argv: [...e.argv].map(String), env: e.init?.env })
+      // the last 1 MiB of a big file starts mid-line
+      return { value: { exitCode: 0, stdout: `t":"cut mid-line","sessionId":"s-busy"}\n${HISTORY}`, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    }
     if (String(e.argv[0]) === 'tasklist') {
       if (w.tasklist === 'fail') throw new Error('ENOENT tasklist')
       const images: Record<number, string> = { 10: 'claude.exe', 20: 'claude.exe', 30: 'claude.exe', 40: 'claude.exe', 50: 'claude.exe', ...w.tasklistImage }
@@ -109,6 +127,10 @@ const PANE = {
 
 // ---------- pure ----------
 
+const peer = (name: string, kind: string, status: string, startedAt: number, repo = 'repo'): PeerView => ({
+  sessionId: name, pid: 1, name, status, kind, repo, where: '', startedAt, statusSince: null, prompt: null, promptAt: null,
+})
+
 describe('repo sessions parsing', () => {
   test('registry records parse; junk and partial records do not', () => {
     const r = parseRecord(recJson(RECS[1] as Rec))
@@ -146,20 +168,37 @@ describe('repo sessions parsing', () => {
   })
 
   test('interactive first, busy before idle, then newest', () => {
-    const peer = (name: string, kind: string, status: string, startedAt: number): PeerView => ({
-      sessionId: name, pid: 1, name, status, kind, where: '', startedAt, statusSince: null,
-    })
     const order = sortPeers([peer('w', 'sdk-cli', 'busy', 9), peer('a', 'interactive', 'idle', 5), peer('b', 'interactive', 'busy', 1), peer('c', 'interactive', 'idle', 8)])
     expect(order.map(p => p.name)).toEqual(['b', 'c', 'a', 'w'])
+  })
+
+  test('other repos: by repo name, then the same order inside each', () => {
+    const order = sortOthers([peer('x', 'interactive', 'idle', 1, 'zeta'), peer('w', 'sdk-cli', 'busy', 9, 'Alpha'), peer('a', 'interactive', 'busy', 5, 'alpha')])
+    expect(order.map(p => p.name)).toEqual(['a', 'w', 'x'])
+  })
+
+  test('latest prompt per wanted session, newest wins, first line only', () => {
+    const got = latestPrompts(HISTORY, new Set(['s-busy', 's-wt', 's-never']))
+    expect(got.get('s-busy')).toEqual({ text: 'fix the flaky test', at: T0 - 300_000 })
+    expect(got.get('s-wt')?.text).toBe('ship the worktree fix')
+    expect(got.has('s-never')).toBe(false)
+    expect(got.has('s-other')).toBe(false) // not wanted
+    expect(latestPrompts('', new Set(['s-busy'])).size).toBe(0)
+    expect(promptLine('\n\n  a   b \nc')).toBe('a b')
+    expect(promptLine(42)).toBe('')
   })
 
   test('text summary', () => {
     const r = parseRecord(recJson(RECS[2] as Rec))
     expect(r).toBeDefined()
-    const text = peersText([toPeer(r!, REPO)], REPO, T0)
+    const text = peersText([toPeer(r!, REPO, { text: 'run unit D3', at: null })], REPO, T0)
     expect(text).toContain('1 other session in repo:')
-    expect(text).toContain('- worker-7: busy 1m (sdk-cli · in tools · started 2h ago)')
+    expect(text).toContain('- worker-7: busy 1m (sdk-cli · in tools · started 2h ago)\n  › run unit D3')
     expect(peersText([], REPO, T0)).toBe('No other Claude Code sessions in repo.')
+    const other = parseRecord(recJson(RECS[3] as Rec))
+    expect(peersText([], REPO, T0, [toPeer(other!, 'C:/other')])).toBe(
+      'No other Claude Code sessions in repo.\n\nOther repos (1):\nother:\n- elsewhere: idle 1m',
+    )
   })
 })
 
@@ -170,8 +209,11 @@ describe('repo sessions', () => {
     const w = world(on)
     const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
     expect(r.text).toContain('3 other sessions in repo:')
-    expect(r.text).toMatch(/- refactor: busy 3m \(started 2h ago\)\n- feature-wt: idle 1m \(in C:\/wt\/feat · started 2h ago\)\n- worker-7: busy 1m \(sdk-cli · in tools/)
-    expect(r.text).not.toContain('elsewhere') // another repo
+    expect(r.text).toMatch(
+      /- refactor: busy 3m \(started 2h ago\)\n {2}› fix the flaky test\n- feature-wt: idle 1m \(in C:\/wt\/feat · started 2h ago\)\n {2}› ship the worktree fix\n- worker-7: busy 1m \(sdk-cli · in tools · started 2h ago\)\n\n/,
+    )
+    expect(r.text).toContain('\n\nOther repos (1):\nother:\n- elsewhere: idle 1m') // another repo, at the bottom, no prompt
+    expect(r.text).not.toContain('a prompt in another repo')
     expect(r.text).not.toContain('crashed') // pid gone
     expect(r.text).not.toContain('- me:') // this session
     expect(w.reads.some(p => p.endsWith('.key'))).toBe(false)
@@ -194,7 +236,13 @@ describe('repo sessions', () => {
       expect(await ui.find({ type: 'Text', text: /busy 3m/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /in C:\/wt\/feat/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /sdk-cli · in tools/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /crashed|elsewhere/ })).toBeUndefined()
+      expect(await ui.find({ type: 'Text', text: /^ {2}› fix the flaky test$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^ {2}› ship the worktree fix$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^Other repos$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^other$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^elsewhere$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /idle 1m/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /crashed|a prompt in another repo|my own prompt/ })).toBeUndefined()
       expect(await ui.find({ key: 'peers-refresh' })).toBeDefined()
       await ui.unmount()
     }
@@ -264,5 +312,24 @@ describe('repo sessions', () => {
     world(on, { tasklistImage: { 60: 'chrome.exe' } })
     const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
     expect(r.text).not.toContain('crashed')
+  })
+
+  test('history.jsonl is read once while it is unchanged', async ($, on) => {
+    const w = world(on)
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    expect(w.reads.filter(p => p.endsWith('/history.jsonl')).length).toBe(1)
+  })
+
+  test('a history.jsonl over 4 MiB is read from its tail, never whole', async ($, on) => {
+    const tails: { argv: string[]; env?: Record<string, string> }[] = []
+    const w = world(on, { bigHistory: true, tails })
+    const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    expect(r.text).toContain('  › fix the flaky test')
+    expect(r.text).not.toContain('cut mid-line')
+    expect(w.reads.some(p => p.endsWith('/history.jsonl'))).toBe(false)
+    expect(tails.length).toBe(1)
+    expect(norm(tails[0]?.env?.BWS_TAIL_PATH)).toBe(`${CONFIG}/history.jsonl`)
+    expect(tails[0]?.env?.BWS_TAIL_BYTES).toBe('1048576')
   })
 })

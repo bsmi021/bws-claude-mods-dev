@@ -1,6 +1,6 @@
 {
   "name": "bws-cockpit",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Repo Sessions pane, Finish-Line Guard, Project Locator, /handoff, and a worker model pin for subagents.",
   "author": {
     "name": "Brian"

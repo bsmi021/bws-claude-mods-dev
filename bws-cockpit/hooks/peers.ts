@@ -115,34 +115,71 @@ export function isAliveIn(images: ReadonlyMap<number, string>, pid: number, self
 
 export const livenessKey = (r: { pid: number; procStart: string }) => `${r.pid}:${r.procStart}`
 
-export function toPeer(r: SessionRecord, root: string): PeerView {
+export type LatestPrompt = { text: string; at: number | null }
+
+// The first non-empty line of a prompt, whitespace collapsed.
+export const promptLine = (display: unknown): string =>
+  typeof display !== 'string' ? '' : (display.split(/\r?\n/).find(l => l.trim() !== '') ?? '').replace(/\s+/g, ' ').trim()
+
+// The newest prompt of each wanted session in history.jsonl (the engine's prompt history, one
+// `{ display, timestamp, project, sessionId }` per line, appended), scanned from the end. Only
+// the lines of wanted sessions are parsed; the scan stops once every one is found.
+export function latestPrompts(history: string, ids: ReadonlySet<string>): Map<string, LatestPrompt> {
+  const out = new Map<string, LatestPrompt>()
+  let end = history.length
+  while (end > 0 && out.size < ids.size) {
+    const start = history.lastIndexOf('\n', end - 1)
+    const line = history.slice(start + 1, end)
+    end = start < 0 ? 0 : start
+    const id = line.match(/"sessionId":\s*"([^"]+)"/)?.[1]
+    if (id === undefined || !ids.has(id) || out.has(id)) continue
+    let rec: Record<string, unknown>
+    try {
+      rec = JSON.parse(line) as Record<string, unknown>
+    } catch {
+      continue
+    }
+    const text = promptLine(rec.display)
+    if (text) out.set(id, { text, at: num(rec.timestamp) })
+  }
+  return out
+}
+
+export function toPeer(r: SessionRecord, root: string, prompt?: LatestPrompt): PeerView {
   return {
     sessionId: r.sessionId,
     pid: r.pid,
     name: r.name,
     status: r.status,
     kind: r.kind,
+    repo: repoName(root),
     where: whereIn(r.cwd, root),
     startedAt: r.startedAt,
     statusSince: r.statusSince,
+    prompt: prompt?.text ?? null,
+    promptAt: prompt?.at ?? null,
   }
 }
 
 const STATUS_RANK: Record<string, number> = { busy: 0, waiting: 1, idle: 2, shell: 3 }
 
-// Interactive sessions first, then by status (busy first), then the newest first.
-export function sortPeers(peers: readonly PeerView[]): PeerView[] {
+const byRank = (a: PeerView, b: PeerView) => {
   const rank = (p: PeerView) => [p.kind === 'interactive' ? 0 : 1, STATUS_RANK[p.status] ?? 4, -(p.startedAt ?? 0)]
-  return [...peers].sort((a, b) => {
-    const ra = rank(a)
-    const rb = rank(b)
-    for (let i = 0; i < ra.length; i++) {
-      const d = (ra[i] ?? 0) - (rb[i] ?? 0)
-      if (d !== 0) return d
-    }
-    return a.name.localeCompare(b.name)
-  })
+  const ra = rank(a)
+  const rb = rank(b)
+  for (let i = 0; i < ra.length; i++) {
+    const d = (ra[i] ?? 0) - (rb[i] ?? 0)
+    if (d !== 0) return d
+  }
+  return a.name.localeCompare(b.name)
 }
+
+// Interactive sessions first, then by status (busy first), then the newest first.
+export const sortPeers = (peers: readonly PeerView[]): PeerView[] => [...peers].sort(byRank)
+
+// Sessions in other repos: by repo name, then as sortPeers within each repo.
+export const sortOthers = (peers: readonly PeerView[]): PeerView[] =>
+  [...peers].sort((a, b) => a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()) || byRank(a, b))
 
 export const STATUS_COLOR: Record<string, string | undefined> = { busy: 'claude', waiting: 'warning', idle: 'success' }
 
@@ -159,11 +196,28 @@ export function peerDetail(p: PeerView, now: number): string {
     .join(' · ')
 }
 
-export function peersText(peers: readonly PeerView[], root: string, now: number): string {
-  if (peers.length === 0) return `No other Claude Code sessions in ${repoName(root)}.`
-  const lines = peers.map(p => {
-    const detail = peerDetail(p, now)
-    return `- ${p.name}: ${p.status} ${forText(p.statusSince, now)}${detail ? ` (${detail})` : ''}`
-  })
-  return `${peers.length} other session${peers.length === 1 ? '' : 's'} in ${repoName(root)}:\n${lines.join('\n')}`
+// A session in another repo, on one line: the kind when not interactive, the folder when not the root.
+export const otherDetail = (p: PeerView) => [p.kind !== 'interactive' ? p.kind : '', p.where ? `in ${p.where}` : ''].filter(Boolean).join(' · ')
+
+export function peersText(peers: readonly PeerView[], root: string, now: number, others: readonly PeerView[] = []): string {
+  const head =
+    peers.length === 0
+      ? `No other Claude Code sessions in ${repoName(root)}.`
+      : `${peers.length} other session${peers.length === 1 ? '' : 's'} in ${repoName(root)}:\n` +
+        peers
+          .map(p => {
+            const detail = peerDetail(p, now)
+            const line = `- ${p.name}: ${p.status} ${forText(p.statusSince, now)}${detail ? ` (${detail})` : ''}`
+            return p.prompt ? `${line}\n  › ${p.prompt}` : line
+          })
+          .join('\n')
+  if (others.length === 0) return head
+  const lines: string[] = []
+  let repo: string | undefined
+  for (const p of others) {
+    if (p.repo !== repo) lines.push(`${(repo = p.repo)}:`)
+    const detail = otherDetail(p)
+    lines.push(`- ${p.name}: ${p.status} ${forText(p.statusSince, now)}${detail ? ` (${detail})` : ''}`)
+  }
+  return `${head}\n\nOther repos (${others.length}):\n${lines.join('\n')}`
 }

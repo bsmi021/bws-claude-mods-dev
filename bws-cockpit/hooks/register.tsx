@@ -41,8 +41,8 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
-import { STATUS_COLOR, forText, isAliveIn, isRecordFile, livenessKey, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortPeers, toPeer } from './peers'
-import type { SessionRecord } from './peers'
+import { STATUS_COLOR, forText, isAliveIn, isRecordFile, latestPrompts, livenessKey, otherDetail, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortOthers, sortPeers, toPeer } from './peers'
+import type { LatestPrompt, SessionRecord } from './peers'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
@@ -507,6 +507,7 @@ const alive = new Map<string, { isAlive: boolean; at: number }>()
 const repos = new Map<string, { key: string; root: string }>()
 let isScanningPeers = false
 let isFullscreen: boolean | undefined
+let promptCache: { key: string; fileKey: string; text: string; prompts: Map<string, LatestPrompt> } | undefined
 
 async function configDir($: EngineInterface): Promise<string | undefined> {
   const own = await settle($.env.get('CLAUDE_CONFIG_DIR'))
@@ -558,7 +559,46 @@ async function liveOnly($: EngineInterface, recs: SessionRecord[], selfPid: numb
   return recs.filter(r => alive.get(livenessKey(r))?.isAlive !== false)
 }
 
-// The other live sessions in this session's repo, from <config dir>/sessions/<pid>.json.
+const FS_READ_MAX = 4 * 1024 * 1024 // $.fs.read rejects a file over 4 MiB
+const HISTORY_TAIL = 1024 * 1024 // a bigger history.jsonl is read from its last 1 MiB (a few thousand prompts)
+// Prints the last BWS_TAIL_BYTES of BWS_TAIL_PATH, opened shared so the engine can keep appending.
+const PS_TAIL =
+  "$f = [IO.File]::Open($env:BWS_TAIL_PATH, 'Open', 'Read', 'ReadWrite'); " +
+  'try { $n = [Math]::Min($f.Length, [long]$env:BWS_TAIL_BYTES); [void]$f.Seek(-$n, \'End\'); ' +
+  '$b = New-Object byte[] $n; $r = 0; while ($r -lt $n) { $k = $f.Read($b, $r, $n - $r); if ($k -le 0) { break }; $r += $k }; ' +
+  '[Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Out.Write([Text.Encoding]::UTF8.GetString($b, 0, $r)) } finally { $f.Close() }'
+
+// A text file whole when $.fs.read can take it, else its tail (PowerShell, then `tail -c`).
+// The tail's first line is usually cut; latestPrompts skips a line it cannot parse.
+async function readTail($: EngineInterface, path: string, size: number): Promise<string | undefined> {
+  if (size <= FS_READ_MAX) return settle($.fs.read(path))
+  const env = { BWS_TAIL_PATH: toWin(path), BWS_TAIL_BYTES: String(HISTORY_TAIL) }
+  const ps = await settle($.process.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', PS_TAIL], { timeoutMs: 15000, env }))
+  if (ps && ps.exitCode === 0) return ps.stdout
+  const tail = await settle($.process.run(['tail', '-c', String(HISTORY_TAIL), path], { timeoutMs: 15000 }))
+  return tail && tail.exitCode === 0 ? tail.stdout : undefined
+}
+
+// The latest prompt of each wanted session, from <config dir>/history.jsonl. The file (several
+// MB) is read again only when its size or mtime moves, and scanned again only when that or
+// the wanted set changes.
+async function readPrompts($: EngineInterface, dir: string, ids: string[]): Promise<Map<string, LatestPrompt>> {
+  if (ids.length === 0) return new Map()
+  const path = `${dir}/history.jsonl`
+  const st = await settle($.fs.stat(path))
+  if (!st) return new Map()
+  const fileKey = `${st.size}:${st.mtimeMs}`
+  const key = `${fileKey}|${[...ids].sort().join(',')}`
+  if (promptCache?.key === key) return promptCache.prompts
+  const text = promptCache?.fileKey === fileKey ? promptCache.text : await readTail($, path, st.size)
+  if (text === undefined) return new Map()
+  const prompts = latestPrompts(text, new Set(ids))
+  promptCache = { key, fileKey, text, prompts }
+  return prompts
+}
+
+// The other live sessions, from <config dir>/sessions/<pid>.json: this repo's as peers (with
+// their latest prompts), the rest as others.
 async function scanPeers($: EngineInterface): Promise<PeersView | null> {
   const dir = await configDir($)
   if (dir === undefined) return null
@@ -567,15 +607,28 @@ async function scanPeers($: EngineInterface): Promise<PeersView | null> {
   const files = ((await settle($.fs.list(`${dir}/sessions`))) ?? []).filter(f => f.kind === 'file' && isRecordFile(f.name))
   const texts = await Promise.all(files.map(f => settle($.fs.read(`${dir}/sessions/${f.name}`))))
   const recs: SessionRecord[] = []
+  const roots = new Map<string, string>() // sessionId -> repo root, for sessions in other repos
   let selfPid: number | undefined
   for (const text of texts) {
     const r = text === undefined ? undefined : parseRecord(text)
     if (r?.sessionId === selfId) selfPid = r.pid
     if (r === undefined || r.sessionId === selfId) continue
-    if ((await findRepo($, r.cwd)).key === mine.key) recs.push(r)
+    const repo = await findRepo($, r.cwd)
+    if (repo.key !== mine.key) roots.set(r.sessionId, repo.root)
+    recs.push(r)
   }
   const live = await liveOnly($, recs, selfPid)
-  const v: PeersView = { root: mine.root, at: await $.clock.now(), peers: sortPeers(live.map(r => toPeer(r, mine.root))) }
+  const here = live.filter(r => !roots.has(r.sessionId))
+  const prompts = await readPrompts($, dir, here.map(r => r.sessionId))
+  const v: PeersView = {
+    root: mine.root,
+    at: await $.clock.now(),
+    peers: sortPeers(here.map(r => toPeer(r, mine.root, prompts.get(r.sessionId)))),
+    others: sortOthers(live.flatMap(r => {
+      const root = roots.get(r.sessionId)
+      return root === undefined ? [] : [toPeer(r, root)]
+    })),
+  }
   await update($, peers, () => v)
   return v
 }
@@ -1019,14 +1072,14 @@ export const register: Register = (on, options) => {
     const v = await scanPeers($)
     if (v === null) return { text: 'No Claude config folder found (CLAUDE_CONFIG_DIR, USERPROFILE or HOME).' }
     const now = await $.clock.now()
-    if ((await $.session.surfaces()).length === 0) return { text: peersText(v.peers, v.root, now) }
+    if ((await $.session.surfaces()).length === 0) return { text: peersText(v.peers, v.root, now, v.others) }
     if (await isPeersShown($)) {
       await $.ui.close({ id: PEERS_PANE })
       return {}
     }
     await announce($, v)
     const opened = await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
-    return opened.isPlaced ? {} : { text: peersText(v.peers, v.root, now) }
+    return opened.isPlaced ? {} : { text: peersText(v.peers, v.root, now, v.others) }
   })
 
   on('ui.render', { component: 'Pane', requestId: PEERS_PANE }, async ($, e, next) => {
@@ -1058,7 +1111,33 @@ export const register: Register = (on, options) => {
                 <Text bold={!isWorker} dimColor={isWorker}>{fit(p.name, Math.max(6, width - state.length - 4))}</Text>
                 <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
               </Box>
+              {p.prompt ? <Text>{`  › ${fit(p.prompt, width - 4)}`}</Text> : null}
               {detail ? <Text dimColor>{`  ${fit(detail, width - 2)}`}</Text> : null}
+            </Box>
+          )
+        })}
+        {v.others.length > 0 ? rule : null}
+        {v.others.length > 0 ? (
+          <Box flexDirection="row">
+            <Text bold>Other repos</Text>
+            <Text dimColor>{`  ${v.others.length}`}</Text>
+          </Box>
+        ) : null}
+        {v.others.map((p, i) => {
+          const color = STATUS_COLOR[p.status]
+          const isWorker = p.kind !== 'interactive'
+          const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
+          const detail = otherDetail(p)
+          const label = detail ? `${p.name} · ${detail}` : p.name
+          const isNewRepo = v.others[i - 1]?.repo !== p.repo
+          return (
+            <Box key={`other-${p.sessionId}`} flexDirection="column">
+              {isNewRepo ? <Text color="claude">{fit(p.repo, width)}</Text> : null}
+              <Box flexDirection="row">
+                <Text color={color} dimColor={color === undefined}>{p.status === 'busy' ? '  ● ' : '  ○ '}</Text>
+                <Text dimColor={isWorker}>{fit(label, Math.max(6, width - state.length - 6))}</Text>
+                <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
+              </Box>
             </Box>
           )
         })}
