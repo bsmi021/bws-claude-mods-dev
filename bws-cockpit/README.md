@@ -48,6 +48,14 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
 - **Band:** a `loop` chip (running, needs you, stalled, stopped) and the hotkey `4: loop`, which opens the pane.
 - **Without a pane** (headless `claude -p "/loop-watch"`), the same summary comes back as text.
 
+### Repo Sessions
+- **`/repo-sessions`** toggles a pane listing the other Claude Code sessions open in this repo. In the fullscreen layout (`"tui": "fullscreen"`) it docks to the right of the transcript; on the main screen it sits inline above the prompt. (`/peers` is Claude Code's own built-in, which lists every session on the machine.)
+- **Same repo** means the same common git dir, so sessions in subfolders and in worktrees count. Outside git it means the same folder.
+- Each row shows the session's name, its status (busy, idle, waiting, shell, or whatever the engine reports) and how long it has been in it. A dim second line shows the kind when it isn't interactive (for example `claude -p` workers), the subfolder or worktree path when it isn't the repo root, and when it started. Interactive sessions sort first.
+- **Opens unasked** when a new interactive session appears in this repo. That only happens in the fullscreen layout, and the engine seats an unasked pane only from 144 columns. Each session triggers it once, so closing the pane keeps it closed until another new one appears.
+- **Source:** Claude Code's own registry, `<config dir>/sessions/<pid>.json`. The config dir is `CLAUDE_CONFIG_DIR`, or `~/.claude`. The `.key` files beside the registry are never read. Sessions whose process is gone are dropped, using one `tasklist` call at most every 45 s; if the check fails, every session is kept. It refreshes every 5 s while a surface is attached.
+- **Without a pane** (`claude -p "/repo-sessions"`), the same list comes back as text.
+
 ### Finish-Line Guard
 Keeps Claude from stopping while this session's checklist still has work. This session's run folder is the newest `runs/*` whose RUNLOG, PLAN or TASKS was written since the session started; a stale folder never counts.
 - **Open items.** When Claude tries to end its turn and PLAN.md or TASKS.md still has `- [ ]` items, the stop is blocked and Claude is told which items remain (up to 5). It is also told how to hand back properly: say so plainly, and mark the item `(blocked: …)` or `(needs <ownerName>: …)`.
@@ -138,18 +146,21 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `projectRoots` | `C:/Projects` | Folders that hold your projects, separated by `;` |
 | `workerModel` | (empty: off) | Model for subagents whose Agent call names none |
 | `workerAgentTypes` | `general-purpose,claude` | Subagent types the worker model applies to |
+| `peersPane` | `true` | Repo Sessions (`/repo-sessions` and the pane) |
+| `peersAutoOpen` | `true` | Open the pane when a new interactive session appears in this repo |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
-| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
+| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, repo-sessions, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch and repo-sessions Panes), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`, `tasklist /FO CSV /NH` (Repo Sessions liveness). Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
-| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
+| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; for Repo Sessions, `<config dir>/sessions/<pid>.json` and the `.git` entry above each session's folder |
 | Prompts | `$.prompt.submit` for resume |
 | Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
 | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
+| Environment | reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` |
 | Tools | registers `find_project` |
 
 It writes no files.
@@ -161,7 +172,7 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Check | Result |
 |---|---|
 | `claude plugin validate` | passed |
-| `claude plugin test` | 93/93: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
+| `claude plugin test` | 108/108, adding Repo Sessions (registry parsing, worktree repo keys, liveness and its failure, sort, the text list, the pane on terminal and desktop, /repo-sessions toggle and tab, auto-open once in fullscreen only, the off switch). Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
 | Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop |
 | Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
 | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
@@ -170,6 +181,7 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
 | Project Locator live | `/projects refresh` from the home folder indexed 65 real projects (9 s including startup). A Glob for `**/*.uproject` over `C:\Projects` came back from the index in 4 ms with the 7 real `.uproject` files. The same Glob over the home folder was refused at once. `find_project` by name returned the folder, `.uproject` and harness loop |
 | /handoff live | After a headless task in a scratch repo, `claude -p --continue "/handoff"` wrote a 467-word HANDOFF.md through the resumed-session fallback, with the correct commit hash and next step |
 | Worker pin live | A parent on claude-opus-5-5 spawned three subagents: general-purpose with no model ran on claude-sonnet-5-5 (toast shown), Explore kept claude-opus-5-5, and an explicit `haiku` stayed on Haiku |
+| Repo Sessions live (2.1.288) | headless `claude -p "/repo-sessions"` in this repo listed the one other live session here (`busy 9m`), not itself and none of the four sessions in other repos |
 | Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
 
 Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.

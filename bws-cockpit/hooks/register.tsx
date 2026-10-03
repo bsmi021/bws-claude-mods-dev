@@ -22,7 +22,7 @@ import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPip
 import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
-import type { LoopView } from '../types'
+import type { LoopView, PeersView } from '../types'
 import { actionable, decide, openItems, openSummary } from './finish'
 import {
   SCAN_DEPTH,
@@ -41,6 +41,8 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
+import { STATUS_COLOR, forText, isRecordFile, livenessKey, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortPeers, toPeer } from './peers'
+import type { SessionRecord } from './peers'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
@@ -51,6 +53,8 @@ const loops = atom({ plugin: 'bws-cockpit', key: 'loops' } as const, [])
 const loopSelected = atom({ plugin: 'bws-cockpit', key: 'loopSelected' } as const, null)
 const loopAction = atom({ plugin: 'bws-cockpit', key: 'loopAction' } as const, null)
 const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const, null)
+const peers = atom({ plugin: 'bws-cockpit', key: 'peers' } as const, null)
+const peersAnnounced = atom({ plugin: 'bws-cockpit', key: 'peersAnnounced' } as const, [])
 
 const LOOP_PANE = 'loop-watch'
 const STOP_CONFIRM_MS = 10_000
@@ -84,6 +88,7 @@ type Options = {
   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
   pin: { model: string; types: string[] }
+  peers: { isOn: boolean; autoOpen: boolean }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -489,6 +494,108 @@ async function resume($: EngineInterface): Promise<string | undefined> {
   return undefined
 }
 
+// ---------- Repo Sessions ----------
+
+const PEERS_PANE = 'repo-sessions'
+const PEERS_TITLE = 'Sessions here'
+const PEERS_POLL_MS = 5_000
+const ALIVE_TTL_MS = 45_000 // how long a pid's tasklist answer stands
+
+// Module state, started over by a reload: liveness by pid+procStart, repos by folder, whether a
+// scan is running, and the layout the last drawing reported (undefined until something draws).
+const alive = new Map<string, { isAlive: boolean; at: number }>()
+const repos = new Map<string, { key: string; root: string }>()
+let isScanningPeers = false
+let isFullscreen: boolean | undefined
+
+async function configDir($: EngineInterface): Promise<string | undefined> {
+  const own = await settle($.env.get('CLAUDE_CONFIG_DIR'))
+  if (own) return toSlash(own)
+  const home = (await settle($.env.get('USERPROFILE'))) || (await settle($.env.get('HOME')))
+  return home ? `${toSlash(home)}/.claude` : undefined
+}
+
+// The repo a folder is in: the nearest `.git` above it, keyed by its common git dir so a
+// worktree matches its main checkout. Outside git, the folder itself.
+async function findRepo($: EngineInterface, dir: string): Promise<{ key: string; root: string }> {
+  const start = toSlash(dir)
+  const hit = repos.get(start.toLowerCase())
+  if (hit) return hit
+  let found = { key: `dir:${start.toLowerCase()}`, root: start }
+  for (let d = start, i = 0; i < 40; i++) {
+    const git = `${d}/.git`
+    const st = await settle($.fs.stat(git))
+    if (st) {
+      const text = st.kind === 'file' ? ((await settle($.fs.read(git))) ?? '') : undefined
+      found = { key: repoKey(d, text), root: d }
+      break
+    }
+    const up = parentOf(d)
+    if (up === d) break
+    d = up
+  }
+  repos.set(start.toLowerCase(), found)
+  return found
+}
+
+// Drops sessions whose process is gone (a crash leaves its registry file). One tasklist call
+// per 45 s at most; when it fails or answers nothing, every session is kept.
+async function liveOnly($: EngineInterface, recs: SessionRecord[]): Promise<SessionRecord[]> {
+  const now = await $.clock.now()
+  const due = recs.filter(r => {
+    const c = alive.get(livenessKey(r))
+    return c === undefined || now - c.at > ALIVE_TTL_MS
+  })
+  if (due.length > 0) {
+    const run = await settle($.process.run(['tasklist', '/FO', 'CSV', '/NH'], { timeoutMs: 10000 }))
+    const pids = run && run.exitCode === 0 ? parseTasklist(run.stdout) : undefined
+    for (const r of due) alive.set(livenessKey(r), { isAlive: pids === undefined || pids.size === 0 || pids.has(r.pid), at: now })
+  }
+  return recs.filter(r => alive.get(livenessKey(r))?.isAlive !== false)
+}
+
+// The other live sessions in this session's repo, from <config dir>/sessions/<pid>.json.
+async function scanPeers($: EngineInterface): Promise<PeersView | null> {
+  const dir = await configDir($)
+  if (dir === undefined) return null
+  const [selfId, selfRoot] = await Promise.all([$.session.id(), $.session.root()])
+  const mine = await findRepo($, selfRoot)
+  const files = ((await settle($.fs.list(`${dir}/sessions`))) ?? []).filter(f => f.kind === 'file' && isRecordFile(f.name))
+  const texts = await Promise.all(files.map(f => settle($.fs.read(`${dir}/sessions/${f.name}`))))
+  const recs: SessionRecord[] = []
+  for (const text of texts) {
+    const r = text === undefined ? undefined : parseRecord(text)
+    if (r === undefined || r.sessionId === selfId) continue
+    if ((await findRepo($, r.cwd)).key === mine.key) recs.push(r)
+  }
+  const live = await liveOnly($, recs)
+  const v: PeersView = { root: mine.root, at: await $.clock.now(), peers: sortPeers(live.map(r => toPeer(r, mine.root))) }
+  await update($, peers, () => v)
+  return v
+}
+
+const isPeersShown = async ($: EngineInterface) => (await $.ui.panes()).some(p => p.id === PEERS_PANE && p.isShown && p.isPlaced)
+
+// The poll: rescans, and opens the pane unasked when a new interactive session shows up here
+// (fullscreen only, where it docks beside the transcript). Each session is announced once.
+async function tickPeers($: EngineInterface, o: Options) {
+  if (isScanningPeers) return
+  const isOpen = (await $.ui.panes()).some(p => p.id === PEERS_PANE)
+  if (!isOpen && !o.peers.autoOpen) return
+  isScanningPeers = true
+  try {
+    const v = await scanPeers($)
+    if (v === null || isOpen || isFullscreen !== true) return
+    const seen = await read($, peersAnnounced)
+    const fresh = v.peers.filter(p => p.kind === 'interactive' && !seen.includes(p.sessionId))
+    if (fresh.length === 0) return
+    await update($, peersAnnounced, ids => [...ids, ...fresh.map(p => p.sessionId)].slice(-200))
+    await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
+  } finally {
+    isScanningPeers = false
+  }
+}
+
 // Adds a note the model reads after the tool result, so a rewrite is never silent.
 const withNote = <R extends { deny?: string; context?: readonly string[] }>(r: R, note: string): R =>
   r.deny !== undefined ? r : { ...r, context: [...(r.context ?? []), `bws-cockpit: ${note}`] }
@@ -525,6 +632,7 @@ export const register: Register = (on, options) => {
       model: String(options.workerModel ?? '').trim(),
       types: parseTypes(String(options.workerAgentTypes ?? 'general-purpose,claude')),
     },
+    peers: { isOn: options.peersPane !== false, autoOpen: options.peersAutoOpen !== false },
   }
 
   // ---------- /handoff ----------
@@ -669,6 +777,7 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
     await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy its start prompt', argumentHint: '[focus]' })
+    if (o.peers.isOn) await $.command.register({ name: 'repo-sessions', description: 'Show the other Claude Code sessions open in this repo in a side pane (toggles)' })
     if (o.projects.isOn) {
       await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })
       await $.tool.register({
@@ -690,6 +799,10 @@ export const register: Register = (on, options) => {
     if (surfaces.length > 0) {
       void refresh($, o, 0)
       $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
+      if (o.peers.isOn) {
+        void tickPeers($, o)
+        $.clock.every(PEERS_POLL_MS, () => void tickPeers($, o))
+      }
     }
     return next(e)
   })
@@ -885,7 +998,65 @@ export const register: Register = (on, options) => {
     )
   })
 
+  // ---------- Repo Sessions ----------
+
+  on('command.run', { command: 'repo-sessions' }, async ($, e, next) => {
+    const v = await scanPeers($)
+    if (v === null) return { text: 'No Claude config folder found (CLAUDE_CONFIG_DIR, USERPROFILE or HOME).' }
+    const now = await $.clock.now()
+    if ((await $.session.surfaces()).length === 0) return { text: peersText(v.peers, v.root, now) }
+    if (await isPeersShown($)) {
+      await $.ui.close({ id: PEERS_PANE })
+      return {}
+    }
+    const opened = await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
+    return opened.isPlaced ? {} : { text: peersText(v.peers, v.root, now) }
+  })
+
+  on('ui.render', { component: 'Pane', requestId: PEERS_PANE }, async ($, e, next) => {
+    isFullscreen = e.viewport?.isFullscreen ?? isFullscreen
+    const { Box, Text, Button } = $.ui.resolve(e)
+    const v = await read($, peers)
+    const now = await $.clock.now()
+    const width = Math.max(24, (e.props.bodyColumns ?? 60) - 1)
+    if (v === null) return <Text dimColor>Looking for sessions…</Text>
+    const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
+    const count = `${v.peers.length} other${v.peers.length === 1 ? '' : 's'}`
+    return (
+      <Box flexDirection="column">
+        <Box flexDirection="row">
+          <Text bold>{fit(repoName(v.root), Math.max(6, width - count.length - 2))}</Text>
+          <Text dimColor>{`  ${count}`}</Text>
+        </Box>
+        {rule}
+        {v.peers.length === 0 ? <Text dimColor wrap="wrap">No other Claude Code sessions in this repo.</Text> : null}
+        {v.peers.map(p => {
+          const color = STATUS_COLOR[p.status]
+          const isWorker = p.kind !== 'interactive'
+          const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
+          const detail = peerDetail(p, now)
+          return (
+            <Box key={`peer-${p.sessionId}`} flexDirection="column">
+              <Box flexDirection="row">
+                <Text color={color} dimColor={color === undefined}>{p.status === 'busy' ? '● ' : '○ '}</Text>
+                <Text bold={!isWorker} dimColor={isWorker}>{fit(p.name, Math.max(6, width - state.length - 4))}</Text>
+                <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
+              </Box>
+              {detail ? <Text dimColor>{`  ${fit(detail, width - 2)}`}</Text> : null}
+            </Box>
+          )
+        })}
+        {rule}
+        <Box flexDirection="row" columnGap={2}>
+          <Text dimColor>{`updated ${ago(v.at, now)}`}</Text>
+          <Button key="peers-refresh" plain dimColor label="refresh" hotkey="g" onPress={() => void scanPeers($)} />
+        </Box>
+      </Box>
+    )
+  })
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    isFullscreen = e.viewport?.isFullscreen ?? isFullscreen
     const v = await read($, view)
     if (e.props.hasSurvey || v === null || (await read($, isHidden))) return next(e)
     const { Box, Text, Button } = $.ui.resolve(e)

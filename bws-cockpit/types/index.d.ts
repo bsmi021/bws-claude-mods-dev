@@ -64,6 +64,25 @@ export type LoopView = {
 
 export type LoopActionNote = { text: string; at: number; isError: boolean }
 
+// ---------- Repo Sessions (other Claude Code sessions in this repo) ----------
+
+export type PeerView = {
+  sessionId: string
+  pid: number
+  name: string
+  status: string // busy, idle, shell, or whatever the registry says
+  kind: string // interactive, or a headless kind
+  where: string // relative to the repo root; '' at the root
+  startedAt: number | null
+  statusSince: number | null
+}
+
+export type PeersView = {
+  root: string // this session's repo root
+  at: number // when it was scanned
+  peers: PeerView[]
+}
+
 declare module 'claude-code' {
   interface PluginState {
     'bws-cockpit': {
@@ -73,6 +92,8 @@ declare module 'claude-code' {
       loopSelected: string | null
       loopAction: LoopActionNote | null
       stopArmedAt: number | null
+      peers: PeersView | null
+      peersAnnounced: string[]
     }
   }
 }

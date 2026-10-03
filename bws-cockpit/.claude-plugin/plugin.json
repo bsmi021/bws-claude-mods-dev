@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.5.0",
-  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Finish-Line Guard, Project Locator, /handoff, and a worker model pin for subagents.",
+  "version": "0.6.0",
+  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Repo Sessions pane, Finish-Line Guard, Project Locator, /handoff, and a worker model pin for subagents.",
   "author": {
     "name": "Brian"
   },
@@ -119,6 +119,18 @@
       "title": "Worker subagent types",
       "description": "Subagent types the worker model applies to, comma-separated.",
       "default": "general-purpose,claude"
+    },
+    "peersPane": {
+      "type": "boolean",
+      "title": "Repo Sessions pane",
+      "description": "/repo-sessions shows the other Claude Code sessions open in this repo (worktrees included) in a pane.",
+      "default": true
+    },
+    "peersAutoOpen": {
+      "type": "boolean",
+      "title": "Repo Sessions: open on a new session",
+      "description": "Open the pane unasked when a new interactive session appears in this repo (fullscreen layout, 144+ columns).",
+      "default": true
     }
   }
 }
