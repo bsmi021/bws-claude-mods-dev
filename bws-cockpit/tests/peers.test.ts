@@ -45,7 +45,7 @@ const HISTORY = [
   hist('s-busy', 'fix the flaky test', T0 - 300_000),
   hist('self', 'my own prompt', T0 - 200_000),
   hist('s-busy', '/repo-sessions', T0 - 100_000), // bare slash command: skipped
-  hist('s-worker', '/harness-loop build the M7 bundles', T0 - 90_000), // with arguments: kept
+  hist('s-worker', '/harness-loop build the next milestone', T0 - 90_000), // with arguments: kept
   'not json',
 ].join('\n') + '\n'
 
@@ -66,7 +66,7 @@ function world(on: On, w: World = {}) {
   on('session.surfaces', () => ({ value: (w.surfaces ?? []) as never }))
   on('fs.list', ($, e) => {
     if (norm(e.path) !== `${CONFIG}/sessions`) throw new Error(`ENOENT ${e.path}`)
-    const names = [...RECS.map(r => `${r.pid}.json`), '20.0d0c497f.key']
+    const names = [...RECS.map(r => `${r.pid}.json`), '20.abcdef01.key']
     return { value: names.map(name => ({ name, kind: 'file' as const, size: 1, mtimeMs: T0, isLink: false })) }
   })
   on('fs.stat', ($, e) => {
@@ -151,8 +151,8 @@ describe('repo sessions parsing', () => {
   })
 
   test('only <pid>.json files are records', () => {
-    expect(isRecordFile('24896.json')).toBe(true)
-    expect(isRecordFile('24896.0d0c497f.key')).toBe(false)
+    expect(isRecordFile('12345.json')).toBe(true)
+    expect(isRecordFile('12345.abcdef01.key')).toBe(false)
     expect(isRecordFile('notes.json')).toBe(false)
   })
 
@@ -171,7 +171,7 @@ describe('repo sessions parsing', () => {
   })
 
   test('tasklist CSV pids', () => {
-    expect([...parseTasklist('"claude.exe","24896","Console","1","300,000 K"\r\n"System","4","Services","0","1 K"\r\n')]).toEqual([[24896, 'claude.exe'], [4, 'System']])
+    expect([...parseTasklist('"claude.exe","12345","Console","1","300,000 K"\r\n"System","4","Services","0","1 K"\r\n')]).toEqual([[12345, 'claude.exe'], [4, 'System']])
     expect(parseTasklist('INFO: No tasks are running').size).toBe(0)
   })
 
@@ -187,7 +187,7 @@ describe('repo sessions parsing', () => {
 
   test('latest prompt per wanted session, newest wins, first line only', () => {
     const got = latestPrompts(HISTORY, new Set(['s-busy', 's-wt', 's-never', 's-worker']))
-    expect(got.get('s-worker')?.text).toBe('/harness-loop build the M7 bundles')
+    expect(got.get('s-worker')?.text).toBe('/harness-loop build the next milestone')
     expect(got.get('s-busy')).toEqual({ text: 'fix the flaky test', at: T0 - 300_000 })
     expect(got.get('s-wt')?.text).toBe('ship the worktree fix')
     expect(got.has('s-never')).toBe(false)
@@ -219,7 +219,7 @@ describe('repo sessions', () => {
     const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
     expect(r.text).toContain('3 other sessions in repo:')
     expect(r.text).toMatch(
-      /- refactor: busy 3m \(started 2h ago\)\n {2}› fix the flaky test\n- feature-wt: idle 1m \(in C:\/wt\/feat · started 2h ago\)\n {2}› ship the worktree fix\n- worker-7: busy 1m \(sdk-cli · in tools · started 2h ago\)\n {2}› \/harness-loop build the M7 bundles\n\n/,
+      /- refactor: busy 3m \(started 2h ago\)\n {2}› fix the flaky test\n- feature-wt: idle 1m \(in C:\/wt\/feat · started 2h ago\)\n {2}› ship the worktree fix\n- worker-7: busy 1m \(sdk-cli · in tools · started 2h ago\)\n {2}› \/harness-loop build the next milestone\n\n/,
     )
     expect(r.text).toContain('\n\nOther repos (1):\nother:\n- elsewhere: idle 1m') // another repo, at the bottom, no prompt
     expect(r.text).not.toContain('a prompt in another repo')
