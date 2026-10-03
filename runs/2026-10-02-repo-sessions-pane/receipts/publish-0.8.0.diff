@@ -1,0 +1,1241 @@
+diff --git a/bws-cockpit/.claude-plugin/plugin.json b/bws-cockpit/.claude-plugin/plugin.json
+index 5f860bf..616d45a 100644
+--- a/bws-cockpit/.claude-plugin/plugin.json
++++ b/bws-cockpit/.claude-plugin/plugin.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "bws-cockpit",
+-  "version": "0.5.0",
+-  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Finish-Line Guard, Project Locator, /handoff, and a worker model pin for subagents.",
++  "version": "0.8.0",
++  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Repo Sessions pane, Finish-Line Guard, Project Locator, /handoff, and a worker model pin for subagents.",
+   "author": {
+     "name": "Brian"
+   },
+@@ -119,6 +119,18 @@
+       "title": "Worker subagent types",
+       "description": "Subagent types the worker model applies to, comma-separated.",
+       "default": "general-purpose,claude"
++    },
++    "peersPane": {
++      "type": "boolean",
++      "title": "Repo Sessions pane",
++      "description": "/repo-sessions shows the other Claude Code sessions open in this repo (worktrees included) in a pane.",
++      "default": true
++    },
++    "peersAutoOpen": {
++      "type": "boolean",
++      "title": "Repo Sessions: open on a new session",
++      "description": "Open the pane unasked when a new interactive session appears in this repo (fullscreen layout, 144+ columns).",
++      "default": true
+     }
+   }
+-}
+\ No newline at end of file
++}
+diff --git a/bws-cockpit/README.md b/bws-cockpit/README.md
+index a981aa0..9d32f1c 100644
+--- a/bws-cockpit/README.md
++++ b/bws-cockpit/README.md
+@@ -48,6 +48,20 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
+ - **Band:** a `loop` chip (running, needs you, stalled, stopped) and the hotkey `4: loop`, which opens the pane.
+ - **Without a pane** (headless `claude -p "/loop-watch"`), the same summary comes back as text.
+ 
++### Repo Sessions
++- **`/repo-sessions`** toggles a pane listing the other Claude Code sessions open in this repo. In the fullscreen layout (`"tui": "fullscreen"`) it docks to the right of the transcript; on the main screen it sits inline above the prompt. (`/peers` is Claude Code's own built-in, which lists every session on the machine.)
++- **Same repo** means the same common git dir, so sessions in subfolders and in worktrees count. Outside git it means the same folder.
++- Each row shows the session's name, its status (busy, idle, waiting, shell, or whatever the engine reports) and how long it has been in it. A dim second line shows the kind when it isn't interactive (for example `claude -p` workers), the subfolder or worktree path when it isn't the repo root, and when it started. Interactive sessions sort first.
++- **Latest prompt:** under each row, `› ` and the first line of that session's newest prompt, cut to the pane width. Bare slash commands (`/clear`, `/repo-sessions`) are skipped; ones with arguments count. Prompts are read only while the pane is open, or for a `/repo-sessions` text reply. It comes from Claude Code's prompt history, `<config dir>/history.jsonl`, matched by session id. The file is read again only when its size or mtime changes. Over 4 MiB (the limit of `$.fs.read`), only its last 1 MiB is read, through a PowerShell seek or `tail -c`. A session with no prompt there gets no line; `claude -p` runs usually have none.
++- **Message a peer:** each row for a session in this repo has a `msg` button. Pressing it opens a text box under that row; one box is open at a time, and pressing `msg` again closes it. Enter sends the text with `$.session.send` to that session id, and an empty Enter closes the box.
++  - Under the row you get `✓ sent` or `✗ <reason>` for a minute. On a refusal the box stays open so you can retry.
++  - The peer gets the text as a cross-session message from this session, marked as coming from bws-cockpit, and acts on it as a prompt. A reply it sends comes back here the same way.
++  - Mobile has no text box, so it shows no button. Sessions in other repos have no button.
++- **Other repos:** a section at the bottom lists every other live session on the machine that is not in this repo. They're grouped under their repo's folder name, each with its status and how long it has been in it. These rows have no prompt lines.
++- **Opens unasked** when a new interactive session appears in this repo. That only happens in the fullscreen layout, and the engine seats an unasked pane only from 144 columns. Each session triggers it once, so closing the pane keeps it closed until another new one appears.
++- **Source:** Claude Code's own registry, `<config dir>/sessions/<pid>.json`. The config dir is `CLAUDE_CONFIG_DIR`, or `~/.claude`. The `.key` files beside the registry are never read. Sessions whose process is gone are dropped, using one `tasklist` call at most every 45 s; if the check fails, every session is kept. It refreshes every 5 s while a surface is attached.
++- **Without a pane** (`claude -p "/repo-sessions"`), the same list comes back as text, prompts and other repos included.
++
+ ### Finish-Line Guard
+ Keeps Claude from stopping while this session's checklist still has work. This session's run folder is the newest `runs/*` whose RUNLOG, PLAN or TASKS was written since the session started; a stale folder never counts.
+ - **Open items.** When Claude tries to end its turn and PLAN.md or TASKS.md still has `- [ ]` items, the stop is blocked and Claude is told which items remain (up to 5). It is also told how to hand back properly: say so plainly, and mark the item `(blocked: …)` or `(needs <ownerName>: …)`.
+@@ -138,18 +152,22 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
+ | `projectRoots` | `C:/Projects` | Folders that hold your projects, separated by `;` |
+ | `workerModel` | (empty: off) | Model for subagents whose Agent call names none |
+ | `workerAgentTypes` | `general-purpose,claude` | Subagent types the worker model applies to |
++| `peersPane` | `true` | Repo Sessions (`/repo-sessions` and the pane) |
++| `peersAutoOpen` | `true` | Open the pane when a new interactive session appears in this repo |
+ 
+ ## Capabilities it uses
+ 
+ | Category | What it uses |
+ |---|---|
+-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+-| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
++| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, repo-sessions, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch and repo-sessions Panes), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
++| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`, `tasklist /FO CSV /NH` (Repo Sessions liveness), and `powershell` reading the last 1 MiB of `history.jsonl` when it is over 4 MiB, only after it changes. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
+ | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
+-| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
++| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; for Repo Sessions, `<config dir>/sessions/<pid>.json`, `<config dir>/history.jsonl` and the `.git` entry above each session's folder |
+ | Prompts | `$.prompt.submit` for resume |
++| Messages | `$.session.send` to a peer's session id, only when you type one in the Repo Sessions pane and press Enter |
+ | Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
+ | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
++| Environment | reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` |
+ | Tools | registers `find_project` |
+ 
+ It writes no files.
+@@ -161,7 +179,7 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
+ | Check | Result |
+ |---|---|
+ | `claude plugin validate` | passed |
+-| `claude plugin test` | 93/93: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
++| `claude plugin test` | 120/120, adding Loop Watch on mobile (no picker or Input, the answer command as text) and Repo Sessions (the msg button and its box, a send and its address, delivered, refused, thrown, empty, the one-minute note, no button on mobile, latest prompt from history, newest wins, first line, the tail read for a file over 4 MiB, the read cache, other repos grouped and sorted, registry parsing, worktree repo keys, liveness and its failure, sort, the text list, the pane on terminal and desktop, /repo-sessions toggle and tab, auto-open once in fullscreen only, the off switch, no reopen after a close, a reused pid). Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
+ | Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop |
+ | Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
+ | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
+@@ -170,6 +188,7 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
+ | Project Locator live | `/projects refresh` from the home folder indexed 65 real projects (9 s including startup). A Glob for `**/*.uproject` over `C:\Projects` came back from the index in 4 ms with the 7 real `.uproject` files. The same Glob over the home folder was refused at once. `find_project` by name returned the folder, `.uproject` and harness loop |
+ | /handoff live | After a headless task in a scratch repo, `claude -p --continue "/handoff"` wrote a 467-word HANDOFF.md through the resumed-session fallback, with the correct commit hash and next step |
+ | Worker pin live | A parent on claude-opus-5-5 spawned three subagents: general-purpose with no model ran on claude-sonnet-5-5 (toast shown), Explore kept claude-opus-5-5, and an explicit `haiku` stayed on Haiku |
++| Repo Sessions live (2.1.288) | headless `claude -p "/repo-sessions"` in this repo listed the other live session here with its latest prompt (read from the tail of a real 5 MB history.jsonl), and the 5 sessions in other repos under their repo names. The docked pane was checked by eye in fullscreen. A `$.session.send({ to: { sessionId } })` from a scratch probe mod to a live peer returned `isDelivered: true`; the peer received the text as a cross-session message and replied |
+ | Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
+ 
+ Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.
+diff --git a/bws-cockpit/hooks/peers.ts b/bws-cockpit/hooks/peers.ts
+new file mode 100644
+index 0000000..ee0abac
+--- /dev/null
++++ b/bws-cockpit/hooks/peers.ts
+@@ -0,0 +1,225 @@
++// Repo Sessions: the other Claude Code sessions open in this repo, read from the engine's own
++// registry (<config dir>/sessions/<pid>.json). Pure helpers; register.tsx does the reading.
++
++import type { PeerView } from '../types'
++import { ago } from './loop'
++import { toSlash } from './projects'
++
++export type SessionRecord = {
++  pid: number
++  procStart: string
++  sessionId: string
++  cwd: string
++  name: string
++  status: string
++  kind: string
++  startedAt: number | null
++  statusSince: number | null
++  updatedAt: number | null
++}
++
++// Registry entries are `<pid>.json`; the `<pid>.<hash>.key` files beside them are never read.
++export const isRecordFile = (name: string) => /^\d+\.json$/.test(name)
++
++const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
++const str = (v: unknown, dflt = ''): string => (typeof v === 'string' ? v : dflt)
++
++export function parseRecord(text: string): SessionRecord | undefined {
++  let raw: Record<string, unknown>
++  try {
++    const v: unknown = JSON.parse(text)
++    if (typeof v !== 'object' || v === null) return undefined
++    raw = v as Record<string, unknown>
++  } catch {
++    return undefined
++  }
++  const pid = num(raw.pid)
++  const sessionId = str(raw.sessionId)
++  const cwd = str(raw.cwd)
++  if (pid === null || !sessionId || !cwd) return undefined
++  return {
++    pid,
++    procStart: str(raw.procStart),
++    sessionId,
++    cwd,
++    name: str(raw.name) || sessionId.slice(0, 8),
++    status: str(raw.status, 'unknown'),
++    kind: str(raw.kind, 'unknown'),
++    startedAt: num(raw.startedAt),
++    statusSince: num(raw.statusUpdatedAt) ?? num(raw.updatedAt),
++    updatedAt: num(raw.updatedAt),
++  }
++}
++
++export const parentOf = (p: string) => {
++  const cut = p.lastIndexOf('/')
++  return cut <= 0 ? p : p.slice(0, cut)
++}
++
++// Resolves `a/../b` and `./` segments in a slash path.
++const tidy = (p: string) => {
++  const out: string[] = []
++  for (const part of p.split('/')) {
++    if (part === '.' || (part === '' && out.length > 0)) continue
++    if (part === '..' && out.length > 1) out.pop()
++    else out.push(part)
++  }
++  return out.join('/')
++}
++
++const isAbsolute = (p: string) => /^[a-z]:\//i.test(p) || p.startsWith('/')
++
++// The repo's common git dir, lowercased, from the folder holding `.git`: the `.git` folder
++// itself, or for a worktree (a `.git` file, `gitdir: <main>/.git/worktrees/<name>`) the main one.
++export function repoKey(dir: string, gitFile?: string): string {
++  const base = toSlash(dir)
++  if (gitFile === undefined) return `${base}/.git`.toLowerCase()
++  const line = gitFile.match(/^gitdir:\s*(.+?)\s*$/m)?.[1]
++  if (!line) return `${base}/.git`.toLowerCase()
++  const target = toSlash(line)
++  const abs = tidy(isAbsolute(target) ? target : `${base}/${target}`)
++  return abs.replace(/\/worktrees\/[^/]+$/i, '').toLowerCase()
++}
++
++// Where a session runs, relative to the repo root: '' at the root, the subpath under it,
++// or the full path when it sits elsewhere (a worktree outside the repo folder).
++export function whereIn(cwd: string, root: string): string {
++  const c = toSlash(cwd)
++  const r = toSlash(root)
++  if (c.toLowerCase() === r.toLowerCase()) return ''
++  if (c.toLowerCase().startsWith(`${r.toLowerCase()}/`)) return c.slice(r.length + 1)
++  return c
++}
++
++export const repoName = (root: string) => toSlash(root).split('/').pop() || root
++
++// PID to image name from `tasklist /FO CSV /NH` output: "Image","PID","Session","#","Mem".
++export function parseTasklist(stdout: string): Map<number, string> {
++  const pids = new Map<number, string>()
++  for (const line of stdout.split(/\r?\n/)) {
++    const m = line.match(/^"([^"]*)","(\d+)"/)
++    const pid = Number(m?.[2])
++    if (m && Number.isInteger(pid) && pid > 0) pids.set(pid, m[1] ?? '')
++  }
++  return pids
++}
++
++// A session is alive when its pid runs the same program as this session's own (claude.exe or
++// node.exe), so a crashed session's pid reused by another program reads as gone. Without
++// this session's own image, any running pid counts.
++export function isAliveIn(images: ReadonlyMap<number, string>, pid: number, selfImage: string | undefined): boolean {
++  const image = images.get(pid)
++  if (image === undefined) return false
++  return selfImage === undefined || image.toLowerCase() === selfImage.toLowerCase()
++}
++
++export const livenessKey = (r: { pid: number; procStart: string }) => `${r.pid}:${r.procStart}`
++
++export type LatestPrompt = { text: string; at: number | null }
++
++// The first non-empty line of a prompt, whitespace collapsed.
++export const promptLine = (display: unknown): string =>
++  typeof display !== 'string' ? '' : (display.split(/\r?\n/).find(l => l.trim() !== '') ?? '').replace(/\s+/g, ' ').trim()
++
++// The newest prompt of each wanted session in history.jsonl (the engine's prompt history, one
++// `{ display, timestamp, project, sessionId }` per line, appended), scanned from the end. Only
++// the lines of wanted sessions are parsed; the scan stops once every one is found. A slash
++// command with arguments counts (it carries the task); a bare one is skipped.
++export function latestPrompts(history: string, ids: ReadonlySet<string>): Map<string, LatestPrompt> {
++  const out = new Map<string, LatestPrompt>()
++  let end = history.length
++  while (end > 0 && out.size < ids.size) {
++    const start = history.lastIndexOf('\n', end - 1)
++    const line = history.slice(start + 1, end)
++    end = start < 0 ? 0 : start
++    const id = line.match(/"sessionId":\s*"([^"]+)"/)?.[1]
++    if (id === undefined || !ids.has(id) || out.has(id)) continue
++    let rec: Record<string, unknown>
++    try {
++      rec = JSON.parse(line) as Record<string, unknown>
++    } catch {
++      continue
++    }
++    const text = promptLine(rec.display)
++    // A bare slash command (/clear, /repo-sessions) says nothing about the task: look further back.
++    if (text && !/^\/\S+$/.test(text)) out.set(id, { text, at: num(rec.timestamp) })
++  }
++  return out
++}
++
++export function toPeer(r: SessionRecord, root: string, prompt?: LatestPrompt): PeerView {
++  return {
++    sessionId: r.sessionId,
++    pid: r.pid,
++    name: r.name,
++    status: r.status,
++    kind: r.kind,
++    repo: repoName(root),
++    where: whereIn(r.cwd, root),
++    startedAt: r.startedAt,
++    statusSince: r.statusSince,
++    prompt: prompt?.text ?? null,
++    promptAt: prompt?.at ?? null,
++  }
++}
++
++const STATUS_RANK: Record<string, number> = { busy: 0, waiting: 1, idle: 2, shell: 3 }
++
++const byRank = (a: PeerView, b: PeerView) => {
++  const rank = (p: PeerView) => [p.kind === 'interactive' ? 0 : 1, STATUS_RANK[p.status] ?? 4, -(p.startedAt ?? 0)]
++  const ra = rank(a)
++  const rb = rank(b)
++  for (let i = 0; i < ra.length; i++) {
++    const d = (ra[i] ?? 0) - (rb[i] ?? 0)
++    if (d !== 0) return d
++  }
++  return a.name.localeCompare(b.name)
++}
++
++// Interactive sessions first, then by status (busy first), then the newest first.
++export const sortPeers = (peers: readonly PeerView[]): PeerView[] => [...peers].sort(byRank)
++
++// Sessions in other repos: by repo name, then as sortPeers within each repo.
++export const sortOthers = (peers: readonly PeerView[]): PeerView[] =>
++  [...peers].sort((a, b) => a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()) || byRank(a, b))
++
++export const STATUS_COLOR: Record<string, string | undefined> = { busy: 'claude', waiting: 'warning', idle: 'success' }
++
++// "busy 3m", the time in that status without the "ago".
++export const forText = (since: number | null, now: number) => (since === null ? '' : ago(since, now).replace(/ ago$/, ''))
++
++export function peerDetail(p: PeerView, now: number): string {
++  return [
++    p.kind !== 'interactive' ? p.kind : '',
++    p.where ? `in ${p.where}` : '',
++    p.startedAt !== null ? `started ${ago(p.startedAt, now)}` : '',
++  ]
++    .filter(Boolean)
++    .join(' · ')
++}
++
++// A session in another repo, on one line: the kind when not interactive, the folder when not the root.
++export const otherDetail = (p: PeerView) => [p.kind !== 'interactive' ? p.kind : '', p.where ? `in ${p.where}` : ''].filter(Boolean).join(' · ')
++
++export function peersText(peers: readonly PeerView[], root: string, now: number, others: readonly PeerView[] = []): string {
++  const head =
++    peers.length === 0
++      ? `No other Claude Code sessions in ${repoName(root)}.`
++      : `${peers.length} other session${peers.length === 1 ? '' : 's'} in ${repoName(root)}:\n` +
++        peers
++          .map(p => {
++            const detail = peerDetail(p, now)
++            const line = `- ${p.name}: ${p.status} ${forText(p.statusSince, now)}${detail ? ` (${detail})` : ''}`
++            return p.prompt ? `${line}\n  › ${p.prompt}` : line
++          })
++          .join('\n')
++  if (others.length === 0) return head
++  const lines: string[] = []
++  let repo: string | undefined
++  for (const p of others) {
++    if (p.repo !== repo) lines.push(`${(repo = p.repo)}:`)
++    const detail = otherDetail(p)
++    lines.push(`- ${p.name}: ${p.status} ${forText(p.statusSince, now)}${detail ? ` (${detail})` : ''}`)
++  }
++  return `${head}\n\nOther repos (${others.length}):\n${lines.join('\n')}`
++}
+diff --git a/bws-cockpit/hooks/register.tsx b/bws-cockpit/hooks/register.tsx
+index 5952a5d..53b03d1 100644
+--- a/bws-cockpit/hooks/register.tsx
++++ b/bws-cockpit/hooks/register.tsx
+@@ -22,7 +22,7 @@ import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPip
+ import type { Dialect } from './shell'
+ import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
+ import type { LoopConfig, LoopLimits } from './loop'
+-import type { LoopView } from '../types'
++import type { LoopView, PeersView } from '../types'
+ import { actionable, decide, openItems, openSummary } from './finish'
+ import {
+   SCAN_DEPTH,
+@@ -41,6 +41,8 @@ import {
+   toWin,
+ } from './projects'
+ import type { ProjectEntry, ProjectIndex } from './projects'
++import { STATUS_COLOR, forText, isAliveIn, isRecordFile, latestPrompts, livenessKey, otherDetail, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortOthers, sortPeers, toPeer } from './peers'
++import type { LatestPrompt, SessionRecord } from './peers'
+ import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
+ 
+ const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
+@@ -51,6 +53,10 @@ const loops = atom({ plugin: 'bws-cockpit', key: 'loops' } as const, [])
+ const loopSelected = atom({ plugin: 'bws-cockpit', key: 'loopSelected' } as const, null)
+ const loopAction = atom({ plugin: 'bws-cockpit', key: 'loopAction' } as const, null)
+ const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const, null)
++const peers = atom({ plugin: 'bws-cockpit', key: 'peers' } as const, null)
++const peersAnnounced = atom({ plugin: 'bws-cockpit', key: 'peersAnnounced' } as const, [])
++const peerCompose = atom({ plugin: 'bws-cockpit', key: 'peerCompose' } as const, null)
++const peerNote = atom({ plugin: 'bws-cockpit', key: 'peerNote' } as const, null)
+ 
+ const LOOP_PANE = 'loop-watch'
+ const STOP_CONFIRM_MS = 10_000
+@@ -84,6 +90,7 @@ type Options = {
+   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
+   projects: { isOn: boolean; roots: string[] }
+   pin: { model: string; types: string[] }
++  peers: { isOn: boolean; autoOpen: boolean }
+ }
+ 
+ // Module state: a probe cache shared by the band and the guards. A reload starts it over.
+@@ -489,6 +496,200 @@ async function resume($: EngineInterface): Promise<string | undefined> {
+   return undefined
+ }
+ 
++// ---------- Repo Sessions ----------
++
++const PEERS_PANE = 'repo-sessions'
++const PEERS_TITLE = 'Sessions here'
++const PEERS_POLL_MS = 5_000
++const ALIVE_TTL_MS = 45_000 // how long a pid's tasklist answer stands
++
++// Module state, started over by a reload: liveness by pid+procStart, repos by folder, whether a
++// scan is running, and the layout the last drawing reported (undefined until something draws).
++const alive = new Map<string, { isAlive: boolean; at: number }>()
++const repos = new Map<string, { key: string; root: string }>()
++let isScanningPeers = false
++let isFullscreen: boolean | undefined
++let promptCache: { key: string; fileKey: string; text: string; prompts: Map<string, LatestPrompt> } | undefined
++
++async function configDir($: EngineInterface): Promise<string | undefined> {
++  const own = await settle($.env.get('CLAUDE_CONFIG_DIR'))
++  if (own) return toSlash(own)
++  const home = (await settle($.env.get('USERPROFILE'))) || (await settle($.env.get('HOME')))
++  return home ? `${toSlash(home)}/.claude` : undefined
++}
++
++// The repo a folder is in: the nearest `.git` above it, keyed by its common git dir so a
++// worktree matches its main checkout. Outside git, the folder itself.
++async function findRepo($: EngineInterface, dir: string): Promise<{ key: string; root: string }> {
++  const start = toSlash(dir)
++  const hit = repos.get(start.toLowerCase())
++  if (hit) return hit
++  let found = { key: `dir:${start.toLowerCase()}`, root: start }
++  for (let d = start, i = 0; i < 40; i++) {
++    const git = `${d}/.git`
++    const st = await settle($.fs.stat(git))
++    if (st) {
++      const text = st.kind === 'file' ? ((await settle($.fs.read(git))) ?? '') : undefined
++      found = { key: repoKey(d, text), root: d }
++      break
++    }
++    const up = parentOf(d)
++    if (up === d) break
++    d = up
++  }
++  repos.set(start.toLowerCase(), found)
++  return found
++}
++
++// Drops sessions whose process is gone (a crash leaves its registry file). One tasklist call
++// per 45 s at most; when it fails or answers nothing, every session is kept.
++async function liveOnly($: EngineInterface, recs: SessionRecord[], selfPid: number | undefined): Promise<SessionRecord[]> {
++  const now = await $.clock.now()
++  const due = recs.filter(r => {
++    const c = alive.get(livenessKey(r))
++    return c === undefined || now - c.at > ALIVE_TTL_MS
++  })
++  if (due.length > 0) {
++    const run = await settle($.process.run(['tasklist', '/FO', 'CSV', '/NH'], { timeoutMs: 10000 }))
++    const images = run && run.exitCode === 0 ? parseTasklist(run.stdout) : undefined
++    const selfImage = selfPid === undefined ? undefined : images?.get(selfPid)
++    for (const r of due) {
++      const isAlive = images === undefined || images.size === 0 || isAliveIn(images, r.pid, selfImage)
++      alive.set(livenessKey(r), { isAlive, at: now })
++    }
++  }
++  return recs.filter(r => alive.get(livenessKey(r))?.isAlive !== false)
++}
++
++const FS_READ_MAX = 4 * 1024 * 1024 // $.fs.read rejects a file over 4 MiB
++const HISTORY_TAIL = 1024 * 1024 // a bigger history.jsonl is read from its last 1 MiB (a few thousand prompts)
++// Prints the last BWS_TAIL_BYTES of BWS_TAIL_PATH, opened shared so the engine can keep appending.
++const PS_TAIL =
++  "$f = [IO.File]::Open($env:BWS_TAIL_PATH, 'Open', 'Read', 'ReadWrite'); " +
++  'try { $n = [Math]::Min($f.Length, [long]$env:BWS_TAIL_BYTES); [void]$f.Seek(-$n, \'End\'); ' +
++  '$b = New-Object byte[] $n; $r = 0; while ($r -lt $n) { $k = $f.Read($b, $r, $n - $r); if ($k -le 0) { break }; $r += $k }; ' +
++  '[Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Out.Write([Text.Encoding]::UTF8.GetString($b, 0, $r)) } finally { $f.Close() }'
++
++// A text file whole when $.fs.read can take it, else its tail (PowerShell, then `tail -c`).
++// The tail's first line is usually cut; latestPrompts skips a line it cannot parse.
++async function readTail($: EngineInterface, path: string, size: number): Promise<string | undefined> {
++  if (size <= FS_READ_MAX) return settle($.fs.read(path))
++  const env = { BWS_TAIL_PATH: toWin(path), BWS_TAIL_BYTES: String(HISTORY_TAIL) }
++  const ps = await settle($.process.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', PS_TAIL], { timeoutMs: 15000, env }))
++  if (ps && ps.exitCode === 0) return ps.stdout
++  const tail = await settle($.process.run(['tail', '-c', String(HISTORY_TAIL), path], { timeoutMs: 15000 }))
++  return tail && tail.exitCode === 0 ? tail.stdout : undefined
++}
++
++// The latest prompt of each wanted session, from <config dir>/history.jsonl. The file (several
++// MB) is read again only when its size or mtime moves, and scanned again only when that or
++// the wanted set changes.
++async function readPrompts($: EngineInterface, dir: string, ids: string[]): Promise<Map<string, LatestPrompt>> {
++  if (ids.length === 0) return new Map()
++  const path = `${dir}/history.jsonl`
++  const st = await settle($.fs.stat(path))
++  if (!st) return new Map()
++  const fileKey = `${st.size}:${st.mtimeMs}`
++  const key = `${fileKey}|${[...ids].sort().join(',')}`
++  if (promptCache?.key === key) return promptCache.prompts
++  const text = promptCache?.fileKey === fileKey ? promptCache.text : await readTail($, path, st.size)
++  if (text === undefined) return new Map()
++  const prompts = latestPrompts(text, new Set(ids))
++  promptCache = { key, fileKey, text, prompts }
++  return prompts
++}
++
++// The other live sessions, from <config dir>/sessions/<pid>.json: this repo's as peers (with
++// their latest prompts, read only for a pane or a reply that shows them), the rest as others.
++async function scanPeers($: EngineInterface, withPrompts = true): Promise<PeersView | null> {
++  const dir = await configDir($)
++  if (dir === undefined) return null
++  const [selfId, selfRoot] = await Promise.all([$.session.id(), $.session.root()])
++  const mine = await findRepo($, selfRoot)
++  const files = ((await settle($.fs.list(`${dir}/sessions`))) ?? []).filter(f => f.kind === 'file' && isRecordFile(f.name))
++  const texts = await Promise.all(files.map(f => settle($.fs.read(`${dir}/sessions/${f.name}`))))
++  const recs: SessionRecord[] = []
++  const roots = new Map<string, string>() // sessionId -> repo root, for sessions in other repos
++  let selfPid: number | undefined
++  for (const text of texts) {
++    const r = text === undefined ? undefined : parseRecord(text)
++    if (r?.sessionId === selfId) selfPid = r.pid
++    if (r === undefined || r.sessionId === selfId) continue
++    const repo = await findRepo($, r.cwd)
++    if (repo.key !== mine.key) roots.set(r.sessionId, repo.root)
++    recs.push(r)
++  }
++  const live = await liveOnly($, recs, selfPid)
++  const here = live.filter(r => !roots.has(r.sessionId))
++  const prompts = withPrompts ? await readPrompts($, dir, here.map(r => r.sessionId)) : new Map<string, LatestPrompt>()
++  const v: PeersView = {
++    root: mine.root,
++    at: await $.clock.now(),
++    peers: sortPeers(here.map(r => toPeer(r, mine.root, prompts.get(r.sessionId)))),
++    others: sortOthers(live.flatMap(r => {
++      const root = roots.get(r.sessionId)
++      return root === undefined ? [] : [toPeer(r, root)]
++    })),
++  }
++  await update($, peers, () => v)
++  return v
++}
++
++// Marks the interactive peers as seen, so each opens the pane unasked at most once; whatever
++// was on screen while the pane was open counts as seen. Returns how many were new.
++async function announce($: EngineInterface, v: PeersView): Promise<number> {
++  const seen = await read($, peersAnnounced)
++  const fresh = v.peers.filter(p => p.kind === 'interactive' && !seen.includes(p.sessionId))
++  if (fresh.length > 0) await update($, peersAnnounced, ids => [...ids, ...fresh.map(p => p.sessionId)].slice(-200))
++  return fresh.length
++}
++
++const PEER_NOTE_MS = 60_000 // how long a send's outcome stays under the row
++
++// Sends a message typed in the pane to one peer with $.session.send and notes the outcome under
++// its row. Delivery closes the Input; a refusal leaves it open to retry. Empty closes it.
++async function sendToPeer($: EngineInterface, sessionId: string, value: string) {
++  const text = value.trim()
++  if (!text) {
++    await update($, peerCompose, () => null)
++    return
++  }
++  let outcome: { text: string; isError: boolean }
++  try {
++    const r = await $.session.send({ to: { sessionId }, text })
++    outcome = r.isDelivered ? { text: 'sent', isError: false } : { text: r.reason, isError: true }
++  } catch (err) {
++    outcome = { text: err instanceof Error ? err.message : String(err), isError: true }
++  }
++  const at = await $.clock.now()
++  await update($, peerNote, () => ({ sessionId, ...outcome, at }))
++  if (!outcome.isError) await update($, peerCompose, () => null)
++}
++
++const isPeersShown = async ($: EngineInterface) => (await $.ui.panes()).some(p => p.id === PEERS_PANE && p.isShown && p.isPlaced)
++
++// The poll: rescans, and opens the pane unasked when a new interactive session shows up here
++// (fullscreen only, where it docks beside the transcript). Each session is announced once.
++async function tickPeers($: EngineInterface, o: Options) {
++  if (isScanningPeers) return
++  const isOpen = (await $.ui.panes()).some(p => p.id === PEERS_PANE)
++  if (!isOpen && !o.peers.autoOpen) return
++  isScanningPeers = true
++  try {
++    // With the pane closed, the poll only watches for new peers: no history.jsonl read.
++    const v = await scanPeers($, isOpen)
++    // Before anything has drawn the layout is unknown: announce nobody yet, so a session
++    // started beside an existing one still opens the pane once it draws.
++    if (v === null || isFullscreen !== true) return
++    const fresh = await announce($, v)
++    if (isOpen || fresh === 0) return
++    await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
++    await scanPeers($) // now with prompts
++  } finally {
++    isScanningPeers = false
++  }
++}
++
+ // Adds a note the model reads after the tool result, so a rewrite is never silent.
+ const withNote = <R extends { deny?: string; context?: readonly string[] }>(r: R, note: string): R =>
+   r.deny !== undefined ? r : { ...r, context: [...(r.context ?? []), `bws-cockpit: ${note}`] }
+@@ -525,6 +726,7 @@ export const register: Register = (on, options) => {
+       model: String(options.workerModel ?? '').trim(),
+       types: parseTypes(String(options.workerAgentTypes ?? 'general-purpose,claude')),
+     },
++    peers: { isOn: options.peersPane !== false, autoOpen: options.peersAutoOpen !== false },
+   }
+ 
+   // ---------- /handoff ----------
+@@ -669,6 +871,7 @@ export const register: Register = (on, options) => {
+     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
+     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
+     await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy its start prompt', argumentHint: '[focus]' })
++    if (o.peers.isOn) await $.command.register({ name: 'repo-sessions', description: 'Show the other Claude Code sessions open in this repo in a side pane (toggles)' })
+     if (o.projects.isOn) {
+       await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })
+       await $.tool.register({
+@@ -690,6 +893,10 @@ export const register: Register = (on, options) => {
+     if (surfaces.length > 0) {
+       void refresh($, o, 0)
+       $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
++      if (o.peers.isOn) {
++        void tickPeers($, o)
++        $.clock.every(PEERS_POLL_MS, () => void tickPeers($, o))
++      }
+     }
+     return next(e)
+   })
+@@ -753,8 +960,10 @@ export const register: Register = (on, options) => {
+   on('ui.render', { component: 'Pane', requestId: LOOP_PANE }, async ($, e, next) => {
+     const table = $.ui.resolve(e)
+     const { Box, Text, Button, Link } = table
+-    const Select = 'Select' in table ? table.Select : null // mobile has none
+-    const Input = 'Input' in table ? table.Input : null
++    // Mobile has neither (its table may still carry the names at runtime): fall back to text there.
++    const isMobile = e.surface === 'mobile'
++    const Select = !isMobile && 'Select' in table ? table.Select : null
++    const Input = !isMobile && 'Input' in table ? table.Input : null
+     const all = await read($, loops)
+     const lp = await selectedLoop($)
+     const now = await $.clock.now()
+@@ -885,7 +1094,123 @@ export const register: Register = (on, options) => {
+     )
+   })
+ 
++  // ---------- Repo Sessions ----------
++
++  on('command.run', { command: 'repo-sessions' }, async ($, e, next) => {
++    const v = await scanPeers($)
++    if (v === null) return { text: 'No Claude config folder found (CLAUDE_CONFIG_DIR, USERPROFILE or HOME).' }
++    const now = await $.clock.now()
++    if ((await $.session.surfaces()).length === 0) return { text: peersText(v.peers, v.root, now, v.others) }
++    if (await isPeersShown($)) {
++      await $.ui.close({ id: PEERS_PANE })
++      return {}
++    }
++    await announce($, v)
++    const opened = await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
++    return opened.isPlaced ? {} : { text: peersText(v.peers, v.root, now, v.others) }
++  })
++
++  on('ui.render', { component: 'Pane', requestId: PEERS_PANE }, async ($, e, next) => {
++    isFullscreen = e.viewport?.isFullscreen ?? isFullscreen
++    const table = $.ui.resolve(e)
++    const { Box, Text, Button } = table
++    // Mobile has no Input (its table may still carry the name at runtime): no msg button there.
++    const Input = e.surface !== 'mobile' && 'Input' in table ? table.Input : null
++    const v = await read($, peers)
++    const now = await $.clock.now()
++    const width = Math.max(24, (e.props.bodyColumns ?? 60) - 1)
++    if (v === null) return <Text dimColor>Looking for sessions…</Text>
++    const composing = await read($, peerCompose)
++    const note = await read($, peerNote)
++    const msgCols = Input ? 5 : 0 // "  msg"
++    const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
++    const count = `${v.peers.length} other${v.peers.length === 1 ? '' : 's'}`
++    return (
++      <Box flexDirection="column">
++        <Box flexDirection="row">
++          <Text bold>{fit(repoName(v.root), Math.max(6, width - count.length - 2))}</Text>
++          <Text dimColor>{`  ${count}`}</Text>
++        </Box>
++        {rule}
++        {v.peers.length === 0 ? <Text dimColor wrap="wrap">No other Claude Code sessions in this repo.</Text> : null}
++        {v.peers.map(p => {
++          const color = STATUS_COLOR[p.status]
++          const isWorker = p.kind !== 'interactive'
++          const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
++          const detail = peerDetail(p, now)
++          const isComposing = Input !== null && composing === p.sessionId
++          const sent = note !== null && note.sessionId === p.sessionId && now - note.at < PEER_NOTE_MS ? note : null
++          return (
++            <Box key={`peer-${p.sessionId}`} flexDirection="column">
++              <Box flexDirection="row">
++                <Text color={color} dimColor={color === undefined}>{p.status === 'busy' ? '● ' : '○ '}</Text>
++                <Text bold={!isWorker} dimColor={isWorker}>{fit(p.name, Math.max(6, width - state.length - 4 - msgCols))}</Text>
++                <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
++                {Input ? <Text>{'  '}</Text> : null}
++                {Input ? (
++                  <Button
++                    key={`msg-${p.sessionId}`}
++                    plain
++                    dimColor={!isComposing}
++                    label="msg"
++                    onPress={() => void update($, peerCompose, cur => (cur === p.sessionId ? null : p.sessionId))}
++                  />
++                ) : null}
++              </Box>
++              {p.prompt ? <Text>{`  › ${fit(p.prompt, width - 4)}`}</Text> : null}
++              {detail ? <Text dimColor>{`  ${fit(detail, width - 2)}`}</Text> : null}
++              {isComposing && Input ? (
++                <Input
++                  key={`send-${p.sessionId}`}
++                  label={`  to ${fit(p.name, Math.max(6, Math.floor(width / 3)))} › `}
++                  placeholder="message, Enter sends (empty closes)"
++                  submitLabel="send"
++                  autoFocus
++                  onSubmit={(value: string) => void sendToPeer($, p.sessionId, value)}
++                />
++              ) : null}
++              {sent ? (
++                <Text color={sent.isError ? 'error' : 'success'} wrap="wrap">{`  ${sent.isError ? '✗' : '✓'} ${sent.text} · ${ago(sent.at, now)}`}</Text>
++              ) : null}
++            </Box>
++          )
++        })}
++        {v.others.length > 0 ? rule : null}
++        {v.others.length > 0 ? (
++          <Box flexDirection="row">
++            <Text bold>Other repos</Text>
++            <Text dimColor>{`  ${v.others.length}`}</Text>
++          </Box>
++        ) : null}
++        {v.others.map((p, i) => {
++          const color = STATUS_COLOR[p.status]
++          const isWorker = p.kind !== 'interactive'
++          const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
++          const detail = otherDetail(p)
++          const label = detail ? `${p.name} · ${detail}` : p.name
++          const isNewRepo = v.others[i - 1]?.repo !== p.repo
++          return (
++            <Box key={`other-${p.sessionId}`} flexDirection="column">
++              {isNewRepo ? <Text color="claude">{fit(p.repo, width)}</Text> : null}
++              <Box flexDirection="row">
++                <Text color={color} dimColor={color === undefined}>{p.status === 'busy' ? '  ● ' : '  ○ '}</Text>
++                <Text dimColor={isWorker}>{fit(label, Math.max(6, width - state.length - 6))}</Text>
++                <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
++              </Box>
++            </Box>
++          )
++        })}
++        {rule}
++        <Box flexDirection="row" columnGap={2}>
++          <Text dimColor>{`updated ${ago(v.at, now)}`}</Text>
++          <Button key="peers-refresh" plain dimColor label="refresh" hotkey="g" onPress={() => void scanPeers($)} />
++        </Box>
++      </Box>
++    )
++  })
++
+   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
++    isFullscreen = e.viewport?.isFullscreen ?? isFullscreen
+     const v = await read($, view)
+     if (e.props.hasSurvey || v === null || (await read($, isHidden))) return next(e)
+     const { Box, Text, Button } = $.ui.resolve(e)
+diff --git a/bws-cockpit/tests/loop.test.ts b/bws-cockpit/tests/loop.test.ts
+index 41c1579..cc8c823 100644
+--- a/bws-cockpit/tests/loop.test.ts
++++ b/bws-cockpit/tests/loop.test.ts
+@@ -293,6 +293,22 @@ describe('loop watch', () => {
+     await after.unmount()
+   })
+ 
++  test('on mobile (no Select, no Input) the loop picker is gone and a need shows its answer command', async ($, on) => {
++    world(on, { state: PAUSED_STATE, second: true })
++    await $.command.run({ command: 'loop-watch', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'mobile' })
++    expect(await ui.find({ type: 'Text', text: /^kit$/ })).toBeDefined()
++    expect(await ui.find({ key: 'loop-pick' })).toBeUndefined()
++    expect(await ui.find({ key: 'answer-W2c-N1' })).toBeUndefined()
++    expect(await ui.find({ type: 'Text', text: /python Tools\/KitHarness\/harness\.py answer W2c N1 "<your answer>"/ })).toBeDefined()
++    await ui.unmount()
++    // the same loop on the terminal keeps both controls
++    const term = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    expect(await term.find({ key: 'loop-pick' })).toBeDefined()
++    expect(await term.find({ key: 'answer-W2c-N1' })).toBeDefined()
++    await term.unmount()
++  })
++
+   test('an empty answer runs nothing', async ($, on) => {
+     const w = world(on, { state: PAUSED_STATE })
+     await $.command.run({ command: 'loop-watch', args: '' } as never)
+diff --git a/bws-cockpit/tests/peers.test.ts b/bws-cockpit/tests/peers.test.ts
+new file mode 100644
+index 0000000..4cbe2fa
+--- /dev/null
++++ b/bws-cockpit/tests/peers.test.ts
+@@ -0,0 +1,420 @@
++import { describe, expect, mock, test } from 'claude-code/testing'
++import type { On } from 'claude-code'
++
++import { isRecordFile, latestPrompts, parseRecord, parseTasklist, peersText, promptLine, repoKey, sortOthers, sortPeers, toPeer, whereIn } from '../hooks/peers'
++import type { PeerView } from '../types'
++
++// The engine's session registry, shaped like the real <pid>.json files.
++const T0 = Date.parse('2026-10-02T14:00:00')
++const CONFIG = 'C:/Users/me/.claude'
++const REPO = 'C:/repo'
++
++type Rec = { pid: number; sessionId: string; cwd: string; name: string; status: string; kind?: string; startedAt?: number; statusAt?: number }
++
++const recJson = (r: Rec) =>
++  JSON.stringify({
++    pid: r.pid,
++    sessionId: r.sessionId,
++    cwd: r.cwd.split('/').join(String.fromCharCode(92)),
++    startedAt: r.startedAt ?? T0 - 2 * 3600_000,
++    procStart: `ps${r.pid}`,
++    version: '2.1.288',
++    kind: r.kind ?? 'interactive',
++    entrypoint: 'cli',
++    name: r.name,
++    status: r.status,
++    updatedAt: r.statusAt ?? T0 - 60_000,
++    statusUpdatedAt: r.statusAt ?? T0 - 60_000,
++  })
++
++const RECS: Rec[] = [
++  { pid: 10, sessionId: 'self', cwd: REPO, name: 'me', status: 'busy' },
++  { pid: 20, sessionId: 's-busy', cwd: REPO, name: 'refactor', status: 'busy', statusAt: T0 - 3 * 60_000 },
++  { pid: 30, sessionId: 's-worker', cwd: `${REPO}/tools`, name: 'worker-7', status: 'busy', kind: 'sdk-cli' },
++  { pid: 40, sessionId: 's-other', cwd: 'C:/other', name: 'elsewhere', status: 'idle' },
++  { pid: 50, sessionId: 's-wt', cwd: 'C:/wt/feat', name: 'feature-wt', status: 'idle' },
++  { pid: 60, sessionId: 's-dead', cwd: REPO, name: 'crashed', status: 'idle' },
++]
++
++// The engine's prompt history: one line per prompt, newest last.
++const hist = (sessionId: string, display: string, at: number) => JSON.stringify({ display, pastedContents: {}, timestamp: at, project: 'C:\\repo', sessionId })
++const HISTORY = [
++  hist('s-busy', 'an older prompt', T0 - 600_000),
++  hist('s-other', 'a prompt in another repo', T0 - 500_000),
++  hist('s-wt', '\n  ship the   worktree fix\nsecond line', T0 - 400_000),
++  hist('s-busy', 'fix the flaky test', T0 - 300_000),
++  hist('self', 'my own prompt', T0 - 200_000),
++  hist('s-busy', '/repo-sessions', T0 - 100_000), // bare slash command: skipped
++  hist('s-worker', '/harness-loop build the next milestone', T0 - 90_000), // with arguments: kept
++  'not json',
++].join('\n') + '\n'
++
++const norm = (p: unknown) => String(p).replace(/\\/g, '/')
++
++type World = { send?: 'ok' | 'refuse' | 'throw'; sent?: { to: unknown; text: string }[]; surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
++
++function world(on: On, w: World = {}) {
++  const clock = mock.clock(on, { now: T0 })
++  const opened: string[] = []
++  const closed: string[] = []
++  const reads: string[] = []
++  let panes = w.panes ?? []
++  on('env.get', ($, e) => ({ value: e.name === 'USERPROFILE' ? 'C:\\Users\\me' : undefined }))
++  on('session.id', () => ({ value: 'self' }))
++  on('session.root', () => ({ value: REPO }))
++  on('session.cwd', () => ({ value: REPO }))
++  on('session.surfaces', () => ({ value: (w.surfaces ?? []) as never }))
++  on('fs.list', ($, e) => {
++    if (norm(e.path) !== `${CONFIG}/sessions`) throw new Error(`ENOENT ${e.path}`)
++    const names = [...RECS.map(r => `${r.pid}.json`), '20.abcdef01.key']
++    return { value: names.map(name => ({ name, kind: 'file' as const, size: 1, mtimeMs: T0, isLink: false })) }
++  })
++  on('fs.stat', ($, e) => {
++    const path = norm(e.path)
++    if (path === `${CONFIG}/history.jsonl`) return { value: { kind: 'file', size: w.bigHistory ? 5_000_000 : HISTORY.length, mtimeMs: T0 - 1000, isLink: false } as never }
++    if (path === `${REPO}/.git` || path === 'C:/other/.git') return { value: { kind: 'dir', size: 0, mtimeMs: 0, isLink: false } as never }
++    if (path === 'C:/wt/feat/.git') return { value: { kind: 'file', size: 1, mtimeMs: 0, isLink: false } as never }
++    throw new Error(`ENOENT ${path}`)
++  })
++  on('fs.read', ($, e) => {
++    const path = norm(e.path)
++    reads.push(path)
++    if (path === 'C:/wt/feat/.git') return { value: 'gitdir: C:/repo/.git/worktrees/feat\n' as never }
++    if (path === `${CONFIG}/history.jsonl`) return { value: HISTORY as never }
++    const rec = RECS.find(r => path === `${CONFIG}/sessions/${r.pid}.json`)
++    if (rec) return { value: recJson(rec) as never }
++    throw new Error(`ENOENT ${path}`)
++  })
++  on('process.run', ($, e) => {
++    if (String(e.argv[0]) === 'powershell' && w.bigHistory) {
++      w.tails?.push({ argv: [...e.argv].map(String), env: e.init?.env })
++      // the last 1 MiB of a big file starts mid-line
++      return { value: { exitCode: 0, stdout: `t":"cut mid-line","sessionId":"s-busy"}\n${HISTORY}`, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
++    }
++    if (String(e.argv[0]) === 'tasklist') {
++      if (w.tasklist === 'fail') throw new Error('ENOENT tasklist')
++      const images: Record<number, string> = { 10: 'claude.exe', 20: 'claude.exe', 30: 'claude.exe', 40: 'claude.exe', 50: 'claude.exe', ...w.tasklistImage }
++      const lines = Object.entries(images).map(([pid, image]) => `"${image}","${pid}","Console","1","300,000 K"`)
++      return { value: { exitCode: 0, stdout: `${lines.join('\r\n')}\r\n`, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
++    }
++    throw new Error(`ENOENT ${String(e.argv[0])}`)
++  })
++  on('http.fetch', () => {
++    throw new Error('ECONNREFUSED')
++  })
++  on('ui.panes', () => ({ value: panes as never }))
++  on('ui.open', ($, e) => {
++    opened.push(String(e.id))
++    panes = [...panes.filter(p => p.id !== e.id), { id: String(e.id), isShown: true, isPlaced: true }]
++    return { value: { isPlaced: true } }
++  })
++  on('ui.close', ($, e) => {
++    closed.push(String(e.id))
++    panes = panes.filter(p => p.id !== e.id)
++    return { value: undefined }
++  })
++  on('ui.toast', () => ({ value: undefined }))
++  on('session.send', ($, e) => {
++    w.sent?.push({ to: e.to, text: e.text })
++    if (w.send === 'throw') throw new Error('peer socket closed')
++    if (w.send === 'refuse') return { isDelivered: false, reason: 'refactor is not running' }
++    return { isDelivered: true }
++  })
++  on('command.register', () => ({ value: undefined as never }))
++  on('tool.register', () => ({ value: undefined as never }))
++  on('session.start', ($, e) => e as never)
++  return { clock, opened, closed, reads, closeAll: () => void (panes = []) }
++}
++
++const PANE = {
++  plugin: 'bws-cockpit',
++  component: 'Pane',
++  requestId: 'repo-sessions',
++  props: { title: 'Sessions here', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
++} as const
++
++// ---------- pure ----------
++
++const peer = (name: string, kind: string, status: string, startedAt: number, repo = 'repo'): PeerView => ({
++  sessionId: name, pid: 1, name, status, kind, repo, where: '', startedAt, statusSince: null, prompt: null, promptAt: null,
++})
++
++describe('repo sessions parsing', () => {
++  test('registry records parse; junk and partial records do not', () => {
++    const r = parseRecord(recJson(RECS[1] as Rec))
++    expect(r?.pid).toBe(20)
++    expect(r?.name).toBe('refactor')
++    expect(r?.statusSince).toBe(T0 - 3 * 60_000)
++    expect(parseRecord('{"pid":1}')).toBeUndefined()
++    expect(parseRecord('not json')).toBeUndefined()
++    expect(parseRecord('null')).toBeUndefined()
++  })
++
++  test('only <pid>.json files are records', () => {
++    expect(isRecordFile('12345.json')).toBe(true)
++    expect(isRecordFile('12345.abcdef01.key')).toBe(false)
++    expect(isRecordFile('notes.json')).toBe(false)
++  })
++
++  test('repo key: the .git folder, a worktree resolves to its main checkout', () => {
++    expect(repoKey('C:/Repo')).toBe('c:/repo/.git')
++    expect(repoKey('C:/wt/feat', 'gitdir: C:/Repo/.git/worktrees/feat\n')).toBe('c:/repo/.git')
++    expect(repoKey('C:/wt/feat', 'gitdir: C:\\Repo\\.git\\worktrees\\feat\r\n')).toBe('c:/repo/.git')
++    expect(repoKey('C:/Repo/.claude/worktrees/x', 'gitdir: ../../../.git/worktrees/x')).toBe('c:/repo/.git')
++    expect(repoKey('C:/sub', 'gitdir: C:/Repo/.git/modules/sub')).toBe('c:/repo/.git/modules/sub')
++  })
++
++  test('where a session runs, relative to the repo root', () => {
++    expect(whereIn('C:\\Repo', 'C:/repo')).toBe('')
++    expect(whereIn('C:\\Repo\\tools\\x', 'C:/repo')).toBe('tools/x')
++    expect(whereIn('D:/wt/feat', 'C:/repo')).toBe('D:/wt/feat')
++  })
++
++  test('tasklist CSV pids', () => {
++    expect([...parseTasklist('"claude.exe","12345","Console","1","300,000 K"\r\n"System","4","Services","0","1 K"\r\n')]).toEqual([[12345, 'claude.exe'], [4, 'System']])
++    expect(parseTasklist('INFO: No tasks are running').size).toBe(0)
++  })
++
++  test('interactive first, busy before idle, then newest', () => {
++    const order = sortPeers([peer('w', 'sdk-cli', 'busy', 9), peer('a', 'interactive', 'idle', 5), peer('b', 'interactive', 'busy', 1), peer('c', 'interactive', 'idle', 8)])
++    expect(order.map(p => p.name)).toEqual(['b', 'c', 'a', 'w'])
++  })
++
++  test('other repos: by repo name, then the same order inside each', () => {
++    const order = sortOthers([peer('x', 'interactive', 'idle', 1, 'zeta'), peer('w', 'sdk-cli', 'busy', 9, 'Alpha'), peer('a', 'interactive', 'busy', 5, 'alpha')])
++    expect(order.map(p => p.name)).toEqual(['a', 'w', 'x'])
++  })
++
++  test('latest prompt per wanted session, newest wins, first line only', () => {
++    const got = latestPrompts(HISTORY, new Set(['s-busy', 's-wt', 's-never', 's-worker']))
++    expect(got.get('s-worker')?.text).toBe('/harness-loop build the next milestone')
++    expect(got.get('s-busy')).toEqual({ text: 'fix the flaky test', at: T0 - 300_000 })
++    expect(got.get('s-wt')?.text).toBe('ship the worktree fix')
++    expect(got.has('s-never')).toBe(false)
++    expect(got.has('s-other')).toBe(false) // not wanted
++    expect(latestPrompts('', new Set(['s-busy'])).size).toBe(0)
++    expect(promptLine('\n\n  a   b \nc')).toBe('a b')
++    expect(promptLine(42)).toBe('')
++  })
++
++  test('text summary', () => {
++    const r = parseRecord(recJson(RECS[2] as Rec))
++    expect(r).toBeDefined()
++    const text = peersText([toPeer(r!, REPO, { text: 'run unit D3', at: null })], REPO, T0)
++    expect(text).toContain('1 other session in repo:')
++    expect(text).toContain('- worker-7: busy 1m (sdk-cli · in tools · started 2h ago)\n  › run unit D3')
++    expect(peersText([], REPO, T0)).toBe('No other Claude Code sessions in repo.')
++    const other = parseRecord(recJson(RECS[3] as Rec))
++    expect(peersText([], REPO, T0, [toPeer(other!, 'C:/other')])).toBe(
++      'No other Claude Code sessions in repo.\n\nOther repos (1):\nother:\n- elsewhere: idle 1m',
++    )
++  })
++})
++
++// ---------- hooks ----------
++
++describe('repo sessions', () => {
++  test('/repo-sessions with no surface lists the live sessions in this repo as text', async ($, on) => {
++    const w = world(on)
++    const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(r.text).toContain('3 other sessions in repo:')
++    expect(r.text).toMatch(
++      /- refactor: busy 3m \(started 2h ago\)\n {2}› fix the flaky test\n- feature-wt: idle 1m \(in C:\/wt\/feat · started 2h ago\)\n {2}› ship the worktree fix\n- worker-7: busy 1m \(sdk-cli · in tools · started 2h ago\)\n {2}› \/harness-loop build the next milestone\n\n/,
++    )
++    expect(r.text).toContain('\n\nOther repos (1):\nother:\n- elsewhere: idle 1m') // another repo, at the bottom, no prompt
++    expect(r.text).not.toContain('a prompt in another repo')
++    expect(r.text).not.toContain('crashed') // pid gone
++    expect(r.text).not.toContain('- me:') // this session
++    expect(w.reads.some(p => p.endsWith('.key'))).toBe(false)
++  })
++
++  test('a failed liveness check keeps every session', async ($, on) => {
++    world(on, { tasklist: 'fail' })
++    const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(r.text).toContain('crashed')
++  })
++
++  test('the pane shows each session with status, time and where', async ($, on) => {
++    world(on, { surfaces: ['terminal'] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    for (const surface of ['terminal', 'desktop'] as const) {
++      const ui = await $.ui.mount({ ...PANE, surface })
++      expect(await ui.find({ type: 'Text', text: /^repo$/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /3 others/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /^refactor$/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /busy 3m/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /in C:\/wt\/feat/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /sdk-cli · in tools/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /^ {2}› fix the flaky test$/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /^ {2}› ship the worktree fix$/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /^Other repos$/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /^other$/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /^elsewhere$/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /idle 1m/ })).toBeDefined()
++      expect(await ui.find({ type: 'Text', text: /crashed|a prompt in another repo|my own prompt/ })).toBeUndefined()
++      expect(await ui.find({ key: 'peers-refresh' })).toBeDefined()
++      await ui.unmount()
++    }
++  })
++
++  test('/repo-sessions opens the pane, and a second one closes it', async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'] })
++    expect((await $.command.run({ command: 'repo-sessions', args: '' } as never)).text).toBeUndefined()
++    expect(w.opened).toEqual(['repo-sessions'])
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(w.closed).toEqual(['repo-sessions'])
++  })
++
++  test('/repo-sessions brings a pane hidden behind another tab to the front instead of closing it', async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'], panes: [{ id: 'repo-sessions', isShown: false, isPlaced: true }] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(w.opened).toEqual(['repo-sessions'])
++    expect(w.closed).toEqual([])
++  })
++
++  test('in fullscreen a new interactive session opens the pane once; closing it keeps it closed', async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'] })
++    // A drawing reports the layout: fullscreen, where the pane docks beside the transcript.
++    const probe = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 200, rows: 50, isFullscreen: true } })
++    await probe.unmount()
++    await $.session.start({ cwd: REPO, surface: 'terminal', isInteractive: true } as never)
++    await w.clock.advance(5_000)
++    expect(w.opened).toEqual(['repo-sessions'])
++    w.closeAll() // the person closes it
++    await w.clock.advance(15_000)
++    expect(w.opened).toEqual(['repo-sessions'])
++  })
++
++  test('outside fullscreen nothing opens unasked', async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'] })
++    const probe = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 200, rows: 50, isFullscreen: false } })
++    await probe.unmount()
++    await $.session.start({ cwd: REPO, surface: 'terminal', isInteractive: true } as never)
++    await w.clock.advance(10_000)
++    expect(w.opened).toEqual([])
++    expect(w.reads.some(p => p.endsWith('/sessions/20.json'))).toBe(true) // the poll ran
++    expect(w.reads.some(p => p.endsWith('/history.jsonl'))).toBe(false) // but read no prompts with the pane closed
++  })
++
++  test('peersAutoOpen: false never opens unasked', { options: { peersAutoOpen: false } }, async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'] })
++    const probe = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 200, rows: 50, isFullscreen: true } })
++    await probe.unmount()
++    await $.session.start({ cwd: REPO, surface: 'terminal', isInteractive: true } as never)
++    await w.clock.advance(10_000)
++    expect(w.opened).toEqual([])
++  })
++
++  test('a pane opened and closed by /repo-sessions stays closed for the peers it already showed', async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'] })
++    const probe = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 200, rows: 50, isFullscreen: false } })
++    await probe.unmount()
++    await $.session.start({ cwd: REPO, surface: 'terminal', isInteractive: true } as never)
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const open = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 200, rows: 50, isFullscreen: true } })
++    await open.unmount()
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(w.closed).toEqual(['repo-sessions'])
++    await w.clock.advance(15_000)
++    expect(w.opened).toEqual(['repo-sessions'])
++  })
++
++  test('a reused pid that is not a claude process counts as gone', async ($, on) => {
++    world(on, { tasklistImage: { 60: 'chrome.exe' } })
++    const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(r.text).not.toContain('crashed')
++  })
++
++  test('history.jsonl is read once while it is unchanged', async ($, on) => {
++    const w = world(on)
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(w.reads.filter(p => p.endsWith('/history.jsonl')).length).toBe(1)
++  })
++
++  test('a history.jsonl over 4 MiB is read from its tail, never whole', async ($, on) => {
++    const tails: { argv: string[]; env?: Record<string, string> }[] = []
++    const w = world(on, { bigHistory: true, tails })
++    const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    expect(r.text).toContain('  › fix the flaky test')
++    expect(r.text).not.toContain('cut mid-line')
++    expect(w.reads.some(p => p.endsWith('/history.jsonl'))).toBe(false)
++    expect(tails.length).toBe(1)
++    expect(norm(tails[0]?.env?.BWS_TAIL_PATH)).toBe(`${CONFIG}/history.jsonl`)
++    expect(tails[0]?.env?.BWS_TAIL_BYTES).toBe('1048576')
++  })
++
++  test('msg opens a message box under that row; Enter sends it with $.session.send and closes it', async ($, on) => {
++    const sent: { to: unknown; text: string }[] = []
++    world(on, { surfaces: ['terminal'], sent })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    for (const surface of ['terminal', 'desktop'] as const) {
++      const ui = await $.ui.mount({ ...PANE, surface })
++      expect(await ui.find({ key: 'msg-s-busy' })).toBeDefined()
++      expect(await ui.find({ key: 'msg-s-worker' })).toBeDefined()
++      expect(await ui.find({ key: 'msg-s-other' })).toBeUndefined() // another repo: no button
++      expect(await ui.find({ key: 'send-s-busy' })).toBeUndefined()
++      await ui.press({ key: 'msg-s-busy' })
++      expect(await ui.find({ key: 'send-s-busy' })).toBeDefined()
++      expect(await ui.find({ key: 'send-s-wt' })).toBeUndefined() // one at a time
++      const typed = `rebase on main first, then "npm test" & report`
++      await ui.input({ key: 'send-s-busy', text: typed })
++      expect(sent.at(-1)?.text).toBe(typed)
++      expect(await ui.find({ key: 'send-s-busy' })).toBeUndefined()
++      expect(await ui.find({ type: 'Text', text: /✓ sent · 0s ago/ })).toBeDefined()
++      await ui.unmount()
++    }
++    expect(sent.length).toBe(2)
++    expect(sent[0]?.to).toBe('s-busy') // the engine spells { sessionId } as the address before the hooks
++  })
++
++  test('msg again closes the box; an empty message sends nothing', async ($, on) => {
++    const sent: { to: unknown; text: string }[] = []
++    world(on, { surfaces: ['terminal'], sent })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    await ui.press({ key: 'msg-s-wt' })
++    await ui.press({ key: 'msg-s-wt' })
++    expect(await ui.find({ key: 'send-s-wt' })).toBeUndefined()
++    await ui.press({ key: 'msg-s-wt' })
++    await ui.input({ key: 'send-s-wt', text: '   ' })
++    expect(await ui.find({ key: 'send-s-wt' })).toBeUndefined()
++    expect(sent).toEqual([])
++    await ui.unmount()
++  })
++
++  test('a refused send shows the reason and keeps the box open', async ($, on) => {
++    world(on, { surfaces: ['terminal'], send: 'refuse', sent: [] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    await ui.press({ key: 'msg-s-busy' })
++    await ui.input({ key: 'send-s-busy', text: 'hello' })
++    expect(await ui.find({ type: 'Text', text: /✗ refactor is not running/ })).toBeDefined()
++    expect(await ui.find({ key: 'send-s-busy' })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('a send that throws shows the error; the note clears after a minute', async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'], send: 'throw', sent: [] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    await ui.press({ key: 'msg-s-busy' })
++    await ui.input({ key: 'send-s-busy', text: 'hello' })
++    expect(await ui.find({ type: 'Text', text: /^ {2}✗ .+ · 0s ago$/ })).toBeDefined()
++    expect(await ui.find({ key: 'send-s-busy' })).toBeDefined()
++    await ui.unmount()
++    await w.clock.advance(61_000)
++    const later = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    expect(await later.find({ type: 'Text', text: /✗/ })).toBeUndefined()
++    await later.unmount()
++  })
++
++  test('a surface with no Input (mobile) draws no msg button', async ($, on) => {
++    world(on, { surfaces: ['mobile'] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'mobile' })
++    expect(await ui.find({ type: 'Text', text: /^refactor$/ })).toBeDefined()
++    expect(await ui.find({ key: 'msg-s-busy' })).toBeUndefined()
++    await ui.unmount()
++  })
++})
+diff --git a/bws-cockpit/types/index.d.ts b/bws-cockpit/types/index.d.ts
+index 8add6bd..f4ecec5 100644
+--- a/bws-cockpit/types/index.d.ts
++++ b/bws-cockpit/types/index.d.ts
+@@ -64,6 +64,32 @@ export type LoopView = {
+ 
+ export type LoopActionNote = { text: string; at: number; isError: boolean }
+ 
++// ---------- Repo Sessions (other Claude Code sessions in this repo) ----------
++
++export type PeerView = {
++  sessionId: string
++  pid: number
++  name: string
++  status: string // busy, idle, shell, or whatever the registry says
++  kind: string // interactive, or a headless kind
++  repo: string // its repo's folder name
++  where: string // relative to its repo root; '' at the root
++  startedAt: number | null
++  statusSince: number | null
++  prompt: string | null // first line of its latest prompt in history.jsonl (same-repo peers only)
++  promptAt: number | null
++}
++
++export type PeersView = {
++  root: string // this session's repo root
++  at: number // when it was scanned
++  peers: PeerView[]
++  others: PeerView[] // live sessions in other repos, by repo name
++}
++
++// The outcome of the last message sent from the pane, shown under that peer's row.
++export type PeerNote = { sessionId: string; text: string; isError: boolean; at: number }
++
+ declare module 'claude-code' {
+   interface PluginState {
+     'bws-cockpit': {
+@@ -73,6 +99,10 @@ declare module 'claude-code' {
+       loopSelected: string | null
+       loopAction: LoopActionNote | null
+       stopArmedAt: number | null
++      peers: PeersView | null
++      peersAnnounced: string[]
++      peerCompose: string | null // the sessionId whose message Input is open
++      peerNote: PeerNote | null
+     }
+   }
+ }

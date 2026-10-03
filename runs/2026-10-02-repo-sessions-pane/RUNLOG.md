@@ -83,3 +83,11 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
   - The same test checks that the terminal still gets the picker and the Input.
 - AGENTS.md: corrected the gotcha line that recommended `'Input' in table` alone.
 - Evidence: `receipts/test.txt` 120/120; validate and tsc clean.
+
+## Session 5: publish refresh (not pushed)
+- Scratch worktree on `publish` (= mods/main 7855bb7); `git checkout main -- bws-cockpit bws-shell-lint`. bws-shell-lint unchanged; no files to delete.
+- Privacy scan of the added lines: no personal names, emails, machine or account names, real user paths, project or game names, session ids, pipes or device serials.
+  - Fixed on main first (`752643f`): three test values taken from real data: a real pid (24896), the start of a real session `.key` filename, and a paraphrase of a real prompt ("M7 bundles").
+- README test count corrected to 120 on main.
+- Local `publish` commits: e445c69, 9779373. The plugin folders on `publish` match main. Full diff: `receipts/publish-0.8.0.diff` (7 files, +1057/-10).
+- Next: Brian approves the diff, then `git push mods` (the push rule maps publish to main).
