@@ -124,7 +124,7 @@ Local Doc: ./docs/mods.md
 - Validator rules: one unmatched hook per event, so merge into the existing `turn.complete` or `prompt.context` hook. Never name a local `next`.
 - `$.prompt.submit` inside a `command.run` hook deadlocks: defer it with `$.clock.after`.
 - `$.model.fork` gives `nothing-to-fork` on a resumed session's first command: fall back to `$.session.messages()` + `$.model.complete`.
-- `Select` and `Input` are missing on mobile: narrow with `'Input' in table`.
+- `Select` and `Input` are missing on mobile, but `'Input' in table` can still be true there at runtime: narrow with `e.surface !== 'mobile' && 'Input' in table`.
 - Test stubs:
   - `fs.*` paths arrive with backslashes: normalize them.
   - A bottom `prompt.submit` stub must return `{ text }`.

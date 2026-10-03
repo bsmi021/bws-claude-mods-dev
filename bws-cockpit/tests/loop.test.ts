@@ -293,6 +293,22 @@ describe('loop watch', () => {
     await after.unmount()
   })
 
+  test('on mobile (no Select, no Input) the loop picker is gone and a need shows its answer command', async ($, on) => {
+    world(on, { state: PAUSED_STATE, second: true })
+    await $.command.run({ command: 'loop-watch', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'mobile' })
+    expect(await ui.find({ type: 'Text', text: /^kit$/ })).toBeDefined()
+    expect(await ui.find({ key: 'loop-pick' })).toBeUndefined()
+    expect(await ui.find({ key: 'answer-W2c-N1' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /python Tools\/KitHarness\/harness\.py answer W2c N1 "<your answer>"/ })).toBeDefined()
+    await ui.unmount()
+    // the same loop on the terminal keeps both controls
+    const term = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(await term.find({ key: 'loop-pick' })).toBeDefined()
+    expect(await term.find({ key: 'answer-W2c-N1' })).toBeDefined()
+    await term.unmount()
+  })
+
   test('an empty answer runs nothing', async ($, on) => {
     const w = world(on, { state: PAUSED_STATE })
     await $.command.run({ command: 'loop-watch', args: '' } as never)

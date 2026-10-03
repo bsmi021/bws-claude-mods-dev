@@ -960,8 +960,10 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'Pane', requestId: LOOP_PANE }, async ($, e, next) => {
     const table = $.ui.resolve(e)
     const { Box, Text, Button, Link } = table
-    const Select = 'Select' in table ? table.Select : null // mobile has none
-    const Input = 'Input' in table ? table.Input : null
+    // Mobile has neither (its table may still carry the names at runtime): fall back to text there.
+    const isMobile = e.surface === 'mobile'
+    const Select = !isMobile && 'Select' in table ? table.Select : null
+    const Input = !isMobile && 'Input' in table ? table.Input : null
     const all = await read($, loops)
     const lp = await selectedLoop($)
     const now = await $.clock.now()

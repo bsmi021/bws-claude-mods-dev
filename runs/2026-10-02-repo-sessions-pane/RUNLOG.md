@@ -73,4 +73,13 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
 
 ## Next
 - Brian presses `msg` in the pane and sends one message: the button-press path by eye.
-- Parked: the Loop Watch mobile check above.
+
+## Session 4: Loop Watch mobile fix
+- A new test fails first on the old code. It renders the paused loop, with two loops, on `mobile`:
+  - The loop picker is gone.
+  - The answer command is missing. The `<Input>` was drawn because `'Input' in table` is true at runtime, and mobile dropped it, so the fallback text never showed.
+- Fix: the Loop Watch pane narrows Select and Input with `e.surface !== 'mobile'` as well.
+  - On mobile the need shows its `harness.py answer` command as text.
+  - The same test checks that the terminal still gets the picker and the Input.
+- AGENTS.md: corrected the gotcha line that recommended `'Input' in table` alone.
+- Evidence: `receipts/test.txt` 120/120; validate and tsc clean.
