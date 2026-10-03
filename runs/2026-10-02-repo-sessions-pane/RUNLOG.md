@@ -90,4 +90,4 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
   - Fixed on main first (`752643f`): three test values taken from real data: a real pid (24896), the start of a real session `.key` filename, and a paraphrase of a real prompt ("M7 bundles").
 - README test count corrected to 120 on main.
 - Local `publish` commits: e445c69, 9779373. The plugin folders on `publish` match main. Full diff: `receipts/publish-0.8.0.diff` (7 files, +1057/-10).
-- Next: Brian approves the diff, then `git push mods` (the push rule maps publish to main).
+- Pushed on Brian's go: `git push mods` sent 7855bb7..9779373 publish -> main; mods/main = 9779373. Scratch worktree removed.
