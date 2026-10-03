@@ -122,3 +122,7 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
 - Live check done (Brian): `msg` from this session's pane to `notice-recipient` showed `◆ held`, then `✓ approved and delivered` after he approved it.
 - Parked: the Finish-Line evidence check fired twice on replies that only waited on Brian (likely "done" in "tell me when that's done").
 
+
+## Session 7: publish 0.9.0
+- Privacy scan of the 287 added lines: clean. Full diff: `receipts/publish-0.9.0.diff`.
+- Pushed on Brian's go: `git push mods` sent 9779373..c26fab2 publish -> main. Scratch worktree removed.

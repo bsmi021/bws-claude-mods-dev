@@ -1,0 +1,544 @@
+diff --git a/bws-cockpit/.claude-plugin/plugin.json b/bws-cockpit/.claude-plugin/plugin.json
+index 616d45a..e58560c 100644
+--- a/bws-cockpit/.claude-plugin/plugin.json
++++ b/bws-cockpit/.claude-plugin/plugin.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "bws-cockpit",
+-  "version": "0.8.0",
++  "version": "0.9.0",
+   "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Repo Sessions pane, Finish-Line Guard, Project Locator, /handoff, and a worker model pin for subagents.",
+   "author": {
+     "name": "Brian"
+diff --git a/bws-cockpit/README.md b/bws-cockpit/README.md
+index 9d32f1c..c1a1447 100644
+--- a/bws-cockpit/README.md
++++ b/bws-cockpit/README.md
+@@ -54,7 +54,16 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
+ - Each row shows the session's name, its status (busy, idle, waiting, shell, or whatever the engine reports) and how long it has been in it. A dim second line shows the kind when it isn't interactive (for example `claude -p` workers), the subfolder or worktree path when it isn't the repo root, and when it started. Interactive sessions sort first.
+ - **Latest prompt:** under each row, `› ` and the first line of that session's newest prompt, cut to the pane width. Bare slash commands (`/clear`, `/repo-sessions`) are skipped; ones with arguments count. Prompts are read only while the pane is open, or for a `/repo-sessions` text reply. It comes from Claude Code's prompt history, `<config dir>/history.jsonl`, matched by session id. The file is read again only when its size or mtime changes. Over 4 MiB (the limit of `$.fs.read`), only its last 1 MiB is read, through a PowerShell seek or `tail -c`. A session with no prompt there gets no line; `claude -p` runs usually have none.
+ - **Message a peer:** each row for a session in this repo has a `msg` button. Pressing it opens a text box under that row; one box is open at a time, and pressing `msg` again closes it. Enter sends the text with `$.session.send` to that session id, and an empty Enter closes the box.
+-  - Under the row you get `✓ sent` or `✗ <reason>` for a minute. On a refusal the box stays open so you can retry.
++  - Under the row the message's state follows it:
++    - `✓ sent`: queued at the peer.
++    - `◆ held: waiting for approval in <name>`: the two sessions run in different permission modes, so the peer's person has to approve it. This line never fades while it waits.
++    - `✓ approved and delivered`, `✗ denied by the recipient`, `✗ expired, not delivered`.
++    - `✗ <reason>`: the send was refused or failed. The box stays open so you can retry.
++    - Any other notice wording shows its first sentence as-is.
++    - Final states fade after a minute.
++  - The states come from Claude Code's delivery notices for this session's sends (`[Cross-session delivery notice] …`), seen on `prompt.submit`. They're matched to the peer by its messaging pipe, then by `msg_id`, and passed on unchanged, so Claude still reads them.
++  - A notice for a message the pane didn't send, such as one Claude sent, changes nothing in the pane.
++  - The expired wording hasn't been seen yet; the pane looks for "expired" in its first sentence.
+   - The peer gets the text as a cross-session message from this session, marked as coming from bws-cockpit, and acts on it as a prompt. A reply it sends comes back here the same way.
+   - Mobile has no text box, so it shows no button. Sessions in other repos have no button.
+ - **Other repos:** a section at the bottom lists every other live session on the machine that is not in this repo. They're grouped under their repo's folder name, each with its status and how long it has been in it. These rows have no prompt lines.
+@@ -164,7 +173,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
+ | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
+ | Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; for Repo Sessions, `<config dir>/sessions/<pid>.json`, `<config dir>/history.jsonl` and the `.git` entry above each session's folder |
+ | Prompts | `$.prompt.submit` for resume |
+-| Messages | `$.session.send` to a peer's session id, only when you type one in the Repo Sessions pane and press Enter |
++| Messages | `$.session.send` to a peer's session id, only when you type one in the Repo Sessions pane and press Enter; observes `prompt.submit` delivery notices for those sends |
+ | Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
+ | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
+ | Environment | reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` |
+@@ -179,7 +188,7 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
+ | Check | Result |
+ |---|---|
+ | `claude plugin validate` | passed |
+-| `claude plugin test` | 120/120, adding Loop Watch on mobile (no picker or Input, the answer command as text) and Repo Sessions (the msg button and its box, a send and its address, delivered, refused, thrown, empty, the one-minute note, no button on mobile, latest prompt from history, newest wins, first line, the tail read for a file over 4 MiB, the read cache, other repos grouped and sorted, registry parsing, worktree repo keys, liveness and its failure, sort, the text list, the pane on terminal and desktop, /repo-sessions toggle and tab, auto-open once in fullscreen only, the off switch, no reopen after a close, a reused pid). Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
++| `claude plugin test` | 128/128, adding msg delivery states (the real held, batched held, released and denied wordings, first sentence only, unknown wording, binding by order then id, notices for other pipes or no open send ignored, a held notice landing before the send resolves, held not fading, final states fading, the notice passed on unchanged), Loop Watch on mobile (no picker or Input, the answer command as text) and Repo Sessions (the msg button and its box, a send and its address, delivered, refused, thrown, empty, the one-minute note, no button on mobile, latest prompt from history, newest wins, first line, the tail read for a file over 4 MiB, the read cache, other repos grouped and sorted, registry parsing, worktree repo keys, liveness and its failure, sort, the text list, the pane on terminal and desktop, /repo-sessions toggle and tab, auto-open once in fullscreen only, the off switch, no reopen after a close, a reused pid). Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
+ | Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop |
+ | Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
+ | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
+@@ -188,7 +197,7 @@ Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
+ | Project Locator live | `/projects refresh` from the home folder indexed 65 real projects (9 s including startup). A Glob for `**/*.uproject` over `C:\Projects` came back from the index in 4 ms with the 7 real `.uproject` files. The same Glob over the home folder was refused at once. `find_project` by name returned the folder, `.uproject` and harness loop |
+ | /handoff live | After a headless task in a scratch repo, `claude -p --continue "/handoff"` wrote a 467-word HANDOFF.md through the resumed-session fallback, with the correct commit hash and next step |
+ | Worker pin live | A parent on claude-opus-5-5 spawned three subagents: general-purpose with no model ran on claude-sonnet-5-5 (toast shown), Explore kept claude-opus-5-5, and an explicit `haiku` stayed on Haiku |
+-| Repo Sessions live (2.1.288) | headless `claude -p "/repo-sessions"` in this repo listed the other live session here with its latest prompt (read from the tail of a real 5 MB history.jsonl), and the 5 sessions in other repos under their repo names. The docked pane was checked by eye in fullscreen. A `$.session.send({ to: { sessionId } })` from a scratch probe mod to a live peer returned `isDelivered: true`; the peer received the text as a cross-session message and replied |
++| Repo Sessions live (2.1.288) | headless `claude -p "/repo-sessions"` in this repo listed the other live session here with its latest prompt (read from the tail of a real 5 MB history.jsonl), and the 5 sessions in other repos under their repo names. The docked pane was checked by eye in fullscreen. A `$.session.send({ to: { sessionId } })` from a scratch probe mod to a live peer returned `isDelivered: true`; the peer received the text as a cross-session message and replied. From the pane, a message to a default-mode session showed `◆ held`, then `✓ approved and delivered` once its person approved it |
+ | Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
+ 
+ Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.
+diff --git a/bws-cockpit/hooks/peers.ts b/bws-cockpit/hooks/peers.ts
+index ee0abac..c828d5e 100644
+--- a/bws-cockpit/hooks/peers.ts
++++ b/bws-cockpit/hooks/peers.ts
+@@ -1,13 +1,14 @@
+ // Repo Sessions: the other Claude Code sessions open in this repo, read from the engine's own
+ // registry (<config dir>/sessions/<pid>.json). Pure helpers; register.tsx does the reading.
+ 
+-import type { PeerView } from '../types'
++import type { PeerSend, PeerView, SendState } from '../types'
+ import { ago } from './loop'
+ import { toSlash } from './projects'
+ 
+ export type SessionRecord = {
+   pid: number
+   procStart: string
++  pipe: string | null // messagingSocketPath, normalized: where delivery notices name it
+   sessionId: string
+   cwd: string
+   name: string
+@@ -40,6 +41,7 @@ export function parseRecord(text: string): SessionRecord | undefined {
+   return {
+     pid,
+     procStart: str(raw.procStart),
++    pipe: str(raw.messagingSocketPath) ? normPipe(str(raw.messagingSocketPath)) : null,
+     sessionId,
+     cwd,
+     name: str(raw.name) || sessionId.slice(0, 8),
+@@ -158,6 +160,7 @@ export function toPeer(r: SessionRecord, root: string, prompt?: LatestPrompt): P
+     where: whereIn(r.cwd, root),
+     startedAt: r.startedAt,
+     statusSince: r.statusSince,
++    pipe: r.pipe,
+     prompt: prompt?.text ?? null,
+     promptAt: prompt?.at ?? null,
+   }
+@@ -198,6 +201,81 @@ export function peerDetail(p: PeerView, now: number): string {
+     .join(' · ')
+ }
+ 
++// ---------- msg delivery states ----------
++
++// A pipe as the registry (`messagingSocketPath`) and the delivery notices (`uds:<pipe>`) spell it.
++export const normPipe = (p: string) => p.replace(/^uds:/i, '').replace(/[\\/]+/g, '/').toLowerCase()
++
++export type DeliveryNotice = { state: SendState; pipe: string; ids: string[]; summary: string }
++
++const NOTICE = '[Cross-session delivery notice]'
++
++// The engine's delivery notice for a message this session sent, as `prompt.submit` sees it:
++// "[Cross-session delivery notice] Your message to another session was held by that session
++// (recipient: uds:<pipe>; msg_id: <id>[, <id>]). ...". Only the first sentence decides the
++// state: the held notice goes on to mention "release, denial or expiry". Wording not seen
++// yet keeps that first sentence as the summary.
++export function parseNotice(text: string): DeliveryNotice | undefined {
++  if (!text.startsWith(NOTICE)) return undefined
++  const head = text.slice(NOTICE.length).split(' (recipient:')[0]?.trim() ?? ''
++  const pipe = text.match(/\(recipient:\s*([^;)]+)/)?.[1]?.trim()
++  if (!pipe) return undefined
++  const ids = (text.match(/msg_id:\s*([^)]+)\)/)?.[1] ?? '').split(',').map(s => s.trim()).filter(Boolean)
++  const state: SendState = /\bheld by\b/.test(head)
++    ? 'held'
++    : /\bapproved and released\b/.test(head)
++      ? 'released'
++      : /\bdenied\b/.test(head)
++        ? 'denied'
++        : /\bexpired\b/.test(head)
++          ? 'expired'
++          : 'other'
++  return { state, pipe: normPipe(pipe), ids, summary: head.replace(/\.$/, '') }
++}
++
++const OPEN_STATES: readonly SendState[] = ['sending', 'sent', 'held']
++
++// Applies one notice to the pane's sends: each id binds to the send already holding it, else
++// to the oldest unbound open send to that pipe (a batch binds in send order). A notice with no
++// such send (one the model sent, say) changes nothing.
++export function applyNotice(sends: readonly PeerSend[], n: DeliveryNotice, at: number): PeerSend[] {
++  const out = [...sends]
++  for (const id of n.ids.length > 0 ? n.ids : [null]) {
++    let i = id === null ? -1 : out.findIndex(s => s.msgId === id)
++    if (i < 0) i = out.findIndex(s => s.pipe === n.pipe && s.msgId === null && OPEN_STATES.includes(s.state))
++    const s = out[i]
++    if (s === undefined) continue
++    out[i] = { ...s, msgId: s.msgId ?? id, state: n.state, text: n.state === 'other' ? n.summary : '', stateAt: at }
++  }
++  return out
++}
++
++// The send's line under its row, and how it is colored; held stays until a final notice.
++export function sendLine(s: PeerSend, now: number): { text: string; color: string | undefined; isOver: boolean } {
++  const age = ago(s.stateAt, now)
++  const isOver = s.state !== 'held' && s.state !== 'sending' && now - s.stateAt >= SEND_NOTE_MS
++  switch (s.state) {
++    case 'sending':
++      return { text: '… sending', color: undefined, isOver }
++    case 'sent':
++      return { text: `✓ sent · ${age}`, color: 'success', isOver }
++    case 'held':
++      return { text: `◆ held: waiting for approval in ${s.name} · ${forText(s.stateAt, now)}`, color: 'warning', isOver }
++    case 'released':
++      return { text: `✓ approved and delivered · ${age}`, color: 'success', isOver }
++    case 'denied':
++      return { text: `✗ denied by the recipient · ${age}`, color: 'error', isOver }
++    case 'expired':
++      return { text: `✗ expired, not delivered · ${age}`, color: 'error', isOver }
++    case 'failed':
++      return { text: `✗ ${s.text} · ${age}`, color: 'error', isOver }
++    default:
++      return { text: `• ${s.text} · ${age}`, color: undefined, isOver }
++  }
++}
++
++export const SEND_NOTE_MS = 60_000 // how long a final state stays under the row
++
+ // A session in another repo, on one line: the kind when not interactive, the folder when not the root.
+ export const otherDetail = (p: PeerView) => [p.kind !== 'interactive' ? p.kind : '', p.where ? `in ${p.where}` : ''].filter(Boolean).join(' · ')
+ 
+diff --git a/bws-cockpit/hooks/register.tsx b/bws-cockpit/hooks/register.tsx
+index 53b03d1..f66400e 100644
+--- a/bws-cockpit/hooks/register.tsx
++++ b/bws-cockpit/hooks/register.tsx
+@@ -22,7 +22,7 @@ import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPip
+ import type { Dialect } from './shell'
+ import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
+ import type { LoopConfig, LoopLimits } from './loop'
+-import type { LoopView, PeersView } from '../types'
++import type { LoopView, PeerSend, PeerView, PeersView } from '../types'
+ import { actionable, decide, openItems, openSummary } from './finish'
+ import {
+   SCAN_DEPTH,
+@@ -41,7 +41,7 @@ import {
+   toWin,
+ } from './projects'
+ import type { ProjectEntry, ProjectIndex } from './projects'
+-import { STATUS_COLOR, forText, isAliveIn, isRecordFile, latestPrompts, livenessKey, otherDetail, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortOthers, sortPeers, toPeer } from './peers'
++import { STATUS_COLOR, applyNotice, forText, isAliveIn, isRecordFile, latestPrompts, livenessKey, otherDetail, parentOf, parseNotice, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sendLine, sortOthers, sortPeers, toPeer } from './peers'
+ import type { LatestPrompt, SessionRecord } from './peers'
+ import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
+ 
+@@ -56,7 +56,7 @@ const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const,
+ const peers = atom({ plugin: 'bws-cockpit', key: 'peers' } as const, null)
+ const peersAnnounced = atom({ plugin: 'bws-cockpit', key: 'peersAnnounced' } as const, [])
+ const peerCompose = atom({ plugin: 'bws-cockpit', key: 'peerCompose' } as const, null)
+-const peerNote = atom({ plugin: 'bws-cockpit', key: 'peerNote' } as const, null)
++const peerSends = atom({ plugin: 'bws-cockpit', key: 'peerSends' } as const, [])
+ 
+ const LOOP_PANE = 'loop-watch'
+ const STOP_CONFIRM_MS = 10_000
+@@ -644,26 +644,33 @@ async function announce($: EngineInterface, v: PeersView): Promise<number> {
+   return fresh.length
+ }
+ 
+-const PEER_NOTE_MS = 60_000 // how long a send's outcome stays under the row
+-
+-// Sends a message typed in the pane to one peer with $.session.send and notes the outcome under
+-// its row. Delivery closes the Input; a refusal leaves it open to retry. Empty closes it.
+-async function sendToPeer($: EngineInterface, sessionId: string, value: string) {
++// Sends a message typed in the pane to one peer with $.session.send and tracks it under its row.
++// The send is recorded (with the peer's pipe) before it is awaited, so a delivery notice that
++// lands first still finds it. Queued closes the Input; a refusal leaves it open to retry.
++// Empty closes it.
++async function sendToPeer($: EngineInterface, p: PeerView, value: string) {
+   const text = value.trim()
+   if (!text) {
+     await update($, peerCompose, () => null)
+     return
+   }
+-  let outcome: { text: string; isError: boolean }
++  const at = await $.clock.now()
++  const mine = (s: PeerSend) => s.sessionId === p.sessionId && s.at === at
++  const pending: PeerSend = { sessionId: p.sessionId, name: p.name, pipe: p.pipe, msgId: null, state: 'sending', text: '', at, stateAt: at }
++  await update($, peerSends, list => [...list, pending].slice(-20))
++  let failure: string | null = null
+   try {
+-    const r = await $.session.send({ to: { sessionId }, text })
+-    outcome = r.isDelivered ? { text: 'sent', isError: false } : { text: r.reason, isError: true }
++    const r = await $.session.send({ to: { sessionId: p.sessionId }, text })
++    if (!r.isDelivered) failure = r.reason
+   } catch (err) {
+-    outcome = { text: err instanceof Error ? err.message : String(err), isError: true }
++    failure = err instanceof Error ? err.message : String(err)
+   }
+-  const at = await $.clock.now()
+-  await update($, peerNote, () => ({ sessionId, ...outcome, at }))
+-  if (!outcome.isError) await update($, peerCompose, () => null)
++  const now = await $.clock.now()
++  // A notice may already have moved it on (held): only a send still `sending` takes the result.
++  await update($, peerSends, list =>
++    list.map(s => (mine(s) && s.state === 'sending' ? { ...s, state: failure === null ? 'sent' : 'failed', text: failure ?? '', stateAt: now } : s)),
++  )
++  if (failure === null) await update($, peerCompose, () => null)
+ }
+ 
+ const isPeersShown = async ($: EngineInterface) => (await $.ui.panes()).some(p => p.id === PEERS_PANE && p.isShown && p.isPlaced)
+@@ -828,6 +835,17 @@ export const register: Register = (on, options) => {
+     return next(e)
+   })
+ 
++  // Repo Sessions: the engine's delivery notices for this session's sends (held, released,
++  // denied, expired) move the matching pane send on. Observe only: the notice goes on unchanged.
++  on('prompt.submit', { text: /^\[Cross-session delivery notice\]/ }, async ($, e, next) => {
++    const n = parseNotice(e.text)
++    if (n !== undefined) {
++      const at = await $.clock.now()
++      await update($, peerSends, list => applyNotice(list, n, at))
++    }
++    return next(e)
++  })
++
+   on('classic.Stop', async ($, e, next) => {
+     if (!o.finish.isOn) return next(e)
+     if (!o.finish.isHeadless && (await $.session.surfaces()).length === 0) return next(e)
+@@ -1121,7 +1139,7 @@ export const register: Register = (on, options) => {
+     const width = Math.max(24, (e.props.bodyColumns ?? 60) - 1)
+     if (v === null) return <Text dimColor>Looking for sessions…</Text>
+     const composing = await read($, peerCompose)
+-    const note = await read($, peerNote)
++    const sends = await read($, peerSends)
+     const msgCols = Input ? 5 : 0 // "  msg"
+     const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
+     const count = `${v.peers.length} other${v.peers.length === 1 ? '' : 's'}`
+@@ -1139,7 +1157,8 @@ export const register: Register = (on, options) => {
+           const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
+           const detail = peerDetail(p, now)
+           const isComposing = Input !== null && composing === p.sessionId
+-          const sent = note !== null && note.sessionId === p.sessionId && now - note.at < PEER_NOTE_MS ? note : null
++          const last = sends.filter(s => s.sessionId === p.sessionId).at(-1)
++          const line = last === undefined ? null : sendLine(last, now)
+           return (
+             <Box key={`peer-${p.sessionId}`} flexDirection="column">
+               <Box flexDirection="row">
+@@ -1166,11 +1185,11 @@ export const register: Register = (on, options) => {
+                   placeholder="message, Enter sends (empty closes)"
+                   submitLabel="send"
+                   autoFocus
+-                  onSubmit={(value: string) => void sendToPeer($, p.sessionId, value)}
++                  onSubmit={(value: string) => void sendToPeer($, p, value)}
+                 />
+               ) : null}
+-              {sent ? (
+-                <Text color={sent.isError ? 'error' : 'success'} wrap="wrap">{`  ${sent.isError ? '✗' : '✓'} ${sent.text} · ${ago(sent.at, now)}`}</Text>
++              {line && !line.isOver ? (
++                <Text color={line.color} dimColor={line.color === undefined} wrap="wrap">{`  ${line.text}`}</Text>
+               ) : null}
+             </Box>
+           )
+diff --git a/bws-cockpit/tests/peers.test.ts b/bws-cockpit/tests/peers.test.ts
+index 4cbe2fa..bb4144f 100644
+--- a/bws-cockpit/tests/peers.test.ts
++++ b/bws-cockpit/tests/peers.test.ts
+@@ -1,8 +1,8 @@
+ import { describe, expect, mock, test } from 'claude-code/testing'
+ import type { On } from 'claude-code'
+ 
+-import { isRecordFile, latestPrompts, parseRecord, parseTasklist, peersText, promptLine, repoKey, sortOthers, sortPeers, toPeer, whereIn } from '../hooks/peers'
+-import type { PeerView } from '../types'
++import { applyNotice, isRecordFile, latestPrompts, normPipe, parseNotice, parseRecord, parseTasklist, peersText, promptLine, repoKey, sendLine, sortOthers, sortPeers, toPeer, whereIn } from '../hooks/peers'
++import type { PeerSend, PeerView } from '../types'
+ 
+ // The engine's session registry, shaped like the real <pid>.json files.
+ const T0 = Date.parse('2026-10-02T14:00:00')
+@@ -25,6 +25,7 @@ const recJson = (r: Rec) =>
+     status: r.status,
+     updatedAt: r.statusAt ?? T0 - 60_000,
+     statusUpdatedAt: r.statusAt ?? T0 - 60_000,
++    messagingSocketPath: pipeOf(r.pid),
+   })
+ 
+ const RECS: Rec[] = [
+@@ -49,9 +50,26 @@ const HISTORY = [
+   'not json',
+ ].join('\n') + '\n'
+ 
++// The registry's messaging pipe, and the engine's delivery notices in their real wording.
++const BS = String.fromCharCode(92)
++const pipeOf = (pid: number) => `${BS}${BS}.${BS}pipe${BS}LOCAL${BS}cc-msg-p${pid}`
++const NOTICE = '[Cross-session delivery notice]'
++const heldOne = (pid: number, id: string) =>
++  `${NOTICE} Your message to another session was held by that session (recipient: uds:${pipeOf(pid)}; msg_id: ${id}). NOT delivered: its Claude has not seen it. ` +
++  'Do not report it as delivered, do not wait for a reply, and do not resend while held. The usual cause is that the two sessions run in different permission modes: ' +
++  'a terminal session then asks its user to approve, but a Claude Desktop or non-interactive session cannot ask, so there the hold expires undelivered unless the modes come to match. ' +
++  'A session can also be set to hold every message. Another notice follows on release, denial or expiry. Tell your user what is held and why, or choose another approach.'
++const heldMany = (pid: number, ids: string[]) =>
++  `${NOTICE} ${ids.length} of your messages to another session were held by that session (recipient: uds:${pipeOf(pid)}; msg_id: ${ids.join(', ')}). NOT delivered: its Claude has not seen them. ` +
++  'Do not report them as delivered, do not wait for a reply, and do not resend while held. Another notice follows on release, denial or expiry.'
++const released = (pid: number, id: string) =>
++  `${NOTICE} Your message to another session was approved and released to that session (recipient: uds:${pipeOf(pid)}; msg_id: ${id}).`
++const denied = (pid: number, id: string) =>
++  `${NOTICE} Your message to another session was denied by the recipient user (recipient: uds:${pipeOf(pid)}; msg_id: ${id}). Not delivered to that session's Claude. Do not wait for a reply; continue, or choose another approach.`
++
+ const norm = (p: unknown) => String(p).replace(/\\/g, '/')
+ 
+-type World = { send?: 'ok' | 'refuse' | 'throw'; sent?: { to: unknown; text: string }[]; surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
++type World = { gate?: Promise<void>; onSend?: () => void; send?: 'ok' | 'refuse' | 'throw' | 'held-first'; sent?: { to: unknown; text: string }[]; surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
+ 
+ function world(on: On, w: World = {}) {
+   const clock = mock.clock(on, { now: T0 })
+@@ -114,9 +132,12 @@ function world(on: On, w: World = {}) {
+     return { value: undefined }
+   })
+   on('ui.toast', () => ({ value: undefined }))
+-  on('session.send', ($, e) => {
++  on('prompt.submit', ($, e) => ({ text: e.text }))
++  on('session.send', async ($, e) => {
+     w.sent?.push({ to: e.to, text: e.text })
+     if (w.send === 'throw') throw new Error('peer socket closed')
++    w.onSend?.()
++    if (w.send === 'held-first') await w.gate // still in flight when the notice lands
+     if (w.send === 'refuse') return { isDelivered: false, reason: 'refactor is not running' }
+     return { isDelivered: true }
+   })
+@@ -136,7 +157,7 @@ const PANE = {
+ // ---------- pure ----------
+ 
+ const peer = (name: string, kind: string, status: string, startedAt: number, repo = 'repo'): PeerView => ({
+-  sessionId: name, pid: 1, name, status, kind, repo, where: '', startedAt, statusSince: null, prompt: null, promptAt: null,
++  sessionId: name, pid: 1, name, status, kind, repo, where: '', startedAt, statusSince: null, pipe: null, prompt: null, promptAt: null,
+ })
+ 
+ describe('repo sessions parsing', () => {
+@@ -417,4 +438,116 @@ describe('repo sessions', () => {
+     expect(await ui.find({ key: 'msg-s-busy' })).toBeUndefined()
+     await ui.unmount()
+   })
++
++  test('held, then approved: the row says so, held never fades, the final state does', async ($, on) => {
++    const w = world(on, { surfaces: ['terminal'], sent: [] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    await ui.press({ key: 'msg-s-busy' })
++    await ui.input({ key: 'send-s-busy', text: 'rebase please' })
++    expect(await ui.find({ type: 'Text', text: /✓ sent · 0s ago/ })).toBeDefined()
++    const passed = await $.prompt.submit({ text: heldOne(20, 'm1') } as never)
++    expect(passed.text).toBe(heldOne(20, 'm1')) // observed, passed on unchanged
++    expect(await ui.find({ type: 'Text', text: /^ {2}◆ held: waiting for approval in refactor · 0s$/ })).toBeDefined()
++    await ui.unmount()
++    await w.clock.advance(5 * 60_000) // the live pane redraws on its 5 s poll; here, a fresh mount
++    const later = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    expect(await later.find({ type: 'Text', text: /◆ held: waiting for approval in refactor · 5m/ })).toBeDefined()
++    await $.prompt.submit({ text: released(20, 'm1') } as never)
++    expect(await later.find({ type: 'Text', text: /^ {2}✓ approved and delivered · 0s ago$/ })).toBeDefined()
++    await later.unmount()
++    await w.clock.advance(61_000)
++    const faded = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    expect(await faded.find({ type: 'Text', text: /approved and delivered|held|sent/ })).toBeUndefined()
++    await faded.unmount()
++  })
++
++  test('held, then denied', async ($, on) => {
++    world(on, { surfaces: ['terminal'], sent: [] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    await ui.press({ key: 'msg-s-wt' })
++    await ui.input({ key: 'send-s-wt', text: 'stop the build' })
++    await $.prompt.submit({ text: heldOne(50, 'm2') } as never)
++    await $.prompt.submit({ text: denied(50, 'm2') } as never)
++    expect(await ui.find({ type: 'Text', text: /^ {2}✗ denied by the recipient · 0s ago$/ })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('a held notice that lands before the send resolves stays held', async ($, on) => {
++    let release = () => {}
++    let inFlight = () => {}
++    const gate = new Promise<void>(resolve => (release = resolve))
++    const sending = new Promise<void>(resolve => (inFlight = resolve))
++    world(on, { surfaces: ['terminal'], send: 'held-first', gate, onSend: () => inFlight(), sent: [] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    await ui.press({ key: 'msg-s-busy' })
++    const typing = ui.input({ key: 'send-s-busy', text: 'hello' })
++    await sending // recorded and in flight
++    await $.prompt.submit({ text: heldOne(20, 'm-early') } as never)
++    release() // now it resolves, delivered
++    await typing
++    expect(await ui.find({ type: 'Text', text: /◆ held: waiting for approval in refactor/ })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /✓ sent/ })).toBeUndefined()
++    await ui.unmount()
++  })
++
++  test('a notice for a message the pane did not send changes nothing', async ($, on) => {
++    world(on, { surfaces: ['terminal'], sent: [] })
++    await $.command.run({ command: 'repo-sessions', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    await ui.press({ key: 'msg-s-busy' })
++    await ui.input({ key: 'send-s-busy', text: 'hello' })
++    await $.prompt.submit({ text: heldOne(50, 'm3') } as never) // another peer's pipe
++    expect(await ui.find({ type: 'Text', text: /✓ sent · 0s ago/ })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /held/ })).toBeUndefined()
++    await ui.unmount()
++  })
++})
++
++describe('msg delivery notices', () => {
++  const sendTo = (sessionId: string, pid: number, at: number, state: PeerSend['state'] = 'sent'): PeerSend => ({
++    sessionId, name: sessionId, pipe: normPipe(pipeOf(pid)), msgId: null, state, text: '', at, stateAt: at,
++  })
++
++  test('the real wordings parse; only the first sentence decides', () => {
++    const one = parseNotice(heldOne(20, 'm1'))
++    expect(one?.state).toBe('held') // its tail mentions "release, denial or expiry"
++    expect(one?.ids).toEqual(['m1'])
++    expect(one?.pipe).toBe(normPipe(pipeOf(20)))
++    expect(one?.pipe).toBe('/./pipe/local/cc-msg-p20')
++    expect(parseNotice(heldMany(20, ['a1', 'b2']))?.ids).toEqual(['a1', 'b2'])
++    expect(parseNotice(heldMany(20, ['a1', 'b2']))?.state).toBe('held')
++    expect(parseNotice(released(20, 'm1'))?.state).toBe('released')
++    expect(parseNotice(denied(20, 'm1'))?.state).toBe('denied')
++    expect(parseNotice(`${NOTICE} Your message to another session expired before it was approved (recipient: uds:x; msg_id: m1).`)?.state).toBe('expired')
++    const odd = parseNotice(`${NOTICE} Your message to another session was quarantined by policy (recipient: uds:x; msg_id: m1).`)
++    expect(odd?.state).toBe('other')
++    expect(odd?.summary).toBe('Your message to another session was quarantined by policy')
++    expect(parseNotice('fix the flaky test')).toBeUndefined()
++  })
++
++  test('a batch binds in send order, later notices by id; other pipes are untouched', () => {
++    const sends = [sendTo('a', 20, 1), sendTo('b', 20, 2), sendTo('c', 50, 3)]
++    const held = applyNotice(sends, parseNotice(heldMany(20, ['id-a', 'id-b']))!, 10)
++    expect(held.map(s => [s.state, s.msgId])).toEqual([['held', 'id-a'], ['held', 'id-b'], ['sent', null]])
++    const done = applyNotice(held, parseNotice(released(20, 'id-b'))!, 20)
++    expect(done.map(s => s.state)).toEqual(['held', 'released', 'sent'])
++    expect(done[1]?.stateAt).toBe(20)
++    expect(applyNotice(done, parseNotice(denied(99, 'id-z'))!, 30)).toEqual(done) // nobody's
++  })
++
++  test('a final notice with no open send is ignored', () => {
++    const sends = [sendTo('a', 20, 1, 'released')]
++    expect(applyNotice(sends, parseNotice(denied(20, 'm9'))!, 5)).toEqual(sends)
++  })
++
++  test('held never fades; final states fade after a minute', () => {
++    const held = { ...sendTo('a', 20, 0, 'held'), name: 'refactor' }
++    expect(sendLine(held, 10 * 60_000).isOver).toBe(false)
++    expect(sendLine({ ...held, state: 'released' }, 59_000).isOver).toBe(false)
++    expect(sendLine({ ...held, state: 'released' }, 61_000).isOver).toBe(true)
++    expect(sendLine({ ...held, state: 'other', text: 'was quarantined' }, 0).text).toBe('• was quarantined · 0s ago')
++  })
+ })
+diff --git a/bws-cockpit/types/index.d.ts b/bws-cockpit/types/index.d.ts
+index f4ecec5..00fde22 100644
+--- a/bws-cockpit/types/index.d.ts
++++ b/bws-cockpit/types/index.d.ts
+@@ -76,6 +76,7 @@ export type PeerView = {
+   where: string // relative to its repo root; '' at the root
+   startedAt: number | null
+   statusSince: number | null
++  pipe: string | null // its messaging pipe, normalized, as delivery notices name it
+   prompt: string | null // first line of its latest prompt in history.jsonl (same-repo peers only)
+   promptAt: number | null
+ }
+@@ -87,8 +88,21 @@ export type PeersView = {
+   others: PeerView[] // live sessions in other repos, by repo name
+ }
+ 
+-// The outcome of the last message sent from the pane, shown under that peer's row.
+-export type PeerNote = { sessionId: string; text: string; isError: boolean; at: number }
++// A message sent from the pane and where it stands. `sent` is queued at the peer; the engine's
++// delivery notices move it to held, then released, denied or expired (`other`: wording not
++// seen yet, kept in `text`). `failed` is a send refused or thrown, the reason in `text`.
++export type SendState = 'sending' | 'sent' | 'held' | 'released' | 'denied' | 'expired' | 'failed' | 'other'
++
++export type PeerSend = {
++  sessionId: string
++  name: string
++  pipe: string | null
++  msgId: string | null // bound by the first notice that names it
++  state: SendState
++  text: string
++  at: number // when it was sent
++  stateAt: number // when it reached this state
++}
+ 
+ declare module 'claude-code' {
+   interface PluginState {
+@@ -102,7 +116,7 @@ declare module 'claude-code' {
+       peers: PeersView | null
+       peersAnnounced: string[]
+       peerCompose: string | null // the sessionId whose message Input is open
+-      peerNote: PeerNote | null
++      peerSends: PeerSend[] // newest last, the last 20
+     }
+   }
+ }
