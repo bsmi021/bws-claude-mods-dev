@@ -1,0 +1,1 @@
+{ "name": "notice-probe", "version": "0.1.0", "description": "Throwaway: logs which events carry cross-session delivery notices, and sends a probe message" }

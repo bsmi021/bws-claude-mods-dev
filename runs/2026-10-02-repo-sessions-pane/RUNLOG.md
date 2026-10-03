@@ -91,3 +91,13 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
 - README test count corrected to 120 on main.
 - Local `publish` commits: e445c69, 9779373. The plugin folders on `publish` match main. Full diff: `receipts/publish-0.8.0.diff` (7 files, +1057/-10).
 - Pushed on Brian's go: `git push mods` sent 7855bb7..9779373 publish -> main; mods/main = 9779373. Scratch worktree removed.
+
+## Session 6: delivery-notice probe
+- The scratch mod `notice-probe/` sent PROBE A and PROBE B with `/probe-send` to a peer session that held both messages for approval.
+- Both `$.session.send` calls returned `{"isDelivered":true}`, but the messages were only **held**. So `isDelivered` means the peer accepted the message, not that its Claude saw it.
+- Three notices came back. Each arrived as a `prompt.submit` with `origin.kind = "unclassified"` and `wait=false`, followed by a `session.append` of an `isMeta` user message:
+  - held: one notice for both msg_ids;
+  - released: A, approved by the peer's user;
+  - denied: B, denied by the peer's user.
+- No `origin` kind tells these notices apart, so a mod has to match the `[Cross-session delivery notice]` prefix in the text.
+- Evidence: `receipts/notice-probe.log`.
