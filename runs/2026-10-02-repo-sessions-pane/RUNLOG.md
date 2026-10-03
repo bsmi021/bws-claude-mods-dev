@@ -101,3 +101,24 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
   - denied: B, denied by the peer's user.
 - No `origin` kind tells these notices apart, so a mod has to match the `[Cross-session delivery notice]` prefix in the text.
 - Evidence: `receipts/notice-probe.log`.
+
+## Session 6: msg delivery states (0.9.0)
+- Probe (`notice-probe/`, `launch-notice-test.ps1`):
+  - A bypass-mode sender sent two messages to a default-mode recipient. Brian approved A and denied B.
+  - `receipts/notice-probe.log`: the notices reach the sender on `prompt.submit`, origin `unclassified`, 0.5 s after the send.
+  - Wordings captured: held (batched: "2 of your messages … were held", with 2 msg_ids), released ("approved and released") and denied ("denied by the recipient user"). Expired: not seen.
+- Built:
+  - `parseNotice`: the first sentence only, since the held text mentions "release, denial or expiry".
+  - `applyNotice`: binds by msg_id, else to the oldest unbound open send to that pipe; a batch binds in order.
+  - `sendLine` renders the state.
+  - `PeerView.pipe` comes from the registry's `messagingSocketPath`.
+  - `sendToPeer` records the send (`sending`) before awaiting, and only a still-`sending` entry takes the result.
+  - A matched `prompt.submit` hook `{ text: /^\[Cross-session delivery notice\]/ }` observes and returns `next(e)`. The existing unmatched hook is untouched.
+  - The `peerNote` state was replaced by `peerSends` (last 20).
+- Tests: 128/128. Mutation check: dropping the `sending` guard fails the "held lands before the send resolves" test.
+- Evidence: `receipts/test.txt`, `receipts/validate.txt`, `receipts/tsc.txt`.
+
+## Next
+- Live, Brian: press `msg` in this session's pane on `notice-recipient` (default mode, so the message is held). Expect `◆ held`, then after approving there, `✓ approved and delivered`.
+- Parked: the Finish-Line evidence check fired twice on replies that only waited on Brian (likely "done" in "tell me when that's done").
+

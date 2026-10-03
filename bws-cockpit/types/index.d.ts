@@ -76,6 +76,7 @@ export type PeerView = {
   where: string // relative to its repo root; '' at the root
   startedAt: number | null
   statusSince: number | null
+  pipe: string | null // its messaging pipe, normalized, as delivery notices name it
   prompt: string | null // first line of its latest prompt in history.jsonl (same-repo peers only)
   promptAt: number | null
 }
@@ -87,8 +88,21 @@ export type PeersView = {
   others: PeerView[] // live sessions in other repos, by repo name
 }
 
-// The outcome of the last message sent from the pane, shown under that peer's row.
-export type PeerNote = { sessionId: string; text: string; isError: boolean; at: number }
+// A message sent from the pane and where it stands. `sent` is queued at the peer; the engine's
+// delivery notices move it to held, then released, denied or expired (`other`: wording not
+// seen yet, kept in `text`). `failed` is a send refused or thrown, the reason in `text`.
+export type SendState = 'sending' | 'sent' | 'held' | 'released' | 'denied' | 'expired' | 'failed' | 'other'
+
+export type PeerSend = {
+  sessionId: string
+  name: string
+  pipe: string | null
+  msgId: string | null // bound by the first notice that names it
+  state: SendState
+  text: string
+  at: number // when it was sent
+  stateAt: number // when it reached this state
+}
 
 declare module 'claude-code' {
   interface PluginState {
@@ -102,7 +116,7 @@ declare module 'claude-code' {
       peers: PeersView | null
       peersAnnounced: string[]
       peerCompose: string | null // the sessionId whose message Input is open
-      peerNote: PeerNote | null
+      peerSends: PeerSend[] // newest last, the last 20
     }
   }
 }

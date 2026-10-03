@@ -1,13 +1,14 @@
 // Repo Sessions: the other Claude Code sessions open in this repo, read from the engine's own
 // registry (<config dir>/sessions/<pid>.json). Pure helpers; register.tsx does the reading.
 
-import type { PeerView } from '../types'
+import type { PeerSend, PeerView, SendState } from '../types'
 import { ago } from './loop'
 import { toSlash } from './projects'
 
 export type SessionRecord = {
   pid: number
   procStart: string
+  pipe: string | null // messagingSocketPath, normalized: where delivery notices name it
   sessionId: string
   cwd: string
   name: string
@@ -40,6 +41,7 @@ export function parseRecord(text: string): SessionRecord | undefined {
   return {
     pid,
     procStart: str(raw.procStart),
+    pipe: str(raw.messagingSocketPath) ? normPipe(str(raw.messagingSocketPath)) : null,
     sessionId,
     cwd,
     name: str(raw.name) || sessionId.slice(0, 8),
@@ -158,6 +160,7 @@ export function toPeer(r: SessionRecord, root: string, prompt?: LatestPrompt): P
     where: whereIn(r.cwd, root),
     startedAt: r.startedAt,
     statusSince: r.statusSince,
+    pipe: r.pipe,
     prompt: prompt?.text ?? null,
     promptAt: prompt?.at ?? null,
   }
@@ -197,6 +200,81 @@ export function peerDetail(p: PeerView, now: number): string {
     .filter(Boolean)
     .join(' · ')
 }
+
+// ---------- msg delivery states ----------
+
+// A pipe as the registry (`messagingSocketPath`) and the delivery notices (`uds:<pipe>`) spell it.
+export const normPipe = (p: string) => p.replace(/^uds:/i, '').replace(/[\\/]+/g, '/').toLowerCase()
+
+export type DeliveryNotice = { state: SendState; pipe: string; ids: string[]; summary: string }
+
+const NOTICE = '[Cross-session delivery notice]'
+
+// The engine's delivery notice for a message this session sent, as `prompt.submit` sees it:
+// "[Cross-session delivery notice] Your message to another session was held by that session
+// (recipient: uds:<pipe>; msg_id: <id>[, <id>]). ...". Only the first sentence decides the
+// state: the held notice goes on to mention "release, denial or expiry". Wording not seen
+// yet keeps that first sentence as the summary.
+export function parseNotice(text: string): DeliveryNotice | undefined {
+  if (!text.startsWith(NOTICE)) return undefined
+  const head = text.slice(NOTICE.length).split(' (recipient:')[0]?.trim() ?? ''
+  const pipe = text.match(/\(recipient:\s*([^;)]+)/)?.[1]?.trim()
+  if (!pipe) return undefined
+  const ids = (text.match(/msg_id:\s*([^)]+)\)/)?.[1] ?? '').split(',').map(s => s.trim()).filter(Boolean)
+  const state: SendState = /\bheld by\b/.test(head)
+    ? 'held'
+    : /\bapproved and released\b/.test(head)
+      ? 'released'
+      : /\bdenied\b/.test(head)
+        ? 'denied'
+        : /\bexpired\b/.test(head)
+          ? 'expired'
+          : 'other'
+  return { state, pipe: normPipe(pipe), ids, summary: head.replace(/\.$/, '') }
+}
+
+const OPEN_STATES: readonly SendState[] = ['sending', 'sent', 'held']
+
+// Applies one notice to the pane's sends: each id binds to the send already holding it, else
+// to the oldest unbound open send to that pipe (a batch binds in send order). A notice with no
+// such send (one the model sent, say) changes nothing.
+export function applyNotice(sends: readonly PeerSend[], n: DeliveryNotice, at: number): PeerSend[] {
+  const out = [...sends]
+  for (const id of n.ids.length > 0 ? n.ids : [null]) {
+    let i = id === null ? -1 : out.findIndex(s => s.msgId === id)
+    if (i < 0) i = out.findIndex(s => s.pipe === n.pipe && s.msgId === null && OPEN_STATES.includes(s.state))
+    const s = out[i]
+    if (s === undefined) continue
+    out[i] = { ...s, msgId: s.msgId ?? id, state: n.state, text: n.state === 'other' ? n.summary : '', stateAt: at }
+  }
+  return out
+}
+
+// The send's line under its row, and how it is colored; held stays until a final notice.
+export function sendLine(s: PeerSend, now: number): { text: string; color: string | undefined; isOver: boolean } {
+  const age = ago(s.stateAt, now)
+  const isOver = s.state !== 'held' && s.state !== 'sending' && now - s.stateAt >= SEND_NOTE_MS
+  switch (s.state) {
+    case 'sending':
+      return { text: '… sending', color: undefined, isOver }
+    case 'sent':
+      return { text: `✓ sent · ${age}`, color: 'success', isOver }
+    case 'held':
+      return { text: `◆ held: waiting for approval in ${s.name} · ${forText(s.stateAt, now)}`, color: 'warning', isOver }
+    case 'released':
+      return { text: `✓ approved and delivered · ${age}`, color: 'success', isOver }
+    case 'denied':
+      return { text: `✗ denied by the recipient · ${age}`, color: 'error', isOver }
+    case 'expired':
+      return { text: `✗ expired, not delivered · ${age}`, color: 'error', isOver }
+    case 'failed':
+      return { text: `✗ ${s.text} · ${age}`, color: 'error', isOver }
+    default:
+      return { text: `• ${s.text} · ${age}`, color: undefined, isOver }
+  }
+}
+
+export const SEND_NOTE_MS = 60_000 // how long a final state stays under the row
 
 // A session in another repo, on one line: the kind when not interactive, the folder when not the root.
 export const otherDetail = (p: PeerView) => [p.kind !== 'interactive' ? p.kind : '', p.where ? `in ${p.where}` : ''].filter(Boolean).join(' · ')

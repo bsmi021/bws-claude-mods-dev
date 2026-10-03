@@ -22,7 +22,7 @@ import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPip
 import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
-import type { LoopView, PeersView } from '../types'
+import type { LoopView, PeerSend, PeerView, PeersView } from '../types'
 import { actionable, decide, openItems, openSummary } from './finish'
 import {
   SCAN_DEPTH,
@@ -41,7 +41,7 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
-import { STATUS_COLOR, forText, isAliveIn, isRecordFile, latestPrompts, livenessKey, otherDetail, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortOthers, sortPeers, toPeer } from './peers'
+import { STATUS_COLOR, applyNotice, forText, isAliveIn, isRecordFile, latestPrompts, livenessKey, otherDetail, parentOf, parseNotice, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sendLine, sortOthers, sortPeers, toPeer } from './peers'
 import type { LatestPrompt, SessionRecord } from './peers'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 
@@ -56,7 +56,7 @@ const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const,
 const peers = atom({ plugin: 'bws-cockpit', key: 'peers' } as const, null)
 const peersAnnounced = atom({ plugin: 'bws-cockpit', key: 'peersAnnounced' } as const, [])
 const peerCompose = atom({ plugin: 'bws-cockpit', key: 'peerCompose' } as const, null)
-const peerNote = atom({ plugin: 'bws-cockpit', key: 'peerNote' } as const, null)
+const peerSends = atom({ plugin: 'bws-cockpit', key: 'peerSends' } as const, [])
 
 const LOOP_PANE = 'loop-watch'
 const STOP_CONFIRM_MS = 10_000
@@ -644,26 +644,33 @@ async function announce($: EngineInterface, v: PeersView): Promise<number> {
   return fresh.length
 }
 
-const PEER_NOTE_MS = 60_000 // how long a send's outcome stays under the row
-
-// Sends a message typed in the pane to one peer with $.session.send and notes the outcome under
-// its row. Delivery closes the Input; a refusal leaves it open to retry. Empty closes it.
-async function sendToPeer($: EngineInterface, sessionId: string, value: string) {
+// Sends a message typed in the pane to one peer with $.session.send and tracks it under its row.
+// The send is recorded (with the peer's pipe) before it is awaited, so a delivery notice that
+// lands first still finds it. Queued closes the Input; a refusal leaves it open to retry.
+// Empty closes it.
+async function sendToPeer($: EngineInterface, p: PeerView, value: string) {
   const text = value.trim()
   if (!text) {
     await update($, peerCompose, () => null)
     return
   }
-  let outcome: { text: string; isError: boolean }
-  try {
-    const r = await $.session.send({ to: { sessionId }, text })
-    outcome = r.isDelivered ? { text: 'sent', isError: false } : { text: r.reason, isError: true }
-  } catch (err) {
-    outcome = { text: err instanceof Error ? err.message : String(err), isError: true }
-  }
   const at = await $.clock.now()
-  await update($, peerNote, () => ({ sessionId, ...outcome, at }))
-  if (!outcome.isError) await update($, peerCompose, () => null)
+  const mine = (s: PeerSend) => s.sessionId === p.sessionId && s.at === at
+  const pending: PeerSend = { sessionId: p.sessionId, name: p.name, pipe: p.pipe, msgId: null, state: 'sending', text: '', at, stateAt: at }
+  await update($, peerSends, list => [...list, pending].slice(-20))
+  let failure: string | null = null
+  try {
+    const r = await $.session.send({ to: { sessionId: p.sessionId }, text })
+    if (!r.isDelivered) failure = r.reason
+  } catch (err) {
+    failure = err instanceof Error ? err.message : String(err)
+  }
+  const now = await $.clock.now()
+  // A notice may already have moved it on (held): only a send still `sending` takes the result.
+  await update($, peerSends, list =>
+    list.map(s => (mine(s) && s.state === 'sending' ? { ...s, state: failure === null ? 'sent' : 'failed', text: failure ?? '', stateAt: now } : s)),
+  )
+  if (failure === null) await update($, peerCompose, () => null)
 }
 
 const isPeersShown = async ($: EngineInterface) => (await $.ui.panes()).some(p => p.id === PEERS_PANE && p.isShown && p.isPlaced)
@@ -825,6 +832,17 @@ export const register: Register = (on, options) => {
 
   on('prompt.submit', async ($, e, next) => {
     continuesUsed = 0
+    return next(e)
+  })
+
+  // Repo Sessions: the engine's delivery notices for this session's sends (held, released,
+  // denied, expired) move the matching pane send on. Observe only: the notice goes on unchanged.
+  on('prompt.submit', { text: /^\[Cross-session delivery notice\]/ }, async ($, e, next) => {
+    const n = parseNotice(e.text)
+    if (n !== undefined) {
+      const at = await $.clock.now()
+      await update($, peerSends, list => applyNotice(list, n, at))
+    }
     return next(e)
   })
 
@@ -1121,7 +1139,7 @@ export const register: Register = (on, options) => {
     const width = Math.max(24, (e.props.bodyColumns ?? 60) - 1)
     if (v === null) return <Text dimColor>Looking for sessions…</Text>
     const composing = await read($, peerCompose)
-    const note = await read($, peerNote)
+    const sends = await read($, peerSends)
     const msgCols = Input ? 5 : 0 // "  msg"
     const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
     const count = `${v.peers.length} other${v.peers.length === 1 ? '' : 's'}`
@@ -1139,7 +1157,8 @@ export const register: Register = (on, options) => {
           const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
           const detail = peerDetail(p, now)
           const isComposing = Input !== null && composing === p.sessionId
-          const sent = note !== null && note.sessionId === p.sessionId && now - note.at < PEER_NOTE_MS ? note : null
+          const last = sends.filter(s => s.sessionId === p.sessionId).at(-1)
+          const line = last === undefined ? null : sendLine(last, now)
           return (
             <Box key={`peer-${p.sessionId}`} flexDirection="column">
               <Box flexDirection="row">
@@ -1166,11 +1185,11 @@ export const register: Register = (on, options) => {
                   placeholder="message, Enter sends (empty closes)"
                   submitLabel="send"
                   autoFocus
-                  onSubmit={(value: string) => void sendToPeer($, p.sessionId, value)}
+                  onSubmit={(value: string) => void sendToPeer($, p, value)}
                 />
               ) : null}
-              {sent ? (
-                <Text color={sent.isError ? 'error' : 'success'} wrap="wrap">{`  ${sent.isError ? '✗' : '✓'} ${sent.text} · ${ago(sent.at, now)}`}</Text>
+              {line && !line.isOver ? (
+                <Text color={line.color} dimColor={line.color === undefined} wrap="wrap">{`  ${line.text}`}</Text>
               ) : null}
             </Box>
           )

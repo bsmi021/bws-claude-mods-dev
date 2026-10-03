@@ -1,8 +1,8 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { isRecordFile, latestPrompts, parseRecord, parseTasklist, peersText, promptLine, repoKey, sortOthers, sortPeers, toPeer, whereIn } from '../hooks/peers'
-import type { PeerView } from '../types'
+import { applyNotice, isRecordFile, latestPrompts, normPipe, parseNotice, parseRecord, parseTasklist, peersText, promptLine, repoKey, sendLine, sortOthers, sortPeers, toPeer, whereIn } from '../hooks/peers'
+import type { PeerSend, PeerView } from '../types'
 
 // The engine's session registry, shaped like the real <pid>.json files.
 const T0 = Date.parse('2026-10-02T14:00:00')
@@ -25,6 +25,7 @@ const recJson = (r: Rec) =>
     status: r.status,
     updatedAt: r.statusAt ?? T0 - 60_000,
     statusUpdatedAt: r.statusAt ?? T0 - 60_000,
+    messagingSocketPath: pipeOf(r.pid),
   })
 
 const RECS: Rec[] = [
@@ -49,9 +50,26 @@ const HISTORY = [
   'not json',
 ].join('\n') + '\n'
 
+// The registry's messaging pipe, and the engine's delivery notices in their real wording.
+const BS = String.fromCharCode(92)
+const pipeOf = (pid: number) => `${BS}${BS}.${BS}pipe${BS}LOCAL${BS}cc-msg-p${pid}`
+const NOTICE = '[Cross-session delivery notice]'
+const heldOne = (pid: number, id: string) =>
+  `${NOTICE} Your message to another session was held by that session (recipient: uds:${pipeOf(pid)}; msg_id: ${id}). NOT delivered: its Claude has not seen it. ` +
+  'Do not report it as delivered, do not wait for a reply, and do not resend while held. The usual cause is that the two sessions run in different permission modes: ' +
+  'a terminal session then asks its user to approve, but a Claude Desktop or non-interactive session cannot ask, so there the hold expires undelivered unless the modes come to match. ' +
+  'A session can also be set to hold every message. Another notice follows on release, denial or expiry. Tell your user what is held and why, or choose another approach.'
+const heldMany = (pid: number, ids: string[]) =>
+  `${NOTICE} ${ids.length} of your messages to another session were held by that session (recipient: uds:${pipeOf(pid)}; msg_id: ${ids.join(', ')}). NOT delivered: its Claude has not seen them. ` +
+  'Do not report them as delivered, do not wait for a reply, and do not resend while held. Another notice follows on release, denial or expiry.'
+const released = (pid: number, id: string) =>
+  `${NOTICE} Your message to another session was approved and released to that session (recipient: uds:${pipeOf(pid)}; msg_id: ${id}).`
+const denied = (pid: number, id: string) =>
+  `${NOTICE} Your message to another session was denied by the recipient user (recipient: uds:${pipeOf(pid)}; msg_id: ${id}). Not delivered to that session's Claude. Do not wait for a reply; continue, or choose another approach.`
+
 const norm = (p: unknown) => String(p).replace(/\\/g, '/')
 
-type World = { send?: 'ok' | 'refuse' | 'throw'; sent?: { to: unknown; text: string }[]; surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
+type World = { gate?: Promise<void>; onSend?: () => void; send?: 'ok' | 'refuse' | 'throw' | 'held-first'; sent?: { to: unknown; text: string }[]; surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
 
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: T0 })
@@ -114,9 +132,12 @@ function world(on: On, w: World = {}) {
     return { value: undefined }
   })
   on('ui.toast', () => ({ value: undefined }))
-  on('session.send', ($, e) => {
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  on('session.send', async ($, e) => {
     w.sent?.push({ to: e.to, text: e.text })
     if (w.send === 'throw') throw new Error('peer socket closed')
+    w.onSend?.()
+    if (w.send === 'held-first') await w.gate // still in flight when the notice lands
     if (w.send === 'refuse') return { isDelivered: false, reason: 'refactor is not running' }
     return { isDelivered: true }
   })
@@ -136,7 +157,7 @@ const PANE = {
 // ---------- pure ----------
 
 const peer = (name: string, kind: string, status: string, startedAt: number, repo = 'repo'): PeerView => ({
-  sessionId: name, pid: 1, name, status, kind, repo, where: '', startedAt, statusSince: null, prompt: null, promptAt: null,
+  sessionId: name, pid: 1, name, status, kind, repo, where: '', startedAt, statusSince: null, pipe: null, prompt: null, promptAt: null,
 })
 
 describe('repo sessions parsing', () => {
@@ -416,5 +437,117 @@ describe('repo sessions', () => {
     expect(await ui.find({ type: 'Text', text: /^refactor$/ })).toBeDefined()
     expect(await ui.find({ key: 'msg-s-busy' })).toBeUndefined()
     await ui.unmount()
+  })
+
+  test('held, then approved: the row says so, held never fades, the final state does', async ($, on) => {
+    const w = world(on, { surfaces: ['terminal'], sent: [] })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.press({ key: 'msg-s-busy' })
+    await ui.input({ key: 'send-s-busy', text: 'rebase please' })
+    expect(await ui.find({ type: 'Text', text: /✓ sent · 0s ago/ })).toBeDefined()
+    const passed = await $.prompt.submit({ text: heldOne(20, 'm1') } as never)
+    expect(passed.text).toBe(heldOne(20, 'm1')) // observed, passed on unchanged
+    expect(await ui.find({ type: 'Text', text: /^ {2}◆ held: waiting for approval in refactor · 0s$/ })).toBeDefined()
+    await ui.unmount()
+    await w.clock.advance(5 * 60_000) // the live pane redraws on its 5 s poll; here, a fresh mount
+    const later = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(await later.find({ type: 'Text', text: /◆ held: waiting for approval in refactor · 5m/ })).toBeDefined()
+    await $.prompt.submit({ text: released(20, 'm1') } as never)
+    expect(await later.find({ type: 'Text', text: /^ {2}✓ approved and delivered · 0s ago$/ })).toBeDefined()
+    await later.unmount()
+    await w.clock.advance(61_000)
+    const faded = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(await faded.find({ type: 'Text', text: /approved and delivered|held|sent/ })).toBeUndefined()
+    await faded.unmount()
+  })
+
+  test('held, then denied', async ($, on) => {
+    world(on, { surfaces: ['terminal'], sent: [] })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.press({ key: 'msg-s-wt' })
+    await ui.input({ key: 'send-s-wt', text: 'stop the build' })
+    await $.prompt.submit({ text: heldOne(50, 'm2') } as never)
+    await $.prompt.submit({ text: denied(50, 'm2') } as never)
+    expect(await ui.find({ type: 'Text', text: /^ {2}✗ denied by the recipient · 0s ago$/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a held notice that lands before the send resolves stays held', async ($, on) => {
+    let release = () => {}
+    let inFlight = () => {}
+    const gate = new Promise<void>(resolve => (release = resolve))
+    const sending = new Promise<void>(resolve => (inFlight = resolve))
+    world(on, { surfaces: ['terminal'], send: 'held-first', gate, onSend: () => inFlight(), sent: [] })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.press({ key: 'msg-s-busy' })
+    const typing = ui.input({ key: 'send-s-busy', text: 'hello' })
+    await sending // recorded and in flight
+    await $.prompt.submit({ text: heldOne(20, 'm-early') } as never)
+    release() // now it resolves, delivered
+    await typing
+    expect(await ui.find({ type: 'Text', text: /◆ held: waiting for approval in refactor/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /✓ sent/ })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('a notice for a message the pane did not send changes nothing', async ($, on) => {
+    world(on, { surfaces: ['terminal'], sent: [] })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.press({ key: 'msg-s-busy' })
+    await ui.input({ key: 'send-s-busy', text: 'hello' })
+    await $.prompt.submit({ text: heldOne(50, 'm3') } as never) // another peer's pipe
+    expect(await ui.find({ type: 'Text', text: /✓ sent · 0s ago/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /held/ })).toBeUndefined()
+    await ui.unmount()
+  })
+})
+
+describe('msg delivery notices', () => {
+  const sendTo = (sessionId: string, pid: number, at: number, state: PeerSend['state'] = 'sent'): PeerSend => ({
+    sessionId, name: sessionId, pipe: normPipe(pipeOf(pid)), msgId: null, state, text: '', at, stateAt: at,
+  })
+
+  test('the real wordings parse; only the first sentence decides', () => {
+    const one = parseNotice(heldOne(20, 'm1'))
+    expect(one?.state).toBe('held') // its tail mentions "release, denial or expiry"
+    expect(one?.ids).toEqual(['m1'])
+    expect(one?.pipe).toBe(normPipe(pipeOf(20)))
+    expect(one?.pipe).toBe('/./pipe/local/cc-msg-p20')
+    expect(parseNotice(heldMany(20, ['a1', 'b2']))?.ids).toEqual(['a1', 'b2'])
+    expect(parseNotice(heldMany(20, ['a1', 'b2']))?.state).toBe('held')
+    expect(parseNotice(released(20, 'm1'))?.state).toBe('released')
+    expect(parseNotice(denied(20, 'm1'))?.state).toBe('denied')
+    expect(parseNotice(`${NOTICE} Your message to another session expired before it was approved (recipient: uds:x; msg_id: m1).`)?.state).toBe('expired')
+    const odd = parseNotice(`${NOTICE} Your message to another session was quarantined by policy (recipient: uds:x; msg_id: m1).`)
+    expect(odd?.state).toBe('other')
+    expect(odd?.summary).toBe('Your message to another session was quarantined by policy')
+    expect(parseNotice('fix the flaky test')).toBeUndefined()
+  })
+
+  test('a batch binds in send order, later notices by id; other pipes are untouched', () => {
+    const sends = [sendTo('a', 20, 1), sendTo('b', 20, 2), sendTo('c', 50, 3)]
+    const held = applyNotice(sends, parseNotice(heldMany(20, ['id-a', 'id-b']))!, 10)
+    expect(held.map(s => [s.state, s.msgId])).toEqual([['held', 'id-a'], ['held', 'id-b'], ['sent', null]])
+    const done = applyNotice(held, parseNotice(released(20, 'id-b'))!, 20)
+    expect(done.map(s => s.state)).toEqual(['held', 'released', 'sent'])
+    expect(done[1]?.stateAt).toBe(20)
+    expect(applyNotice(done, parseNotice(denied(99, 'id-z'))!, 30)).toEqual(done) // nobody's
+  })
+
+  test('a final notice with no open send is ignored', () => {
+    const sends = [sendTo('a', 20, 1, 'released')]
+    expect(applyNotice(sends, parseNotice(denied(20, 'm9'))!, 5)).toEqual(sends)
+  })
+
+  test('held never fades; final states fade after a minute', () => {
+    const held = { ...sendTo('a', 20, 0, 'held'), name: 'refactor' }
+    expect(sendLine(held, 10 * 60_000).isOver).toBe(false)
+    expect(sendLine({ ...held, state: 'released' }, 59_000).isOver).toBe(false)
+    expect(sendLine({ ...held, state: 'released' }, 61_000).isOver).toBe(true)
+    expect(sendLine({ ...held, state: 'other', text: 'was quarantined' }, 0).text).toBe('• was quarantined · 0s ago')
   })
 })

@@ -44,3 +44,43 @@ Brian's ask: "a message button on each peer row in the repo-sessions pane that s
 4. Other-repo rows: no button (not asked).
 5. Validate clean, tests green (open/close compose, send argv, delivered, refused, threw, empty cancel, no Input surface), tsc strict clean, README + 0.8.0.
 6. Live: a real send from this session to `repo-sessions-check` lands in its transcript (session_watch / transcript read). Brian eyes the button.
+
+---
+
+# PLAN 4 (2026-10-02): msg delivery states (bws-cockpit 0.9.0)
+
+Brian's ask: "make the msg button in the repo-sessions pane show held, released and expired instead of just ✓ sent".
+
+## Probe result (receipts/notice-probe.log)
+- Notices reach the SENDING session on `prompt.submit`, origin `{kind:'unclassified'}`, ~0.5 s after `$.session.send` resolves `{isDelivered:true}`.
+- Captured wording (first sentence decides the state):
+  - held, batched: "2 of your messages to another session were held by that session (recipient: uds:<pipe>; msg_id: <a>, <b>)"
+  - held, single: "Your message to another session was held by that session (...)"
+  - released: "Your message to another session was approved and released to that session (...)"
+  - denied: "Your message to another session was denied by the recipient user (...)"
+  - expired: not seen.
+- Recipient pipe = the peer's registry `messagingSocketPath`.
+
+## Finish line
+1. Under the peer row, the latest pane send shows its state:
+   - sending
+   - ✓ sent (queued, no hold)
+   - ◆ held (waiting for approval there)
+   - ✓ approved and delivered
+   - ✗ denied by the recipient
+   - ✗ expired, not delivered
+   - ✗ <send refusal or error>
+   - otherwise the notice's first sentence as-is
+2. Held never fades. Final states fade after 60 s.
+3. Correlation:
+   - A pending send (pipe, sessionId) is written before `$.session.send` is awaited, so the order of result and notice does not matter.
+   - A notice binds by `msg_id` when it has one, otherwise to the oldest unbound pending send to that pipe.
+   - Batched ids bind in order.
+   - A notice with no pending pane send (for example, one the model sent) is ignored.
+4. Observe only: a matched `prompt.submit` hook returns `next(e)` unchanged. The existing unmatched hook is untouched.
+5. Three checks green with tests:
+   - parse: real held (batched and single), released and denied texts; held does not misread; unknown wording falls back.
+   - bind: by order, then by id.
+   - hook: held survives 60 s+, released, then fades; denied; unmatched notice ignored; prompt.submit passes through.
+   - README, 0.9.0.
+6. Live: the pane's real notices, after Brian presses `msg` toward a default-mode session.
