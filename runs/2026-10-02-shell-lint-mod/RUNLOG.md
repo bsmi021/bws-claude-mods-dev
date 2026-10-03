@@ -96,3 +96,9 @@ Build `bws-shell-lint`. It is a Claude Code mod that denies Bash or PowerShell c
   - two comments naming generator scripts that live in this private repo
 - **Kept by design:** the manifest authors (`bsmi021`, `Brian`).
 - **No remote is configured. Nothing pushed.** To publish: add a remote, then `git push <remote> publish:main`.
+
+## MIT license on publish (2026-10-02)
+- `publish` got `LICENSE` (MIT, copyright 2026 bsmi021, Brian's public GitHub handle).
+- Scan: only the license holder, the generator comments and the manifest authors, all intended.
+- Validate passes for both plugins; bws-cockpit 93/93 and bws-shell-lint 16/16, run from the publish tree.
+- Brian then said "push". No remote is configured, so nothing was pushed: waiting for the target repo.
