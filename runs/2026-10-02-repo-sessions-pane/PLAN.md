@@ -30,3 +30,17 @@ Brian's ask: "show each peer's latest prompt under its row in the repo-sessions 
 3. Text fallback (`claude -p "/repo-sessions"`) carries both: prompt lines and the other-repos list.
 4. Auto-open still triggers only on same-repo interactive peers.
 5. Validate clean, tests green (new: prompt parsing, wanted-only scan, other-repos grouping, pane both surfaces, text), tsc strict clean, README + version 0.7.0, live receipts (headless text + Brian's eye on the pane).
+
+---
+
+# PLAN 3 (2026-10-02): message button per peer (bws-cockpit 0.8.0)
+
+Brian's ask: "a message button on each peer row in the repo-sessions pane that sends it a message via $.session.send".
+
+## Finish line
+1. Each same-repo peer row has a `msg` Button. Pressing it opens an Input under that row (one at a time; pressing `msg` again closes it). Enter sends the text with `$.session.send({ to: { sessionId }, text })`; empty Enter cancels.
+2. Result under the row: `✓ sent` or `✗ <reason>` (the engine's reason, or a thrown error's message), with age; it clears after 60 s. Input closes on success, stays open on failure.
+3. Surfaces with no Input (mobile): no `msg` button.
+4. Other-repo rows: no button (not asked).
+5. Validate clean, tests green (open/close compose, send argv, delivered, refused, threw, empty cancel, no Input surface), tsc strict clean, README + 0.8.0.
+6. Live: a real send from this session to `repo-sessions-check` lands in its transcript (session_watch / transcript read). Brian eyes the button.

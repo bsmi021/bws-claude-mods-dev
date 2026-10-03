@@ -51,7 +51,7 @@ const HISTORY = [
 
 const norm = (p: unknown) => String(p).replace(/\\/g, '/')
 
-type World = { surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
+type World = { send?: 'ok' | 'refuse' | 'throw'; sent?: { to: unknown; text: string }[]; surfaces?: string[]; tasklist?: 'fail'; bigHistory?: boolean; tails?: { argv: string[]; env?: Record<string, string> }[]; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
 
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: T0 })
@@ -114,6 +114,12 @@ function world(on: On, w: World = {}) {
     return { value: undefined }
   })
   on('ui.toast', () => ({ value: undefined }))
+  on('session.send', ($, e) => {
+    w.sent?.push({ to: e.to, text: e.text })
+    if (w.send === 'throw') throw new Error('peer socket closed')
+    if (w.send === 'refuse') return { isDelivered: false, reason: 'refactor is not running' }
+    return { isDelivered: true }
+  })
   on('command.register', () => ({ value: undefined as never }))
   on('tool.register', () => ({ value: undefined as never }))
   on('session.start', ($, e) => e as never)
@@ -336,5 +342,79 @@ describe('repo sessions', () => {
     expect(tails.length).toBe(1)
     expect(norm(tails[0]?.env?.BWS_TAIL_PATH)).toBe(`${CONFIG}/history.jsonl`)
     expect(tails[0]?.env?.BWS_TAIL_BYTES).toBe('1048576')
+  })
+
+  test('msg opens a message box under that row; Enter sends it with $.session.send and closes it', async ($, on) => {
+    const sent: { to: unknown; text: string }[] = []
+    world(on, { surfaces: ['terminal'], sent })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const ui = await $.ui.mount({ ...PANE, surface })
+      expect(await ui.find({ key: 'msg-s-busy' })).toBeDefined()
+      expect(await ui.find({ key: 'msg-s-worker' })).toBeDefined()
+      expect(await ui.find({ key: 'msg-s-other' })).toBeUndefined() // another repo: no button
+      expect(await ui.find({ key: 'send-s-busy' })).toBeUndefined()
+      await ui.press({ key: 'msg-s-busy' })
+      expect(await ui.find({ key: 'send-s-busy' })).toBeDefined()
+      expect(await ui.find({ key: 'send-s-wt' })).toBeUndefined() // one at a time
+      const typed = `rebase on main first, then "npm test" & report`
+      await ui.input({ key: 'send-s-busy', text: typed })
+      expect(sent.at(-1)?.text).toBe(typed)
+      expect(await ui.find({ key: 'send-s-busy' })).toBeUndefined()
+      expect(await ui.find({ type: 'Text', text: /✓ sent · 0s ago/ })).toBeDefined()
+      await ui.unmount()
+    }
+    expect(sent.length).toBe(2)
+    expect(sent[0]?.to).toBe('s-busy') // the engine spells { sessionId } as the address before the hooks
+  })
+
+  test('msg again closes the box; an empty message sends nothing', async ($, on) => {
+    const sent: { to: unknown; text: string }[] = []
+    world(on, { surfaces: ['terminal'], sent })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.press({ key: 'msg-s-wt' })
+    await ui.press({ key: 'msg-s-wt' })
+    expect(await ui.find({ key: 'send-s-wt' })).toBeUndefined()
+    await ui.press({ key: 'msg-s-wt' })
+    await ui.input({ key: 'send-s-wt', text: '   ' })
+    expect(await ui.find({ key: 'send-s-wt' })).toBeUndefined()
+    expect(sent).toEqual([])
+    await ui.unmount()
+  })
+
+  test('a refused send shows the reason and keeps the box open', async ($, on) => {
+    world(on, { surfaces: ['terminal'], send: 'refuse', sent: [] })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.press({ key: 'msg-s-busy' })
+    await ui.input({ key: 'send-s-busy', text: 'hello' })
+    expect(await ui.find({ type: 'Text', text: /✗ refactor is not running/ })).toBeDefined()
+    expect(await ui.find({ key: 'send-s-busy' })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a send that throws shows the error; the note clears after a minute', async ($, on) => {
+    const w = world(on, { surfaces: ['terminal'], send: 'throw', sent: [] })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await ui.press({ key: 'msg-s-busy' })
+    await ui.input({ key: 'send-s-busy', text: 'hello' })
+    expect(await ui.find({ type: 'Text', text: /^ {2}✗ .+ · 0s ago$/ })).toBeDefined()
+    expect(await ui.find({ key: 'send-s-busy' })).toBeDefined()
+    await ui.unmount()
+    await w.clock.advance(61_000)
+    const later = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(await later.find({ type: 'Text', text: /✗/ })).toBeUndefined()
+    await later.unmount()
+  })
+
+  test('a surface with no Input (mobile) draws no msg button', async ($, on) => {
+    world(on, { surfaces: ['mobile'] })
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'mobile' })
+    expect(await ui.find({ type: 'Text', text: /^refactor$/ })).toBeDefined()
+    expect(await ui.find({ key: 'msg-s-busy' })).toBeUndefined()
+    await ui.unmount()
   })
 })

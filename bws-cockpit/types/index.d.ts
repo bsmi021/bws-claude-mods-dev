@@ -87,6 +87,9 @@ export type PeersView = {
   others: PeerView[] // live sessions in other repos, by repo name
 }
 
+// The outcome of the last message sent from the pane, shown under that peer's row.
+export type PeerNote = { sessionId: string; text: string; isError: boolean; at: number }
+
 declare module 'claude-code' {
   interface PluginState {
     'bws-cockpit': {
@@ -98,6 +101,8 @@ declare module 'claude-code' {
       stopArmedAt: number | null
       peers: PeersView | null
       peersAnnounced: string[]
+      peerCompose: string | null // the sessionId whose message Input is open
+      peerNote: PeerNote | null
     }
   }
 }

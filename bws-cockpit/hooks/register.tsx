@@ -55,6 +55,8 @@ const loopAction = atom({ plugin: 'bws-cockpit', key: 'loopAction' } as const, n
 const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const, null)
 const peers = atom({ plugin: 'bws-cockpit', key: 'peers' } as const, null)
 const peersAnnounced = atom({ plugin: 'bws-cockpit', key: 'peersAnnounced' } as const, [])
+const peerCompose = atom({ plugin: 'bws-cockpit', key: 'peerCompose' } as const, null)
+const peerNote = atom({ plugin: 'bws-cockpit', key: 'peerNote' } as const, null)
 
 const LOOP_PANE = 'loop-watch'
 const STOP_CONFIRM_MS = 10_000
@@ -642,6 +644,28 @@ async function announce($: EngineInterface, v: PeersView): Promise<number> {
   return fresh.length
 }
 
+const PEER_NOTE_MS = 60_000 // how long a send's outcome stays under the row
+
+// Sends a message typed in the pane to one peer with $.session.send and notes the outcome under
+// its row. Delivery closes the Input; a refusal leaves it open to retry. Empty closes it.
+async function sendToPeer($: EngineInterface, sessionId: string, value: string) {
+  const text = value.trim()
+  if (!text) {
+    await update($, peerCompose, () => null)
+    return
+  }
+  let outcome: { text: string; isError: boolean }
+  try {
+    const r = await $.session.send({ to: { sessionId }, text })
+    outcome = r.isDelivered ? { text: 'sent', isError: false } : { text: r.reason, isError: true }
+  } catch (err) {
+    outcome = { text: err instanceof Error ? err.message : String(err), isError: true }
+  }
+  const at = await $.clock.now()
+  await update($, peerNote, () => ({ sessionId, ...outcome, at }))
+  if (!outcome.isError) await update($, peerCompose, () => null)
+}
+
 const isPeersShown = async ($: EngineInterface) => (await $.ui.panes()).some(p => p.id === PEERS_PANE && p.isShown && p.isPlaced)
 
 // The poll: rescans, and opens the pane unasked when a new interactive session shows up here
@@ -1086,11 +1110,17 @@ export const register: Register = (on, options) => {
 
   on('ui.render', { component: 'Pane', requestId: PEERS_PANE }, async ($, e, next) => {
     isFullscreen = e.viewport?.isFullscreen ?? isFullscreen
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const table = $.ui.resolve(e)
+    const { Box, Text, Button } = table
+    // Mobile has no Input (its table may still carry the name at runtime): no msg button there.
+    const Input = e.surface !== 'mobile' && 'Input' in table ? table.Input : null
     const v = await read($, peers)
     const now = await $.clock.now()
     const width = Math.max(24, (e.props.bodyColumns ?? 60) - 1)
     if (v === null) return <Text dimColor>Looking for sessions…</Text>
+    const composing = await read($, peerCompose)
+    const note = await read($, peerNote)
+    const msgCols = Input ? 5 : 0 // "  msg"
     const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
     const count = `${v.peers.length} other${v.peers.length === 1 ? '' : 's'}`
     return (
@@ -1106,15 +1136,40 @@ export const register: Register = (on, options) => {
           const isWorker = p.kind !== 'interactive'
           const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
           const detail = peerDetail(p, now)
+          const isComposing = Input !== null && composing === p.sessionId
+          const sent = note !== null && note.sessionId === p.sessionId && now - note.at < PEER_NOTE_MS ? note : null
           return (
             <Box key={`peer-${p.sessionId}`} flexDirection="column">
               <Box flexDirection="row">
                 <Text color={color} dimColor={color === undefined}>{p.status === 'busy' ? '● ' : '○ '}</Text>
-                <Text bold={!isWorker} dimColor={isWorker}>{fit(p.name, Math.max(6, width - state.length - 4))}</Text>
+                <Text bold={!isWorker} dimColor={isWorker}>{fit(p.name, Math.max(6, width - state.length - 4 - msgCols))}</Text>
                 <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
+                {Input ? <Text>{'  '}</Text> : null}
+                {Input ? (
+                  <Button
+                    key={`msg-${p.sessionId}`}
+                    plain
+                    dimColor={!isComposing}
+                    label="msg"
+                    onPress={() => void update($, peerCompose, cur => (cur === p.sessionId ? null : p.sessionId))}
+                  />
+                ) : null}
               </Box>
               {p.prompt ? <Text>{`  › ${fit(p.prompt, width - 4)}`}</Text> : null}
               {detail ? <Text dimColor>{`  ${fit(detail, width - 2)}`}</Text> : null}
+              {isComposing && Input ? (
+                <Input
+                  key={`send-${p.sessionId}`}
+                  label={`  to ${fit(p.name, Math.max(6, Math.floor(width / 3)))} › `}
+                  placeholder="message, Enter sends (empty closes)"
+                  submitLabel="send"
+                  autoFocus
+                  onSubmit={(value: string) => void sendToPeer($, p.sessionId, value)}
+                />
+              ) : null}
+              {sent ? (
+                <Text color={sent.isError ? 'error' : 'success'} wrap="wrap">{`  ${sent.isError ? '✗' : '✓'} ${sent.text} · ${ago(sent.at, now)}`}</Text>
+              ) : null}
             </Box>
           )
         })}

@@ -1,0 +1,1 @@
+{ "name": "send-probe", "version": "0.1.0", "description": "Throwaway: one $.session.send to a peer, for the Repo Sessions live receipt" }

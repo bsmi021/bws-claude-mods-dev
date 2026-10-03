@@ -52,7 +52,25 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
 - Live: `launch-peer.ps1` now gives the peer a first prompt (`reply with just: ok`).
   - `receipts/live-prompts-others.txt`: both peers here show their latest prompts, and 5 sessions in 5 other repos are grouped below.
 
+- Brian confirmed the prompt lines and the Other repos section.
+
+## Session 3: msg button per peer (0.8.0)
+- Each same-repo peer row has a `msg` Button. It opens an Input under that row, one at a time; pressing `msg` again closes it.
+- Enter calls `sendToPeer`, which sends `$.session.send({ to: { sessionId }, text })`. Empty input closes the Input.
+- The outcome stays under the row for 60 s: `✓ sent`, or `✗ <reason>`.
+  - The Input closes on delivery and stays open on a refusal or error.
+- State: `peerCompose` (which peer's Input is open) and `peerNote` (the last outcome), declared in types.
+- Mobile: the element type has no `Input`, but `'Input' in table` was true at runtime in the test kit.
+  - So the pane also checks `e.surface !== 'mobile'`.
+  - The Loop Watch pane narrows Select and Input with `'in'` alone. It may have the same latent issue: parked, not touched.
+- Evidence:
+  - `receipts/test.txt`: 119/119.
+  - `receipts/validate.txt`: clean.
+  - `receipts/tsc.txt`: clean.
+  - `receipts/live-send-probe.jsonl`: a scratch probe mod (`send-probe/`) ran `$.session.send({ to: { sessionId } })` headless to the live `repo-sessions-check` and got `{"isDelivered":true}`.
+    - The peer's transcript has the text as a `<cross-session-message ... from-plugin="send-probe">`, and the peer answered "received".
+    - Its reply could not route back because the probe session had already exited, which is expected.
+
 ## Next
-- Brian checks the new prompt lines and the Other repos section in the docked pane (`repo-sessions-check` window, or `/repo-sessions` here).
-- Parked: a message button per peer.
-- Parked: a last-prompt line per session; a message button per peer.
+- Brian presses `msg` in the pane and sends one message: the button-press path by eye.
+- Parked: the Loop Watch mobile check above.
