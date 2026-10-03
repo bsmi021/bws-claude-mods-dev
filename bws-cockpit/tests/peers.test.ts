@@ -44,6 +44,8 @@ const HISTORY = [
   hist('s-wt', '\n  ship the   worktree fix\nsecond line', T0 - 400_000),
   hist('s-busy', 'fix the flaky test', T0 - 300_000),
   hist('self', 'my own prompt', T0 - 200_000),
+  hist('s-busy', '/repo-sessions', T0 - 100_000), // bare slash command: skipped
+  hist('s-worker', '/harness-loop build the M7 bundles', T0 - 90_000), // with arguments: kept
   'not json',
 ].join('\n') + '\n'
 
@@ -178,7 +180,8 @@ describe('repo sessions parsing', () => {
   })
 
   test('latest prompt per wanted session, newest wins, first line only', () => {
-    const got = latestPrompts(HISTORY, new Set(['s-busy', 's-wt', 's-never']))
+    const got = latestPrompts(HISTORY, new Set(['s-busy', 's-wt', 's-never', 's-worker']))
+    expect(got.get('s-worker')?.text).toBe('/harness-loop build the M7 bundles')
     expect(got.get('s-busy')).toEqual({ text: 'fix the flaky test', at: T0 - 300_000 })
     expect(got.get('s-wt')?.text).toBe('ship the worktree fix')
     expect(got.has('s-never')).toBe(false)
@@ -210,7 +213,7 @@ describe('repo sessions', () => {
     const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
     expect(r.text).toContain('3 other sessions in repo:')
     expect(r.text).toMatch(
-      /- refactor: busy 3m \(started 2h ago\)\n {2}› fix the flaky test\n- feature-wt: idle 1m \(in C:\/wt\/feat · started 2h ago\)\n {2}› ship the worktree fix\n- worker-7: busy 1m \(sdk-cli · in tools · started 2h ago\)\n\n/,
+      /- refactor: busy 3m \(started 2h ago\)\n {2}› fix the flaky test\n- feature-wt: idle 1m \(in C:\/wt\/feat · started 2h ago\)\n {2}› ship the worktree fix\n- worker-7: busy 1m \(sdk-cli · in tools · started 2h ago\)\n {2}› \/harness-loop build the M7 bundles\n\n/,
     )
     expect(r.text).toContain('\n\nOther repos (1):\nother:\n- elsewhere: idle 1m') // another repo, at the bottom, no prompt
     expect(r.text).not.toContain('a prompt in another repo')
@@ -283,6 +286,8 @@ describe('repo sessions', () => {
     await $.session.start({ cwd: REPO, surface: 'terminal', isInteractive: true } as never)
     await w.clock.advance(10_000)
     expect(w.opened).toEqual([])
+    expect(w.reads.some(p => p.endsWith('/sessions/20.json'))).toBe(true) // the poll ran
+    expect(w.reads.some(p => p.endsWith('/history.jsonl'))).toBe(false) // but read no prompts with the pane closed
   })
 
   test('peersAutoOpen: false never opens unasked', { options: { peersAutoOpen: false } }, async ($, on) => {

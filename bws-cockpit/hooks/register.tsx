@@ -598,8 +598,8 @@ async function readPrompts($: EngineInterface, dir: string, ids: string[]): Prom
 }
 
 // The other live sessions, from <config dir>/sessions/<pid>.json: this repo's as peers (with
-// their latest prompts), the rest as others.
-async function scanPeers($: EngineInterface): Promise<PeersView | null> {
+// their latest prompts, read only for a pane or a reply that shows them), the rest as others.
+async function scanPeers($: EngineInterface, withPrompts = true): Promise<PeersView | null> {
   const dir = await configDir($)
   if (dir === undefined) return null
   const [selfId, selfRoot] = await Promise.all([$.session.id(), $.session.root()])
@@ -619,7 +619,7 @@ async function scanPeers($: EngineInterface): Promise<PeersView | null> {
   }
   const live = await liveOnly($, recs, selfPid)
   const here = live.filter(r => !roots.has(r.sessionId))
-  const prompts = await readPrompts($, dir, here.map(r => r.sessionId))
+  const prompts = withPrompts ? await readPrompts($, dir, here.map(r => r.sessionId)) : new Map<string, LatestPrompt>()
   const v: PeersView = {
     root: mine.root,
     at: await $.clock.now(),
@@ -652,13 +652,15 @@ async function tickPeers($: EngineInterface, o: Options) {
   if (!isOpen && !o.peers.autoOpen) return
   isScanningPeers = true
   try {
-    const v = await scanPeers($)
+    // With the pane closed, the poll only watches for new peers: no history.jsonl read.
+    const v = await scanPeers($, isOpen)
     // Before anything has drawn the layout is unknown: announce nobody yet, so a session
     // started beside an existing one still opens the pane once it draws.
     if (v === null || isFullscreen !== true) return
     const fresh = await announce($, v)
     if (isOpen || fresh === 0) return
     await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
+    await scanPeers($) // now with prompts
   } finally {
     isScanningPeers = false
   }

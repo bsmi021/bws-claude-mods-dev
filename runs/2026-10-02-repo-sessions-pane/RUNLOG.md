@@ -45,7 +45,14 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
   - `receipts/validate.txt` and `receipts/tsc.txt`: clean.
   - `receipts/live-prompts-others-p.jsonl`: the real peer with its latest prompt, then 5 sessions in other repos.
 
+- Advisor review:
+  - Bare slash commands (`/repo-sessions`, `/clear`) are skipped as "latest prompt". Ones with arguments are kept. Tested.
+  - With the pane closed, the poll does not read history.jsonl, so there is no PowerShell spawn per prompt machine-wide. Tested.
+  - `receipts/ps-tail-utf8.txt`: the real PowerShell tail returns exactly 1 MiB with no mojibake. `D1–D10` is intact.
+- Live: `launch-peer.ps1` now gives the peer a first prompt (`reply with just: ok`).
+  - `receipts/live-prompts-others.txt`: both peers here show their latest prompts, and 5 sessions in 5 other repos are grouped below.
+
 ## Next
-- Brian checks the new prompt lines and the Other repos section in the docked pane.
+- Brian checks the new prompt lines and the Other repos section in the docked pane (`repo-sessions-check` window, or `/repo-sessions` here).
 - Parked: a message button per peer.
 - Parked: a last-prompt line per session; a message button per peer.

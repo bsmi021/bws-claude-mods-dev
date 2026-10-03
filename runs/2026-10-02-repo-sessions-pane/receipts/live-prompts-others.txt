@@ -1,0 +1,17 @@
+bws-cockpit: 2 other sessions in bws.mods.claude-code:
+- bws-mods-claude-code-1d: busy 9m (started 1h ago)
+  › Pane docked on the right, looks good. Now build the parked follow-up: show each peer's latest prompt under its row in the repo-sessions pane. As well add a section to the bottom to show all other sessions in different repos
+- repo-sessions-check: idle 31s (started 36s ago)
+  › reply with just: ok
+
+Other repos (5):
+bws.android.scribe:
+- bws-android-scribe-85: waiting 7m
+bws.game.tms:
+- harness: busy 3s
+bws.portfolio:
+- bws-portfolio-49: waiting 2m
+bws.web.pinkgill:
+- bws-web-pinkgill-34: waiting 8m
+tms-heim:
+- models: idle 5m

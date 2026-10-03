@@ -123,7 +123,8 @@ export const promptLine = (display: unknown): string =>
 
 // The newest prompt of each wanted session in history.jsonl (the engine's prompt history, one
 // `{ display, timestamp, project, sessionId }` per line, appended), scanned from the end. Only
-// the lines of wanted sessions are parsed; the scan stops once every one is found.
+// the lines of wanted sessions are parsed; the scan stops once every one is found. A slash
+// command with arguments counts (it carries the task); a bare one is skipped.
 export function latestPrompts(history: string, ids: ReadonlySet<string>): Map<string, LatestPrompt> {
   const out = new Map<string, LatestPrompt>()
   let end = history.length
@@ -140,7 +141,8 @@ export function latestPrompts(history: string, ids: ReadonlySet<string>): Map<st
       continue
     }
     const text = promptLine(rec.display)
-    if (text) out.set(id, { text, at: num(rec.timestamp) })
+    // A bare slash command (/clear, /repo-sessions) says nothing about the task: look further back.
+    if (text && !/^\/\S+$/.test(text)) out.set(id, { text, at: num(rec.timestamp) })
   }
   return out
 }
