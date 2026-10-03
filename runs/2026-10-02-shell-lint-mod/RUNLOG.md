@@ -102,3 +102,8 @@ Build `bws-shell-lint`. It is a Claude Code mod that denies Bash or PowerShell c
 - Scan: only the license holder, the generator comments and the manifest authors, all intended.
 - Validate passes for both plugins; bws-cockpit 93/93 and bws-shell-lint 16/16, run from the publish tree.
 - Brian then said "push". No remote is configured, so nothing was pushed: waiting for the target repo.
+- **Pushed (Brian: "push to a private repo"):**
+  - Created the private repo github.com/bsmi021/bws-claude-mods.
+  - Added remote `mods` with `remote.mods.push = refs/heads/publish:refs/heads/main`, then ran `git push mods publish:main`.
+  - Verified: visibility PRIVATE, remote `main` = 7855bb7 (the publish tip), 5 commits, 29 files, 0 files from runs/, docs/ or AGENTS.md.
+  - The local `main`, with the private data, was never pushed.
