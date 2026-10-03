@@ -119,6 +119,6 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
 - Evidence: `receipts/test.txt`, `receipts/validate.txt`, `receipts/tsc.txt`.
 
 ## Next
-- Live, Brian: press `msg` in this session's pane on `notice-recipient` (default mode, so the message is held). Expect `◆ held`, then after approving there, `✓ approved and delivered`.
+- Live check done (Brian): `msg` from this session's pane to `notice-recipient` showed `◆ held`, then `✓ approved and delivered` after he approved it.
 - Parked: the Finish-Line evidence check fired twice on replies that only waited on Brian (likely "done" in "tell me when that's done").
 
