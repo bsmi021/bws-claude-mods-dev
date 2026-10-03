@@ -114,3 +114,28 @@ Sources: [Troubleshooting](https://code.claude.com/docs/en/plugins/mods/troubles
 Documentation checked: 2026-10-02. Recheck local types and current official documentation when APIs differ.
 
 Local Doc: ./docs/mods.md
+
+## This repo
+
+- `bws-cockpit/` is one plugin with many features. `hooks/register.tsx` is the only file that uses `$`; `lib.ts`, `shell.ts`, `loop.ts`, `finish.ts`, `projects.ts` and `handoff.ts` are pure and tested directly. `bws-shell-lint/` is separate.
+- Each feature gets `runs/<date>-<slug>/` with PLAN.md (finish line first), RUNLOG.md and `receipts/`.
+- Checks, all three before ending a turn: `claude plugin validate ./<plugin>`, `cd <plugin> && claude plugin test`, and tsc 5.x (strict, noUncheckedIndexedAccess) against `.claude-plugin/types/`. Validate does not type-check.
+- Both plugins load in every session through `CLAUDE_CODE_PLUGIN_DIRS`, so a broken `register.tsx` breaks every new session.
+- Validator rules: one unmatched hook per event, so merge into the existing `turn.complete` or `prompt.context` hook. Never name a local `next`.
+- `$.prompt.submit` inside a `command.run` hook deadlocks: defer it with `$.clock.after`.
+- `$.model.fork` gives `nothing-to-fork` on a resumed session's first command: fall back to `$.session.messages()` + `$.model.complete`.
+- `Select` and `Input` are missing on mobile: narrow with `'Input' in table`.
+- Test stubs:
+  - `fs.*` paths arrive with backslashes: normalize them.
+  - A bottom `prompt.submit` stub must return `{ text }`.
+  - `classic.Stop` and `turn.complete` need bottom stubs.
+  - Unmount a pane before mounting it again.
+- Git Bash here halves backslash runs before bash sees them. Never put Windows backslash paths in heredoc or inline Python strings; use forward slashes, or the Edit/Write tools.
+- Live checks: `claude -p "..." --plugin-dir ./<plugin> --output-format stream-json --verbose`.
+  - Prefix slash commands with `MSYS_NO_PATHCONV=1`.
+  - Pass plugin options with `--settings <file>` (`pluginConfigs`); it merges with user settings.
+- Test terminals: the tool shell sets `NO_COLOR=1`, so clear it to see band colors. Launch `wt.exe` through a `.ps1` file, since `wt` splits commands on `;`.
+- Guard and lint rules that block or rewrite match the command position only. Replay them over the real-command corpus before shipping.
+- Never push `main`: its `runs/` holds private prompts and transcripts. Publish only the orphan `publish` branch:
+  - Refresh it in a scratch worktree with `git checkout main -- bws-cockpit bws-shell-lint`.
+  - Scan for names, project and game names, serials and paths first.
