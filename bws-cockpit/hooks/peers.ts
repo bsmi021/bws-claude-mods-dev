@@ -93,14 +93,24 @@ export function whereIn(cwd: string, root: string): string {
 
 export const repoName = (root: string) => toSlash(root).split('/').pop() || root
 
-// PIDs in `tasklist /FO CSV /NH` output: "Image","PID","Session","#","Mem".
-export function parseTasklist(stdout: string): Set<number> {
-  const pids = new Set<number>()
+// PID to image name from `tasklist /FO CSV /NH` output: "Image","PID","Session","#","Mem".
+export function parseTasklist(stdout: string): Map<number, string> {
+  const pids = new Map<number, string>()
   for (const line of stdout.split(/\r?\n/)) {
-    const pid = Number(line.match(/^"[^"]*","(\d+)"/)?.[1])
-    if (Number.isInteger(pid) && pid > 0) pids.add(pid)
+    const m = line.match(/^"([^"]*)","(\d+)"/)
+    const pid = Number(m?.[2])
+    if (m && Number.isInteger(pid) && pid > 0) pids.set(pid, m[1] ?? '')
   }
   return pids
+}
+
+// A session is alive when its pid runs the same program as this session's own (claude.exe or
+// node.exe), so a crashed session's pid reused by another program reads as gone. Without
+// this session's own image, any running pid counts.
+export function isAliveIn(images: ReadonlyMap<number, string>, pid: number, selfImage: string | undefined): boolean {
+  const image = images.get(pid)
+  if (image === undefined) return false
+  return selfImage === undefined || image.toLowerCase() === selfImage.toLowerCase()
 }
 
 export const livenessKey = (r: { pid: number; procStart: string }) => `${r.pid}:${r.procStart}`

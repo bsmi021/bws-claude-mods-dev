@@ -38,7 +38,7 @@ const RECS: Rec[] = [
 
 const norm = (p: unknown) => String(p).replace(/\\/g, '/')
 
-type World = { surfaces?: string[]; tasklist?: 'fail'; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
+type World = { surfaces?: string[]; tasklist?: 'fail'; tasklistImage?: Record<number, string>; panes?: { id: string; isShown: boolean; isPlaced: boolean }[] }
 
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: T0 })
@@ -73,7 +73,8 @@ function world(on: On, w: World = {}) {
   on('process.run', ($, e) => {
     if (String(e.argv[0]) === 'tasklist') {
       if (w.tasklist === 'fail') throw new Error('ENOENT tasklist')
-      const lines = [10, 20, 30, 40, 50].map(pid => `"claude.exe","${pid}","Console","1","300,000 K"`)
+      const images: Record<number, string> = { 10: 'claude.exe', 20: 'claude.exe', 30: 'claude.exe', 40: 'claude.exe', 50: 'claude.exe', ...w.tasklistImage }
+      const lines = Object.entries(images).map(([pid, image]) => `"${image}","${pid}","Console","1","300,000 K"`)
       return { value: { exitCode: 0, stdout: `${lines.join('\r\n')}\r\n`, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     }
     throw new Error(`ENOENT ${String(e.argv[0])}`)
@@ -140,7 +141,7 @@ describe('repo sessions parsing', () => {
   })
 
   test('tasklist CSV pids', () => {
-    expect([...parseTasklist('"claude.exe","24896","Console","1","300,000 K"\r\n"System","4","Services","0","1 K"\r\n')]).toEqual([24896, 4])
+    expect([...parseTasklist('"claude.exe","24896","Console","1","300,000 K"\r\n"System","4","Services","0","1 K"\r\n')]).toEqual([[24896, 'claude.exe'], [4, 'System']])
     expect(parseTasklist('INFO: No tasks are running').size).toBe(0)
   })
 
@@ -243,5 +244,25 @@ describe('repo sessions', () => {
     await $.session.start({ cwd: REPO, surface: 'terminal', isInteractive: true } as never)
     await w.clock.advance(10_000)
     expect(w.opened).toEqual([])
+  })
+
+  test('a pane opened and closed by /repo-sessions stays closed for the peers it already showed', async ($, on) => {
+    const w = world(on, { surfaces: ['terminal'] })
+    const probe = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 200, rows: 50, isFullscreen: false } })
+    await probe.unmount()
+    await $.session.start({ cwd: REPO, surface: 'terminal', isInteractive: true } as never)
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    const open = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 200, rows: 50, isFullscreen: true } })
+    await open.unmount()
+    await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    expect(w.closed).toEqual(['repo-sessions'])
+    await w.clock.advance(15_000)
+    expect(w.opened).toEqual(['repo-sessions'])
+  })
+
+  test('a reused pid that is not a claude process counts as gone', async ($, on) => {
+    world(on, { tasklistImage: { 60: 'chrome.exe' } })
+    const r = await $.command.run({ command: 'repo-sessions', args: '' } as never)
+    expect(r.text).not.toContain('crashed')
   })
 })

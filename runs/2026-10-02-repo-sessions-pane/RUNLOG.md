@@ -16,7 +16,7 @@ Show the other Claude Code sessions open in the same repo in a pane to the right
 - userConfig `peersPane` and `peersAutoOpen`. Version 0.6.0. README updated.
 
 ## Evidence
-- `receipts/test.txt`: 108/108.
+- `receipts/test.txt`: 110/110.
 - `receipts/validate.txt`: passed.
 - `receipts/tsc.txt`: tsc 5 strict, exit 0.
 - `receipts/live-repo-sessions-p.jsonl`: a headless `/repo-sessions` here listed `bws-mods-claude-code-1d: busy 9m` and excluded itself and the 4 sessions in other repos.

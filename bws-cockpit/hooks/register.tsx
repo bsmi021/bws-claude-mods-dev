@@ -41,7 +41,7 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
-import { STATUS_COLOR, forText, isRecordFile, livenessKey, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortPeers, toPeer } from './peers'
+import { STATUS_COLOR, forText, isAliveIn, isRecordFile, livenessKey, parentOf, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sortPeers, toPeer } from './peers'
 import type { SessionRecord } from './peers'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 
@@ -540,7 +540,7 @@ async function findRepo($: EngineInterface, dir: string): Promise<{ key: string;
 
 // Drops sessions whose process is gone (a crash leaves its registry file). One tasklist call
 // per 45 s at most; when it fails or answers nothing, every session is kept.
-async function liveOnly($: EngineInterface, recs: SessionRecord[]): Promise<SessionRecord[]> {
+async function liveOnly($: EngineInterface, recs: SessionRecord[], selfPid: number | undefined): Promise<SessionRecord[]> {
   const now = await $.clock.now()
   const due = recs.filter(r => {
     const c = alive.get(livenessKey(r))
@@ -548,8 +548,12 @@ async function liveOnly($: EngineInterface, recs: SessionRecord[]): Promise<Sess
   })
   if (due.length > 0) {
     const run = await settle($.process.run(['tasklist', '/FO', 'CSV', '/NH'], { timeoutMs: 10000 }))
-    const pids = run && run.exitCode === 0 ? parseTasklist(run.stdout) : undefined
-    for (const r of due) alive.set(livenessKey(r), { isAlive: pids === undefined || pids.size === 0 || pids.has(r.pid), at: now })
+    const images = run && run.exitCode === 0 ? parseTasklist(run.stdout) : undefined
+    const selfImage = selfPid === undefined ? undefined : images?.get(selfPid)
+    for (const r of due) {
+      const isAlive = images === undefined || images.size === 0 || isAliveIn(images, r.pid, selfImage)
+      alive.set(livenessKey(r), { isAlive, at: now })
+    }
   }
   return recs.filter(r => alive.get(livenessKey(r))?.isAlive !== false)
 }
@@ -563,15 +567,26 @@ async function scanPeers($: EngineInterface): Promise<PeersView | null> {
   const files = ((await settle($.fs.list(`${dir}/sessions`))) ?? []).filter(f => f.kind === 'file' && isRecordFile(f.name))
   const texts = await Promise.all(files.map(f => settle($.fs.read(`${dir}/sessions/${f.name}`))))
   const recs: SessionRecord[] = []
+  let selfPid: number | undefined
   for (const text of texts) {
     const r = text === undefined ? undefined : parseRecord(text)
+    if (r?.sessionId === selfId) selfPid = r.pid
     if (r === undefined || r.sessionId === selfId) continue
     if ((await findRepo($, r.cwd)).key === mine.key) recs.push(r)
   }
-  const live = await liveOnly($, recs)
+  const live = await liveOnly($, recs, selfPid)
   const v: PeersView = { root: mine.root, at: await $.clock.now(), peers: sortPeers(live.map(r => toPeer(r, mine.root))) }
   await update($, peers, () => v)
   return v
+}
+
+// Marks the interactive peers as seen, so each opens the pane unasked at most once; whatever
+// was on screen while the pane was open counts as seen. Returns how many were new.
+async function announce($: EngineInterface, v: PeersView): Promise<number> {
+  const seen = await read($, peersAnnounced)
+  const fresh = v.peers.filter(p => p.kind === 'interactive' && !seen.includes(p.sessionId))
+  if (fresh.length > 0) await update($, peersAnnounced, ids => [...ids, ...fresh.map(p => p.sessionId)].slice(-200))
+  return fresh.length
 }
 
 const isPeersShown = async ($: EngineInterface) => (await $.ui.panes()).some(p => p.id === PEERS_PANE && p.isShown && p.isPlaced)
@@ -585,11 +600,11 @@ async function tickPeers($: EngineInterface, o: Options) {
   isScanningPeers = true
   try {
     const v = await scanPeers($)
-    if (v === null || isOpen || isFullscreen !== true) return
-    const seen = await read($, peersAnnounced)
-    const fresh = v.peers.filter(p => p.kind === 'interactive' && !seen.includes(p.sessionId))
-    if (fresh.length === 0) return
-    await update($, peersAnnounced, ids => [...ids, ...fresh.map(p => p.sessionId)].slice(-200))
+    // Before anything has drawn the layout is unknown: announce nobody yet, so a session
+    // started beside an existing one still opens the pane once it draws.
+    if (v === null || isFullscreen !== true) return
+    const fresh = await announce($, v)
+    if (isOpen || fresh === 0) return
     await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
   } finally {
     isScanningPeers = false
@@ -1009,6 +1024,7 @@ export const register: Register = (on, options) => {
       await $.ui.close({ id: PEERS_PANE })
       return {}
     }
+    await announce($, v)
     const opened = await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
     return opened.isPlaced ? {} : { text: peersText(v.peers, v.root, now) }
   })
