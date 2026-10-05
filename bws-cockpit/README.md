@@ -149,6 +149,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `lowVramCvars` | (built-in set) | Comma-separated `cvar=value` list |
 | `adbPath` | `adb` | adb executable |
 | `refreshSeconds` | `30` | Band re-probe interval |
+| `backgroundProbe` | `true` | Off stops the timed, per-turn and session-start probes (they start powershell, nvidia-smi and adb, which can flash a console window on Windows). `/cockpit`, the refresh button and the guard still probe on demand |
 | `loopIdleMinutes` | `20` | Alert when the running worker has made no tool call for this long |
 | `loopSessionAlert` | `6` | Alert when the current unit reaches this many sessions |
 | `loopDriverStaleMinutes` | `3` | Alert when a RUNNING driver's heartbeat stops |

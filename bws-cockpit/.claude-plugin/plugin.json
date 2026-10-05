@@ -48,6 +48,12 @@
       "description": "How often the band re-probes editors and devices while a terminal or Desktop surface is attached.",
       "default": 30
     },
+    "backgroundProbe": {
+      "type": "boolean",
+      "title": "Band background probe",
+      "description": "Re-probe editors, VRAM and devices at session start, every refresh interval and after each turn. Each probe starts powershell, nvidia-smi and adb, which can flash a console window on Windows. Off: probes run only for /cockpit, the refresh button and the guard.",
+      "default": true
+    },
     "loopIdleMinutes": {
       "type": "number",
       "title": "Loop: idle alert (minutes)",

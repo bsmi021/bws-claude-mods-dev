@@ -86,6 +86,7 @@ type Options = {
   cvars: readonly string[]
   adbPath: string
   refreshSeconds: number
+  isBackgroundProbe: boolean
   loop: LoopLimits
   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
@@ -710,6 +711,7 @@ export const register: Register = (on, options) => {
     cvars: cvarText.length > 0 ? cvarText.split(',').map(s => s.trim()).filter(Boolean) : LOW_VRAM_CVARS,
     adbPath: String(options.adbPath ?? 'adb'),
     refreshSeconds: Math.max(5, Number(options.refreshSeconds ?? 30)),
+    isBackgroundProbe: options.backgroundProbe !== false,
     loop: {
       driverStaleMs: Math.max(1, Number(options.loopDriverStaleMinutes ?? 3)) * 60_000,
       idleMs: Math.max(1, Number(options.loopIdleMinutes ?? 20)) * 60_000,
@@ -873,7 +875,7 @@ export const register: Register = (on, options) => {
   // One turn.complete hook: refresh the band, then add the finish-line line under the answer.
   on('turn.complete', async ($, e, next) => {
     const surfaces = await $.session.surfaces()
-    if (surfaces.length > 0) void refresh($, o, 15000)
+    if (surfaces.length > 0 && o.isBackgroundProbe) void refresh($, o, 15000)
     const result = await next(e)
     if (!o.finish.isOn || e.isAborted || e.agentId) return result
     const fl = await sessionFinishLine($)
@@ -909,8 +911,10 @@ export const register: Register = (on, options) => {
     }
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0) {
-      void refresh($, o, 0)
-      $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
+      if (o.isBackgroundProbe) {
+        void refresh($, o, 0)
+        $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
+      }
       if (o.peers.isOn) {
         void tickPeers($, o)
         $.clock.every(PEERS_POLL_MS, () => void tickPeers($, o))
