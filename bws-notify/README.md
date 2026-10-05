@@ -17,7 +17,7 @@ It sends nothing for: turns shorter than `minTurnSeconds`, a stop while backgrou
 
 The engine's `$.process.run` has no hide-window option, so a direct `powershell` call flashes a console window. The mod runs `wscript.exe //B bin/notify.vbs <base64 JSON>` instead. `wscript` is a GUI program, and the script starts `powershell.exe` at window style 0, which runs `bin/toast.ps1` (Windows PowerShell 5.1, WinRT toast API). The text travels as base64, so nothing is quoted or escaped through a shell. A failure writes one line to `%TEMP%\bws-notify.err` and never touches the turn.
 
-Toasts show as "Windows PowerShell". Windows Do Not Disturb and Focus rules apply to them: a toast Windows accepted but did not show as a banner is still in Action Center (Win+N).
+Toasts show as "Windows PowerShell". Windows Do Not Disturb and Focus rules apply to them. Do Not Disturb turns on by itself while an app is fullscreen, so a terminal in OS fullscreen (F11) shows no banner. The toast is still in Action Center (Win+N). To get banners in fullscreen, untick "When I'm using an app in full-screen mode" under Settings → System → Notifications → "Turn on do not disturb automatically".
 
 ## Load
 
@@ -44,5 +44,5 @@ Claude Code 2.1.289, Windows 11, fullscreen terminal layout.
 
 - **Static:** `claude plugin validate` passes.
 - **Automated:** `claude plugin test` passes 12 of 12 (wordings, the base64 round trip, the hidden launch's arguments, duration and minimum length, background-task stops, repeat suppression, headless, the switches, suggestion forks).
-- **Live:** the toast script ran with no error, and Windows listed the toasts in Action Center, including real ones the loaded mod sent for a permission wait, a finished turn and subagent stops.
-- **Not verified:** that a banner is drawn on screen. On the test machine no banner was seen while Do Not Disturb or Focus rules may have applied, and the cause was not isolated. The desktop app, VS Code and mobile surfaces were not tried; the toast is a Windows feature and does not use the mod's pane or band drawing.
+- **Live:** the toast script ran with no error, and Windows listed the toasts in Action Center, including real ones the loaded mod sent for a permission wait, a finished turn and subagent stops. The banner is confirmed drawn on screen. Earlier none appeared while Windows Terminal was fullscreen, and that was Do Not Disturb, not the mod.
+- **Not verified:** the desktop app, VS Code and mobile surfaces were not tried; the toast is a Windows feature and does not use the mod's pane or band drawing.
