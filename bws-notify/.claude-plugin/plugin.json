@@ -1,0 +1,44 @@
+{
+  "name": "bws-notify",
+  "version": "0.1.0",
+  "description": "Windows toasts that say which project and what happened: permission asks, finished turns, finished subagents and errors, with the reply's first line. Replaces the modal MessageBox hook.",
+  "author": { "name": "Brian" },
+  "userConfig": {
+    "needsInput": {
+      "type": "boolean",
+      "title": "Toast when Claude needs you",
+      "description": "Permission asks, questions and idle prompts, with the text Claude is waiting on.",
+      "default": true
+    },
+    "turnDone": {
+      "type": "boolean",
+      "title": "Toast when a turn finishes",
+      "description": "Claude stopped. The toast carries the first line of its last reply.",
+      "default": true
+    },
+    "minTurnSeconds": {
+      "type": "number",
+      "title": "Turn toast: minimum length (seconds)",
+      "description": "Skip the finished-turn toast for turns shorter than this.",
+      "default": 20
+    },
+    "subagentDone": {
+      "type": "boolean",
+      "title": "Toast when a subagent finishes",
+      "description": "Subagent type and the first line of its report.",
+      "default": true
+    },
+    "errors": {
+      "type": "boolean",
+      "title": "Toast on errors",
+      "description": "The turn ended on an API error (limit, overload, auth).",
+      "default": true
+    },
+    "maxBodyChars": {
+      "type": "number",
+      "title": "Toast body length",
+      "description": "Characters of the reply or prompt text kept in a toast.",
+      "default": 160
+    }
+  }
+}
