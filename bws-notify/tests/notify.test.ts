@@ -2,7 +2,7 @@ import { test, expect, mock } from 'claude-code/testing'
 import type { On } from 'claude-code'
 import { duration, encode, firstLine, isReport, needsInput, project, subagentDone, turnDone } from '../hooks/text.ts'
 
-const CWD = 'C:/Projects/bws.game.tms'
+const CWD = 'C:/Projects/my-game'
 
 const decode = (b64: string) => {
   const bin = atob(b64)
@@ -37,7 +37,7 @@ test('firstLine strips markup, takes the first non-empty line and cuts it', () =
 })
 
 test('project and duration wordings', () => {
-  expect(project('C:\\Projects\\bws.game.tms\\')).toBe('bws.game.tms')
+  expect(project('C:\\Projects\\my-game\\')).toBe('my-game')
   expect(duration(9_000)).toBe('9s')
   expect(duration(130_000)).toBe('2m 10s')
   expect(duration(3_900_000)).toBe('1h 5m')
@@ -45,12 +45,12 @@ test('project and duration wordings', () => {
 
 test('toast wordings carry project and conversation text', () => {
   expect(needsInput(CWD, 'Claude needs your permission to use Bash', 'permission_prompt', 100)).toEqual({
-    title: 'bws.game.tms · needs you',
+    title: 'my-game · needs you',
     body: 'Claude needs your permission to use Bash',
   })
-  expect(needsInput(CWD, '', 'idle_prompt', 100).title).toBe('bws.game.tms · waiting for you')
-  expect(turnDone(CWD, 'All 12 tests pass.', 95_000, 100).title).toBe('bws.game.tms · done (1m 35s)')
-  expect(subagentDone(CWD, 'Explore', 'Found 3 callers.', 100)).toEqual({ title: 'bws.game.tms · Explore finished', body: 'Found 3 callers.' })
+  expect(needsInput(CWD, '', 'idle_prompt', 100).title).toBe('my-game · waiting for you')
+  expect(turnDone(CWD, 'All 12 tests pass.', 95_000, 100).title).toBe('my-game · done (1m 35s)')
+  expect(subagentDone(CWD, 'Explore', 'Found 3 callers.', 100)).toEqual({ title: 'my-game · Explore finished', body: 'Found 3 callers.' })
 })
 
 test('encode round-trips unicode', () => {
@@ -65,7 +65,7 @@ test('a permission ask launches a hidden toast with the project and the ask', as
   const [exe, flag1, flag2, vbs, payload] = w.launches[0]
   expect([exe, flag1, flag2]).toEqual(['wscript.exe', '//B', '//Nologo'])
   expect(vbs.replace(/\\/g, '/')).toMatch(/bin\/notify\.vbs$/)
-  expect(decode(payload)).toEqual({ title: 'bws.game.tms · needs you', body: 'Claude needs your permission to use Edit' })
+  expect(decode(payload)).toEqual({ title: 'my-game · needs you', body: 'Claude needs your permission to use Edit' })
 })
 
 test('a finished turn names the duration and the reply, a short turn is skipped', async ($, on) => {
@@ -73,7 +73,7 @@ test('a finished turn names the duration and the reply, a short turn is skipped'
   await $.prompt.submit({ text: 'do it' } as never)
   await w.clock.advance(60_000)
   await $.classic.Stop(stop())
-  expect(decode(w.launches[0][4])).toEqual({ title: 'bws.game.tms · done (1m 0s)', body: 'Done. The parser is in.' })
+  expect(decode(w.launches[0][4])).toEqual({ title: 'my-game · done (1m 0s)', body: 'Done. The parser is in.' })
   await $.prompt.submit({ text: 'again' } as never)
   await w.clock.advance(5_000)
   await $.classic.Stop(stop({ last_assistant_message: 'quick' }))
@@ -90,7 +90,7 @@ test('a subagent finish and an error each toast', async ($, on) => {
   const w = world(on)
   await $.classic.SubagentStop({ cwd: CWD, agent_type: 'Explore', last_assistant_message: 'Found 3 callers.' } as never)
   await $.classic.StopFailure({ cwd: CWD, error: 'rate_limit', error_details: 'Usage limit reached' } as never)
-  expect(w.launches.map(l => decode(l[4]).title)).toEqual(['bws.game.tms · Explore finished', 'bws.game.tms · error: rate_limit'])
+  expect(w.launches.map(l => decode(l[4]).title)).toEqual(['my-game · Explore finished', 'my-game · error: rate_limit'])
 })
 
 test('the same toast twice within a few seconds is sent once', async ($, on) => {
