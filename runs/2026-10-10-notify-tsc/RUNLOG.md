@@ -15,3 +15,9 @@ This is a follow-up parked in `runs/2026-10-10-mods-release`: bws-notify's `./te
 
 ## Next step
 None. The publish branch carries bws-notify 0.1.0; refresh it when Brian asks.
+
+## Publish refresh (2026-10-10)
+- In the scratch worktree `../_bws_publish` on `publish`, ran `git checkout main -- bws-cockpit bws-notify`, giving bws-cockpit 0.10.2 and bws-notify 0.1.1. 8 files changed.
+- Private-name scan (changed files, every added line, and the full tree): the only hits were the manifest author fields and the LICENSE holder, kept by design, plus the synthetic test run folders (`runs/2026-10-02-band-row`, `-handoff`), which are already published.
+- Run from the publish tree: validate passed for both plugins; bws-cockpit 117/117, bws-notify 12/12.
+- Committed `d15eb8f` on `publish`. `git push mods` (publish → main): `202d456..d15eb8f`. Now `mods/main` = `d15eb8f`. This repo's `main` was not pushed, and the worktree is removed.
