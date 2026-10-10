@@ -22,8 +22,8 @@ import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPip
 import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
-import type { LoopView, PeerSend, PeerView, PeersView } from '../types'
-import { actionable, decide, openItems, openSummary } from './finish'
+import type { LoopView } from '../types'
+import { actionable, decide, openItems, openSummary, writtenRunFolders } from './finish'
 import {
   SCAN_DEPTH,
   findProjects,
@@ -41,8 +41,6 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
-import { STATUS_COLOR, applyNotice, forText, isAliveIn, isRecordFile, latestPrompts, livenessKey, otherDetail, parentOf, parseNotice, parseRecord, parseTasklist, peerDetail, peersText, repoKey, repoName, sendLine, sortOthers, sortPeers, toPeer } from './peers'
-import type { LatestPrompt, SessionRecord } from './peers'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
@@ -53,10 +51,7 @@ const loops = atom({ plugin: 'bws-cockpit', key: 'loops' } as const, [])
 const loopSelected = atom({ plugin: 'bws-cockpit', key: 'loopSelected' } as const, null)
 const loopAction = atom({ plugin: 'bws-cockpit', key: 'loopAction' } as const, null)
 const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const, null)
-const peers = atom({ plugin: 'bws-cockpit', key: 'peers' } as const, null)
-const peersAnnounced = atom({ plugin: 'bws-cockpit', key: 'peersAnnounced' } as const, [])
-const peerCompose = atom({ plugin: 'bws-cockpit', key: 'peerCompose' } as const, null)
-const peerSends = atom({ plugin: 'bws-cockpit', key: 'peerSends' } as const, [])
+const touched = atom({ plugin: 'bws-cockpit', key: 'touched' } as const, null)
 
 const LOOP_PANE = 'loop-watch'
 const STOP_CONFIRM_MS = 10_000
@@ -91,7 +86,6 @@ type Options = {
   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
   pin: { model: string; types: string[] }
-  peers: { isOn: boolean; autoOpen: boolean }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -207,13 +201,15 @@ async function findRun($: EngineInterface): Promise<CockpitRun | null> {
 }
 
 // The newest run folder under <cwd>/runs, by its RUNLOG/PLAN/TASKS times, with their text.
-async function readRunFolder($: EngineInterface): Promise<RunFolder | null> {
+// With `only`, just among those folder names.
+async function readRunFolder($: EngineInterface, only?: readonly string[]): Promise<RunFolder | null> {
   const cwd = await $.session.cwd()
   const runsDir = joinPath(cwd, 'runs')
   const entries = await settle($.fs.list(runsDir))
   if (!entries) return null
+  const wanted = only === undefined ? undefined : new Set(only.map(n => n.toLowerCase()))
   const dirs = entries
-    .filter(d => d.kind === 'dir')
+    .filter(d => d.kind === 'dir' && (wanted === undefined || wanted.has(d.name.toLowerCase())))
     .map(d => d.name)
     .sort()
     .reverse()
@@ -325,13 +321,24 @@ async function getIndex($: EngineInterface, o: Options, force = false): Promise<
   return idx
 }
 
-// This session's run folder (written since the session started) and its actionable open items.
-async function sessionFinishLine($: EngineInterface): Promise<{ folder: string; open: string[] } | null> {
-  const r = await readRunFolder($)
-  if (!r) return null
+// Records the run folders this conversation's own tool calls wrote to, keyed by its start, so a
+// folder a harness worker writes never counts as the supervising session's.
+async function noteTouched($: EngineInterface, folders: string[]) {
   const { startedAt } = await $.session.usage()
-  if (r.mtime < startedAt) return null
-  return { folder: r.folder, open: actionable([...openItems(r.plan), ...openItems(r.tasks)]) }
+  await update($, touched, t => {
+    const kept = t !== null && t.startedAt === startedAt ? t.folders : []
+    return { startedAt, folders: [...new Set([...kept, ...folders])].slice(-20) }
+  })
+}
+
+// This session's run folder (the newest it wrote to) and its actionable open items.
+async function sessionFinishLine($: EngineInterface, owner: string): Promise<{ folder: string; open: string[] } | null> {
+  const t = await read($, touched)
+  const { startedAt } = await $.session.usage()
+  if (t === null || t.startedAt !== startedAt || t.folders.length === 0) return null
+  const r = await readRunFolder($, t.folders)
+  if (!r) return null
+  return { folder: r.folder, open: actionable([...openItems(r.plan), ...openItems(r.tasks)], owner) }
 }
 
 async function refresh($: EngineInterface, o: Options, maxAgeMs: number) {
@@ -497,207 +504,6 @@ async function resume($: EngineInterface): Promise<string | undefined> {
   return undefined
 }
 
-// ---------- Repo Sessions ----------
-
-const PEERS_PANE = 'repo-sessions'
-const PEERS_TITLE = 'Sessions here'
-const PEERS_POLL_MS = 5_000
-const ALIVE_TTL_MS = 45_000 // how long a pid's tasklist answer stands
-
-// Module state, started over by a reload: liveness by pid+procStart, repos by folder, whether a
-// scan is running, and the layout the last drawing reported (undefined until something draws).
-const alive = new Map<string, { isAlive: boolean; at: number }>()
-const repos = new Map<string, { key: string; root: string }>()
-let isScanningPeers = false
-let isFullscreen: boolean | undefined
-let promptCache: { key: string; fileKey: string; text: string; prompts: Map<string, LatestPrompt> } | undefined
-
-async function configDir($: EngineInterface): Promise<string | undefined> {
-  const own = await settle($.env.get('CLAUDE_CONFIG_DIR'))
-  if (own) return toSlash(own)
-  const home = (await settle($.env.get('USERPROFILE'))) || (await settle($.env.get('HOME')))
-  return home ? `${toSlash(home)}/.claude` : undefined
-}
-
-// The repo a folder is in: the nearest `.git` above it, keyed by its common git dir so a
-// worktree matches its main checkout. Outside git, the folder itself.
-async function findRepo($: EngineInterface, dir: string): Promise<{ key: string; root: string }> {
-  const start = toSlash(dir)
-  const hit = repos.get(start.toLowerCase())
-  if (hit) return hit
-  let found = { key: `dir:${start.toLowerCase()}`, root: start }
-  for (let d = start, i = 0; i < 40; i++) {
-    const git = `${d}/.git`
-    const st = await settle($.fs.stat(git))
-    if (st) {
-      const text = st.kind === 'file' ? ((await settle($.fs.read(git))) ?? '') : undefined
-      found = { key: repoKey(d, text), root: d }
-      break
-    }
-    const up = parentOf(d)
-    if (up === d) break
-    d = up
-  }
-  repos.set(start.toLowerCase(), found)
-  return found
-}
-
-// Drops sessions whose process is gone (a crash leaves its registry file). One tasklist call
-// per 45 s at most; when it fails or answers nothing, every session is kept.
-async function liveOnly($: EngineInterface, recs: SessionRecord[], selfPid: number | undefined): Promise<SessionRecord[]> {
-  const now = await $.clock.now()
-  const due = recs.filter(r => {
-    const c = alive.get(livenessKey(r))
-    return c === undefined || now - c.at > ALIVE_TTL_MS
-  })
-  if (due.length > 0) {
-    const run = await settle($.process.run(['tasklist', '/FO', 'CSV', '/NH'], { timeoutMs: 10000 }))
-    const images = run && run.exitCode === 0 ? parseTasklist(run.stdout) : undefined
-    const selfImage = selfPid === undefined ? undefined : images?.get(selfPid)
-    for (const r of due) {
-      const isAlive = images === undefined || images.size === 0 || isAliveIn(images, r.pid, selfImage)
-      alive.set(livenessKey(r), { isAlive, at: now })
-    }
-  }
-  return recs.filter(r => alive.get(livenessKey(r))?.isAlive !== false)
-}
-
-const FS_READ_MAX = 4 * 1024 * 1024 // $.fs.read rejects a file over 4 MiB
-const HISTORY_TAIL = 1024 * 1024 // a bigger history.jsonl is read from its last 1 MiB (a few thousand prompts)
-// Prints the last BWS_TAIL_BYTES of BWS_TAIL_PATH, opened shared so the engine can keep appending.
-const PS_TAIL =
-  "$f = [IO.File]::Open($env:BWS_TAIL_PATH, 'Open', 'Read', 'ReadWrite'); " +
-  'try { $n = [Math]::Min($f.Length, [long]$env:BWS_TAIL_BYTES); [void]$f.Seek(-$n, \'End\'); ' +
-  '$b = New-Object byte[] $n; $r = 0; while ($r -lt $n) { $k = $f.Read($b, $r, $n - $r); if ($k -le 0) { break }; $r += $k }; ' +
-  '[Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Out.Write([Text.Encoding]::UTF8.GetString($b, 0, $r)) } finally { $f.Close() }'
-
-// A text file whole when $.fs.read can take it, else its tail (PowerShell, then `tail -c`).
-// The tail's first line is usually cut; latestPrompts skips a line it cannot parse.
-async function readTail($: EngineInterface, path: string, size: number): Promise<string | undefined> {
-  if (size <= FS_READ_MAX) return settle($.fs.read(path))
-  const env = { BWS_TAIL_PATH: toWin(path), BWS_TAIL_BYTES: String(HISTORY_TAIL) }
-  const ps = await settle($.process.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', PS_TAIL], { timeoutMs: 15000, env }))
-  if (ps && ps.exitCode === 0) return ps.stdout
-  const tail = await settle($.process.run(['tail', '-c', String(HISTORY_TAIL), path], { timeoutMs: 15000 }))
-  return tail && tail.exitCode === 0 ? tail.stdout : undefined
-}
-
-// The latest prompt of each wanted session, from <config dir>/history.jsonl. The file (several
-// MB) is read again only when its size or mtime moves, and scanned again only when that or
-// the wanted set changes.
-async function readPrompts($: EngineInterface, dir: string, ids: string[]): Promise<Map<string, LatestPrompt>> {
-  if (ids.length === 0) return new Map()
-  const path = `${dir}/history.jsonl`
-  const st = await settle($.fs.stat(path))
-  if (!st) return new Map()
-  const fileKey = `${st.size}:${st.mtimeMs}`
-  const key = `${fileKey}|${[...ids].sort().join(',')}`
-  if (promptCache?.key === key) return promptCache.prompts
-  const text = promptCache?.fileKey === fileKey ? promptCache.text : await readTail($, path, st.size)
-  if (text === undefined) return new Map()
-  const prompts = latestPrompts(text, new Set(ids))
-  promptCache = { key, fileKey, text, prompts }
-  return prompts
-}
-
-// The other live sessions, from <config dir>/sessions/<pid>.json: this repo's as peers (with
-// their latest prompts, read only for a pane or a reply that shows them), the rest as others.
-async function scanPeers($: EngineInterface, withPrompts = true): Promise<PeersView | null> {
-  const dir = await configDir($)
-  if (dir === undefined) return null
-  const [selfId, selfRoot] = await Promise.all([$.session.id(), $.session.root()])
-  const mine = await findRepo($, selfRoot)
-  const files = ((await settle($.fs.list(`${dir}/sessions`))) ?? []).filter(f => f.kind === 'file' && isRecordFile(f.name))
-  const texts = await Promise.all(files.map(f => settle($.fs.read(`${dir}/sessions/${f.name}`))))
-  const recs: SessionRecord[] = []
-  const roots = new Map<string, string>() // sessionId -> repo root, for sessions in other repos
-  let selfPid: number | undefined
-  for (const text of texts) {
-    const r = text === undefined ? undefined : parseRecord(text)
-    if (r?.sessionId === selfId) selfPid = r.pid
-    if (r === undefined || r.sessionId === selfId) continue
-    const repo = await findRepo($, r.cwd)
-    if (repo.key !== mine.key) roots.set(r.sessionId, repo.root)
-    recs.push(r)
-  }
-  const live = await liveOnly($, recs, selfPid)
-  const here = live.filter(r => !roots.has(r.sessionId))
-  const prompts = withPrompts ? await readPrompts($, dir, here.map(r => r.sessionId)) : new Map<string, LatestPrompt>()
-  const v: PeersView = {
-    root: mine.root,
-    at: await $.clock.now(),
-    peers: sortPeers(here.map(r => toPeer(r, mine.root, prompts.get(r.sessionId)))),
-    others: sortOthers(live.flatMap(r => {
-      const root = roots.get(r.sessionId)
-      return root === undefined ? [] : [toPeer(r, root)]
-    })),
-  }
-  await update($, peers, () => v)
-  return v
-}
-
-// Marks the interactive peers as seen, so each opens the pane unasked at most once; whatever
-// was on screen while the pane was open counts as seen. Returns how many were new.
-async function announce($: EngineInterface, v: PeersView): Promise<number> {
-  const seen = await read($, peersAnnounced)
-  const fresh = v.peers.filter(p => p.kind === 'interactive' && !seen.includes(p.sessionId))
-  if (fresh.length > 0) await update($, peersAnnounced, ids => [...ids, ...fresh.map(p => p.sessionId)].slice(-200))
-  return fresh.length
-}
-
-// Sends a message typed in the pane to one peer with $.session.send and tracks it under its row.
-// The send is recorded (with the peer's pipe) before it is awaited, so a delivery notice that
-// lands first still finds it. Queued closes the Input; a refusal leaves it open to retry.
-// Empty closes it.
-async function sendToPeer($: EngineInterface, p: PeerView, value: string) {
-  const text = value.trim()
-  if (!text) {
-    await update($, peerCompose, () => null)
-    return
-  }
-  const at = await $.clock.now()
-  const mine = (s: PeerSend) => s.sessionId === p.sessionId && s.at === at
-  const pending: PeerSend = { sessionId: p.sessionId, name: p.name, pipe: p.pipe, msgId: null, state: 'sending', text: '', at, stateAt: at }
-  await update($, peerSends, list => [...list, pending].slice(-20))
-  let failure: string | null = null
-  try {
-    const r = await $.session.send({ to: { sessionId: p.sessionId }, text })
-    if (!r.isDelivered) failure = r.reason
-  } catch (err) {
-    failure = err instanceof Error ? err.message : String(err)
-  }
-  const now = await $.clock.now()
-  // A notice may already have moved it on (held): only a send still `sending` takes the result.
-  await update($, peerSends, list =>
-    list.map(s => (mine(s) && s.state === 'sending' ? { ...s, state: failure === null ? 'sent' : 'failed', text: failure ?? '', stateAt: now } : s)),
-  )
-  if (failure === null) await update($, peerCompose, () => null)
-}
-
-const isPeersShown = async ($: EngineInterface) => (await $.ui.panes()).some(p => p.id === PEERS_PANE && p.isShown && p.isPlaced)
-
-// The poll: rescans, and opens the pane unasked when a new interactive session shows up here
-// (fullscreen only, where it docks beside the transcript). Each session is announced once.
-async function tickPeers($: EngineInterface, o: Options) {
-  if (isScanningPeers) return
-  const isOpen = (await $.ui.panes()).some(p => p.id === PEERS_PANE)
-  if (!isOpen && !o.peers.autoOpen) return
-  isScanningPeers = true
-  try {
-    // With the pane closed, the poll only watches for new peers: no history.jsonl read.
-    const v = await scanPeers($, isOpen)
-    // Before anything has drawn the layout is unknown: announce nobody yet, so a session
-    // started beside an existing one still opens the pane once it draws.
-    if (v === null || isFullscreen !== true) return
-    const fresh = await announce($, v)
-    if (isOpen || fresh === 0) return
-    await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
-    await scanPeers($) // now with prompts
-  } finally {
-    isScanningPeers = false
-  }
-}
-
 // Adds a note the model reads after the tool result, so a rewrite is never silent.
 const withNote = <R extends { deny?: string; context?: readonly string[] }>(r: R, note: string): R =>
   r.deny !== undefined ? r : { ...r, context: [...(r.context ?? []), `bws-cockpit: ${note}`] }
@@ -720,7 +526,7 @@ export const register: Register = (on, options) => {
     finish: {
       isOn: options.finishLine !== false,
       maxContinues: Math.max(0, Number(options.finishLineMaxContinues ?? 2)),
-      evidenceCheck: options.evidenceCheck !== false,
+      evidenceCheck: options.evidenceCheck === true,
       isHeadless: options.finishLineHeadless === true,
       owner: String(options.ownerName ?? 'the user'),
     },
@@ -735,7 +541,6 @@ export const register: Register = (on, options) => {
       model: String(options.workerModel ?? '').trim(),
       types: parseTypes(String(options.workerAgentTypes ?? 'general-purpose,claude')),
     },
-    peers: { isOn: options.peersPane !== false, autoOpen: options.peersAutoOpen !== false },
   }
 
   // ---------- /handoff ----------
@@ -837,21 +642,18 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // Repo Sessions: the engine's delivery notices for this session's sends (held, released,
-  // denied, expired) move the matching pane send on. Observe only: the notice goes on unchanged.
-  on('prompt.submit', { text: /^\[Cross-session delivery notice\]/ }, async ($, e, next) => {
-    const n = parseNotice(e.text)
-    if (n !== undefined) {
-      const at = await $.clock.now()
-      await update($, peerSends, list => applyNotice(list, n, at))
-    }
+  // Ownership: a run folder counts for this session only once its own tool calls write to it.
+  on('tool.call', { tool: ['Edit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'] }, async ($, e, next) => {
+    if (!o.finish.isOn) return next(e)
+    const folders = writtenRunFolders(e.tool, e as unknown as Record<string, unknown>)
+    if (folders.length > 0) await noteTouched($, folders)
     return next(e)
   })
 
   on('classic.Stop', async ($, e, next) => {
     if (!o.finish.isOn) return next(e)
     if (!o.finish.isHeadless && (await $.session.surfaces()).length === 0) return next(e)
-    const fl = await sessionFinishLine($)
+    const fl = await sessionFinishLine($, o.finish.owner)
     if (fl === null) return next(e) // no run folder touched this session: nothing to hold to
     const decision = decide({
       open: fl.open,
@@ -878,7 +680,7 @@ export const register: Register = (on, options) => {
     if (surfaces.length > 0 && o.isBackgroundProbe) void refresh($, o, 15000)
     const result = await next(e)
     if (!o.finish.isOn || e.isAborted || e.agentId) return result
-    const fl = await sessionFinishLine($)
+    const fl = await sessionFinishLine($, o.finish.owner)
     if (fl === null || fl.open.length === 0) return result
     const line = `⚑ finish line: ${fl.open.length} open · ${openSummary(fl.open, 3)}`
     return { ...result, text: result.text ? `${result.text}\n${line}` : line }
@@ -891,7 +693,6 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
     await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy its start prompt', argumentHint: '[focus]' })
-    if (o.peers.isOn) await $.command.register({ name: 'repo-sessions', description: 'Show the other Claude Code sessions open in this repo in a side pane (toggles)' })
     if (o.projects.isOn) {
       await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })
       await $.tool.register({
@@ -915,10 +716,6 @@ export const register: Register = (on, options) => {
         void refresh($, o, 0)
         $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
       }
-      if (o.peers.isOn) {
-        void tickPeers($, o)
-        $.clock.every(PEERS_POLL_MS, () => void tickPeers($, o))
-      }
     }
     return next(e)
   })
@@ -926,7 +723,10 @@ export const register: Register = (on, options) => {
   on('prompt.context', async ($, e, next) => {
     const result = await next(e)
     const blocks = [...result.blocks]
-    const run = await findRun($)
+    // The run-folder note is for a person picking work back up. claude -p and SDK workers (no
+    // surface) get their run folder in the prompt, so they skip it.
+    const isAttended = (await $.session.surfaces()).length > 0
+    const run = isAttended ? await findRun($) : null
     if (run !== null) {
       const text =
         `Most recently updated run folder here: ${run.folder}` +
@@ -956,7 +756,9 @@ export const register: Register = (on, options) => {
     const v = await read($, view)
     const devices = v?.devices ? devicesText(v.devices) : 'devices: n/a'
     const guard = v?.lastGuard ? `\nLast guard action: ${v.lastGuard}` : ''
-    return { text: `${runSummary(v?.run ?? null)}\n${devices}${guard}` }
+    const lp = await selectedLoop($)
+    const loop = lp ? `\nLoop: ${lp.name} ${loopState(lp).word}${lp.boardUrl ? ` · board ${lp.boardUrl}` : ''}` : ''
+    return { text: `${runSummary(v?.run ?? null)}\n${devices}${loop}${guard}` }
   })
 
   on('command.run', { command: 'resume-run' }, async ($, e, next) => {
@@ -1116,127 +918,10 @@ export const register: Register = (on, options) => {
     )
   })
 
-  // ---------- Repo Sessions ----------
-
-  on('command.run', { command: 'repo-sessions' }, async ($, e, next) => {
-    const v = await scanPeers($)
-    if (v === null) return { text: 'No Claude config folder found (CLAUDE_CONFIG_DIR, USERPROFILE or HOME).' }
-    const now = await $.clock.now()
-    if ((await $.session.surfaces()).length === 0) return { text: peersText(v.peers, v.root, now, v.others) }
-    if (await isPeersShown($)) {
-      await $.ui.close({ id: PEERS_PANE })
-      return {}
-    }
-    await announce($, v)
-    const opened = await $.ui.open({ id: PEERS_PANE, title: PEERS_TITLE })
-    return opened.isPlaced ? {} : { text: peersText(v.peers, v.root, now, v.others) }
-  })
-
-  on('ui.render', { component: 'Pane', requestId: PEERS_PANE }, async ($, e, next) => {
-    isFullscreen = e.viewport?.isFullscreen ?? isFullscreen
-    const table = $.ui.resolve(e)
-    const { Box, Text, Button } = table
-    // Mobile has no Input (its table may still carry the name at runtime): no msg button there.
-    const Input = e.surface !== 'mobile' && 'Input' in table ? table.Input : null
-    const v = await read($, peers)
-    const now = await $.clock.now()
-    const width = Math.max(24, (e.props.bodyColumns ?? 60) - 1)
-    if (v === null) return <Text dimColor>Looking for sessions…</Text>
-    const composing = await read($, peerCompose)
-    const sends = await read($, peerSends)
-    const msgCols = Input ? 5 : 0 // "  msg"
-    const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
-    const count = `${v.peers.length} other${v.peers.length === 1 ? '' : 's'}`
-    return (
-      <Box flexDirection="column">
-        <Box flexDirection="row">
-          <Text bold>{fit(repoName(v.root), Math.max(6, width - count.length - 2))}</Text>
-          <Text dimColor>{`  ${count}`}</Text>
-        </Box>
-        {rule}
-        {v.peers.length === 0 ? <Text dimColor wrap="wrap">No other Claude Code sessions in this repo.</Text> : null}
-        {v.peers.map(p => {
-          const color = STATUS_COLOR[p.status]
-          const isWorker = p.kind !== 'interactive'
-          const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
-          const detail = peerDetail(p, now)
-          const isComposing = Input !== null && composing === p.sessionId
-          const last = sends.filter(s => s.sessionId === p.sessionId).at(-1)
-          const line = last === undefined ? null : sendLine(last, now)
-          return (
-            <Box key={`peer-${p.sessionId}`} flexDirection="column">
-              <Box flexDirection="row">
-                <Text color={color} dimColor={color === undefined}>{p.status === 'busy' ? '● ' : '○ '}</Text>
-                <Text bold={!isWorker} dimColor={isWorker}>{fit(p.name, Math.max(6, width - state.length - 4 - msgCols))}</Text>
-                <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
-                {Input ? <Text>{'  '}</Text> : null}
-                {Input ? (
-                  <Button
-                    key={`msg-${p.sessionId}`}
-                    plain
-                    dimColor={!isComposing}
-                    label="msg"
-                    onPress={() => void update($, peerCompose, cur => (cur === p.sessionId ? null : p.sessionId))}
-                  />
-                ) : null}
-              </Box>
-              {p.prompt ? <Text>{`  › ${fit(p.prompt, width - 4)}`}</Text> : null}
-              {detail ? <Text dimColor>{`  ${fit(detail, width - 2)}`}</Text> : null}
-              {isComposing && Input ? (
-                <Input
-                  key={`send-${p.sessionId}`}
-                  label={`  to ${fit(p.name, Math.max(6, Math.floor(width / 3)))} › `}
-                  placeholder="message, Enter sends (empty closes)"
-                  submitLabel="send"
-                  autoFocus
-                  onSubmit={(value: string) => void sendToPeer($, p, value)}
-                />
-              ) : null}
-              {line && !line.isOver ? (
-                <Text color={line.color} dimColor={line.color === undefined} wrap="wrap">{`  ${line.text}`}</Text>
-              ) : null}
-            </Box>
-          )
-        })}
-        {v.others.length > 0 ? rule : null}
-        {v.others.length > 0 ? (
-          <Box flexDirection="row">
-            <Text bold>Other repos</Text>
-            <Text dimColor>{`  ${v.others.length}`}</Text>
-          </Box>
-        ) : null}
-        {v.others.map((p, i) => {
-          const color = STATUS_COLOR[p.status]
-          const isWorker = p.kind !== 'interactive'
-          const state = `${p.status} ${forText(p.statusSince, now)}`.trim()
-          const detail = otherDetail(p)
-          const label = detail ? `${p.name} · ${detail}` : p.name
-          const isNewRepo = v.others[i - 1]?.repo !== p.repo
-          return (
-            <Box key={`other-${p.sessionId}`} flexDirection="column">
-              {isNewRepo ? <Text color="claude">{fit(p.repo, width)}</Text> : null}
-              <Box flexDirection="row">
-                <Text color={color} dimColor={color === undefined}>{p.status === 'busy' ? '  ● ' : '  ○ '}</Text>
-                <Text dimColor={isWorker}>{fit(label, Math.max(6, width - state.length - 6))}</Text>
-                <Text color={color} dimColor={color === undefined}>{`  ${state}`}</Text>
-              </Box>
-            </Box>
-          )
-        })}
-        {rule}
-        <Box flexDirection="row" columnGap={2}>
-          <Text dimColor>{`updated ${ago(v.at, now)}`}</Text>
-          <Button key="peers-refresh" plain dimColor label="refresh" hotkey="g" onPress={() => void scanPeers($)} />
-        </Box>
-      </Box>
-    )
-  })
-
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    isFullscreen = e.viewport?.isFullscreen ?? isFullscreen
     const v = await read($, view)
     if (e.props.hasSurvey || v === null || (await read($, isHidden))) return next(e)
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const { Box, Text, Button, Link } = $.ui.resolve(e)
     const width = Math.max(40, (e.props.bodyColumns ?? 100) - 1)
     const run = v.run
     const d = v.devices
@@ -1288,6 +973,8 @@ export const register: Register = (on, options) => {
                 </Text>
                 <Text dimColor={loopChip.state === 'off'}>loop</Text>
                 <Text dimColor>{` ${loopChip.detail} ${loopChip.word}`}</Text>
+                {lp?.boardUrl ? <Text dimColor>{'  '}</Text> : null}
+                {lp?.boardUrl ? <Link href={lp.boardUrl} label={fit(`board ${lp.boardUrl.replace(/^https?:\/\//, '')}`, 60)} /> : null}
               </Box>
             ) : null}
           </Box>
@@ -1381,7 +1068,7 @@ export const register: Register = (on, options) => {
         }
       }
     }
-    if (o.lowVramMode === 'off' || launch.hasOverrides || !isPressure(p, o)) return next(e)
+    if (o.lowVramMode === 'off' || launch.hasOverrides || launch.isRender || !isPressure(p, o)) return next(e)
     const arg = lowVramArg(o.cvars)
     if (launch.isStartProcess) {
       await noteGuard($, 'blocked a UE launch without low-VRAM flags')

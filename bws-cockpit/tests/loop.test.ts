@@ -337,6 +337,21 @@ B, the overhead swing
     await ui.unmount()
   })
 
+  test('the loop chip and /cockpit carry the board URL', async ($, on) => {
+    world(on, { state: PAUSED_STATE })
+    const r = await $.command.run({ command: 'cockpit', args: '' } as never)
+    expect(r.text).toContain('Loop: kit needs you · board http://localhost:8772/')
+    const band = await $.ui.mount({
+      plugin: 'bws-cockpit',
+      surface: 'terminal',
+      component: 'AbovePrompt',
+      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
+    })
+    const link = await band.find({ type: 'Link' })
+    expect(link?.text).toBe('board localhost:8772/')
+    await band.unmount()
+  })
+
   test('the band shows a loop chip and a 4: loop hotkey', async ($, on) => {
     world(on, { state: PAUSED_STATE })
     await $.command.run({ command: 'cockpit', args: '' } as never) // fills the band's view and the loops

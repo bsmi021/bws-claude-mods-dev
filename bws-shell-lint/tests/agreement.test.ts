@@ -1,7 +1,7 @@
 // The TS rules reach the same verdict and detail as the Python reference on every sampled corpus command.
 import { test, expect } from 'claude-code/testing'
-import { lint } from '../hooks/lint.ts'
-import { FIXTURE } from './corpus-fixture.ts'
+import { lint } from '../hooks/lint'
+import { FIXTURE } from './corpus-fixture'
 
 test('TS port agrees with the Python reference on the corpus sample', () => {
   const mismatches: string[] = []

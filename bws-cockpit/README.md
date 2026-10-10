@@ -20,7 +20,7 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
   - Refreshes every `refreshSeconds` and after each turn.
 - **`/resume-run`** queues a prompt that resumes the newest run folder: it reads RUNLOG/PLAN/TASKS, restates the finish line and the next step, checks the receipts, then continues.
 - **`/cockpit`** gives the same status as text, for sessions where nothing draws.
-- **First-message context.** Every new conversation gets one short block naming the newest run folder, its next step and its open count, with a note to confirm before resuming it. This also works headless.
+- **First-message context.** Every new interactive conversation gets one short block naming the newest run folder, its next step and its open count, with a note to confirm before resuming it. `claude -p` and SDK sessions (no surface) skip it: harness workers get their run folder in their prompt.
 
 ### Loop Watch (harness loops)
 - **`/loop-watch`** opens a pane for this project's harness loop. It reads `Tools/<name>/loop.json`, then `<harnessDir>/state.json` and each unit's `TASKS.md`, and shows:
@@ -45,40 +45,17 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
   - `s` stop runs `harness.py stop`, only on a second press within 10 s
   - `g` refreshes
   - The result of each action shows in the pane.
-- **Band:** a `loop` chip (running, needs you, stalled, stopped) and the hotkey `4: loop`, which opens the pane.
+- **Band:** a `loop` chip (running, needs you, stalled, stopped) with the board link beside it, and the hotkey `4: loop`, which opens the pane. `/cockpit` prints the loop and its board URL too.
 - **Without a pane** (headless `claude -p "/loop-watch"`), the same summary comes back as text.
 
-### Repo Sessions
-- **`/repo-sessions`** toggles a pane listing the other Claude Code sessions open in this repo. In the fullscreen layout (`"tui": "fullscreen"`) it docks to the right of the transcript; on the main screen it sits inline above the prompt. (`/peers` is Claude Code's own built-in, which lists every session on the machine.)
-- **Same repo** means the same common git dir, so sessions in subfolders and in worktrees count. Outside git it means the same folder.
-- Each row shows the session's name, its status (busy, idle, waiting, shell, or whatever the engine reports) and how long it has been in it. A dim second line shows the kind when it isn't interactive (for example `claude -p` workers), the subfolder or worktree path when it isn't the repo root, and when it started. Interactive sessions sort first.
-- **Latest prompt:** under each row, `› ` and the first line of that session's newest prompt, cut to the pane width. Bare slash commands (`/clear`, `/repo-sessions`) are skipped; ones with arguments count. Prompts are read only while the pane is open, or for a `/repo-sessions` text reply. It comes from Claude Code's prompt history, `<config dir>/history.jsonl`, matched by session id. The file is read again only when its size or mtime changes. Over 4 MiB (the limit of `$.fs.read`), only its last 1 MiB is read, through a PowerShell seek or `tail -c`. A session with no prompt there gets no line; `claude -p` runs usually have none.
-- **Message a peer:** each row for a session in this repo has a `msg` button. Pressing it opens a text box under that row; one box is open at a time, and pressing `msg` again closes it. Enter sends the text with `$.session.send` to that session id, and an empty Enter closes the box.
-  - Under the row the message's state follows it:
-    - `✓ sent`: queued at the peer.
-    - `◆ held: waiting for approval in <name>`: the two sessions run in different permission modes, so the peer's person has to approve it. This line never fades while it waits.
-    - `✓ approved and delivered`, `✗ denied by the recipient`, `✗ expired, not delivered`.
-    - `✗ <reason>`: the send was refused or failed. The box stays open so you can retry.
-    - Any other notice wording shows its first sentence as-is.
-    - Final states fade after a minute.
-  - The states come from Claude Code's delivery notices for this session's sends (`[Cross-session delivery notice] …`), seen on `prompt.submit`. They're matched to the peer by its messaging pipe, then by `msg_id`, and passed on unchanged, so Claude still reads them.
-  - A notice for a message the pane didn't send, such as one Claude sent, changes nothing in the pane.
-  - The expired wording hasn't been seen yet; the pane looks for "expired" in its first sentence.
-  - The peer gets the text as a cross-session message from this session, marked as coming from bws-cockpit, and acts on it as a prompt. A reply it sends comes back here the same way.
-  - Mobile has no text box, so it shows no button. Sessions in other repos have no button.
-- **Other repos:** a section at the bottom lists every other live session on the machine that is not in this repo. They're grouped under their repo's folder name, each with its status and how long it has been in it. These rows have no prompt lines.
-- **Opens unasked** when a new interactive session appears in this repo. That only happens in the fullscreen layout, and the engine seats an unasked pane only from 144 columns. Each session triggers it once, so closing the pane keeps it closed until another new one appears.
-- **Source:** Claude Code's own registry, `<config dir>/sessions/<pid>.json`. The config dir is `CLAUDE_CONFIG_DIR`, or `~/.claude`. The `.key` files beside the registry are never read. Sessions whose process is gone are dropped, using one `tasklist` call at most every 45 s; if the check fails, every session is kept. It refreshes every 5 s while a surface is attached.
-- **Without a pane** (`claude -p "/repo-sessions"`), the same list comes back as text, prompts and other repos included.
-
 ### Finish-Line Guard
-Keeps Claude from stopping while this session's checklist still has work. This session's run folder is the newest `runs/*` whose RUNLOG, PLAN or TASKS was written since the session started; a stale folder never counts.
+Keeps Claude from stopping while this session's checklist still has work. This session's run folder is the newest `runs/*` that this conversation's own tool calls wrote to: an Edit, Write or NotebookEdit inside it, or a Bash/PowerShell command that names it and writes (a redirect, `tee`, `sed -i`, `mkdir`, `cp`/`mv`, `Set-Content` and the like). A folder a harness worker writes while this session supervises the loop never counts, and neither does reading a worker's checklist.
 - **Open items.** When Claude tries to end its turn and PLAN.md or TASKS.md still has `- [ ]` items, the stop is blocked and Claude is told which items remain (up to 5). It is also told how to hand back properly: say so plainly, and mark the item `(blocked: …)` or `(needs <ownerName>: …)`.
-- **Items that never hold it open:** items marked blocked, waiting on, needs the user/you, parked, deferred, follow-up, later or out of scope.
+- **Items that never hold it open:** items marked blocked, waiting on, needs the user/you, parked, deferred, follow-up, later or out of scope; harness proposals marked `(proposed-task)`; and items addressed to you, starting with `<ownerName>:`.
 - **Never blocked:**
-  - a reply that hands back: it ends with a question, or says "your call", "want me to", "should I" or "let me know"
+  - a reply that hands back: it ends with a question, or says "your call", "want me to", "should I" or "let me know", or asks you to act: "tell me when…", "say go", "when you say…", "when you next ask". An offer such as "say if you want a different order" is not a hand-back
   - a turn with background tasks or scheduled wake-ups pending
-- **Evidence check.** When nothing is open but the reply claims "done", "complete", "all tests pass", ✅ and so on without citing evidence, the stop is blocked once. Evidence is test counts, receipt or log paths, "exit 0", a commit hash or a URL.
+- **Evidence check (off by default).** With `evidenceCheck` on, when nothing is open but the reply claims "done", "complete", "all tests pass", ✅ and so on without citing evidence, the stop is blocked once. Evidence is test counts, receipt or log paths, "exit 0", a commit hash or a URL. Off since 0.10.0: in a week of sessions all 13 of its blocks hit status replies ("holding for master", "nothing committed yet").
 - **Bounded.** At most `finishLineMaxContinues` blocks (default 2) per prompt you send, so it can never loop.
 - **Visible.** When a turn ends with open items anyway, a line under the answer shows `⚑ finish line: N open · …`.
 - **Headless is off by default**, so harness workers keep their own budgets. `finishLineHeadless` turns it on.
@@ -118,7 +95,7 @@ Fix mode: it blocks calls that cannot work and adds missing launch flags. It nev
 | `unity open …` or `Unity.exe … -projectPath` without `-automated` | **Rewrite**: adds `-automated` (or `--args -automated`) |
 | `Start-Process` Unity launch without `-automated` | **Block** with the argument to add (argument lists are not rewritten) |
 | GUI `UnrealEditor.exe` launch of a `.uproject` that is already open | **Block** with the running pid |
-| GUI `UnrealEditor.exe` launch under GPU pressure (another UE editor, Blender, or VRAM ≥ threshold) | **Rewrite**: appends `-ini:Engine:[SystemSettings]:t.MaxFPS=30,…` low-VRAM overrides. A `Start-Process` form is **blocked** with the exact argument instead |
+| GUI `UnrealEditor.exe` launch under GPU pressure (another UE editor, Blender, or VRAM ≥ threshold) | **Rewrite**: appends `-ini:Engine:[SystemSettings]:t.MaxFPS=30,…` low-VRAM overrides. A `Start-Process` form is **blocked** with the exact argument instead. Passes untouched when the command already sets render settings anywhere (`[SystemSettings]:`, `-ExecCmds`, `r.ScreenPercentage`, `t.MaxFPS`, `sg.*Quality`), including inside a `$args = @(…)` array passed as `-ArgumentList $args`, and for render runs (`-unattended`, `HighResShot`, `-RenderOffscreen`, Movie Render Queue) |
 
 Notes on the guard:
 - Every rewrite adds a note the model reads after the tool result, so it is never silent. A toast tells you as well.
@@ -155,50 +132,47 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `loopDriverStaleMinutes` | `3` | Alert when a RUNNING driver's heartbeat stops |
 | `finishLine` | `true` | The Finish-Line Guard |
 | `finishLineMaxContinues` | `2` | Stops the guard may block per prompt you send |
-| `evidenceCheck` | `true` | Block once when a done claim cites no evidence |
+| `evidenceCheck` | `false` | Block once when a done claim cites no evidence |
 | `finishLineHeadless` | `false` | Also guard `claude -p` and SDK sessions |
 | `ownerName` | `the user` | What the guard calls you when it asks Claude to mark an item that needs you |
 | `projectLocator` | `true` | The Project Locator |
 | `projectRoots` | `C:/Projects` | Folders that hold your projects, separated by `;` |
 | `workerModel` | (empty: off) | Model for subagents whose Agent call names none |
 | `workerAgentTypes` | `general-purpose,claude` | Subagent types the worker model applies to |
-| `peersPane` | `true` | Repo Sessions (`/repo-sessions` and the pane) |
-| `peersAutoOpen` | `true` | Open the pane when a new interactive session appears in this repo |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, repo-sessions, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`), `ui.render` (AbovePrompt, the loop-watch and repo-sessions Panes), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
-| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`, `tasklist /FO CSV /NH` (Repo Sessions liveness), and `powershell` reading the last 1 MiB of `history.jsonl` when it is over 4 MiB, only after it changes. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
+| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`; Edit/Write/NotebookEdit/Bash/PowerShell, observe only, to see which run folders the session writes), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
-| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; for Repo Sessions, `<config dir>/sessions/<pid>.json`, `<config dir>/history.jsonl` and the `.git` entry above each session's folder |
+| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
 | Prompts | `$.prompt.submit` for resume |
-| Messages | `$.session.send` to a peer's session id, only when you type one in the Repo Sessions pane and press Enter; observes `prompt.submit` delivery notices for those sends |
 | Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
 | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
-| Environment | reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` |
 | Tools | registers `find_project` |
 
 It writes no files.
 
 ## Tested
 
-Claude Code 2.1.287, Windows 11, Git Bash + PowerShell 7.6.
+Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 7.6.
 
 | Check | Result |
 |---|---|
 | `claude plugin validate` | passed |
-| `claude plugin test` | 128/128, adding msg delivery states (the real held, batched held, released and denied wordings, first sentence only, unknown wording, binding by order then id, notices for other pipes or no open send ignored, a held notice landing before the send resolves, held not fading, final states fading, the notice passed on unchanged), Loop Watch on mobile (no picker or Input, the answer command as text) and Repo Sessions (the msg button and its box, a send and its address, delivered, refused, thrown, empty, the one-minute note, no button on mobile, latest prompt from history, newest wins, first line, the tail read for a file over 4 MiB, the read cache, other repos grouped and sorted, registry parsing, worktree repo keys, liveness and its failure, sort, the text list, the pane on terminal and desktop, /repo-sessions toggle and tab, auto-open once in fullscreen only, the off switch, no reopen after a close, a reused pid). Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch (parsing, alerts, pane layouts, stop confirm, resume, answering needs, toasts, loop picker), /handoff (file, kept copy, clipboard, headless, focus, new folder, transcript fallback, failures), the worker model pin (pinned, explicit model, fork, other types, off, widened types), the Project Locator (index scan, skip list and depth, find_project, Globs answered and refused, cache and refresh, home-folder context, off switch), and the Finish-Line Guard (open-item block, parked items, hand-back, background work, the continue cap and its reset, evidence check, stale folder, headless, off switch, the line under the answer) |
-| Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop |
-| Type-check against the 2.1.287 declarations (tsc 5.9, strict) | clean |
+| `claude plugin test` (0.10.0, Claude Code 2.1.296) | 112/112, three runs in a row. New: run-folder ownership (a worker-written folder and a read of its checklist claim nothing; a shell write claims it; a new conversation forgets), imperative hand-backs from real replies ("tell me when", "say go", "when you next ask"; "say if you want" still blocks), `(proposed-task)` and `<ownerName>:` items parked, the evidence check off by default and on by option, the run-folder context skipped with no surface, the board URL in the loop chip and `/cockpit`, and the low-VRAM pass-through for overrides in a `$args` array, render runs, an explicit screen percentage, and a startup-script `-ini` that is not an override. The Repo Sessions tests went with the pane; the registry parsing kept in `peers.ts` is still tested. Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch, /handoff, the worker model pin, the Project Locator and the Finish-Line Guard |
+| Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop. 0.10.0 (2.1.296, Haiku 5.5, scratch repo with two open items): a session that ran a script which appended to the run folder's RUNLOG (as a harness worker does) was not blocked; a session that appended to the RUNLOG with Edit was blocked with both items named, then did both and ticked them |
+| Type-check against the 2.1.296 declarations (tsc 5.9.3, strict, noUncheckedIndexedAccess) | clean |
 | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
 | Live headless (`claude -p --plugin-dir`) | `echo` naming the exes passes untouched. A UE launch under GPU pressure gets the `-ini` overrides, and a `Unity.exe -projectPath` launch gets `-automated` (both exes at nonexistent paths, so nothing started). adb is blocked for an unauthorized device and passes once it's authorized. A second editor for an open `.uproject` is blocked. An unreal-mcp call passes against a live editor |
 | Loop Watch live | headless `/loop-watch` printed a real loop; the pane drew in an interactive session docked at about 30 columns |
 | Project Locator live | `/projects refresh` from the home folder indexed 65 real projects (9 s including startup). A Glob for `**/*.uproject` over `C:\Projects` came back from the index in 4 ms with the 7 real `.uproject` files. The same Glob over the home folder was refused at once. `find_project` by name returned the folder, `.uproject` and harness loop |
 | /handoff live | After a headless task in a scratch repo, `claude -p --continue "/handoff"` wrote a 467-word HANDOFF.md through the resumed-session fallback, with the correct commit hash and next step |
 | Worker pin live | A parent on claude-opus-5-5 spawned three subagents: general-purpose with no model ran on claude-sonnet-5-5 (toast shown), Explore kept claude-opus-5-5, and an explicit `haiku` stayed on Haiku |
-| Repo Sessions live (2.1.288) | headless `claude -p "/repo-sessions"` in this repo listed the other live session here with its latest prompt (read from the tail of a real 5 MB history.jsonl), and the 5 sessions in other repos under their repo names. The docked pane was checked by eye in fullscreen. A `$.session.send({ to: { sessionId } })` from a scratch probe mod to a live peer returned `isDelivered: true`; the peer received the text as a cross-session message and replied. From the pane, a message to a default-mode session showed `◆ held`, then `✓ approved and delivered` once its person approved it |
+| Guard pass-through live (0.10.0, `vramThresholdMb` 1 to force pressure) | A `Start-Process … -ArgumentList $a` whose `$a` array carried the `-ini` overrides ran (nonexistent path, so PowerShell said the file was missing); the same launch without them was refused with the argument to add |
+| Repo Sessions live (2.1.288, removed in 0.10.0) | headless `claude -p "/repo-sessions"` in this repo listed the other live session here with its latest prompt (read from the tail of a real 5 MB history.jsonl), and the 5 sessions in other repos under their repo names. The docked pane was checked by eye in fullscreen. A `$.session.send({ to: { sessionId } })` from a scratch probe mod to a live peer returned `isDelivered: true`; the peer received the text as a cross-session message and replied. From the pane, a message to a default-mode session showed `◆ held`, then `✓ approved and delivered` once its person approved it |
 | Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
 
 Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.

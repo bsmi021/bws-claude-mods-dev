@@ -28,17 +28,56 @@ export const openItems = (markdown: string): string[] =>
 const PARKED =
   /\b(blocked|waiting (on|for)|needs? (the user|you|user)|on hold|parked|deferred?|follow-?ups?|later|out of scope|won'?t do|not now|optional)\b|\bneeds? [A-Z][\w-]*:/i
 
-export const isParked = (item: string) => PARKED.test(item)
+// A harness proposal waits on the person too, and so does an item addressed to them ("Brian: ...").
+const PROPOSED = /\(proposed[- ]task\)/i
 
-export const actionable = (items: string[]) => items.filter(i => !isParked(i))
+export const isParked = (item: string, owner?: string) => {
+  if (PARKED.test(item) || PROPOSED.test(item)) return true
+  const who = owner?.trim()
+  return who !== undefined && who.length > 0 && who !== 'the user' && item.toLowerCase().startsWith(`${who.toLowerCase()}:`)
+}
+
+export const actionable = (items: string[], owner?: string) => items.filter(i => !isParked(i, owner))
+
+// ---------- ownership ----------
+
+// The runs/<date>-<slug> folders a tool call writes to. Edit, Write and NotebookEdit by their path;
+// Bash and PowerShell only when the command also writes (redirect, tee, sed -i, mkdir, cp/mv, the
+// PowerShell write cmdlets, Python file writes). Reading a worker's TASKS.md claims nothing.
+const RUN_DIR = /runs[\\/]+(\d{4}-\d{2}-\d{2}-[^\\/\s'"`;|&)<>*]+)/g
+const SHELL_WRITE =
+  /(?:^|[^<>=&\d-])>>?(?![&=])|\btee\b|\bsed\s+(-[a-zA-Z]*\s+)*-i|\b(mkdir|cp|mv|touch)\b|\b(Set|Add)-Content\b|\bOut-File\b|\bNew-Item\b|\b(Copy|Move)-Item\b|\bwrite_text\b|\.write\(|\bopen\([^)]*['"][wax]\+?['"]/i
+
+const runDirs = (text: string) => [...text.matchAll(RUN_DIR)].map(m => m[1] ?? '').filter(Boolean)
+
+export function writtenRunFolders(tool: string, input: Record<string, unknown>): string[] {
+  const str = (k: string) => {
+    const v = input[k]
+    return typeof v === 'string' ? v : ''
+  }
+  if (tool === 'Edit' || tool === 'Write' || tool === 'NotebookEdit' || tool === 'MultiEdit') {
+    return [...new Set(runDirs(str('file_path') || str('notebook_path')))]
+  }
+  if (tool === 'Bash' || tool === 'PowerShell') {
+    const cmd = str('command')
+    return SHELL_WRITE.test(cmd) ? [...new Set(runDirs(cmd))] : []
+  }
+  return []
+}
 
 // A reply that hands control back to the person: a question, or an explicit hand-back.
 const HAND_BACK =
   /(your call|want me to|should i\b|shall i\b|which (one|do you|would you)|do you want|waiting on you|need(s)? you to|needs? your|let me know|over to you|your decision|confirm (whether|if|before)|before i (continue|proceed))/i
 
+// Imperative asks hand back too ("tell me when it's plugged in", "say go"). "Say if you want X"
+// does not: it offers an option while there is still work to do.
+const IMPERATIVE_ASK =
+  /\btell me (when|once|whether|["“'])|\bwhen you say\b|\bsay ["“']?(go|yes|the word)\b|\bwhen you next ask\b|\bonce you (answer|confirm|decide|reply|approve)\b|\bwaiting (on|for) your\b/i
+
 export const isHandBack = (message: string) => {
   const tail = message.trim().replace(/[\s*_`)\]]+$/, '')
-  return tail.endsWith('?') || HAND_BACK.test(message.slice(-1500))
+  const end = message.slice(-1500)
+  return tail.endsWith('?') || HAND_BACK.test(end) || IMPERATIVE_ASK.test(end)
 }
 
 // A completion claim in the headline or the closing lines.

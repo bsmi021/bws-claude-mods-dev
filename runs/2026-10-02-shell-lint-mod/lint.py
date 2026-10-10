@@ -17,7 +17,7 @@ import re
 
 BS = chr(92)
 
-LONG_LIMIT = 7850          # first failure 7709, last success 7802 (cwd length shifts it)
+LONG_LIMIT = 7800          # 2026-10-10 replay: 152 of 154 cut-offs caught, 10 of 73,470 ok commands refused
 HARD_LIMIT = 32000         # past this the spawn itself fails with ENAMETOOLONG
 
 HEREDOC_OPEN = re.compile(r"<<(-?)[ \t]*(['\"]?)([A-Za-z_][A-Za-z0-9_.-]*)\2")
@@ -193,7 +193,8 @@ def python_regions(cmd):
 # ---------------------------------------------------------------- rules
 
 def rule_long_command(cmd):
-    size = len(cmd) + 3 * cmd.count("'")
+    # 2026-10-10: double quotes and backslashes count 2 as well, limit 7800 (runs/2026-10-10-mods-release)
+    size = len(cmd.encode('utf-16-le')) // 2 + 3 * cmd.count("'") + cmd.count('"') + cmd.count(chr(92))
     if size >= LONG_LIMIT:
         return {'rule': 'long-command', 'detail': size}
     return None

@@ -5,8 +5,8 @@
 // - Bash receives the command after one more round of backslash parsing: a run of n backslashes
 //   NOT followed by a double quote arrives as ceil(n/2); a run followed by a double quote arrives
 //   untouched. It holds inside single quotes and quoted heredocs, where bash itself keeps them.
-// - A Bash command longer than about 7.7k characters (each ' counting 4, the cost of escaping it)
-//   reaches bash cut short, and bash fails with "unexpected EOF".
+// - A Bash command longer than about 7.8k (each ' counting 4, each double quote and backslash 2, the
+//   cost of escaping them) reaches bash cut short, and bash fails with "unexpected EOF".
 
 export type RuleName = 'long-command' | 'dq-trailing-backslash' | 'py-backslash'
 
@@ -21,8 +21,13 @@ export const RULE_NAMES: readonly RuleName[] = ['long-command', 'dq-trailing-bac
 
 const BS = '\\'
 
-// first failure at 7709, last success at 7802 (the session's cwd length moves the cut a little)
-export const LONG_LIMIT = 7850
+// The size counts each ' as 4 and each " and \ as 2 (what escaping them costs on the way to bash).
+// Replayed over 73,857 real Bash commands (runs/2026-10-10-mods-release): at 7800 it catches 152 of
+// 154 cut-off failures and refuses 10 of 73,470 commands that ran (the old len + 3' at 7850: 142, 4).
+export const LONG_LIMIT = 7800
+
+export const commandSize = (cmd: string) =>
+  cmd.length + 3 * (cmd.split("'").length - 1) + (cmd.split('"').length - 1) + (cmd.split(BS).length - 1)
 
 const HEREDOC_OPEN = /<<(-?)[ \t]*(['"]?)([A-Za-z_][A-Za-z0-9_.-]*)\2/g
 const PY_HEREDOC_LINE = /(^|[\s;&|(])(python[0-9.]*|py)(\.exe)?([ \t][^\n<]*)?<<|>[ \t]*['"]?[^\s'"]+\.py['"]?[ \t]*<<|<<[^\n]*>[ \t]*['"]?[^\s'"]+\.py/
@@ -48,20 +53,20 @@ export function splitHeredocs(cmd: string): { shell: string; bodies: Heredoc[] }
   const bodies: Heredoc[] = []
   let i = 0
   while (i < lines.length) {
-    const line = lines[i]
+    const line = lines[i] ?? ''
     shell.push(line)
     i += 1
     const pending: { dash: boolean; quoted: boolean; tag: string }[] = []
     for (const m of line.matchAll(HEREDOC_OPEN)) {
       const at = m.index ?? 0
       if (at > 0 && line[at - 1] === '<') continue // here-string <<<
-      pending.push({ dash: m[1] === '-', quoted: m[2] !== '', tag: m[3] })
+      pending.push({ dash: m[1] === '-', quoted: m[2] !== '', tag: m[3] ?? '' })
     }
     for (const p of pending) {
       const body: string[] = []
       let terminated = false
       while (i < lines.length) {
-        const ln = lines[i]
+        const ln = lines[i] ?? ''
         i += 1
         const probe = p.dash ? ln.replace(/^\t+/, '') : ln
         if (probe === p.tag || probe.replace(/\r+$/, '') === p.tag) {
@@ -119,9 +124,9 @@ export function scanPython(code: string): PyFault | null {
     }
     if (ch === "'" || ch === '"') {
       let k = i
-      while (k > 0 && 'rRbBuUfF'.includes(code[k - 1])) k -= 1
+      while (k > 0 && 'rRbBuUfF'.includes(code[k - 1] ?? '')) k -= 1
       let prefix = code.slice(k, i).toLowerCase()
-      if (k > 0 && WORD_CHAR.test(code[k - 1])) prefix = '' // the letters belong to an identifier
+      if (k > 0 && WORD_CHAR.test(code[k - 1] ?? '')) prefix = '' // the letters belong to an identifier
       const raw = prefix.includes('r')
       const isBytes = prefix.includes('b')
       const triple = code.startsWith(ch + ch + ch, i)
@@ -159,7 +164,7 @@ function dqUnescape(s: string): string {
   let out = ''
   let i = 0
   while (i < s.length) {
-    if (s[i] === BS && i + 1 < s.length && '\\"$`'.includes(s[i + 1])) {
+    if (s[i] === BS && i + 1 < s.length && '\\"$`'.includes(s[i + 1] ?? '')) {
       out += s[i + 1]
       i += 2
       continue
@@ -209,14 +214,15 @@ function pythonRegions(cmd: string): PyRegion[] {
 }
 
 export function ruleLongCommand(cmd: string): Finding | null {
-  const size = cmd.length + 3 * (cmd.split("'").length - 1)
+  const size = commandSize(cmd)
   return size >= LONG_LIMIT ? { rule: 'long-command', detail: String(size) } : null
 }
 
 export function ruleDqTrailingBackslash(cmd: string): Finding | null {
   const eff = collapse(splitHeredocs(cmd).shell)
   for (const m of eff.matchAll(WIN_PATH_DQ)) {
-    if (m[3].length % 2 === 1) return { rule: 'dq-trailing-backslash', detail: m[2] + m[3] }
+    const run = m[3] ?? ''
+    if (run.length % 2 === 1) return { rule: 'dq-trailing-backslash', detail: (m[2] ?? '') + run }
   }
   return null
 }
@@ -252,7 +258,7 @@ export function lint(cmd: string, disabled: readonly string[] = []): Finding | n
 export function denyText(f: Finding): string {
   const tag = `bws-shell-lint [${f.rule}]`
   if (f.rule === 'long-command') {
-    return `${tag}: this Bash command is ${f.detail} chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, ` +
+    return `${tag}: this Bash command is ${f.detail} units long (each ' counts 4, each double quote and backslash 2) and the Windows Bash tool cuts commands past ~7.8k, ` +
       'so bash would fail with "unexpected EOF". Fix: write the script to a file with the Write tool (the scratchpad is fine), ' +
       'then run the file (python <file> / bash <file>), or split the command.'
   }

@@ -64,46 +64,6 @@ export type LoopView = {
 
 export type LoopActionNote = { text: string; at: number; isError: boolean }
 
-// ---------- Repo Sessions (other Claude Code sessions in this repo) ----------
-
-export type PeerView = {
-  sessionId: string
-  pid: number
-  name: string
-  status: string // busy, idle, shell, or whatever the registry says
-  kind: string // interactive, or a headless kind
-  repo: string // its repo's folder name
-  where: string // relative to its repo root; '' at the root
-  startedAt: number | null
-  statusSince: number | null
-  pipe: string | null // its messaging pipe, normalized, as delivery notices name it
-  prompt: string | null // first line of its latest prompt in history.jsonl (same-repo peers only)
-  promptAt: number | null
-}
-
-export type PeersView = {
-  root: string // this session's repo root
-  at: number // when it was scanned
-  peers: PeerView[]
-  others: PeerView[] // live sessions in other repos, by repo name
-}
-
-// A message sent from the pane and where it stands. `sent` is queued at the peer; the engine's
-// delivery notices move it to held, then released, denied or expired (`other`: wording not
-// seen yet, kept in `text`). `failed` is a send refused or thrown, the reason in `text`.
-export type SendState = 'sending' | 'sent' | 'held' | 'released' | 'denied' | 'expired' | 'failed' | 'other'
-
-export type PeerSend = {
-  sessionId: string
-  name: string
-  pipe: string | null
-  msgId: string | null // bound by the first notice that names it
-  state: SendState
-  text: string
-  at: number // when it was sent
-  stateAt: number // when it reached this state
-}
-
 declare module 'claude-code' {
   interface PluginState {
     'bws-cockpit': {
@@ -113,10 +73,8 @@ declare module 'claude-code' {
       loopSelected: string | null
       loopAction: LoopActionNote | null
       stopArmedAt: number | null
-      peers: PeersView | null
-      peersAnnounced: string[]
-      peerCompose: string | null // the sessionId whose message Input is open
-      peerSends: PeerSend[] // newest last, the last 20
+      // Finish-Line Guard: run folders this conversation's own tool calls wrote to, keyed by its start
+      touched: { startedAt: number; folders: string[] } | null
     }
   }
 }

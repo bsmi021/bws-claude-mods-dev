@@ -1,7 +1,7 @@
 // bws-shell-lint: refuse a Bash command that will fail for quoting or length reasons on Windows Git Bash,
 // and tell Claude the exact fix so it retries correctly at once. Never rewrites the command.
 import type { Register } from 'claude-code'
-import { lint, denyText, toastText } from './lint.ts'
+import { lint, denyText, toastText } from './lint'
 
 export const register: Register = (on, options) => {
   if (options.enabled === false) return

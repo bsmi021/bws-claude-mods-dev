@@ -241,6 +241,40 @@ describe('guard', () => {
     expect(r.deny ?? r.text ?? '').toMatch(/-ini:Engine:\[SystemSettings\]:t\.MaxFPS=30/)
   })
 
+  // The 10-06 retry: the overrides sat in a $args array passed as -ArgumentList $args, and were blocked again.
+  test('a Start-Process retry whose $args already carry the overrides passes', async ($, on) => {
+    const reached = world(on, { procs: 'blender.exe|9|blender', vram: '4100, 8188' })
+    const cmd =
+      `$args = @("C:\\p\\x.uproject", "-nosplash", '-ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPercentage=50')\n` +
+      `Start-Process -FilePath "${UE}" -ArgumentList $args -PassThru | Select-Object Id`
+    const r = await $.tool.call({ tool: 'PowerShell', command: cmd })
+    expect(r.deny).toBeUndefined()
+    expect(reached[0]?.command).toBe(cmd)
+  })
+
+  test('an unattended render run under pressure is left alone (no 50% screen on a capture)', async ($, on) => {
+    const reached = world(on, { procs: 'blender.exe|9|blender', vram: '4100, 8188' })
+    const cmd =
+      `$args = @("C:\\p\\x.uproject", "/Game/Maps/L_Promo", "-nosplash", "-unattended", "-nosound", "-ini:Engine:[/Script/PythonScriptPlugin.PythonScriptPluginSettings]:+StartupScripts=C:/p/render_promo.py")\n` +
+      `Start-Process -FilePath "${UE}" -ArgumentList $args -PassThru`
+    const r = await $.tool.call({ tool: 'PowerShell', command: cmd })
+    expect(r.deny).toBeUndefined()
+    expect(reached[0]?.command).toBe(cmd)
+  })
+
+  test('an explicit full-quality screen percentage is respected', async ($, on) => {
+    const reached = world(on, { procs: 'blender.exe|9|blender', vram: '4100, 8188' })
+    const cmd = `"${UE}" "C:/p/x.uproject" -ExecCmds="r.ScreenPercentage 100,t.MaxFPS 60" &`
+    await $.tool.call({ tool: 'Bash', command: cmd })
+    expect(reached[0]?.command).toBe(cmd)
+  })
+
+  test('a Python startup-script -ini is not mistaken for the low-VRAM overrides', () => {
+    const launch = findUeGuiLaunch(`"${UE}" "C:/p/x.uproject" -ini:Engine:[/Script/PythonScriptPlugin.PythonScriptPluginSettings]:+StartupScripts=C:/p/a.py`)
+    expect(launch?.hasOverrides).toBe(false)
+    expect(launch?.isRender).toBe(false)
+  })
+
   test('unrelated tools and commands pass untouched', async ($, on) => {
     const reached = world(on, { procs: 'blender.exe|9|blender', adb: 'List of devices attached\n\n' })
     await $.tool.call({ tool: 'Bash', command: 'ls -la && git status' })
@@ -301,7 +335,7 @@ describe('cockpit', () => {
     const sent: string[] = []
     on('prompt.submit', ($, e) => {
       sent.push(e.text)
-      return { isQueued: true } as never
+      return { text: e.text } as never
     })
     const r = await $.command.run({ command: 'resume-run', args: '' } as never)
     expect(r.text).toContain('Resuming runs/2026-10-02-bow-fix')
@@ -309,13 +343,20 @@ describe('cockpit', () => {
     expect(sent[0] ?? '').toMatch(/^Resume run runs\/2026-10-02-bow-fix\./)
   })
 
-  test('prompt.context adds one cockpit block', async ($, on) => {
-    world(on, RUN_WORLD)
+  test('prompt.context adds one cockpit block in an attended session', async ($, on) => {
+    world(on, { ...RUN_WORLD, surfaces: ['terminal'] })
     on('prompt.context', ($, e) => ({ blocks: e.blocks }))
     const r = await $.prompt.context({ blocks: [{ name: 'currentDate', text: 'today' }] } as never)
     const block = r.blocks.find(b => b.name === 'bwsCockpit')
     expect(block?.text).toMatch(/runs\/2026-10-02-bow-fix; next step: verify the draw anim in PIE; 2 open items/)
     expect(r.blocks.length).toBe(2)
+  })
+
+  test('claude -p (no surface) gets no run-folder block', async ($, on) => {
+    world(on, { ...RUN_WORLD, surfaces: [] })
+    on('prompt.context', ($, e) => ({ blocks: e.blocks }))
+    const r = await $.prompt.context({ blocks: [{ name: 'currentDate', text: 'today' }] } as never)
+    expect(r.blocks.map(b => b.name)).toEqual(['currentDate'])
   })
 
   test('band draws the run and device rows on terminal and desktop', async ($, on) => {

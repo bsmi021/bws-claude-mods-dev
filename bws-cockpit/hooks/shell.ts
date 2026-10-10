@@ -317,7 +317,13 @@ export const fixUnityLaunch = (cmd: string, dialect: Dialect = 'bash'): Fix => {
 
 // ---------- Unreal ----------
 
-export type UeLaunch = { insertAt: number; uproject?: string; isStartProcess: boolean; hasOverrides: boolean }
+export type UeLaunch = { insertAt: number; uproject?: string; isStartProcess: boolean; hasOverrides: boolean; isRender: boolean }
+
+// Render settings the command already sets, anywhere in it: the arguments can sit in a variable
+// (PowerShell `$args = @(...)` then `-ArgumentList $args`), so the launch's own args are not enough.
+const HAS_RENDER_SETTINGS = /\[SystemSettings\]:|-ExecCmds|\br\.ScreenPercentage\b|\bt\.MaxFPS\b|\bsg\.\w+Quality\b/i
+// An unattended capture or render run, where halving the screen percentage ruins the output.
+const IS_RENDER_RUN = /(?:^|[\s'",(@])-unattended\b|\bHighResShot\b|-RenderOffscreen\b|MoviePipeline|-MovieSceneCaptureType\b/i
 
 // A GUI editor launch: UnrealEditor.exe in command position, not a commandlet,
 // -nullrhi, -game or -server run.
@@ -330,7 +336,8 @@ export const findUeGuiLaunch = (cmd: string, dialect: Dialect = 'bash'): UeLaunc
       insertAt: inv.insertAt,
       uproject: up?.[1],
       isStartProcess: inv.isStartProcess,
-      hasOverrides: /-ExecCmds|-ini:Engine:/i.test(inv.args),
+      hasOverrides: HAS_RENDER_SETTINGS.test(cmd),
+      isRender: IS_RENDER_RUN.test(cmd),
     }
   }
   return undefined

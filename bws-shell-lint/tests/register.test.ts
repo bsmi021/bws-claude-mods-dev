@@ -1,7 +1,8 @@
 // The hook: denies what each rule catches (with the fix), lets real OK commands and other tools through untouched.
 import { test, expect } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { FIXTURE } from './corpus-fixture.ts'
+import { FIXTURE } from './corpus-fixture'
+import { commandSize, lint } from '../hooks/lint'
 
 const BS = '\\'
 const RAN = { stdout: 'ran', stderr: '', interrupted: false }
@@ -18,7 +19,7 @@ function bottom(on: On): Seen {
   })
   on('ui.toast', async (_$, e) => {
     seen.toasts.push(e.text)
-    return null as never
+    return { value: undefined }
   })
   return seen
 }
@@ -57,6 +58,19 @@ for (const [name, command, rule] of [
     expect(seen.toasts.length).toBe(1)
   })
 }
+
+// The 2026-10-10 metric: double quotes and backslashes count 2, limit 7800. A heredoc of 7725 chars
+// with 286 double quotes failed live under the old count (7725 < 7850); it is refused now.
+test('long-command counts double quotes and backslashes, at 7800', () => {
+  const quoted = "python - <<'PY'\n" + 'print("ab")\n'.repeat(286) + 'x = 1\n'.repeat(1)
+  const pad = (s: string, n: number) => s + '#'.repeat(n - s.length) + '\nPY'
+  const heavy = pad(quoted, 7725 - 3)
+  expect(heavy.length).toBe(7725)
+  expect(commandSize(heavy)).toBe(7725 + 3 * 2 + 572)
+  expect(lint(heavy)?.rule).toBe('long-command')
+  expect(lint(pad("python - <<'PY'\n", 7790 - 3 - 6))?.rule).toBeUndefined() // plain text just under: passes
+  expect(lint(pad("python - <<'PY'\n", 7800 - 3 - 6))?.rule).toBe('long-command')
+})
 
 test('the trailing-backslash fix gives the forward-slash path', async ($, on) => {
   bottom(on)
