@@ -46,7 +46,7 @@ run 3 open · UE● VRAM 5.1/8 · loop running · board 2·1 for you · ⚑ 2 ·
 ```
 - **Assumptions** body: today's expanded list (A<n>, reason, Right / Wrong, Instead field, Send N, Clear sent). The collapsed one-line mode goes (the tab count replaces it).
 - **Shelf** body: today's list (▶ ✓ ✗, `a` project/all, eight at a time).
-- **Board** body: bws-board's `lines` state, read-only; "bws-board not loaded" when absent.
+- **Board** body: bws-board's `lines` state, read-only (verified: bws-board rewrites `lines` and `summary` on every heartbeat, pane open or not); "bws-board not loaded" when absent.
 - **Loop** body: today's Loop Watch body (units, needs with answer inputs, r/s/g). Tab shown only while a loop exists.
 - Inside the focused pane: `1`–`4` switch tabs; each tab keeps its own keys (Assumptions `s` send, `c` clear; Shelf `a` scope; Loop `r` `s` `g`).
 
@@ -69,14 +69,22 @@ Tools after the move: `mcp__bws-cockpit__record_assumption`, `…__shelve_idea`,
 | # | Trigger | Detected in | Action |
 |---|---|---|---|
 | T1 | Claude records an assumption | `tool.call` record_assumption | raise Assumptions; ⚑ chip warning |
-| T2 | An ask addressed to this session appears (`bws-board.summary.askedOfMe` rises) | cockpit's refresh tick + turn.complete reading the summary | raise Board; board chip warning (exists) |
+| T2 | An ask addressed to this session appears (`bws-board.summary.askedOfMe` rises) | `on('state.set', { plugin: 'bws-board', key: 'summary' })` if the spike shows it fires for an observer; else cockpit's refresh tick + turn.complete | raise Board; board chip warning (exists) |
 | T3 | Loop alert: needs you, stalled, driver dead, all done | existing loop alert code | raise Loop (toast stays) |
 | T4 | Context use ≥ `handoffNudgePercent` (default 70) | `turn.complete` via `$.session.usage().context` | one toast per session; Handoff button warning-colored until run |
-| T5 | Session start with open ideas, unsent assumptions, or asks for this session | `session.start` (+ first `turn.complete` for the board summary) | open the dashboard on the first such tab |
+| T5 | Session start with open ideas, unsent assumptions, or asks for this session | `session.start` (+ first `turn.complete` for the board summary) | open the dashboard on the first such tab. Does not fire after `/clear`, `/resume` or `/branch` (no `session.start` there) |
 | T6 | Anything waiting on Brian | render | chip recolors (always, independent of the others) |
 
 ## Steps
-1. **Spike (throwaway, scratch mod in run folder, then deleted):** confirm (a) a band Button press can call `$.command.run({ command: 'enhance', args })` while idle and while busy; (b) `$.session.usage().context` field name for percent; (c) a Button press switching `$.state` tab key redraws the pane; (d) re-`$.ui.open` of an open, unfocused pane after unasked open. Record results in RUNLOG. If (a) fails while busy, Enhance is disabled mid-turn with a dim label.
+0. **Isolation.** All code work happens in a git worktree (`../bws.mods.wt-dashboard`, branch `bws-dashboard`), so the cockpit on `CLAUDE_CODE_PLUGIN_DIRS` stays on the last good commit and other sessions never hot-reload a half-done register.tsx. Copy `bws-cockpit/.claude-plugin/types/` into the worktree for tsc. Merge to main only after D1–D4 pass.
+1. **Spike (throwaway scratch mod in the run folder, deleted after):** confirm
+   (a) a band Button press can run `$.command.run({ command: 'enhance', args: draft })`, idle and mid-turn, and the rewrite lands in the box (bws-enhance replaces a box that still equals the draft, so no clearing should be needed);
+   (b) the field for context percent in `$.session.usage().context`;
+   (c) a Button press that switches the tab key in `$.state` redraws the pane;
+   (d) re-`$.ui.open` of an open, unfocused pane raises it after an unasked open;
+   (e) how a test session loads the worktree cockpit without the DIRS copy (shell-level `CLAUDE_CODE_PLUGIN_DIRS` vs the settings `env` block);
+   (f) `on('state.set', { plugin: 'bws-board', key: 'summary' })` passes validate and fires in cockpit.
+   Record results in RUNLOG. If (a) fails mid-turn, Enhance shows dim and inactive while Claude works.
 2. **Move code:** `bws-assumptions/hooks/lib.ts` → `bws-cockpit/hooks/assumptions.ts`; `bws-shelf/hooks/lib.ts` → `bws-cockpit/hooks/shelf.ts`; their tests → `bws-cockpit/tests/`. Pure modules, same rules as lib.ts.
 3. **Merge hooks into `register.tsx`** under the validator's one-unmatched-hook-per-event rule: fold into the existing session.start, prompt.context, turn.complete; add prompt.compose and ui.close once; matched tool.call/command.run hooks per tool/command. Replace the Loop pane render with the `dashboard` pane render (tab strip + four bodies). Drop the two status lines.
 4. **Slim bar:** rewrite the AbovePrompt render as one row of chips + buttons (tiles and grid removed; their content stays in `/cockpit`). Keep the shared-slot behavior.
@@ -84,14 +92,14 @@ Tools after the move: `mcp__bws-cockpit__record_assumption`, `…__shelve_idea`,
 6. **Types + config:** `types/index.d.ts` gains the assumption/shelf/dashboard state keys and the four tool inputs (McpToolInputs augmentation). `plugin.json` userConfig gains `shelfPath`, `shelfNudge`, `handoffNudgePercent`; version 0.15.0.
 7. **Tests:** moved tests green; new: tab switch, counts, raise-vs-focused, closed-by-hand suppression, T4 once, T5 conditions, each bar button's effect (stubs), board tab absent/present.
 8. **Checks:** validate, test, tsc → receipts.
-9. **Live:** `claude --plugin-dir ./bws-cockpit` (with the old two plugins excluded) in a fresh fullscreen session; Brian checks each tab, each bar item, T1–T5; screenshots to `receipts/ui/`.
-10. **Retire** (after D4 passes): `claude plugin uninstall bws-assumptions@bws-mods` and `bws-shelf@bws-mods`; remove both from `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` and from `.claude-plugin/marketplace.json`; delete both folders (git keeps history); update cockpit README (dashboard, bar, moved features, tested surfaces). Commit; push `private`.
+9. **Live:** the worktree's cockpit via `--plugin-dir` (old two plugins and the DIRS cockpit excluded, per spike e) in a fresh fullscreen session; Brian checks each tab, each bar item, T1–T5; screenshots to `receipts/ui/`.
+10. **Retire** (after D4 passes): `claude plugin uninstall bws-assumptions@bws-mods` and `bws-shelf@bws-mods`; remove both from `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` and from `.claude-plugin/marketplace.json`; delete both folders (git keeps history); update cockpit README (dashboard, bar, moved features, tested surfaces). Merge the worktree branch to main, remove the worktree. Commit; push `private`.
 11. RUNLOG: what changed, what was parked.
 
 ## Risks
-- register.tsx grows by ~500 lines and loads in every session: a break kills every new session. Validate + test + tsc before each commit, and live-load with `--plugin-dir` before step 10 touches settings.
-- Until step 10, a session loading both the old plugins and the new cockpit registers `/idea`, `/shelf`, `/assumptions` twice. Live checks in step 9 load cockpit alone.
-- `bws-board.summary` only refreshes on bws-board's heartbeat, so T2 can lag up to one cockpit refresh tick (30 s).
+- register.tsx grows by ~500 lines and loads in every session: a break kills every new session. Step 0's worktree keeps main untouched until D1–D4 pass.
+- Between the merge and step 10's uninstall, a session would load both old plugins and the new cockpit and register `/idea`, `/shelf`, `/assumptions` twice. Step 10 runs in the same sitting as the merge.
+- On the fallback path T2 can lag up to one cockpit refresh tick (30 s); spike (f) decides.
 
 ## Assumptions (confirm or correct in the pane)
 - A2 one `dashboard` pane with its own tab strip (not engine-tabbed separate panes)
@@ -102,6 +110,9 @@ Tools after the move: `mcp__bws-cockpit__record_assumption`, `…__shelve_idea`,
 - A7 retirement = uninstall + DIRS + marketplace + delete folders
 - A8 `/board pane` and bws-board untouched
 - Hotkeys as in the layout above (digits kept where the action survives, letters for new)
+- The Assumptions collapsed one-line mode is removed (tab count replaces it)
+- Idea shelves the prompt-box draft and clears the box; an empty box toasts "type the idea first"
+- No settings permission rules name the old tool ids (checked: none), so the rename needs no permission edits
 
 ## Out of scope (parked)
 See `FOLLOWUPS.md`.
