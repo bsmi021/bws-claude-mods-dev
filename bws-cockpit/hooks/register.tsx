@@ -921,6 +921,10 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const v = await read($, view)
     if (e.props.hasSurvey || v === null || (await read($, isHidden))) return next(e)
+    // The slot holds one tree: share it. Another mod's band (whatever next(e) draws) goes under
+    // ours, by the prompt. Core's own node is its survey slot, empty here, so it adds nothing.
+    const drawn = await settle(next(e))
+    const below = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
     const { Box, Text, Button, Link } = $.ui.resolve(e)
     const width = Math.max(40, (e.props.bodyColumns ?? 100) - 1)
     const run = v.run
@@ -993,6 +997,7 @@ export const register: Register = (on, options) => {
             </Text>
           </Box>
         ) : null}
+        {below ? <Box key="band-below" flexDirection="column">{below}</Box> : null}
       </Box>
     )
   })

@@ -415,6 +415,48 @@ describe('band layout', () => {
     await later.unmount()
   })
 
+  test('another mod\'s band shares the slot: drawn under ours, both whole', async ($, on) => {
+    world(on, RUN_WORLD)
+    // A second mod's band, beneath this plugin in the chain: what next(e) answers.
+    on('ui.render', { component: 'AbovePrompt' }, () => ({
+      type: 'Box',
+      props: { flexDirection: 'row' },
+      children: [{ type: 'Text', children: ['other band'] }, { type: 'Text', props: { dimColor: true }, children: [' · 3 todo'] }],
+    }) as never)
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const ui = await $.ui.mount({ ...BAND, surface })
+      expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined() // ours
+      expect(await ui.find({ key: 'resume' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^other band$/ })).toBeDefined() // theirs
+      expect(await ui.find({ type: 'Text', text: /3 todo/ })).toBeDefined()
+      expect(await ui.find({ key: 'band-below' })).toBeDefined()
+      await ui.unmount()
+    }
+  })
+
+  test('hidden, the band hands the whole slot to the other mod', async ($, on) => {
+    world(on, RUN_WORLD)
+    on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', children: ['other band'] }) as never)
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    await ui.press({ key: 'hide' })
+    await ui.unmount()
+    const after = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await after.find({ type: 'Text', text: /^other band$/ })).toBeDefined()
+    expect(await after.find({ type: 'Text', text: /^bow-fix$/ })).toBeUndefined()
+    await after.unmount()
+  })
+
+  test('no other band: nothing is added under ours', async ($, on) => {
+    world(on, RUN_WORLD)
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
+    expect(await ui.find({ key: 'band-below' })).toBeUndefined()
+    await ui.unmount()
+  })
+
   test('no run folder: no run row and no resume button', async ($, on) => {
     world(on, { procs: 'UnrealEditor.exe|5|x', mcpJson: MCP_HTTP, isMcpUp: false })
     await $.command.run({ command: 'cockpit', args: '' } as never)
