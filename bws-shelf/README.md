@@ -11,7 +11,8 @@ Park tangents instead of following them. You shelve an idea with `/idea`; Claude
   - `✓` marks the idea done.
   - `✗` drops it.
 
-  `a` toggles between this project and all projects; `c` closes the pane.
+  Idea text wraps to the pane's width. Opened over an empty prompt box, the pane takes the keys: `a` toggles between
+  this project and all projects, `c` or Esc closes it. Over a half-typed draft it opens without focus.
   `/shelf all` opens the pane with every project. A headless run prints the list.
 - Claude's tools:
   - `mcp__bws-shelf__shelve_idea {text, detail?}` is always loaded. Its result tells Claude to carry on with the
@@ -45,5 +46,6 @@ Claude Code 2.1.296 on Windows.
   - Asked to shelve a tangent, Claude called `shelve_idea` with no permission prompt or denial, then finished
     the task.
   - `/shelf` printed the list.
-- Not yet checked by eye: the pane in an interactive terminal or Desktop. Mod UI does not show in VS Code chat or
+- Interactive terminal (0.1.0, by eye): the pane, ▶ ✓ ✗ and the scope toggle. Not yet re-checked by eye: 0.1.1's
+  wrapping and focus, which are covered by tests only. Not checked: Desktop. Mod UI does not show in VS Code chat or
   cloud sessions; there, ask Claude to list ideas.

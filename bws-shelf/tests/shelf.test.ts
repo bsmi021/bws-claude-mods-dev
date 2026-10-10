@@ -17,7 +17,7 @@ function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: NOW })
   const files: Record<string, string> = {}
   if (w.shelf !== undefined) files[FILE] = w.shelf
-  const seen = { toasts: [] as string[], fills: [] as string[], opened: [] as string[], closed: [] as string[] }
+  const seen = { toasts: [] as string[], fills: [] as string[], opened: [] as { id: string; focus?: boolean; closeOnEscape?: boolean }[], closed: [] as string[] }
   let box = w.box ?? ''
   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
   on('session.root', () => ({ value: w.root ?? `${ROOT}\\` }))
@@ -41,7 +41,7 @@ function world(on: On, w: World = {}) {
   })
   on('ui.panes', () => ({ value: (w.panes ?? []).map(id => ({ id })) as never }))
   on('ui.open', ($, e) => {
-    seen.opened.push(e.id)
+    seen.opened.push({ id: e.id, focus: e.focus, closeOnEscape: e.closeOnEscape })
     return { value: { isPlaced: true } }
   })
   on('ui.close', ($, e) => {
@@ -55,7 +55,13 @@ function world(on: On, w: World = {}) {
     return { isFilled: true }
   })
   const shelf = () => parseShelf(files[FILE])
-  return { seen, clock, files, shelf }
+  // /shelf opens its pane just after the command returns, as the engine runs it.
+  const openShelf = async ($: { command: { run: (input: never) => Promise<{ text?: string }> } }, args = '') => {
+    const r = await $.command.run({ command: 'shelf', args } as never)
+    await clock.advance(50)
+    return r
+  }
+  return { seen, clock, files, shelf, openShelf }
 }
 
 const seeded = () => {
@@ -212,12 +218,12 @@ describe('mod', () => {
   })
 
   test('/shelf pane: lists this project, Done closes, All shows other projects', async ($, on) => {
-    const { seen, shelf } = world(on, { shelf: seeded() })
-    expect((await $.command.run({ command: 'shelf', args: '' } as never)).text).toBeUndefined()
-    expect(seen.opened).toEqual(['bws-shelf'])
+    const { seen, shelf, openShelf } = world(on, { shelf: seeded() })
+    expect((await openShelf($)).text).toBeUndefined()
+    expect(seen.opened).toEqual([{ id: 'bws-shelf', focus: true, closeOnEscape: true }])
     let ui = await $.ui.mount(PANE)
     expect(await ui.find({ type: 'Text', text: /2 open ideas · game/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /#3 game idea two/ })).toBeDefined()
+    expect((await ui.find({ type: 'Text', text: /#3 game idea two/ }))?.props.wrap).toBe('wrap')
     expect(await ui.find({ type: 'Text', text: /site idea/ })).toBeUndefined()
     await ui.press({ key: 'done-3' })
     await ui.unmount()
@@ -233,8 +239,8 @@ describe('mod', () => {
   })
 
   test('Resume fills an empty box and closes the pane; a busy box is left alone', async ($, on) => {
-    const { seen, shelf } = world(on, { shelf: seeded() })
-    await $.command.run({ command: 'shelf', args: '' } as never)
+    const { seen, shelf, openShelf } = world(on, { shelf: seeded() })
+    await openShelf($)
     const ui = await $.ui.mount(PANE)
     await ui.press({ key: 'resume-3' })
     await ui.unmount()
@@ -244,8 +250,10 @@ describe('mod', () => {
   })
 
   test('Resume with text in the box: note, no fill', async ($, on) => {
-    const { seen } = world(on, { shelf: seeded(), box: 'half-typed' })
-    await $.command.run({ command: 'shelf', args: '' } as never)
+    const { seen, openShelf } = world(on, { shelf: seeded(), box: 'half-typed' })
+    await openShelf($)
+    // Text in the box: no focus request, so the person's draft keeps the keys.
+    expect(seen.opened).toEqual([{ id: 'bws-shelf', focus: undefined, closeOnEscape: undefined }])
     let ui = await $.ui.mount(PANE)
     await ui.press({ key: 'resume-1' })
     await ui.unmount()
@@ -256,8 +264,11 @@ describe('mod', () => {
   })
 
   test('an idea added while the pane is open redraws it', async ($, on) => {
-    world(on, { shelf: seeded(), panes: ['bws-shelf'] })
-    await $.command.run({ command: 'shelf', args: '' } as never)
+    const { seen, openShelf } = world(on, { shelf: seeded(), panes: ['bws-shelf'] })
+    await openShelf($)
+    // Already open over an empty box: closed and opened again, so the focus request takes.
+    expect(seen.closed).toEqual(['bws-shelf'])
+    expect(seen.opened[0]?.focus).toBe(true)
     await $.command.run({ command: 'idea', args: 'fresh one' } as never)
     const ui = await $.ui.mount(PANE)
     expect(await ui.find({ type: 'Text', text: /#4 fresh one/ })).toBeDefined()

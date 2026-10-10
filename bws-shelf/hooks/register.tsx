@@ -79,9 +79,14 @@ async function isOpen($: EngineInterface) {
   return (await $.ui.panes()).some(p => p.id === PANE)
 }
 
+// Focus is asked for only over an empty box (the engine refuses it over text anyway), and only a fresh open grants
+// it, so an open pane is closed first. Runs after the command has returned, when the composer is clear.
 async function openPane($: EngineInterface, isAll: boolean) {
   await refreshView($, isAll)
-  const r = await $.ui.open({ id: PANE, title: isAll ? 'Idea shelf · all projects' : 'Idea shelf' })
+  const isEmpty = (await $.prompt.read()).text.trim() === ''
+  if (isEmpty && (await isOpen($))) await $.ui.close({ id: PANE })
+  const title = isAll ? 'Idea shelf · all projects' : 'Idea shelf'
+  const r = await $.ui.open(isEmpty ? { id: PANE, title, focus: true, closeOnEscape: true } : { id: PANE, title })
   if (!r.isPlaced) $.ui.toast(`Shelf: pane not shown (${r.reason}). /shelf in a wider window, or ask Claude to list ideas.`)
 }
 
@@ -191,7 +196,7 @@ export const register: Register = (on, options) => {
         const now = await $.clock.now()
         return { text: ideas.length === 0 ? 'The shelf is empty.' : listText(ideas, now, isAll, true) }
       }
-      await openPane($, isAll)
+      $.clock.after(10, () => void openPane($, isAll).catch(err => $.ui.toast(`Shelf: could not open (${String(err)})`)))
       return {}
     } catch (err) {
       return { text: `Shelf: could not read (${String(err)})`, exitCode: 1 }
@@ -271,7 +276,9 @@ export const register: Register = (on, options) => {
             <Button key={`resume-${i.id}`} plain label="▶" onPress={() => onResume($, i)} />
             <Button key={`done-${i.id}`} plain label="✓" onPress={() => onClose($, i, 'done')} />
             <Button key={`drop-${i.id}`} plain label="✗" onPress={() => onClose($, i, 'dropped')} />
-            <Text wrap="truncate-end">{ideaLine(i, v.now, v.isAll)}</Text>
+            <Box flexGrow={1} flexShrink={1}>
+              <Text wrap="wrap">{ideaLine(i, v.now, v.isAll)}</Text>
+            </Box>
           </Box>
         ))}
         {more > 0 && <Text dimColor>…{more} more: ask Claude to list ideas.</Text>}

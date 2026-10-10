@@ -1,6 +1,6 @@
 {
   "name": "bws-shelf",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Idea shelf: /idea <text> parks a tangent without sending it to Claude, Claude parks its own through a tool, and /shelf lists this project's open ideas with Resume / Done / Drop. One file shared by every session.",
   "author": {
     "name": "Brian"

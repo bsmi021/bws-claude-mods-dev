@@ -53,3 +53,12 @@ available in later conversations.
 - Pane: wrap idea text instead of cutting it in the narrow side pane; maybe open it focused when the box is empty.
 - Refresh the `publish` branch with bws-shelf (name scan first).
 - Band or footer indicator with the open count.
+
+## 0.1.1: pane wraps and takes focus
+- Idea text wraps instead of being cut: the Text sits in a `flexGrow/flexShrink` Box beside the buttons.
+- `/shelf` opens the pane just after the command returns (`$.clock.after(10)`). Over an empty box it asks for
+  `focus: true` and `closeOnEscape: true`, closing an open pane first because only a fresh open takes focus. Over a
+  draft it opens without focus.
+- Tests now check the focus request (empty box, draft, already open) and `wrap: 'wrap'` on the idea text: 20 pass.
+  `validate-0.1.1.txt` passes; `tsc-0.1.1.txt` is empty (exit 0).
+- Not yet checked by eye: how the wrapped rows look and whether focus takes in a real terminal (no screen handover this round).
