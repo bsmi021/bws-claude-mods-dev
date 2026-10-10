@@ -31,7 +31,7 @@ export const register: Register = (on, options) => {
     await $.state.set({ ...PENDING, id }, true)
     const drawing = $.model
       .complete(
-        { model: String(options.model || 'haiku'), system: GEN_SYSTEM, prompt: genPrompt(wanted.question), maxTokens: 6000, timeoutMs: 90_000 },
+        { model: String(options.model || 'opus'), system: GEN_SYSTEM, prompt: genPrompt(wanted.question), maxTokens: 6000, timeoutMs: 120_000 },
         { signal: stop.signal },
       )
       .then(async r => {

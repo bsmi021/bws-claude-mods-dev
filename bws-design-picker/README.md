@@ -17,7 +17,7 @@ When Claude asks you to choose a design direction, each option is drawn as a sma
 
 4. A design-direction question that came **without** specs (Claude ignored the section, or another tool
    asked): the dialog opens at once with a "drawing mockups of these directions…" line, and a small model
-   (`$.model.complete`, Haiku by default) writes the specs from the question and option descriptions. The
+   (`$.model.complete`, Opus by default) writes the specs from the question and option descriptions. The
    gallery appears when it answers (about 10 s live). Answering first aborts the call.
 
 Detection for step 4 is a regex on the header and question. It needs a visual word (visual, look and feel,
@@ -40,7 +40,7 @@ or add the folder to `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` (Bri
 | Option | Default | |
 |---|---|---|
 | `autoGenerate` | `true` | Generate specs for design questions that have none (one model call each) |
-| `model` | `haiku` | Alias or model id used for generated specs |
+| `model` | `opus` | Alias or model id used for generated specs |
 
 ## Limits
 
@@ -50,8 +50,8 @@ or add the folder to `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` (Bri
 - One gallery per dialog: the first design question's. The section asks Claude for one design question per call.
 - Thumbnails cannot be clicked; the numbers match the picker's options.
 - Text inside the terminal mockups is ASCII only (the Raster refuses wide glyphs).
-- Generated mockups come from the option descriptions only, without your project's context. Haiku's
-  layouts are rougher than the ones Claude writes itself.
+- Generated mockups come from the option descriptions only, without your project's context.
+- Opus is slower than Haiku: the picker shows the "drawing" line until it answers.
 
 ## Tested
 

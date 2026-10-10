@@ -310,7 +310,8 @@ export const SECTION = [
   'plugin draws it as a mockup above the picker:',
   '{"bg":"#hex","font":"sans|serif|mono","palette":["#hex",...max 6],"blocks":[{"x":0,"y":0,"w":100,"h":12,"fill":"#hex","text":"Title","ink":"#hex","shape":"rect|pill|circle"}]}',
   'x, y, w, h are percent of a 16:10 frame. Use 5-15 blocks to sketch that direction\'s real layout (nav, hero, cards, buttons)',
-  'in its own colours; keep text short. Label and description stay in words. Ask one design question per call.',
+  'in its own colours. It is drawn about 32 characters wide, so a block\'s text must fit in w/3 - 2 characters and needs h of at',
+  'least 12; text blocks never overlap. Label and description stay in words. Ask one design question per call.',
 ].join(' ')
 
 // ---------- specs Claude did not give: asked of a small model ----------
@@ -340,13 +341,27 @@ export function wantsGenerated(questions: readonly unknown[]): { index: number; 
 }
 
 export const GEN_SYSTEM = [
-  'You draw low-fidelity UI mockups as JSON for a terminal picker. For each design direction you are given, write one spec:',
-  '{"bg":"#hex","font":"sans|serif|mono","palette":["#hex",...max 6],"blocks":[{"x":0,"y":0,"w":100,"h":12,"fill":"#hex","text":"Title","ink":"#hex","shape":"rect|pill|circle"}]}',
-  'x, y, w, h are percent of a 16:10 frame. Use 6-14 blocks to sketch a believable layout for that direction (nav, hero, cards,',
-  'buttons, images as filled blocks) in its own colours. Text is short ASCII (under 16 characters), and no two blocks that carry',
-  'text overlap. Make the directions visibly different from each other.',
+  'You are a visual designer drawing thumbnail mockups of UI design directions, so someone can choose between them at a glance.',
+  'Each mockup is painted into a tiny grid of terminal cells, about 32 characters wide and 9 text rows tall (a cell is 2 pixels',
+  'tall for fills), with the palette shown as a strip beneath. Think thumbnail, not wireframe: big shapes and a few words.',
+  '',
+  'For each direction, write one spec:',
+  '{"bg":"#hex","font":"sans|serif|mono","palette":["#hex",...4-6],"blocks":[{"x":0,"y":0,"w":100,"h":12,"fill":"#hex","text":"Title","ink":"#hex","shape":"rect|pill|circle"}]}',
+  '',
+  'Blocks:',
+  '- x, y, w, h are percent of a 16:10 frame. Blocks paint in order, later ones on top.',
+  '- Use 6-12 blocks to show the layout that direction would really have: nav bar, hero, an image as a filled block, product',
+  '  cards, a call to action as a pill. Every palette colour should appear in some block.',
+  '- Text is one line, drawn on the block\'s middle row: left-aligned in a rect, centred in a pill or circle. It must fit: at most',
+  '  w/3 - 2 characters (w 30 holds 8, w 60 holds 18), and a block that carries text needs h of at least 12.',
+  '  Prefer one or two words. ASCII only. Blocks that carry text never overlap each other.',
+  '- `ink` is the text colour; give it enough contrast with `fill`.',
+  '',
+  'Make the directions clearly different at a glance: background lightness, accent colour, density and type. Stay true to',
+  'each direction\'s description: its named colours, its mood, its layout.',
+  '',
   'Reply with JSON only: {"specs":[spec, ...]}, one spec per direction, in the order given.',
-].join(' ')
+].join('\n')
 
 /** The user message: the question and its options, numbered. */
 export function genPrompt(q: Question & { options: Option[] }): string {

@@ -280,7 +280,7 @@ test('a design question without specs gets a generated gallery while the dialog 
   await $.tool.call({ tool: 'AskUserQuestion', questions: [ROAST] } as never)
   expect(pendingAtOpen).toBe(true)
   expect(asks.length).toBe(1)
-  expect(asks[0]!.model).toBe('haiku')
+  expect(asks[0]!.model).toBe('opus')
   expect(asks[0]!.prompt).toContain('1. Warm Editorial')
   const ui = await $.ui.mount({ ...ASK([ROAST]), requestId: id, surface: 'terminal' } as never)
   expect(await ui.find({ type: 'Text', text: /^Direction · pick by number below$/ })).toBeDefined()
