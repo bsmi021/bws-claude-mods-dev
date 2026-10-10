@@ -1,6 +1,6 @@
 import { test, expect } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { MAX_ROWS, SECTION, galleries, galleryCells, gallerySvg, hex, layout, parseSpec, printable, rasterize, stripSpecs, toBase64, toSvg } from '../hooks/lib'
+import { MAX_ROWS, SECTION, galleries, galleryCells, galleryFromReply, gallerySvg, genPrompt, hex, isDesignQuestion, wantsGenerated, layout, parseSpec, printable, rasterize, stripSpecs, toBase64, toSvg } from '../hooks/lib'
 
 const SPEC = {
   bg: '#0f172a',
@@ -209,4 +209,137 @@ test('prompt.compose adds the section only when AskUserQuestion is offered', asy
   expect(withAsk.sections[1]!.text).toBe(SECTION)
   const without = await $.prompt.compose({ ...base, tools: ['Bash'] } as never)
   expect(without.sections.map(s => s.id)).toEqual(['intro'])
+})
+
+// ---------- generated specs ----------
+
+const ROAST = {
+  question: 'Which visual direction should the roaster landing page take?',
+  header: 'Direction',
+  multiSelect: false,
+  options: [
+    { label: 'Warm Editorial', description: 'Cream, espresso brown, serif' },
+    { label: 'Bold Graphic', description: 'Orange, black, heavy sans' },
+  ],
+}
+const REPLY = '```json\n' + JSON.stringify({ specs: [SPEC, { bg: '#ff5500', palette: ['#ff5500', '#000'], blocks: [{ x: 0, y: 0, w: 100, h: 20, fill: '#000', text: 'ROAST' }] }] }) + '\n```'
+
+test('isDesignQuestion tells how-it-looks from how-it-works', () => {
+  for (const q of [
+    ROAST,
+    { header: 'Style', question: 'Which look and feel for the app?' },
+    { header: 'Palette', question: 'Pick a colour scheme' },
+    { header: 'Design', question: 'Which design for the landing page?' },
+    { header: 'Layout', question: 'Sidebar or top nav?' },
+  ]) expect(isDesignQuestion(q)).toBe(true)
+  for (const q of [
+    { header: 'API', question: 'Which API design do you prefer?' },
+    { header: 'Code style', question: 'Tabs or spaces?' },
+    { header: 'Schema', question: 'Which database schema design?' },
+    { header: 'Library', question: 'Which date library?' },
+    { header: 'Design', question: 'Which architecture design for the service?' },
+  ]) expect(isDesignQuestion(q)).toBe(false)
+})
+
+test('wantsGenerated only when no option carries a spec', () => {
+  expect(wantsGenerated([ROAST])?.index).toBe(0)
+  expect(wantsGenerated(QUESTIONS)).toBeUndefined()
+  expect(wantsGenerated([{ header: 'Library', question: 'Which lib?', options: [] }])).toBeUndefined()
+})
+
+test('genPrompt numbers the directions with their descriptions', () => {
+  expect(genPrompt(ROAST)).toBe('Question: Which visual direction should the roaster landing page take?\nDirections:\n1. Warm Editorial: Cream, espresso brown, serif\n2. Bold Graphic: Orange, black, heavy sans')
+})
+
+test('galleryFromReply reads fenced JSON and skips bad specs', () => {
+  const g = galleryFromReply(REPLY, ROAST)!
+  expect(g.header).toBe('Direction')
+  expect(g.cards.map(c => [c.number, c.label])).toEqual([[1, 'Warm Editorial'], [2, 'Bold Graphic']])
+  const one = galleryFromReply(JSON.stringify({ specs: [{ nope: 1 }, SPEC] }), ROAST)!
+  expect(one.cards.map(c => c.number)).toEqual([2])
+  expect(galleryFromReply('sorry, no', ROAST)).toBeUndefined()
+  expect(galleryFromReply('{"specs": 3}', ROAST)).toBeUndefined()
+})
+
+test('a design question without specs gets a generated gallery while the dialog is open', async ($, on) => {
+  engine(on)
+  const asks: { model: string; prompt: string }[] = []
+  on('model.complete', (_$, e) => {
+    asks.push({ model: e.model, prompt: e.prompt })
+    return { value: { isAnswered: true, text: REPLY, usage: {} } } as never
+  })
+  let pendingAtOpen: unknown
+  let id = ''
+  on('tool.call', { tool: 'AskUserQuestion' }, async (_s, e) => {
+    id = e.tool_use_id
+    const open = await $.ui.mount({ ...ASK([ROAST]), requestId: id, surface: 'terminal' } as never)
+    pendingAtOpen = (await open.find({ type: 'Text', text: /drawing mockups/ })) !== undefined || (await open.find({ type: 'Raster' } as never)) !== undefined
+    await open.unmount()
+    return { result: { questions: e.questions, answers: {} } } as never
+  })
+  await $.tool.call({ tool: 'AskUserQuestion', questions: [ROAST] } as never)
+  expect(pendingAtOpen).toBe(true)
+  expect(asks.length).toBe(1)
+  expect(asks[0]!.model).toBe('haiku')
+  expect(asks[0]!.prompt).toContain('1. Warm Editorial')
+  const ui = await $.ui.mount({ ...ASK([ROAST]), requestId: id, surface: 'terminal' } as never)
+  expect(await ui.find({ type: 'Text', text: /^Direction · pick by number below$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Raster' } as never)).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /drawing mockups/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('while the model draws, the dialog says so', async ($, on) => {
+  engine(on)
+  let id = ''
+  on('model.complete', (_$, _e, next) =>
+    new Promise(res => next.signal.addEventListener('abort', () => res({ value: { isAnswered: false, reason: 'aborted' } } as never))),
+  )
+  let line: unknown
+  on('tool.call', { tool: 'AskUserQuestion' }, async (_s, e) => {
+    id = e.tool_use_id
+    const ui = await $.ui.mount({ ...ASK([ROAST]), requestId: id, surface: 'terminal' } as never)
+    line = await ui.find({ type: 'Text', text: /drawing mockups/ })
+    await ui.unmount()
+    return { result: { questions: e.questions, answers: {} } } as never
+  })
+  await $.tool.call({ tool: 'AskUserQuestion', questions: [ROAST] } as never)
+  expect(line).toBeDefined()
+  // answered and aborted: no line, no gallery, the engine's dialog alone
+  const after = await $.ui.mount({ ...ASK([ROAST]), requestId: id, surface: 'terminal' } as never)
+  expect(await after.find({ type: 'Text', text: /drawing mockups|pick by number/ })).toBeUndefined()
+  await after.unmount()
+})
+
+test('an answer before the drawing is done aborts the model call', async ($, on) => {
+  let aborted = false
+  on('model.complete', (_$, _e, next) =>
+    new Promise(res => {
+      next.signal.addEventListener('abort', () => {
+        aborted = true
+        res({ value: { isAnswered: false, reason: 'aborted' } } as never)
+      })
+    }),
+  )
+  on('tool.call', { tool: 'AskUserQuestion' }, (_$, e) => ({ result: { questions: e.questions, answers: {} } }) as never)
+  const r = await $.tool.call({ tool: 'AskUserQuestion', questions: [ROAST] } as never)
+  expect(r.result).toBeDefined()
+  expect(aborted).toBe(true)
+})
+
+test('a non-design question makes no model call', async ($, on) => {
+  let calls = 0
+  on('model.complete', () => (calls++, { value: { isAnswered: true, text: REPLY, usage: {} } }) as never)
+  on('tool.call', { tool: 'AskUserQuestion' }, (_$, e) => ({ result: { questions: e.questions, answers: {} } }) as never)
+  const plain = [{ question: 'Which date library?', header: 'Library', multiSelect: false, options: [{ label: 'a', description: '' }, { label: 'b', description: '' }] }]
+  await $.tool.call({ tool: 'AskUserQuestion', questions: plain } as never)
+  expect(calls).toBe(0)
+})
+
+test('autoGenerate off makes no model call', { options: { autoGenerate: false } }, async ($, on) => {
+  let calls = 0
+  on('model.complete', () => (calls++, { value: { isAnswered: true, text: REPLY, usage: {} } }) as never)
+  on('tool.call', { tool: 'AskUserQuestion' }, (_$, e) => ({ result: { questions: e.questions, answers: {} } }) as never)
+  await $.tool.call({ tool: 'AskUserQuestion', questions: [ROAST] } as never)
+  expect(calls).toBe(0)
 })

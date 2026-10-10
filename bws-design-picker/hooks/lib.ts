@@ -52,8 +52,8 @@ export function parseSpec(preview: unknown): Spec | undefined {
   return { bg, font, palette, blocks }
 }
 
-type Question = { header?: unknown; question?: unknown; options?: unknown }
-type Option = { label?: unknown; preview?: unknown }
+export type Question = { header?: unknown; question?: unknown; options?: unknown }
+export type Option = { label?: unknown; preview?: unknown }
 
 /** One gallery per question that has at least one parsed spec, numbered as the picker numbers its options. */
 export function galleries(questions: readonly unknown[]): Gallery[] {
@@ -312,3 +312,68 @@ export const SECTION = [
   'x, y, w, h are percent of a 16:10 frame. Use 5-15 blocks to sketch that direction\'s real layout (nav, hero, cards, buttons)',
   'in its own colours; keep text short. Label and description stay in words. Ask one design question per call.',
 ].join(' ')
+
+// ---------- specs Claude did not give: asked of a small model ----------
+
+const VISUAL = /\b(visual|look(?:\s+and|\s*&)\s+feel|aesthetic|palette|colou?r\s*(?:scheme|palette|direction)|theme|layout|typography|mock-?up|branding|art\s+style|mood\s*board|wireframe)\b/i
+const DESIGN = /\bdesign\b/i
+const SURFACE = /\b(page|site|website|screen|app|landing|ui|ux|interface|logo|brand|dashboard|hero|homepage|menu|hud|poster|card|deck|slide)s?\b/i
+const NOT_VISUAL = /\b(api|schema|database|db|architecture|system|class|module|interface\s+contract|code\s+style|naming|test)\b/i
+
+/**
+ * Whether a question asks the person to choose how something looks: a visual word, or `design` beside a
+ * visual surface, and no sign it is about code (API design, schema, code style).
+ */
+export function isDesignQuestion(q: unknown): boolean {
+  const qq = q as Question
+  const text = `${String(qq?.header ?? '')} ${String(qq?.question ?? '')}`
+  if (NOT_VISUAL.test(text) && !VISUAL.test(text)) return false
+  return VISUAL.test(text) || (DESIGN.test(text) && SURFACE.test(text))
+}
+
+/** The first question that wants mockups drawn for it: a design question with no `design:` previews anywhere. */
+export function wantsGenerated(questions: readonly unknown[]): { index: number; question: Question & { options: Option[] } } | undefined {
+  if (galleries(questions).length) return undefined
+  const index = questions.findIndex(q => isDesignQuestion(q) && Array.isArray((q as Question)?.options))
+  if (index < 0) return undefined
+  return { index, question: questions[index] as Question & { options: Option[] } }
+}
+
+export const GEN_SYSTEM = [
+  'You draw low-fidelity UI mockups as JSON for a terminal picker. For each design direction you are given, write one spec:',
+  '{"bg":"#hex","font":"sans|serif|mono","palette":["#hex",...max 6],"blocks":[{"x":0,"y":0,"w":100,"h":12,"fill":"#hex","text":"Title","ink":"#hex","shape":"rect|pill|circle"}]}',
+  'x, y, w, h are percent of a 16:10 frame. Use 6-14 blocks to sketch a believable layout for that direction (nav, hero, cards,',
+  'buttons, images as filled blocks) in its own colours. Text is short ASCII (under 16 characters), and no two blocks that carry',
+  'text overlap. Make the directions visibly different from each other.',
+  'Reply with JSON only: {"specs":[spec, ...]}, one spec per direction, in the order given.',
+].join(' ')
+
+/** The user message: the question and its options, numbered. */
+export function genPrompt(q: Question & { options: Option[] }): string {
+  const lines = [`Question: ${String(q.question ?? q.header ?? '')}`, 'Directions:']
+  q.options.forEach((o, i) => {
+    const d = (o as { description?: unknown }).description
+    lines.push(`${i + 1}. ${String(o?.label ?? '')}${typeof d === 'string' && d ? `: ${d}` : ''}`)
+  })
+  return lines.join('\n')
+}
+
+/** The model's reply as a gallery: each spec checked as a preview would be; undefined when none survives. */
+export function galleryFromReply(text: string, q: Question & { options: Option[] }): Gallery | undefined {
+  const start = text.indexOf('{'), end = text.lastIndexOf('}')
+  if (start < 0 || end <= start) return undefined
+  let raw: unknown
+  try {
+    raw = JSON.parse(text.slice(start, end + 1))
+  } catch {
+    return undefined
+  }
+  const specs = (raw as { specs?: unknown })?.specs
+  if (!Array.isArray(specs)) return undefined
+  const cards: Card[] = []
+  q.options.forEach((o, i) => {
+    const spec = parseSpec(PREFIX + JSON.stringify(specs[i] ?? null))
+    if (spec) cards.push({ number: i + 1, label: typeof o?.label === 'string' ? o.label : `Option ${i + 1}`, spec })
+  })
+  return cards.length ? { header: String(q.header ?? q.question ?? 'Design'), cards } : undefined
+}

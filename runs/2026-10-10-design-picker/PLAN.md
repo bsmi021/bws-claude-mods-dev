@@ -19,3 +19,13 @@ Plugin added to CLAUDE_CODE_PLUGIN_DIRS so every session gets it.
 ## Parked (follow-ups)
 - Model-generated specs for design questions Claude asked without specs (tool.call + $.state + model.complete).
 - Image element for kitty/Ghostty (higher res); Windows Terminal can't show it.
+
+## Follow-up 1 (2026-10-10): generate specs when Claude gave none
+Finish line: a design-direction AskUserQuestion with no `design:` previews opens the native dialog at
+once with a "drawing mockups" line; the gallery appears when `$.model.complete` returns specs; an answer
+before then aborts the call. Non-design questions make no model call. Three checks green, live-verified.
+- Detection: header/question regex (visual, look and feel, palette, colour scheme, theme, layout,
+  typography, mockup, aesthetic, branding, "design" next to page/site/screen/app/landing/ui/logo/brand).
+  Negatives: API design, code style, schema/architecture design.
+- userConfig: `autoGenerate` (default true), `model` (default haiku).
+- State: `pending: StateFamily<boolean>` beside `galleries`.

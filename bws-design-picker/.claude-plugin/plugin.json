@@ -1,9 +1,23 @@
 {
   "name": "bws-design-picker",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "When Claude asks you to pick a design direction, each option is drawn as a small rendered mockup above the picker.",
   "author": {
     "name": "Brian"
   },
-  "types": "./types/index.d.ts"
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "autoGenerate": {
+      "type": "boolean",
+      "title": "Draw mockups when Claude gave none",
+      "description": "For a design-direction question without design: previews, ask a small model for mockup specs while the picker is open.",
+      "default": true
+    },
+    "model": {
+      "type": "string",
+      "title": "Model that draws generated mockups",
+      "description": "Alias or model id for the generated specs.",
+      "default": "haiku"
+    }
+  }
 }

@@ -30,6 +30,24 @@ rendered visual to choose from, not just text.
 Checks: `claude plugin validate` passed; `claude plugin test` 15/15; `tsc` (strict) clean.
 
 ## Parked
-- Model-generated specs when Claude asks a design question without them.
+- ~~Model-generated specs~~ done in 0.2.0.
 - `Image` element at higher resolution for kitty/Ghostty.
 - Live check of the desktop `Svg` path.
+
+## Follow-up 1 (0.2.0): generated specs
+- `tool.call`: no specs and `isDesignQuestion` -> set `pending`, start `$.model.complete` (haiku, abortable),
+  `await next(e)` (the dialog), then abort and await the drawing. The gallery goes to state when the model
+  answers, and the render redraws.
+- `ui.render`: no gallery but pending -> one dim "drawing mockups of these directions…" line above the dialog.
+- userConfig `autoGenerate` (true), `model` (haiku). Version 0.2.0.
+- Test-kit notes: API stubs (`model.complete`) answer `{ value }`. The test `$` has no `state` noun, so
+  assert through `$.ui.mount`. A stub's `next.signal` aborts when the caller's AbortController does.
+- Generation prompt tightened after the first live run (text blocks overlapped): short text, no overlapping text blocks.
+
+Evidence:
+- `live-gen-2-drawn.png`: gallery from generated specs (`claude-haiku-5-5 answered in 10564ms`, live-gen-debug.log)
+- `live-gen-3-pending.png`: the "drawing" line with the dialog open. Enter pressed about 4 s in, and
+  live-gen2-debug.log shows `claude-haiku-5-5 aborted` 27 ms after the dialog closed. Claude answered
+  "You picked Warm craft".
+
+Checks: validate passed; plugin test 24/24; tsc clean.

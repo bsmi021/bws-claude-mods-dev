@@ -7,7 +7,7 @@ export type Gallery = { header: string; cards: Card[] }
 
 declare module 'claude-code' {
   interface PluginState {
-    /** The gallery each AskUserQuestion call's dialog draws, by tool_use_id: specs lifted out of the previews. */
-    'bws-design-picker': { galleries: StateFamily<Gallery> }
+    /** By tool_use_id: the gallery each AskUserQuestion dialog draws (specs lifted from the previews or generated), and whether a model is still drawing it. */
+    'bws-design-picker': { galleries: StateFamily<Gallery>; pending: StateFamily<boolean> }
   }
 }
