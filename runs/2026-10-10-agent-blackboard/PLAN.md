@@ -16,7 +16,7 @@ Status: **building** (go given 2026-10-10). T1-T4, T6-T8 done (45/45 tests, live
 - [x] `claude plugin validate ./bws-board` passes, and its inventory lists every hook and `$` call below (`receipts/validate.txt`).
 - [x] `claude plugin test` passes in bws-board (45/45) and in cockpit with the bus removed (122/122) (ported bus tests + request/role/wake tests). Cockpit's suite passes with the bus removed.
 - [x] tsc 5.x (strict, noUncheckedIndexedAccess) is clean for both plugins
-- [ ] README written. bws-board is added to `CLAUDE_CODE_PLUGIN_DIRS`, and a fresh session loads cockpit and board without errors. Committed.
+- [x] README written. bws-board is added to `CLAUDE_CODE_PLUGIN_DIRS`, and a fresh session loads cockpit and board without errors (receipts/t5/fresh-board.jsonl). Committed (3f6bfd9).
 
 ## Design
 
@@ -151,7 +151,7 @@ What is **not** possible, or is a limit:
 6. [x] T6 Pane + `/board` text (built in T3; the pane is drawn but not yet checked interactively).
 7. [x] T7 receipts for both plugins (receipts/t5).
 8. [x] T8 Live two-session acceptance run + the claim/deny run, with receipts (run 4; runs 1-3 kept as live-run1..3).
-9. T9 README, `CLAUDE_CODE_PLUGIN_DIRS`, fresh-session load check, RUNLOG, commit. The publish branch is updated only when Brian asks.
+9. [x] T9 README, `CLAUDE_CODE_PLUGIN_DIRS`, fresh-session load check, RUNLOG, commit. The publish branch is updated only when Brian asks.
 
 ## Follow-ups (parked)
 - Live verification of urgent wake in an interactive terminal (interactive B, a second wake inside the window is refused).
