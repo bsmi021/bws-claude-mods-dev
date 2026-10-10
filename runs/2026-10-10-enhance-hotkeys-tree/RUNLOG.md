@@ -32,3 +32,8 @@ tsc 5.6 strict clean. Synced to ~/.claude/dev-mods/408c3d09.../bws-enhance.
 
 ## Next
 - Retest: /enhance <x> in a fresh window -> pane shows the hotkey hint -> press r (box gets the rough prompt back), then s.
+
+## Installed for all projects
+Appended C:/Projects/bws.mods.claude-code/bws-enhance to CLAUDE_CODE_PLUGIN_DIRS in ~/.claude/settings.json
+(backup: ~/.claude/settings.json.bak-enhance). Verified: fresh `claude -p "/enhance ..."` from the home folder lists
+bws-enhance among loaded plugins and returns a rewrite.
