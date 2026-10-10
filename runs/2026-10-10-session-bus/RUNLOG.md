@@ -107,8 +107,16 @@ Finish line in PLAN.md.
   - In the worktree, validate passed and 143/143 tests passed (receipts/publish13-*).
   - Committed `1fa871e` and pushed: `dadac39..1fa871e publish -> main`. The worktree was removed.
 
+- Publish bws-board 0.1.0 + bws-cockpit 0.14.0 (Brian's request):
+  - Main had moved on to bws-board 0.2.0 (`0162120`, another session). Cockpit is identical at `44249cf` and HEAD, so both came from `44249cf`, where 0.1.0 and 0.14.0 shipped together.
+  - `git checkout 44249cf -- bws-cockpit bws-board` left 0.13.0's `hooks/bus.ts` and `tests/bus.test.ts` in place, and cockpit's test run failed on them ("the file did not load"). I removed both. After that the tree matched `44249cf` exactly. The trap is now noted in AGENTS.md.
+  - Scanned the 2,709 added lines. Hits: only the author field (as in the other plugins), the neutral test ids `aaaaaaaa-…`, and the dummy `C:/Users/u` and `C:/Users/someone`.
+  - Top-level README: seven mods. The cockpit row swaps the Session Bus for the board chip; added a bws-board row and its load flag.
+  - In the worktree, validate passed for both. Tests: board 45/45, cockpit 122/122 (receipts/publish14-*).
+  - Committed `e07a3a5` and pushed: `1fa871e..e07a3a5 publish -> main`. The worktree was removed.
+
 ## Outcome
-Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published 0.13.0 as `publish` 1fa871e = `mods/main`.
+Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published bws-board 0.1.0 + bws-cockpit 0.14.0 as `publish` e07a3a5 = `mods/main`.
 
 ## Next step
 Parked follow-ups (PLAN.md): claim-check Bash/PowerShell writes, a band chip or `/bus` command, push delivery through `$.session.send`, and pid liveness.

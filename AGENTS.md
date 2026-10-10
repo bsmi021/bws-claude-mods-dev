@@ -145,5 +145,6 @@ Local Doc: ./docs/mods.md
 - In the manifest's types contract (`types/index.d.ts`), an `import('…')` type makes the validator report every `PluginState` key as not declared. Write the shapes inline.
 - Never push `main`: its `runs/` holds private prompts and transcripts. Publish only the orphan `publish` branch:
   - Refresh it in a scratch worktree with `git checkout main -- bws-cockpit bws-shell-lint`.
+  - That checkout never deletes files the source commit dropped. Diff `git ls-files <dirs>` against `git ls-tree -r --name-only <commit> <dirs>` and `git rm` the leftovers before testing.
   - Remote `mods` is the private repo github.com/bsmi021/bws-claude-mods. Its push rule maps only `publish` to `main`, so `git push mods` never sends this repo's `main`.
   - Scan for names, project and game names, serials and paths first.
