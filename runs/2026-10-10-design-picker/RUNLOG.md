@@ -58,3 +58,13 @@ Checks: validate passed; plugin test 24/24; tsc clean.
 - Still seen: labels clipped to their block's width ("Shop b", "ORDER N", "Ethiop", "Colomb", "Brazi"). That's
   width truncation, not overlap; possible follow-up to pick a smaller font/shorter label or widen text blocks.
 - Sample size is one run; Haiku output varies.
+
+## 0.2.1: Opus for generated specs, prompts reviewed (2026-10-10)
+- Brian didn't like Haiku's mockups. Default `model` is now `opus` (manifest + fallback); timeout 120 s.
+- Root cause of clipped labels: the model was never told the frame size. GEN_SYSTEM now says ~32x9 cells,
+  paint order, where text is drawn, the fit rule (at most w/3 - 2 characters, h >= 12), contrast, and to
+  stay true to each description. SECTION (Claude's own specs) gets the same fit rule in one sentence.
+- Live run (`live-gen-5-opus.png`, `live-gen4-opus-debug.log`): claude-opus-5-5 answered in 27275 ms.
+  No clipped labels, no overlaps, every mockup matches its description. The cost is about 2.5x Haiku's
+  wait (11 s), with the "drawing" line showing meanwhile.
+- Checks: plugin test 24/24, tsc clean, validate passed.

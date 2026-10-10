@@ -869,3 +869,9 @@
 2026-10-10T12:00:43.605Z [WARN] localSettings: not canonicalizing the consent store to C:\Projects\bws.mods.claude-code — this platform has no uid semantics to verify directory ownership with, so the store stays at the session cwd (canonicalization is POSIX-only)
 2026-10-10T12:00:43.607Z [DEBUG] hooks module cc-plugin-you-should-know@builtin session.end settled in 1.1ms (native link, next() included)
 2026-10-10T12:00:43.765Z [ERROR] Failed to flush logs to Datadog: DNSException: getaddrinfo ENOTFOUND http-intake.logs.us5.datadoghq.com
+2026-10-10T12:00:44.116Z [DEBUG] Preserving file permissions: 100666
+2026-10-10T12:00:44.117Z [DEBUG] Writing to temp file: C:\Users\bsmi0\.claude.json.tmp.268908.2ac8388f794e
+2026-10-10T12:00:44.117Z [DEBUG] Applied original permissions to temp file
+2026-10-10T12:00:44.120Z [DEBUG] Temp file written successfully, size: 344481 bytes
+2026-10-10T12:00:44.121Z [DEBUG] Renaming C:\Users\bsmi0\.claude.json.tmp.268908.2ac8388f794e to C:\Users\bsmi0\.claude.json
+2026-10-10T12:00:44.121Z [DEBUG] File C:\Users\bsmi0\.claude.json written atomically
