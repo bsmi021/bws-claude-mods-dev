@@ -1,0 +1,10 @@
+{
+  "answer": "Both draw clean mockups. Opus is 1.6x faster with half the contrast misses. Looks are your call: vote below.",
+  "sub": "24 real calls through the plugin's own path: 6 design questions, 2 runs each, both models side by side.",
+  "points": [
+    { "chip": "tie", "tone": "idle", "text": "Both: 40 of 40 mockups, 0 clipped labels, 0 overlaps" },
+    { "chip": "opus", "tone": "good", "text": "Median wait 27.5 s vs 44.9 s; slowest 40 s vs 78 s" },
+    { "chip": "opus", "tone": "good", "text": "6 low-contrast labels vs Fable's 12, out of about 210" },
+    { "chip": "you", "tone": "info", "text": "12 blind pairs below decide the look" }
+  ]
+}
