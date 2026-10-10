@@ -1,7 +1,7 @@
 {
   "name": "bws-board",
-  "version": "0.2.0",
-  "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake; keeps a history of who held, asked and woke what, and /board digest turns it into a team timeline page.",
+  "version": "0.3.0",
+  "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake; lets one session at a time run git add/commit/push in a working tree and refuses a commit that would sweep up a peer's claimed files; keeps a history of who held, asked and woke what, and /board digest turns it into a team timeline page.",
   "author": {
     "name": "Brian"
   },
@@ -36,6 +36,18 @@
       "title": "History days",
       "description": "Keep each session's board history (files held, asks, refused edits, wakes) for /board digest this many days; 0 keeps none.",
       "default": 14
+    },
+    "gitLease": {
+      "type": "boolean",
+      "title": "Git lease",
+      "description": "One session at a time runs git add/commit/push and the like in a working tree; a commit that would include files another live session claims is refused.",
+      "default": true
+    },
+    "gitLeaseMinutes": {
+      "type": "number",
+      "title": "Git lease minutes",
+      "description": "The git lease lapses this many minutes after the holder's last git command (it also ends at the holder's turn end).",
+      "default": 2
     }
   }
 }

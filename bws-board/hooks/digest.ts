@@ -25,10 +25,11 @@ export type AskRow = {
   note?: string
   decliners: string[]
 }
-export type BlockRow = { at: number; who: string; file: string; holder: string }
+// `isGit`: a git command refused for the git lease (`file` reads `git <verb>`).
+export type BlockRow = { at: number; who: string; file: string; holder: string; isGit?: true }
 export type FileRow = { file: string; holds: { name: string; start: number; end: number; edits: number }[]; isContested: boolean; denies: number }
 export type WakeRow = { from: string; to: string; sent: number; failed: number; held: number }
-export type Totals = { agents: number; busyMs: number; activeMs: number; overlapMs: number; asks: number; done: number; medianTakeMs?: number; medianDoneMs?: number; denies: number; wakes: number }
+export type Totals = { agents: number; busyMs: number; activeMs: number; overlapMs: number; asks: number; done: number; medianTakeMs?: number; medianDoneMs?: number; denies: number; gitWaits: number; wakes: number }
 export type Digest = { folder: string; from: number; to: number; now: number; lanes: Lane[]; asks: AskRow[]; blocks: BlockRow[]; files: FileRow[]; wakes: WakeRow[]; totals: Totals }
 
 const nameOf = (role: string | null | undefined, id: string) => (role ? `${role} (${shortId(id)})` : shortId(id))
@@ -103,6 +104,7 @@ function laneOf(h: History, isLive: boolean, now: number, claimMs: number): Omit
     if (e.kind === 'ask') marks.push({ at: e.at, kind: 'ask', label: `asked ${e.askId ?? ''}${e.urgent ? ' (urgent)' : ''}` })
     if (e.kind === 'take' || e.kind === 'done' || e.kind === 'decline') marks.push({ at: e.at, kind: e.kind, label: `${e.kind} ${e.askId ?? ''}` })
     if (e.kind === 'withdraw') marks.push({ at: e.at, kind: 'withdraw', label: `withdrew ${e.askId ?? ''}` })
+    if (e.kind === 'gitWait') marks.push({ at: e.at, kind: 'deny', label: `git ${e.verb ?? ''} refused: lease held by ${e.holder ? nameOf(e.holderRole, e.holder) : 'another session'}` })
     if (e.kind === 'deny') marks.push({ at: e.at, kind: 'deny', label: `edit refused: held by ${e.holder ? nameOf(e.holderRole, e.holder) : 'another session'}` })
     if (e.kind === 'wake') marks.push({ at: e.at, kind: 'wake', label: `${e.delivered ? 'woke' : 'could not wake'} ${e.to ? shortId(e.to) : ''}` })
     if (e.kind === 'send') marks.push({ at: e.at, kind: 'send', label: `message to ${e.to === 'all' ? 'all' : e.to ? shortId(e.to) : '?'}` })
@@ -172,8 +174,14 @@ export function buildDigest(histories: readonly History[], opts: { folder: strin
   }
 
   const blocks: BlockRow[] = evs
-    .filter(e => e.kind === 'deny' && e.file && inWin(e.at))
-    .map(e => ({ at: e.at, who: nm(e.sid), file: relTo(e.file ?? '', o.folder), holder: e.holder ? (names.has(e.holder) ? nm(e.holder) : nameOf(e.holderRole, e.holder)) : '?' }))
+    .filter(e => ((e.kind === 'deny' && e.file) || e.kind === 'gitWait') && inWin(e.at))
+    .map(e => ({
+      at: e.at,
+      who: nm(e.sid),
+      file: e.kind === 'gitWait' ? `git ${e.verb ?? ''}`.trim() : relTo(e.file ?? '', o.folder),
+      holder: e.holder ? (names.has(e.holder) ? nm(e.holder) : nameOf(e.holderRole, e.holder)) : '?',
+      ...(e.kind === 'gitWait' ? { isGit: true as const } : {}),
+    }))
 
   const byFile = new Map<string, FileRow>()
   for (const l of lanes)
@@ -183,7 +191,7 @@ export function buildDigest(histories: readonly History[], opts: { folder: strin
       row.holds.push({ name: l.name, start: hd.start, end: hd.end, edits: hd.edits })
       byFile.set(file, row)
     }
-  for (const b of blocks) {
+  for (const b of blocks.filter(x => !x.isGit)) {
     const row = byFile.get(b.file) ?? { file: b.file, holds: [], isContested: false, denies: 0 }
     row.denies += 1
     byFile.set(b.file, row)
@@ -214,7 +222,8 @@ export function buildDigest(histories: readonly History[], opts: { folder: strin
     done: asks.filter(a => a.outcome === 'done').length,
     medianTakeMs: median(asks.flatMap(a => (a.takeAt !== undefined ? [a.takeAt - a.at] : []))),
     medianDoneMs: median(asks.flatMap(a => (a.doneAt !== undefined ? [a.doneAt - a.at] : []))),
-    denies: blocks.length,
+    denies: blocks.filter(x => !x.isGit).length,
+    gitWaits: blocks.filter(x => x.isGit).length,
     wakes: wakes.reduce((n, w) => n + w.sent, 0),
   }
   return { folder: o.folder, from: o.from, to: Math.max(o.to, o.from + 1), now: o.now, lanes, asks, blocks, files, wakes, totals }
@@ -285,7 +294,7 @@ export function digestHtml(d: Digest): string {
     ['Parallel', durText(t.overlapMs), `${share}% of working time had 2+ agents busy`],
     ['Asks done', `${t.done}/${t.asks}`, `median ${durText(t.medianDoneMs)} to done`],
     ['Time to take', durText(t.medianTakeMs), 'median'],
-    ['Refused edits', String(t.denies), 'claims that stopped a clip'],
+    ['Refused edits', String(t.denies), `claims that stopped a clip${t.gitWaits > 0 ? ` · ${t.gitWaits} git wait(s)` : ''}`],
     ['Wakes', String(t.wakes), 'urgent asks that woke a session'],
   ]
   const kpiHtml = `<div class="kpis">${kpis.map(([k, v, s]) => `<div class="kpi${k === 'Refused edits' && t.denies > 0 ? ' warn' : ''}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join('')}</div>`
@@ -329,7 +338,7 @@ export function digestHtml(d: Digest): string {
     d.lanes.length === 0
       ? '<p class="empty">No board history in this window. History is written by bws-board 0.2.0 and later while sessions work in this repository.</p>'
       : `${kpiHtml}${timeline(d)}<section><h2>Files held</h2>${files}</section><section><h2>Asks</h2>${asks}</section>` +
-        `<section><h2>Refused edits</h2>${blocks}</section><section><h2>Wakes</h2>${wakes}</section>` +
+        `<section><h2>Refused edits and git waits</h2>${blocks}</section><section><h2>Wakes</h2>${wakes}</section>` +
         (tasks ? `<section><h2>What each worked on</h2><ul class="tasks">${tasks}</ul></section>` : '')
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

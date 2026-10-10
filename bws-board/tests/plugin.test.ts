@@ -18,7 +18,9 @@ const kindsOf = (files: Record<string, string>, id: string) => parseHistory(file
 
 // One plugin instance per test, so a second session is the same instance under another session id:
 // its own state starts fresh, and the board folder is shared. Roles come from BWS_AGENT_ROLE per id.
-function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: Record<string, string> } = {}) {
+// `git`: what the stubbed git answers (paths relative to the repo top); `notRepo`: rev-parse fails.
+type GitWorld = { staged?: string[]; modified?: string[]; untracked?: string[]; notRepo?: boolean }
+function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: Record<string, string>; git?: GitWorld } = {}) {
   const files: Record<string, string> = {}
   const mtimes: Record<string, number> = {}
   const who = { id: A }
@@ -41,9 +43,14 @@ function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: 
     sends.push({ to: e.to, text: e.text })
     return { isDelivered: true } as never
   })
+  const git: GitWorld = opts.git ?? {}
   on('process.run', ($, e) => {
     runs.push([...e.argv])
-    return { value: { exitCode: 0, stdout: '', stderr: '' } as never }
+    const a = e.argv.join(' ')
+    const z = (l?: string[]) => (l ?? []).join(String.fromCharCode(0))
+    if (a.includes('rev-parse')) return { value: (git.notRepo ? { exitCode: 128, stdout: '', stderr: 'not a git repository' } : { exitCode: 0, stdout: `${CWD}\n${CWD}/.git\n`, stderr: '' }) as never }
+    const out = a.includes('diff --cached') ? z(git.staged) : a.includes('diff --name-only') ? z(git.modified) : a.includes('ls-files') ? z(git.untracked) : ''
+    return { value: { exitCode: 0, stdout: out, stderr: '' } as never }
   })
   on('tool.register', ($, e) => ({ value: { tool: e.name } }))
   on('command.register', ($, e) => ({ value: { command: e.name } }))
@@ -85,7 +92,7 @@ function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: 
       .filter((c): c is Card => c !== undefined && c.gone !== true)
       .map(c => c.sessionId)
       .sort()
-  return { files, mtimes, who, reached, toasts, sends, runs, clock, put, live }
+  return { files, mtimes, who, reached, toasts, sends, runs, clock, put, live, git }
 }
 
 const block = (r: { blocks: readonly { name: string; text: string }[] }) => r.blocks.find(b => b.name === 'bwsBoard')?.text
@@ -336,7 +343,7 @@ describe('board: history and digest', () => {
     w.who.id = A
     const r = (await $.command.run({ command: 'board', args: 'digest' } as never)) as { text: string }
     expect(r.text).toContain('Board digest for C:/proj, last 1 day(s): 2 agent(s)')
-    expect(r.text).toContain('1/2 ask(s) done, 1 refused edit(s), 1 wake(s).')
+    expect(r.text).toContain('1/2 ask(s) done, 1 refused edit(s), 0 git wait(s), 1 wake(s).')
     expect(r.text).toContain(`${DIR}/digest.html`)
 
     expect(kindsOf(w.files, A)).toEqual(['start', 'busy', 'claim', 'edit', 'ask', 'wake', 'ask', 'wakeHeld', 'send', 'idle'])
@@ -389,5 +396,128 @@ describe('board: history and digest', () => {
     await $.session.start({ cwd: CWD } as never)
     await w.clock.settle()
     expect(w.runs).toEqual([['cmd', '/d', '/c', 'del', '/q', `C:\\cfg\\bws-board\\c-proj\\history\\${C}.json`]])
+  })
+})
+
+const bash = (command: string) => ({ tool: 'Bash', command }) as never
+const turnEnd = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
+
+describe('board: the git lease', () => {
+  test('one session at a time runs git in the tree; the holder\'s turn end frees it', { options: {} }, async ($, on) => {
+    const w = world(on, { roles: { [A]: 'api', [B]: 'tests' } })
+    await $.session.start({ cwd: CWD } as never)
+    await $.prompt.submit({ text: 'Build the login endpoint', wait: false, origin: { kind: 'sdk' } } as never)
+    expect((await $.tool.call(bash('git add src/login.ts'))).deny).toBeUndefined()
+    expect(cardOf(w.files, A)?.git).toMatchObject({ verb: 'add', tree: 'c:/proj' })
+
+    w.who.id = B
+    await w.clock.advance(1000)
+    await $.session.start({ cwd: CWD } as never)
+    await $.prompt.submit({ text: 'Write the auth tests', wait: false, origin: { kind: 'sdk' } } as never)
+    const refused = await $.tool.call(bash('git add tests/auth.ts && git commit -m "tests"'))
+    expect(refused.deny ?? '').toContain('git add refused. Another live session on this board holds the git lease for this working tree: api (aaaaaaaa) (Build the login endpoint), which ran git add 1s ago.')
+    expect(w.reached.filter(r => r.startsWith('b:Bash'))).toEqual([])
+    expect(w.toasts).toContain('board: refused git: another session holds the git lease')
+    // Read-only git and other commands go on.
+    expect((await $.tool.call(bash('git status && git diff --cached && git log -3'))).deny).toBeUndefined()
+    expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_status' } as never))).toContain('  holds the git lease (git add 1s ago)')
+
+    // A's turn ends: the lease is free, and B takes it.
+    w.who.id = A
+    await $.turn.complete(turnEnd)
+    expect(cardOf(w.files, A)?.git).toBeUndefined()
+    w.who.id = B
+    expect((await $.tool.call(bash('git add tests/auth.ts && git commit -m "tests"'))).deny).toBeUndefined()
+    expect(cardOf(w.files, B)?.git).toMatchObject({ verb: 'commit' })
+    expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_status' } as never))).toContain('holds the git lease (git commit')
+
+    // Now A waits for B.
+    w.who.id = A
+    expect((await $.tool.call(bash('git push'))).deny ?? '').toContain('git push refused')
+    await w.clock.settle()
+    expect(kindsOf(w.files, A)).toEqual(['start', 'busy', 'gitHold', 'idle', 'gitWait'])
+    expect(kindsOf(w.files, B)).toEqual(['start', 'busy', 'gitWait', 'gitHold'])
+    const wait = parseHistory(w.files[`${DIR}/history/${B}.json`], B)?.events.find(e => e.kind === 'gitWait')
+    expect(wait).toMatchObject({ verb: 'add', holder: A, holderRole: 'api' })
+    // The history holds the verb, never the command line.
+    expect(w.files[`${DIR}/history/${B}.json`]).not.toContain('tests/auth.ts')
+  })
+
+  test('the lease lapses gitLeaseMinutes after the last git command; board_release frees it at once', { options: { gitLeaseMinutes: 1 } }, async ($, on) => {
+    const w = world(on)
+    await $.session.start({ cwd: CWD } as never)
+    await $.tool.call(bash('git add a.txt'))
+    w.who.id = B
+    await $.session.start({ cwd: CWD } as never)
+    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeDefined()
+    await w.clock.advance(61_000)
+    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeUndefined()
+    // B releases everything: A may go on at once.
+    expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_release' } as never))).toContain('every claim and the git lease')
+    w.who.id = A
+    expect((await $.tool.call(bash('git push'))).deny).toBeUndefined()
+  })
+
+  test("a commit that would take in a peer's claimed file is refused, with the fix", { options: {} }, async ($, on) => {
+    const w = world(on, { roles: { [A]: 'api', [B]: 'tests' }, git: {} })
+    await $.session.start({ cwd: CWD } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/src/login.ts', old_string: 'a', new_string: 'b' } as never)
+    await $.turn.complete(turnEnd)
+
+    w.who.id = B
+    await $.session.start({ cwd: CWD } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/tests/auth.ts', old_string: 'a', new_string: 'b' } as never)
+    // git add -A runs after the check: every modified and untracked file counts.
+    w.git.modified = ['src/login.ts', 'tests/auth.ts']
+    const all = await $.tool.call(bash('git add -A && git commit -m "tests"'))
+    expect(all.deny ?? '').toContain('git commit refused. It would commit a file another live session claims: src/login.ts (held by api (aaaaaaaa))')
+    expect(all.deny ?? '').toContain('git restore --staged -- src/login.ts')
+    expect(all.deny ?? '').not.toContain('tests/auth.ts')
+    expect(w.toasts).toContain('board: refused a commit of files another session claimed')
+    // Already staged, or named in the add: the same.
+    w.git.staged = ['src/login.ts', 'tests/auth.ts']
+    expect((await $.tool.call(bash('git commit -m "tests"'))).deny ?? '').toContain('src/login.ts')
+    w.git.staged = []
+    expect((await $.tool.call(bash('git add src && git commit -m "tests"'))).deny ?? '').toContain('src/login.ts')
+    expect((await $.tool.call(bash('git commit -am "tests"'))).deny ?? '').toContain('src/login.ts')
+    // The fix in one command (seen live): the restore runs before the commit, so a.txt is out.
+    w.git.staged = ['src/login.ts']
+    expect((await $.tool.call(bash('git restore --staged -- src/login.ts && git add -- tests/auth.ts && git commit -m "tests"'))).deny).toBeUndefined()
+    // Only its own file: it goes on.
+    w.git.staged = ['tests/auth.ts']
+    expect((await $.tool.call(bash('git add tests/auth.ts && git commit -m "tests"'))).deny).toBeUndefined()
+    await w.clock.settle()
+    const denies = parseHistory(w.files[`${DIR}/history/${B}.json`], B)?.events.filter(e => e.kind === 'deny')
+    expect(denies?.[0]).toMatchObject({ file: 'c:/proj/src/login.ts', holder: A })
+  })
+
+  test('alone, another repo, or gitLease off: nothing refused and no staged check run', { options: {} }, async ($, on) => {
+    const w = world(on, { git: { staged: ['src/login.ts'] } })
+    await $.session.start({ cwd: CWD } as never)
+    expect((await $.tool.call(bash('git add -A && git commit -m x && git push'))).deny).toBeUndefined()
+    expect(w.runs.filter(r => r.includes('diff'))).toEqual([])
+    // A peer with no claims in the tree: still no diff.
+    w.who.id = B
+    await $.session.start({ cwd: CWD } as never)
+    w.who.id = A
+    await $.turn.complete(turnEnd)
+    w.who.id = B
+    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeUndefined()
+    expect(w.runs.filter(r => r.includes('diff'))).toEqual([])
+    // Not this board's repository: ignored.
+    w.git.notRepo = true
+    w.who.id = A
+    expect((await $.tool.call(bash('git -C C:/elsewhere commit -m x'))).deny).toBeUndefined()
+  })
+
+  test('gitLease off: git is never checked', { options: { gitLease: false } }, async ($, on) => {
+    const w = world(on)
+    await $.session.start({ cwd: CWD } as never)
+    await $.tool.call(bash('git add a.txt'))
+    w.who.id = B
+    await $.session.start({ cwd: CWD } as never)
+    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeUndefined()
+    expect(w.runs.filter(r => r[0] === 'git')).toEqual([])
+    expect(cardOf(w.files, A)?.git).toBeUndefined()
   })
 })

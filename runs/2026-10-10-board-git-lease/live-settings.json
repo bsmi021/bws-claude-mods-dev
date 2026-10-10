@@ -1,0 +1,5 @@
+{
+  "pluginConfigs": {
+    "bws-board": { "options": { "gitLeaseMinutes": 1 } }
+  }
+}

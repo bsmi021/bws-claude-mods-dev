@@ -1,0 +1,27 @@
+commit f7a67cc912de6e921298f793ac89bb8050f9532a
+Author: t <t@t>
+Date:   Sat Oct 10 16:18:03 2026 -0400
+
+    A: a.txt
+
+ a.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 44a404a97b0875777165db8592c0675262249410
+Author: t <t@t>
+Date:   Sat Oct 10 16:17:51 2026 -0400
+
+    B: b.txt
+
+ b.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 82ee28132b0d704f64311ec937e7203207c24456
+Author: t <t@t>
+Date:   Sat Oct 10 16:15:50 2026 -0400
+
+    init
+
+ a.txt | 1 +
+ b.txt | 1 +
+ 2 files changed, 2 insertions(+)

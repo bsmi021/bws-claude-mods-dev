@@ -4,6 +4,7 @@ Several Claude Code sessions working in one repository share a board. Each sessi
 - post what it works on and its role,
 - see the others,
 - claim the files it edits so no one clips them,
+- take turns at git, so no two commit at once or sweep up each other's files,
 - ask the others for what it needs.
 
 They work as peers: no lead session, no subagents.
@@ -17,6 +18,23 @@ They work as peers: no lead session, no subagents.
   (command position only). Another live session's write to that file is refused before it runs. The refusal names the holder and its task, and
   says how to ask for the file. A claim lapses 30 minutes after the holder's last edit of the file. All of a session's
   claims go when it exits or `/clear`s, or when its heartbeat stops for 90 s (a crash).
+- **Git lease.** One session at a time runs git that changes the index, the checkout or refs in a working tree:
+  `add`, `rm`, `mv`, `commit`, `push`, `pull`, `merge`, `rebase`, `reset`, `checkout`, `switch`, `restore`, `stash`
+  (not `list`/`show`), `cherry-pick`, `revert`, `am`. Read-only git (`status`, `diff`, `log`, `show`, `branch`, `fetch`,
+  ...) is never touched. Command position only, as for claims; `cd` and `git -C` are followed, and another repository is
+  ignored.
+  - The first such command takes the session's lease. While a peer live in the same working tree holds it, the command
+    is refused: the reason names the holder, what it last ran, and when the lease ends, and tells Claude to do other
+    work rather than retry in a loop.
+  - The lease ends when the holder's turn ends, 2 minutes after its last git command (`gitLeaseMinutes`), on
+    `board_release` with no paths, when it exits, or when its heartbeat stops for 90 s.
+  - **No sweeping a peer's files.** A `git commit` is refused when it would include a file a live peer claims: the
+    staged files, the modified tracked files for `-a`, and what an earlier `git add` in the same command would stage
+    (`add -A`, `add .` and `add -u` count every modified and untracked file). The refusal names the files and gives
+    the `git restore --staged` fix. This runs git only when a peer claims a file in the tree.
+  - Worktrees are separate: a session in another worktree of the repository never waits for this one.
+  - It narrows the race, not removes it: two sessions that start git in the same instant can both go on, as with
+    claims.
 - **Asks.** A session posts what it needs with `board_ask { to, text, urgent? }`:
   - `to` is a role, a session id, or `anyone`.
   - A peer takes the ask (`board_take`), then finishes it (`board_done { note }`) or declines it (`board_decline`).
@@ -40,7 +58,7 @@ They work as peers: no lead session, no subagents.
   - `/board pane` opens a live Board pane, redrawn on every heartbeat.
   - `/board digest [days]` writes the team digest page (below) and prints its path.
 - `board_status { task? }` gives Claude the same listing, and can set the task line.
-- `board_release { paths? }` gives up claims, all of them when no paths are given.
+- `board_release { paths? }` gives up claims, all of them and the git lease when no paths are given.
 
 ## History and the team digest
 Each session also keeps a history of what it did on the board. The history outlives its card, so you can look back at
@@ -52,6 +70,7 @@ how the team worked:
   - asks posted, taken, done, declined or withdrawn
   - messages sent (recipient only, never the text)
   - urgent wakes sent or held back
+  - the git lease taken (the subcommand only, never the command line) and every git command refused for it
 
   Text is only what the card already holds redacted (task, ask text, notes), plus file paths. No message text and no
   commands are logged.
@@ -63,7 +82,8 @@ how the team worked:
   - A timeline with one lane per session: busy turns, files held, and markers for asks, takes, dones, refused edits,
     wakes, messages and releases.
   - Tables: files held (a file two sessions held, or one with a refused edit, is flagged *contested*), asks with how
-    long they waited, refused edits (who blocked whom, on which file), and wakes per sender and receiver.
+    long they waited, refused edits and git waits (who blocked whom, on which file or git command), and wakes per
+    sender and receiver.
 
   Peer text is HTML-escaped. One small inline script only shows times in your local zone; without it, they read UTC.
   The page does not open by itself.
@@ -93,12 +113,16 @@ how the team worked:
 - `urgentWake` (default true): urgent asks may wake named idle sessions.
 - `wakeMinutes` (default 5): the minimum gap between wakes from this session to the same session.
 - `historyDays` (default 14): keep history files this many days. `0` writes no history.
+- `gitLease` (default true): take turns at git, and refuse a commit of a peer's claimed files.
+- `gitLeaseMinutes` (default 2): the git lease lapses this long after the holder's last git command.
 
 ## Capabilities and safety
 - It reads and writes its own card folder under the Claude config folder, and deletes day-old card files and
   expired history files in it. It also writes `digest.html` there when asked.
 - It reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` and `BWS_AGENT_ROLE`.
 - It sends `$.session.send` messages only for urgent asks.
+- For the git lease it runs `git rev-parse` (once per folder) and, only when a peer claims a file in the tree, `git diff
+  --name-only` / `git ls-files --others` before a commit. It never runs a git command that changes anything.
 - It never approves a tool call and never logs prompt text beyond the redacted first line.
 - Peer text is always marked as not coming from the user.
 
@@ -144,3 +168,18 @@ In the live run, cockpit's Session Bus was switched off, and its text was absent
 - **The page:** rendered by headless Edge in light and dark at 1280 px wide, and checked by eye.
 - **Not verified:** phone width (headless Edge will not size a window that narrow), and the history sweep live (tests
   only).
+
+0.3.0, git lease (`runs/2026-10-10-board-git-lease/receipts/`), Claude Code 2.1.296 on Windows 11, git 2.54:
+- Static validation passed, tsc clean. 75 automated tests, including the detector, the lease and its turn-end, lapse
+  and release ends, the sweep check (`add -A`, already staged, `add <dir>`, `commit -a`, an unstage before the commit),
+  and no git run when no peer claims a file.
+- **Corpus replay:** 79,355 real Bash/PowerShell commands; 4,054 take the lease. No git command at command position was
+  missed; the leftovers are verbs inside quoted text.
+- **Live, headless, two sessions in a scratch repository** (lease set to 1 minute for the run):
+  - A staged its file and held its turn; B's `git add b.txt && git commit` was refused for the lease.
+  - After the lease lapsed, with A still live, B's `git add -A && git commit` was refused for A's `a.txt`. B followed
+    the fix (`git restore --staged -- a.txt && git add -- b.txt && git commit`) and committed only `b.txt`. A then
+    committed `a.txt` itself; each commit held only its own file.
+  - The first run found the restore-then-commit command refused (the check ran before the restore); fixed, and the
+    second run passed it.
+- **Not verified live:** PowerShell git commands, `-C` into a worktree, and a push (tests only).

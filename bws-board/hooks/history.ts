@@ -21,9 +21,11 @@ export type HistKind =
   | 'send'
   | 'wake'
   | 'wakeHeld'
+  | 'gitHold'
+  | 'gitWait'
 
 // `file`/`files`: normalized absolute paths (see board.ts normFile). `holder`: the session that held
-// a refused file. `to`: a session id (wake, send), 'all', or an ask's target. `from`: an ask's asker.
+// a refused file or the git lease. `verb`: a git subcommand (gitHold, gitWait). `to`: a session id (wake, send), 'all', or an ask's target. `from`: an ask's asker.
 export type HistEvent = {
   at: number
   kind: HistKind
@@ -41,6 +43,7 @@ export type HistEvent = {
   note?: string
   delivered?: boolean
   reason?: string
+  verb?: string
 }
 
 export type History = { version: 1; sessionId: string; folder: string; events: HistEvent[] }
@@ -52,7 +55,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 export const historyDir = (dir: string) => `${dir}/history`
 export const historyPath = (dir: string, sessionId: string) => `${historyDir(dir)}/${sessionId}.json`
 
-const KINDS: readonly HistKind[] = ['start', 'end', 'busy', 'idle', 'task', 'claim', 'edit', 'release', 'deny', 'ask', 'take', 'done', 'decline', 'withdraw', 'send', 'wake', 'wakeHeld']
+const KINDS: readonly HistKind[] = ['start', 'end', 'busy', 'idle', 'task', 'claim', 'edit', 'release', 'deny', 'ask', 'take', 'done', 'decline', 'withdraw', 'send', 'wake', 'wakeHeld', 'gitHold', 'gitWait']
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const optStr = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined)
@@ -61,7 +64,7 @@ function parseEvent(o: Record<string, unknown>): HistEvent | undefined {
   const kind = KINDS.find(k => k === o.kind)
   if (kind === undefined || typeof o.at !== 'number' || !Number.isFinite(o.at)) return undefined
   const ev: HistEvent = { at: o.at, kind, role: optStr(o.role) ?? null }
-  for (const k of ['file', 'task', 'holder', 'askId', 'to', 'from', 'text', 'note', 'reason'] as const) {
+  for (const k of ['file', 'task', 'holder', 'askId', 'to', 'from', 'text', 'note', 'reason', 'verb'] as const) {
     const s = optStr(o[k])
     if (s !== undefined) ev[k] = s
   }

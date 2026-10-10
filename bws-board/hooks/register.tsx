@@ -21,9 +21,12 @@ import {
   claimHolder,
   denyText,
   dropClaims,
+  gitDenyText,
+  gitHolder,
   idFromFile,
   introText,
   isLive,
+  liveClaims,
   livePeers,
   newCard,
   news,
@@ -40,9 +43,11 @@ import {
   shortId,
   shorten,
   shownAsks,
+  stagedDenyText,
   statusText,
   summary,
   sweepable,
+  takeLease,
   taskFrom,
   toSlash,
   tombstone,
@@ -51,12 +56,12 @@ import {
   wakeTargets,
   wakeText,
 } from './board'
-import type { ActKind, Board, Card, Inbox, Limits, Self } from './board'
+import type { ActKind, Board, Card, GitLease, Inbox, Limits, Self } from './board'
 import { buildDigest, digestHtml, durText } from './digest'
 import { HIST_DAYS, addEvent, expiredHistory, historyDir, historyPath, historyText, parseHistory } from './history'
 import type { HistEvent, History } from './history'
-import { writeTargets } from './shell'
-import type { Dialect } from './shell'
+import { gitOps, writeTargets } from './shell'
+import type { Dialect, GitOp } from './shell'
 
 const roleAtom = atom({ plugin: 'bws-board', key: 'role' } as const, null)
 const ownAtom = atom({ plugin: 'bws-board', key: 'own' } as const, {})
@@ -67,7 +72,7 @@ const PANE = 'board'
 const PENDING_MAX = 20
 const OWN_MAX = 4 // sessions' own cards kept in state: this one and the few before it in this process
 
-type Options = { isOn: boolean; lim: Limits; isWake: boolean; wakeMs: number; historyDays: number }
+type Options = { isOn: boolean; lim: Limits & { leaseMs: number }; isWake: boolean; wakeMs: number; historyDays: number; isGit: boolean }
 type Ctx = { dir: string; folder: string; selfId: string; cwd: string }
 type Pending = BoardOwn['pending']
 
@@ -355,14 +360,105 @@ async function sweep($: EngineInterface, ctx: Ctx) {
   }
 }
 
-// The main loop's turn ended: this session is idle; a busy one logs the change.
+// The main loop's turn ended: this session is idle (a busy one logs the change), and gives up the git lease.
 async function idle($: EngineInterface, o: Options) {
   let was = ''
   const r = await boardUpdate($, o.lim, own => {
     was = own.card.status
-    return { ...own, card: { ...own.card, status: 'idle' } }
+    return { ...own, card: { ...withoutGit(own.card), status: 'idle' } }
   })
   if (r && was === 'busy') await logEvent($, o, r.ctx, { kind: 'idle', at: r.now })
+}
+
+const withoutGit = (c: Card): Card => {
+  const { git: _git, ...rest } = c
+  return rest
+}
+
+// ---------- the git lease ----------
+// One session at a time runs index- or ref-changing git in a working tree (shell.ts GIT_LEASE_VERBS).
+// The lease is the `git` field on the holder's card; it ends at the holder's turn end, leaseMs after
+// its last git command, on board_release with no paths, or when the session leaves or goes stale.
+
+// A folder's working tree for git: its top as git prints it and as the board compares it. Null when
+// it is not in this board's repository (another repo, or no repo). Cached per folder.
+type Tree = { top: string; key: string }
+const trees = new Map<string, Tree | null>()
+
+async function treeOf($: EngineInterface, ctx: Ctx, dir: string): Promise<Tree | null> {
+  const id = `${ctx.cwd}|${dir}`
+  const hit = trees.get(id)
+  if (hit !== undefined) return hit
+  const r = await settle($.process.run(['git', 'rev-parse', '--path-format=absolute', '--show-toplevel', '--git-common-dir'], { cwd: dir || ctx.cwd, timeoutMs: 10_000 }))
+  if (r === undefined || r.exitCode !== 0) return null
+  const [top = '', common = ''] = r.stdout.trim().split(/\r?\n/)
+  const tree = top !== '' && normFile(common, '') === `${normFile(ctx.folder, '')}/.git` ? { top: toSlash(top), key: normFile(top, '') } : null
+  trees.set(id, tree)
+  return tree
+}
+
+// The files a commit would take in that peers claim: the staged files, plus for -a the modified
+// tracked ones. An add or unstage earlier in the same command has not run yet, so its paths count:
+// an add -A/./-u counts every modified and untracked file, restore --staged or reset takes files out.
+// Runs git only when a peer claims a file in the tree.
+async function heldInCommit($: EngineInterface, o: Options, ctx: Ctx, b: Board, op: GitOp, tree: Tree, now: number) {
+  const peers = livePeers(b, ctx.selfId, now, o.lim.staleMs).filter(c => liveClaims(c.claims, now, o.lim.claimMs).some(cl => cl.path.startsWith(`${tree.key}/`)))
+  if (peers.length === 0) return []
+  const list = async (args: string[]) => {
+    const r = await settle($.process.run(['git', ...args, '-z'], { cwd: tree.top, timeoutMs: 15_000 }))
+    return new Set(r?.exitCode === 0 ? r.stdout.split(String.fromCharCode(0)).filter(n => n !== '').map(n => normFile(`${tree.top}/${n}`, '')) : [])
+  }
+  const st = op.staged
+  const under = (f: string, dirs: readonly string[]) => dirs.some(a => f === a || f.startsWith(`${a}/`))
+  const added = (st?.paths ?? []).map(p => normFile(p, ctx.cwd))
+  const dropped = (st?.dropped ?? []).map(p => normFile(p, ctx.cwd))
+  // The index as it is now, less what the command unstages before its commit.
+  const index = st?.isReset === true ? new Set<string>() : await list(['diff', '--cached', '--name-only'])
+  const modified = op.isAll || st?.isAll === true ? await list(['diff', '--name-only']) : new Set<string>()
+  const untracked = st?.isAll === true ? await list(['ls-files', '--others', '--exclude-standard']) : new Set<string>()
+  const isIn = (f: string) => (index.has(f) && !under(f, dropped)) || modified.has(f) || untracked.has(f) || under(f, added)
+  const held: { file: string; holder: Card }[] = []
+  for (const c of peers)
+    for (const cl of liveClaims(c.claims, now, o.lim.claimMs)) {
+      if (!isIn(cl.path)) continue
+      const holder = claimHolder(b, ctx.selfId, cl.path, now, o.lim)
+      if (holder !== undefined && !held.some(h => h.file === cl.path)) held.push({ file: cl.path, holder })
+    }
+  return held
+}
+
+// The git check for a shell command: refused while a peer holds the lease in the same tree, or when
+// a commit would take in a peer's claimed files; otherwise this session takes the lease.
+async function gitCheck($: EngineInterface, o: Options, ops: readonly GitOp[]): Promise<string | undefined> {
+  const ctx = await boardCtx($)
+  if (ctx === undefined) return undefined
+  const now = await $.clock.now()
+  const b = await readFolder($, ctx)
+  const mine = (await read($, ownAtom))[ctx.selfId]?.card.git
+  let taken: { verb: string; tree: string } | undefined
+  for (const op of ops) {
+    const tree = await treeOf($, ctx, op.dir ?? '')
+    if (tree === null) continue
+    const holder = gitHolder(b, ctx.selfId, tree.key, now, o.lim, mine)
+    if (holder !== undefined) {
+      void logEvent($, o, ctx, { kind: 'gitWait', at: now, verb: op.verb, holder: holder.sessionId, holderRole: holder.role })
+      return gitDenyText(holder, op.verb, now, o.lim.leaseMs)
+    }
+    if (op.verb === 'commit') {
+      const held = await heldInCommit($, o, ctx, b, op, tree, now)
+      if (held.length > 0) {
+        for (const h of held) void logEvent($, o, ctx, { kind: 'deny', at: now, file: h.file, holder: h.holder.sessionId, holderRole: h.holder.role })
+        return stagedDenyText(held, ctx.folder)
+      }
+    }
+    taken = { verb: op.verb, tree: tree.key }
+  }
+  if (taken === undefined) return undefined
+  const t = taken
+  const isFresh = mine !== undefined && mine.tree === t.tree && now - mine.at < o.lim.leaseMs
+  await sync($, ctx, o.lim, (own, f, at) => ({ ...own, card: { ...own.card, git: takeLease(own.card.git, t.verb, t.tree, at, o.lim.leaseMs) } }))
+  if (!isFresh) void logEvent($, o, ctx, { kind: 'gitHold', at: now, verb: t.verb })
+  return undefined
 }
 
 // ---------- history ----------
@@ -427,9 +523,11 @@ async function writeDigest($: EngineInterface, o: Options, days: number): Promis
     t.agents === 0
       ? `No board history for ${ctx.folder} in the last ${days} day(s)${o.historyDays <= 0 ? ' (history is off: historyDays is 0)' : ''}.`
       : `Board digest for ${ctx.folder}, last ${days} day(s): ${t.agents} agent(s), ${durText(t.overlapMs)} with 2+ busy at once, ` +
-        `${t.done}/${t.asks} ask(s) done, ${t.denies} refused edit(s), ${t.wakes} wake(s).`
+        `${t.done}/${t.asks} ask(s) done, ${t.denies} refused edit(s), ${t.gitWaits} git wait(s), ${t.wakes} wake(s).`
   return `${head}\n${path}`
 }
+
+const ownView = (c: Card): { task: string; claims: Card['claims']; git?: GitLease } => ({ task: c.task, claims: c.claims, ...(c.git ? { git: c.git } : {}) })
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 const clean = (v: unknown, max: number) => shorten(redact(str(v).replace(/\s+/g, ' ')), max)
@@ -461,10 +559,15 @@ async function act($: EngineInterface, o: Options, kind: ActKind, rawId: unknown
 export const register: Register = (on, options) => {
   const o: Options = {
     isOn: options.board !== false,
-    lim: { staleMs: STALE_MS, claimMs: Math.max(1, Number(options.claimMinutes ?? 30)) * 60_000 },
+    lim: {
+      staleMs: STALE_MS,
+      claimMs: Math.max(1, Number(options.claimMinutes ?? 30)) * 60_000,
+      leaseMs: Math.max(0.25, Number(options.gitLeaseMinutes ?? 2)) * 60_000,
+    },
     isWake: options.urgentWake !== false,
     wakeMs: Math.max(1, Number(options.wakeMinutes ?? 5)) * 60_000,
     historyDays: Math.max(0, Number(options.historyDays ?? HIST_DAYS)),
+    isGit: options.gitLease !== false,
   }
   if (!o.isOn) return
 
@@ -587,15 +690,17 @@ export const register: Register = (on, options) => {
     return next({ ...e, context: [...(e.context ?? []), `bws-board: ${pendingText(p, b ?? { folder: '', cards: lastGood })}`] })
   })
 
-  // The main loop's turn ended, so this session is idle (a subagent's turn is not).
+  // The main loop's turn ended, so this session is idle (a subagent's turn is not) and its git lease
+  // is free. Awaited, so the card reads idle before the next prompt marks it busy.
   on('turn.complete', async ($, e, next) => {
-    if (!e.agentId) void settle(idle($, o))
+    if (!e.agentId) await settle(idle($, o))
     return next(e)
   })
 
   // A write to a file another live session claimed is refused: Edit, Write, NotebookEdit, and a Bash
   // or PowerShell command that writes one (redirect, tee, sed -i, cp/mv, the PowerShell write
-  // cmdlets; command position only). Otherwise the written files are claimed.
+  // cmdlets; command position only). Otherwise the written files are claimed. A shell command that
+  // runs git add/commit/push and the like then needs the git lease.
   on('tool.call', { tool: ['Edit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'] }, async ($, e, next) => {
     const writes = writesOf(e as unknown as Record<string, unknown>)
     if (writes.length > 0) {
@@ -607,6 +712,19 @@ export const register: Register = (on, options) => {
       }
       if (refusal !== undefined) {
         $.ui.toast(`board: refused ${e.tool === 'Bash' || e.tool === 'PowerShell' ? 'a command that writes' : 'an edit of'} a file another session claimed`, { timeoutMs: 6000 })
+        return { deny: refusal }
+      }
+    }
+    const ops = o.isGit && (e.tool === 'Bash' || e.tool === 'PowerShell') && typeof e.command === 'string' ? gitOps(e.command, dialectOf(e.tool)) : []
+    if (ops.length > 0) {
+      let refusal: string | undefined
+      try {
+        refusal = await gitCheck($, o, ops)
+      } catch (err) {
+        noteFailure($, err)
+      }
+      if (refusal !== undefined) {
+        $.ui.toast(refusal.includes('git lease') ? 'board: refused git: another session holds the git lease' : 'board: refused a commit of files another session claimed', { timeoutMs: 6000 })
         return { deny: refusal }
       }
     }
@@ -643,7 +761,7 @@ export const register: Register = (on, options) => {
       if (r === undefined) return { result: 'The board is off here: no Claude config folder found.' }
       if (task && task !== oldTask) void logEvent($, o, r.ctx, { kind: 'task', task })
       const self = { id: r.own.sessionId, role: r.own.card.role }
-      const status = statusText(r.board, self, r.now, o.lim, { task: r.own.card.task, claims: r.own.card.claims }, p.messages)
+      const status = statusText(r.board, self, r.now, o.lim, ownView(r.own.card), p.messages)
       return { result: p.lines.length > 0 ? `${status}\nNew since you last heard:\n${p.lines.join('\n')}` : status }
     } catch (err) {
       return { result: `The board could not be read: ${errText(err)}` }
@@ -745,10 +863,13 @@ export const register: Register = (on, options) => {
       const ctx = await boardCtx($)
       if (ctx === undefined) return { result: 'The board is off here: no Claude config folder found.' }
       const files = raw.map(p => normFile(p, ctx.cwd))
-      const r = await sync($, ctx, o.lim, own => ({ ...own, card: { ...own.card, claims: dropClaims(own.card.claims, files) } }))
+      const r = await sync($, ctx, o.lim, own => {
+        const card = { ...own.card, claims: dropClaims(own.card.claims, files) }
+        return { ...own, card: files.length === 0 ? withoutGit(card) : card }
+      })
       void logEvent($, o, ctx, { kind: 'release', files })
       const held = r.own.card.claims.map(c => relTo(c.path, ctx.folder))
-      return { result: `Released ${files.length === 0 ? 'every claim' : files.map(f => relTo(f, ctx.folder)).join(', ')}. Still claimed: ${held.length > 0 ? held.join(', ') : 'nothing'}.` }
+      return { result: `Released ${files.length === 0 ? 'every claim and the git lease' : files.map(f => relTo(f, ctx.folder)).join(', ')}. Still claimed: ${held.length > 0 ? held.join(', ') : 'nothing'}.` }
     } catch (err) {
       return { result: `Nothing released: the board could not be written (${errText(err)}).` }
     }
@@ -791,7 +912,7 @@ export const register: Register = (on, options) => {
       if (r === undefined) return { text: 'The board is off here: no Claude config folder found.' }
       const self = { id: r.own.sessionId, role: r.own.card.role }
       const live = Object.values(r.board.cards).filter(c => isLive(c, r.now, o.lim.staleMs)).length
-      return { text: `Board for ${r.board.folder} · ${live} live session(s)\n${statusText(r.board, self, r.now, o.lim, { task: r.own.card.task, claims: r.own.card.claims }, [])}` }
+      return { text: `Board for ${r.board.folder} · ${live} live session(s)\n${statusText(r.board, self, r.now, o.lim, ownView(r.own.card), [])}` }
     } catch (err) {
       return { text: `The board could not be read: ${errText(err)}` }
     }

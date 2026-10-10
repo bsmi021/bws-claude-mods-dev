@@ -15,6 +15,7 @@ export type BoardCard = {
   outbox: { seq: number; to: string; text: string; at: number }[]
   asks: { id: string; to: string; text: string; urgent: boolean; at: number; state: 'open' | 'done' | 'withdrawn'; by?: string; note?: string }[]
   acts: { askId: string; kind: 'take' | 'done' | 'decline'; at: number; note?: string }[]
+  git?: { since: number; at: number; verb: string; tree: string }
   gone?: true
 }
 

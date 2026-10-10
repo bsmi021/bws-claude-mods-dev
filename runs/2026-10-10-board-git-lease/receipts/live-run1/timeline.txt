@@ -1,0 +1,5 @@
+A took the lease at 20:16:03Z
+B1 finished at 20:16:17Z (14 s after A's add)
+B2 starts at 20:17:13Z (70 s after A's add)
+B2 finished at 20:18:00Z
+A finished at 20:18:07Z

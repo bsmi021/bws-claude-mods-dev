@@ -13,6 +13,10 @@ export type AskState = 'open' | 'done' | 'withdrawn'
 export type Ask = { id: string; to: string; text: string; urgent: boolean; at: number; state: AskState; by?: string; note?: string }
 export type ActKind = 'take' | 'done' | 'decline'
 export type Act = { askId: string; kind: ActKind; at: number; note?: string }
+// The git lease: this session runs index- or ref-changing git in `tree` (a working tree's top,
+// as normFile has it). `since`: when it took the lease; `at`: its last git command; `verb`: that
+// command's subcommand (never the command line, which can carry a token in a push URL).
+export type GitLease = { since: number; at: number; verb: string; tree: string }
 export type Card = {
   version: 1
   sessionId: string
@@ -28,10 +32,12 @@ export type Card = {
   outbox: Message[]
   asks: Ask[]
   acts: Act[]
+  git?: GitLease
   gone?: true
 }
 export type Board = { folder: string; cards: Record<string, Card> }
-export type Limits = { staleMs: number; claimMs: number }
+// `leaseMs`: how long the git lease lasts after the holder's last git command (absent: not shown).
+export type Limits = { staleMs: number; claimMs: number; leaseMs?: number }
 export type Self = { id: string; role: string | null }
 export type Inbox = { from: string; seq: number; text: string; at: number }
 
@@ -122,7 +128,10 @@ export function parseCard(text: string | undefined, sessionId: string): Card | u
       return { askId: str(a.askId), kind, at: num(a.at), ...(note ? { note } : {}) }
     }),
   }
-  return v.gone === true ? { ...card, gone: true } : card
+  const g = isObj(v.git) ? v.git : undefined
+  const git = g && optStr(g.verb) && optStr(g.tree) ? { since: num(g.since, num(g.at)), at: num(g.at), verb: str(g.verb), tree: str(g.tree) } : undefined
+  const full = git ? { ...card, git } : card
+  return v.gone === true ? { ...full, gone: true } : full
 }
 
 export const cardText = (c: Card) => `${JSON.stringify(c, null, 2)}\n`
@@ -222,6 +231,52 @@ export function claimHolder(b: Board, selfId: string, file: string, now: number,
   const beats = (c: Claim, id: string) =>
     mine === undefined || now - mine.at >= lim.claimMs || c.since < mine.since || (c.since === mine.since && id < selfId)
   return livePeers(b, selfId, now, lim.staleMs).find(c => liveClaims(c.claims, now, lim.claimMs).some(cl => cl.path === file && beats(cl, c.sessionId)))
+}
+
+// ---------- git lease ----------
+
+export const liveLease = (c: Card, now: number, leaseMs: number) => (c.git !== undefined && now - c.git.at < leaseMs ? c.git : undefined)
+
+// The live session, other than this one, holding the git lease in this tree. As with claims, when
+// two took it at once the earlier (then the smaller id) holds it.
+export function gitHolder(b: Board, selfId: string, tree: string, now: number, lim: Limits & { leaseMs: number }, mine?: GitLease): Card | undefined {
+  const own = mine !== undefined && mine.tree === tree && now - mine.at < lim.leaseMs ? mine : undefined
+  return livePeers(b, selfId, now, lim.staleMs).find(c => {
+    const l = liveLease(c, now, lim.leaseMs)
+    return l !== undefined && l.tree === tree && (own === undefined || l.since < own.since || (l.since === own.since && c.sessionId < selfId))
+  })
+}
+
+// The lease after a git command in `tree`: held since its first command while it stays fresh.
+export const takeLease = (cur: GitLease | undefined, verb: string, tree: string, now: number, leaseMs: number): GitLease => ({
+  since: cur !== undefined && cur.tree === tree && now - cur.at < leaseMs ? cur.since : now,
+  at: now,
+  verb,
+  tree,
+})
+
+export function gitDenyText(holder: Card, verb: string, now: number, leaseMs: number): string {
+  const l = holder.git
+  const left = l ? Math.max(1, Math.ceil((leaseMs - (now - l.at)) / 60_000)) : 1
+  return (
+    `bws-board: git ${verb} refused. Another live session on this board holds the git lease for this working tree: ` +
+    `${who(holder, holder.sessionId)} (${holder.task || 'no task recorded'}), which ran git ${l?.verb ?? 'a command'} ${agoText(now - (l?.at ?? now))}. ` +
+    `Only one session at a time runs git add/commit/push and the like here, so the two do not race on the index or sweep up each other's files. ` +
+    `The lease ends when that session's turn ends, or about ${left} min after its last git command. Do not re-run this command in a loop: ` +
+    `do other work first, check ${TOOL_PREFIX}board_status to see when the lease is free, or ask it with ${TOOL_PREFIX}board_send (to "${holder.role ?? shortId(holder.sessionId)}").`
+  )
+}
+
+// A commit that would take in files peers claim: which, and the fix.
+export function stagedDenyText(held: readonly { file: string; holder: Card }[], folder: string): string {
+  const rel = held.map(h => relTo(h.file, folder))
+  const names = [...new Set(held.map(h => who(h.holder, h.holder.sessionId)))]
+  return (
+    `bws-board: git commit refused. It would commit ${rel.length === 1 ? 'a file' : `${rel.length} files`} another live session claims: ` +
+    `${rel.slice(0, 10).join(', ')}${rel.length > 10 ? ` (+${rel.length - 10} more)` : ''} (held by ${names.join(', ')}). ` +
+    `That is their work in progress. Unstage them with: git restore --staged -- ${rel.slice(0, 10).join(' ')} ` +
+    `then stage and commit only your own files by name (not git add -A, git add . or git commit -a). Or ask the holder to commit them.`
+  )
 }
 
 // Claims with this file claimed now (moved to the end), the oldest dropped past the cap.
@@ -477,6 +532,8 @@ export function peerLines(b: Board, selfId: string, now: number, lim: Limits): s
     )
     if (claims.length > 0)
       lines.push(`  claims: ${claims.slice(-10).map(cl => relTo(cl.path, b.folder)).join(', ')}${claims.length > 10 ? ` (+${claims.length - 10} more)` : ''}`)
+    const lease = lim.leaseMs === undefined ? undefined : liveLease(c, now, lim.leaseMs)
+    if (lease !== undefined) lines.push(`  holds the git lease${lease.tree === normFile(b.folder, '') ? '' : ` in ${lease.tree}`} (git ${lease.verb} ${agoText(now - lease.at)})`)
   }
   return lines
 }
@@ -531,13 +588,14 @@ export function newsText(lines: readonly string[], inbox: readonly Inbox[], b: B
 }
 
 // The whole board for board_status and /board.
-export function statusText(b: Board, self: Self, now: number, lim: Limits, own: { task: string; claims: readonly Claim[] }, inbox: readonly Inbox[]): string {
+export function statusText(b: Board, self: Self, now: number, lim: Limits, own: { task: string; claims: readonly Claim[]; git?: GitLease }, inbox: readonly Inbox[]): string {
   const lines = peerLines(b, self.id, now, lim)
   const mine = liveClaims(own.claims, now, lim.claimMs)
+  const lease = own.git !== undefined && lim.leaseMs !== undefined && now - own.git.at < lim.leaseMs ? own.git : undefined
   const asks = shownAsks(askViews(b, now, lim.staleMs), now)
   const dups = duplicateRoles(b, now, lim.staleMs)
   return [
-    `This session: ${self.role ? `${self.role} (${self.id})` : self.id} · ${own.task || 'no task recorded'} · claims ${mine.length > 0 ? mine.map(c => relTo(c.path, b.folder)).join(', ') : 'none'}`,
+    `This session: ${self.role ? `${self.role} (${self.id})` : self.id} · ${own.task || 'no task recorded'} · claims ${mine.length > 0 ? mine.map(c => relTo(c.path, b.folder)).join(', ') : 'none'}${lease ? ` · holds the git lease (git ${lease.verb} ${agoText(now - lease.at)})` : ''}`,
     lines.length > 0 ? `Other live sessions in ${b.folder}:\n${lines.join('\n')}` : `No other live session in ${b.folder}.`,
     asks.length > 0 ? `Asks:\n${asks.map(v => askLine(v, b)).join('\n')}` : 'No asks on the board.',
     dups.length > 0 ? `Duplicate role: ${dups.join(', ')} is held by more than one live session.` : '',

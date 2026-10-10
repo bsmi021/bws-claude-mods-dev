@@ -478,3 +478,129 @@ export const writeTargets = (cmd: string, dialect: Dialect): WriteTarget[] => {
   }
   return out
 }
+
+// ---------- git ----------
+
+// The git subcommands that change the index, the working tree's checkout or refs: one session at
+// a time runs these in a tree (the board's git lease). Read-only git (status, diff, log, show,
+// branch, fetch, tag, ...) is not here.
+export const GIT_LEASE_VERBS: ReadonlySet<string> = new Set([
+  'add', 'rm', 'mv', 'commit', 'push', 'pull', 'merge', 'rebase', 'reset', 'checkout', 'switch', 'restore', 'stash', 'cherry-pick', 'revert', 'am',
+])
+// git's global options that take the next word as their value.
+const GIT_VALUED = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--config-env|--super-prefix)$/
+// commit's short options that take a value: in a cluster (-am), what follows one is that value.
+const COMMIT_VALUED = /[mFCctS]/
+
+// One git command that takes the lease. `dir`: where it runs, as written ('' = the session's own
+// folder; undefined = a `cd` the parser could not follow). `isAll`: commit -a, or add -A/-u/./a glob.
+// `paths`: add's plain paths, joined to `dir`. `unstage`: what restore --staged or a mixed reset takes
+// out of the index (`isAll`: all of it). A commit carries what the adds and unstages before it in the
+// same command leave staged (`staged`), since the check runs before any of the command does:
+// `paths` added, `dropped` taken out, `isAll` add -A and the like, `isReset` the index reset to HEAD.
+export type Staged = { isAll: boolean; paths: string[]; dropped: string[]; isReset: boolean }
+export type GitOp = { verb: string; dir: string | undefined; isAll: boolean; paths: string[]; unstage?: { isAll: boolean; paths: string[] }; staged?: Staged }
+
+// The path arguments of a git subcommand: words that are not options (nor an option's value).
+const pathArgs = (args: string[], valued: RegExp) => {
+  const out: string[] = []
+  let isPaths = false
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i] ?? ''
+    if (isPaths || !a.startsWith('-')) out.push(a)
+    else if (a === '--') isPaths = true
+    else if (valued.test(a)) i++
+  }
+  return out
+}
+
+const gitOp = (words: string[], base: string | undefined): GitOp | undefined => {
+  let dir = base
+  let i = 0
+  for (; i < words.length; i++) {
+    const w = words[i] ?? ''
+    if (!w.startsWith('-')) break
+    // Another git folder or work tree: not this board's to judge.
+    if (/^--(?:git-dir|work-tree)(?:=|$)/.test(w)) return undefined
+    if (GIT_VALUED.test(w)) {
+      const v = words[++i] ?? ''
+      if (w === '-C') dir = !isConcrete(v) ? undefined : dir === undefined ? (isAbsPath(v) ? v : undefined) : joinTo(dir, v)
+    }
+  }
+  const verb = words[i]
+  if (verb === undefined || !GIT_LEASE_VERBS.has(verb)) return undefined
+  const args = words.slice(i + 1)
+  if (verb === 'stash' && /^(?:list|show)$/.test(args[0] ?? '')) return undefined
+  if (verb === 'commit') {
+    const isAll = args.some(a => a === '--all' || (/^-[A-Za-z]+$/.test(a) && (a.slice(1).split(COMMIT_VALUED)[0] ?? '').includes('a')))
+    return { verb, dir, isAll, paths: [] }
+  }
+  if (verb === 'add') {
+    const dashes = args.indexOf('--')
+    const flags = dashes < 0 ? args : args.slice(0, dashes)
+    const named = [...flags.filter(a => !a.startsWith('-')), ...(dashes < 0 ? [] : args.slice(dashes + 1))]
+    const isAll =
+      dir === undefined ||
+      flags.some(a => /^(?:-A|-u|--all|--update|--no-ignore-removal|--pathspec-from-file(?:=.*)?)$/.test(a) || /^-[A-Za-z]*[Au][A-Za-z]*$/.test(a)) ||
+      named.some(p => p === '.' || p.startsWith(':') || !isConcrete(p))
+    return { verb, dir, isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) }
+  }
+  if (verb === 'restore' && args.some(a => a === '--staged' || /^-[A-Za-z]*S[A-Za-z]*$/.test(a))) {
+    const named = pathArgs(args, /^(?:-s|--source)$/)
+    const isAll = dir === undefined || named.length === 0 || named.some(p => p === '.' || p.startsWith(':') || !isConcrete(p))
+    return { verb, dir, isAll: false, paths: [], unstage: { isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) } }
+  }
+  // A mixed reset (the default) unstages: `reset`, `reset HEAD`, `reset [HEAD] [--] <paths>`.
+  if (verb === 'reset' && !args.some(a => /^--(?:hard|soft|merge|keep)$/.test(a))) {
+    const dashes = args.indexOf('--')
+    const before = (dashes < 0 ? args : args.slice(0, dashes)).filter(a => !a.startsWith('-'))
+    const after = dashes < 0 ? [] : args.slice(dashes + 1)
+    const isRef = (a: string | undefined) => a !== undefined && /^(?:HEAD|@)(?:[~^]\d*)*$/.test(a)
+    const named = [...(isRef(before[0]) ? before.slice(1) : before), ...after]
+    // `reset <commit>` moves the branch: not an unstage this check can follow.
+    if (dashes < 0 && before.length === 1 && !isRef(before[0]) && !/[./]/.test(before[0] ?? '')) return { verb, dir, isAll: false, paths: [] }
+    const isAll = dir === undefined || named.length === 0 || named.some(p => p === '.' || p.startsWith(':') || !isConcrete(p))
+    return { verb, dir, isAll: false, paths: [], unstage: { isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) } }
+  }
+  return { verb, dir, isAll: false, paths: [] }
+}
+
+// What the adds and unstages, in order, leave in the index on top of what it held.
+const stagedBy = (ops: readonly GitOp[]): Staged => {
+  let st: Staged = { isAll: false, paths: [], dropped: [], isReset: false }
+  for (const o of ops) {
+    if (o.verb === 'add' && o.isAll) st = { ...st, isAll: true, dropped: [] }
+    else if (o.verb === 'add') st = { ...st, paths: [...st.paths, ...o.paths], dropped: st.dropped.filter(d => !o.paths.includes(d)) }
+    else if (o.unstage?.isAll) st = { isAll: false, paths: [], dropped: [], isReset: true }
+    else if (o.unstage) st = { ...st, paths: st.paths.filter(p => !o.unstage?.paths.includes(p)), dropped: [...st.dropped, ...o.unstage.paths] }
+  }
+  return st
+}
+
+// The lease-taking git commands in a shell command, command position only, in order. `cd` moves
+// where later ones run, as for writeTargets. A `git -C <dir>` names its own folder.
+export const gitOps = (cmd: string, dialect: Dialect): GitOp[] => {
+  const out: GitOp[] = []
+  let base: string | undefined = ''
+  for (const seg of splitSegments(cmd, dialect)) {
+    const inv = invocationOf(cmd, seg, dialect)
+    if (inv === undefined || inv.isStartProcess) continue
+    const args = lexSegment(inv.args, dialect).words.map(w => w.text)
+    if (CD.test(inv.base)) {
+      const dir = args.find(x => !x.startsWith('-'))
+      if (dir === undefined || !isConcrete(dir)) base = undefined
+      else if (base !== undefined) base = joinTo(base, dir)
+      else if (isAbsPath(dir)) base = dir
+      continue
+    }
+    if (!/^git(?:\.exe)?$/i.test(inv.base)) continue
+    const op = gitOp(args, base)
+    if (op === undefined) continue
+    if (op.verb === 'commit') {
+      const before = out.filter(o => o.dir === op.dir && (o.verb === 'add' || o.unstage !== undefined))
+      if (before.length > 0) op.staged = stagedBy(before)
+    }
+    out.push(op)
+  }
+  return out
+}
