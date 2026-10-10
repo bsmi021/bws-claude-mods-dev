@@ -1,0 +1,26 @@
+
+tests\shelf.test.ts:
+(pass) lib > shelf path: option, then CLAUDE_CONFIG_DIR, then home [2.38ms]
+(pass) lib > a missing or damaged file is an empty shelf; ids keep counting past the highest [1.18ms]
+(pass) lib > add trims and clips; close and reopen [0.91ms]
+(pass) lib > per project, case-insensitive, newest first; all projects with empty project [0.75ms]
+(pass) lib > age, scope words, context line [0.52ms]
+(pass) mod > /idea shelves for this project with a toast and no transcript reply [86.77ms]
+(pass) mod > /idea headless prints the line; empty args print usage and save nothing [52.46ms]
+(pass) mod > a write keeps ideas another session added since [34.73ms]
+(pass) mod > shelve_idea from Claude: saved as Claude, result says to carry on, user is told [33.93ms]
+(pass) mod > list_ideas: this project by default, all on request [37.20ms]
+(pass) mod > close_idea marks done; unknown ids and bad statuses are refused [37.95ms]
+(pass) mod > other tools pass through untouched [33.46ms]
+(pass) mod > prompt.context adds one shelf line in attended sessions only [30.49ms]
+(pass) mod > prompt.context: nothing headless [32.02ms]
+(pass) mod > nudge off: no shelf line [37.03ms]
+(pass) mod > /shelf headless lists this project with details [33.74ms]
+(pass) mod > /shelf pane: lists this project, Done closes, All shows other projects [65.18ms]
+(pass) mod > Resume fills an empty box and closes the pane; a busy box is left alone [69.59ms]
+(pass) mod > Resume with text in the box: note, no fill [51.07ms]
+(pass) mod > an idea added while the pane is open redraws it [56.54ms]
+
+ 20 pass
+ 0 fail
+Ran 20 tests across 1 file. [1.13s]
