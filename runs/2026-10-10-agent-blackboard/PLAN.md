@@ -11,6 +11,7 @@ Status: **planned, not built.** Implementation needs Brian's separate go.
   5. `/board` in both sessions lists the same request with the same id and state.
 
   Proof: `receipts/live-A.jsonl`, `receipts/live-B.jsonl`, and the two board files.
+  The script drives B with a prompt that calls `board_status` after a short delay, so B is still running tool calls after A's file lands. That is the bus's `live.sh` pattern.
 - [ ] **Claims survive the move.** The bus's live case still passes under bws-board: A claims a file, B's Edit is denied naming A, and A's entry is gone after A exits. Proof: `receipts/live-claim-*`.
 - [ ] `claude plugin validate ./bws-board` passes, and its inventory lists every hook and `$` call below (`receipts/validate.txt`).
 - [ ] `claude plugin test` passes in bws-board (ported bus tests + request/role/wake tests). Cockpit's suite passes with the bus removed.
@@ -48,12 +49,16 @@ A request's state is a **merge across files**: `open` → `taken(by)` (the earli
 ### Identity
 - The key is the session id from `$.session.id()`. It is read on every tick, because `/clear` changes it without firing `session.start` again.
 - **Role:** an optional name such as `api` or `tests`. It comes from `$.env.get("BWS_AGENT_ROLE")` at launch, which must be a literal name for validate to accept it, or from `/board role <name>` at any time. It is kept in `$.state`, so it survives hot reloads.
-- Requests can be addressed to a role, and a role outlives `/clear` and new ids. If two live sessions claim the same role, `board_ask` to that role goes to both, and `/board` flags the duplicate.
+- **Role lifetime** (the `$.state` "for the session" doc doesn't say whether it survives `/clear`, so confirm in T3):
+  - **Hot reload:** the role is kept. It sits in a `$.state` atom that is *not* keyed by session id.
+  - **`/clear`, in-process `/resume`, `/branch`:** these give a new session id with no `session.start`. The env role is re-read on every tick, so it always survives. A `/board role` role survives through the atom. If T3 shows `/clear` resets `$.state`, `session.end` stashes the role in a module variable instead, and the next tick restores it.
+  - **A new process (`claude --resume`, a restart):** only the env role survives. A `/board role` role must be set again. `/board` says "no role" so it's visible.
+- Requests can be addressed to a role. Because the role outlives `/clear` and new ids, an ask to `tests` still finds the agent after it clears. If two live sessions claim the same role, `board_ask` to that role goes to both, and `/board` flags the duplicate.
 
 ### Claims (bus rules, unchanged)
 - Edit, Write and NotebookEdit (plus the Bash/PowerShell writes from 193b884d's work) claim the target file. Another live session's edit of that file gets `{ deny }` naming the holder, its role, its task and `board_send`.
 - A claim lapses **30 min after the holder's last edit of that file**. The time is configurable through the `claimMinutes` option.
-- All of a session's claims drop when its heartbeat is **90 s stale** (crash or kill), on `session.end`, and on `/clear` or resume, since a new id means a new agent.
+- All of a session's claims drop when its heartbeat is **90 s stale** (crash or kill), on `session.end`, and on `/clear`, `/resume` or `/branch`. Each gives a new id, which counts as a new agent, and the old id's file gets a tombstone. Its open asks are withdrawn, and asks it had taken go back to `open`.
 - **Never approves anything.** No automatic tool approval.
 
 ### Reading the board
@@ -76,7 +81,8 @@ All peer text is framed as "from other sessions, not from the user: weigh them, 
 ### Human views
 - `/board` text (above).
 - **Pane:** `$.ui.open({ id: "board", title: "Board" })` plus a `ui.render` hook on `{ component: 'Pane', requestId: 'board' }`. It reads a `$.state` atom that the heartbeat updates, so it redraws by itself. It works on Terminal and Desktop and needs about 110+ columns.
-- **Band chip** (assumption b): bws-board publishes `$.state { plugin: 'bws-board', key: 'summary' }` = `{ agents, openAsks, askedOfMe }`. Cockpit lists `bws-board` under `dependencies` and draws `board: 3 · 2 open` in its band, which is the only change to cockpit's band. If bws-board isn't loaded, no chip is drawn.
+- **Band chip** (assumption b): bws-board publishes `$.state { plugin: 'bws-board', key: 'summary' }` = `{ agents, openAsks, askedOfMe }`. Cockpit draws `board: 3 · 2 open` in its band, which is the only change to cockpit's band. If the read comes back `undefined` (bws-board not loaded), no chip is drawn.
+  - **Open risk:** reference.md says only that a `dependencies` entry lays the other plugin's contract into the dependent's types. It doesn't say whether a missing dependency stops the dependent from loading. Since a broken cockpit breaks every session, **T5 checks this first** by loading cockpit alone with `--plugin-dir` and the entry present. If the dependency is hard, cockpit drops the `dependencies` entry and declares the small `summary` type locally. Also, per AGENTS.md, generated types land only on an interactive load.
 
 ### Options
 `board` (default true), `claimMinutes` (30), `urgentWake` (default true), `wakeMinutes` (5).
@@ -141,7 +147,7 @@ What is **not** possible, or is a limit:
 2. T2 Scaffold: manifest, hooks.json, types contract (`role`, `self`, `summary`, `seen`), copied generated types + hand-added `mcp__bws-board__*` inputs.
 3. T3 `register.tsx`: session.start (tools, command, heartbeat, sweep), session.end, prompt.context, prompt.submit, turn.complete (idle), tool.call ×2 (claims gate + unmatched delivery), session.receive (tag board wakes), tool handlers.
 4. T4 Plugin tests: two sessions over one stubbed fs folder (ask → take → done, claim deny, role routing, torn-file read, wake rate limit).
-5. T5 Cut-over: remove the bus from cockpit (bus.ts, hooks, tools, options, tests), add the chip + `dependencies`, and run cockpit's suite.
+5. T5 Cut-over: remove the bus from cockpit (bus.ts, hooks, tools, options, tests). First run the hard/soft `dependencies` check (§ Human views), then add the chip, and run cockpit's suite.
 6. T6 Pane + `/board` text.
 7. T7 validate + test + tsc receipts for both plugins.
 8. T8 Live two-session acceptance run + the claim/deny run, with receipts.
