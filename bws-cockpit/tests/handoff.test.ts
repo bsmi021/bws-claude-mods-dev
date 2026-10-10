@@ -11,7 +11,7 @@ const norm = (p: unknown) => String(p).split(String.fromCharCode(92)).join('/')
 const HANDOFF = '# Handoff: band row\n\n## Objective\nAdd the band row.\n\n## Next step\nWrite the README section.'
 
 type World = {
-  runTouched?: boolean // a run folder written this session
+  runTouched?: boolean // false: the run folder's files are older than the session
   existing?: string // a HANDOFF.md already there
   fork?: { isAnswered: true; text: string } | { isAnswered: false; reason: string }
   surfaces?: string[]
@@ -44,6 +44,7 @@ function world(on: On, w: World) {
     if (hit === undefined) throw new Error(`ENOENT ${e.path}`)
     return { value: hit as never }
   })
+  on('tool.call', () => ({ result: {} as never }))
   on('fs.write', ($, e) => {
     writes[norm(e.path)] = String(e.text)
     return { value: undefined }
@@ -55,6 +56,10 @@ function world(on: On, w: World) {
   })
   return { writes, prompts, copies, run }
 }
+
+// This session writes into the run folder (after every stub is registered), which makes it the session's own.
+const own = ($: { tool: { call: (input: never) => Promise<unknown> } }) =>
+  $.tool.call({ tool: 'Write', file_path: `${CWD}/runs/2026-10-02-band-row/RUNLOG.md`, content: '' } as never)
 
 describe('handoff text', () => {
   test('the prompt names the file, the sections and the focus', () => {
@@ -71,6 +76,7 @@ describe('handoff text', () => {
 describe('/handoff', () => {
   test('writes HANDOFF.md in the session run folder and copies the start prompt', async ($, on) => {
     const w = world(on, {})
+    await own($)
     const r = await $.command.run({ command: 'handoff', args: '' } as never)
     expect(w.writes[`${w.run}/HANDOFF.md`]).toBe(`${HANDOFF}\n`)
     expect(w.copies).toEqual([startPrompt('runs/2026-10-02-band-row')])
@@ -81,6 +87,7 @@ describe('/handoff', () => {
 
   test('an existing HANDOFF.md is kept under a timestamped name', async ($, on) => {
     const w = world(on, { existing: '# old handoff' })
+    await own($)
     const r = await $.command.run({ command: 'handoff', args: '' } as never)
     const kept = Object.keys(w.writes).find(k => /HANDOFF\.\d{8}-\d{4}\.md$/.test(k))
     expect(kept).toBeDefined()
@@ -91,6 +98,7 @@ describe('/handoff', () => {
 
   test('the focus text reaches the prompt', async ($, on) => {
     const w = world(on, {})
+    await own($)
     await $.command.run({ command: 'handoff', args: '  the README  ' } as never)
     expect(w.prompts[0]).toContain('Focus the handoff on: the README.')
   })
@@ -102,8 +110,24 @@ describe('/handoff', () => {
     expect(r.text).toContain('runs/2026-10-02-handoff/HANDOFF.md')
   })
 
+  test('a run folder a worker freshened (never written by this session) is ignored: a new handoff folder', async ($, on) => {
+    const w = world(on, {}) // band-row's PLAN.md changed after the session started, but not by this session
+    await $.tool.call({ tool: 'Bash', command: 'cat runs/2026-10-02-band-row/PLAN.md' }) // reading it claims nothing
+    const r = await $.command.run({ command: 'handoff', args: '' } as never)
+    expect(Object.keys(w.writes)).toEqual([`${CWD}/runs/2026-10-02-handoff/HANDOFF.md`])
+    expect(r.text).toContain('Handoff written: runs/2026-10-02-handoff/HANDOFF.md')
+  })
+
+  test('with finishLine off the session folder is still found', { options: { finishLine: false } }, async ($, on) => {
+    const w = world(on, {})
+    await own($)
+    await $.command.run({ command: 'handoff', args: '' } as never)
+    expect(w.writes[`${w.run}/HANDOFF.md`]).toBe(`${HANDOFF}\n`)
+  })
+
   test('headless: no clipboard, the start prompt is in the reply', async ($, on) => {
     const w = world(on, { surfaces: [] })
+    await own($)
     const r = await $.command.run({ command: 'handoff', args: '' } as never)
     expect(w.copies).toEqual([])
     expect(r.text).not.toContain('copied')
@@ -124,6 +148,7 @@ describe('/handoff', () => {
       asked.push({ model: String(e.model), prompt: String(e.prompt) })
       return { value: { isAnswered: true, text: HANDOFF, usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } as never }
     })
+    await own($)
     const r = await $.command.run({ command: 'handoff', args: '' } as never)
     expect(asked[0]?.model).toBe('claude-opus-5-5')
     expect(asked[0]?.prompt).toContain('USER: Add the band row.')
@@ -136,6 +161,7 @@ describe('/handoff', () => {
   test('nothing to fork and no messages: no file, a clear reply', async ($, on) => {
     const w = world(on, { fork: { isAnswered: false, reason: 'nothing-to-fork' } })
     on('session.messages', () => ({ value: [] as never }))
+    await own($)
     const r = await $.command.run({ command: 'handoff', args: '' } as never)
     expect(r.text).toMatch(/No handoff written: there is nothing to hand off yet/)
     expect(Object.keys(w.writes)).toEqual([])
@@ -143,6 +169,7 @@ describe('/handoff', () => {
 
   test('an API error writes nothing', async ($, on) => {
     const w = world(on, { fork: { isAnswered: false, reason: 'api-error' } })
+    await own($)
     const r = await $.command.run({ command: 'handoff', args: '' } as never)
     expect(r.text).toBe('No handoff written: the model call failed (api-error).')
     expect(Object.keys(w.writes)).toEqual([])

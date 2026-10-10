@@ -331,12 +331,17 @@ async function noteTouched($: EngineInterface, folders: string[]) {
   })
 }
 
-// This session's run folder (the newest it wrote to) and its actionable open items.
-async function sessionFinishLine($: EngineInterface, owner: string): Promise<{ folder: string; open: string[] } | null> {
+// This session's run folder: the newest one its own tool calls wrote to, or null.
+async function sessionRunFolder($: EngineInterface): Promise<RunFolder | null> {
   const t = await read($, touched)
   const { startedAt } = await $.session.usage()
   if (t === null || t.startedAt !== startedAt || t.folders.length === 0) return null
-  const r = await readRunFolder($, t.folders)
+  return readRunFolder($, t.folders)
+}
+
+// This session's run folder and its actionable open items.
+async function sessionFinishLine($: EngineInterface, owner: string): Promise<{ folder: string; open: string[] } | null> {
+  const r = await sessionRunFolder($)
   if (!r) return null
   return { folder: r.folder, open: actionable([...openItems(r.plan), ...openItems(r.tasks)], owner) }
 }
@@ -548,9 +553,9 @@ export const register: Register = (on, options) => {
   on('command.run', { command: 'handoff' }, async ($, e, next) => {
     const cwd = await $.session.cwd()
     const now = await $.clock.now()
-    const run = await readRunFolder($)
-    const { startedAt } = await $.session.usage()
-    const folder = run !== null && run.mtime >= startedAt ? run.folder : handoffFolder(now)
+    // The session's own run folder (as the Finish-Line Guard sees it), never one a worker freshened.
+    const run = await sessionRunFolder($)
+    const folder = run !== null ? run.folder : handoffFolder(now)
     $.ui.toast(`handoff: writing ${folder}/HANDOFF.md`, { timeoutMs: 4000 })
     const focus = e.args.trim()
     let r = await $.model.fork({ prompt: handoffPrompt(folder, focus) })
@@ -643,8 +648,8 @@ export const register: Register = (on, options) => {
   })
 
   // Ownership: a run folder counts for this session only once its own tool calls write to it.
+  // Recorded even with finishLine off, since /handoff picks its folder the same way.
   on('tool.call', { tool: ['Edit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'] }, async ($, e, next) => {
-    if (!o.finish.isOn) return next(e)
     const folders = writtenRunFolders(e.tool, e as unknown as Record<string, unknown>)
     if (folders.length > 0) await noteTouched($, folders)
     return next(e)
