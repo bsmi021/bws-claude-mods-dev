@@ -282,6 +282,27 @@ describe('board: two sessions', () => {
     expect(((await $.command.run({ command: 'board', args: 'role' } as never)) as { text: string }).text).toContain("This session's role: docs.")
   })
 
+  test('/board pane opens the dashboard Board tab just after the command; without the dashboard it prints the board', async ($, on) => {
+    const w = world(on)
+    on('session.surfaces', () => ({ value: ['terminal'] as never }))
+    const listed = { names: ['board', 'dashboard'] }
+    on('command.list', () => ({ value: listed.names.map(name => ({ name })) as never }))
+    const ran: { command: string; args: string }[] = []
+    on('command.run', ($, e) => {
+      ran.push({ command: String(e.command), args: String(e.args) })
+      return { text: '' } as never
+    })
+    const r = (await $.command.run({ command: 'board', args: 'pane' } as never)) as { text?: string }
+    expect(r.text).toBeUndefined()
+    await w.clock.advance(50)
+    expect(ran).toEqual([{ command: 'dashboard', args: 'board' }])
+    listed.names = ['board']
+    const r2 = (await $.command.run({ command: 'board', args: 'pane' } as never)) as { text?: string }
+    expect(r2.text).toContain('Board for')
+    await w.clock.advance(50)
+    expect(ran.length).toBe(1)
+  })
+
   test('board_send reaches a role; the message arrives once after a tool result', async ($, on) => {
     const w = world(on, { roles: { [B]: 'tests' } })
     w.who.id = B

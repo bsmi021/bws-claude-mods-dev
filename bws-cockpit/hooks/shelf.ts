@@ -1,4 +1,4 @@
-// Pure helpers for bws-shelf: the shelf file, adding and closing ideas, the per-project filter and the text views.
+// Pure helpers for the dashboard's Shelf tab (moved from bws-shelf): the shelf file, adding and closing ideas, the per-project filter and the text views.
 
 export type By = 'user' | 'claude'
 export type Status = 'open' | 'done' | 'dropped'
@@ -114,9 +114,6 @@ export const resumePrompt = (i: Idea) => `Pick up shelved idea #${i.id}: ${i.tex
 
 // `/shelf all`, `/shelf` → scope; anything else is not a scope word.
 export const isAllScope = (args: string) => /^\s*(all|-a|--all)\s*$/i.test(args)
-
-// The status line under the prompt; none when the project's shelf is empty.
-export const statusText = (count: number) => (count === 0 ? undefined : `💡 ${count} shelved idea${count === 1 ? '' : 's'} · /shelf`)
 
 export function contextLine(count: number, tool: string) {
   const ideas = count === 0 ? 'The idea shelf for this project is empty' : `${count} open idea${count === 1 ? '' : 's'} on this project's idea shelf (/shelf)`

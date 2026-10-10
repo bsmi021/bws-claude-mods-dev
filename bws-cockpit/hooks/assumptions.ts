@@ -1,11 +1,11 @@
-// Pure helpers for bws-assumptions: the list, the lines the pane and status draw, and the verdict prompt.
+// Pure helpers for the dashboard's Assumptions tab (moved from bws-assumptions): the list, the lines it draws, the verdict prompt.
 import type { Assumption, Verdict } from '../types'
 
 export const TOOL_NAME = 'record_assumption'
 export const MAX_ITEMS = 200
 
 export const TOOL_DESCRIPTION =
-  'Record an assumption you are making while building, so the user can confirm or correct it later from a side pane. ' +
+  'Record an assumption you are making while building, so the user can confirm or correct it later from the dashboard. ' +
   'Call it the moment you choose something the user did not specify and that would change the result if wrong: ' +
   'a library, a file location, a name, an API shape, a default value, a behaviour in an edge case, what "done" means. ' +
   'One call per assumption, stated as a plain claim ("Dates are stored as UTC ISO strings"). ' +
@@ -22,10 +22,10 @@ export const TOOL_SCHEMA = {
 
 export const GUIDE =
   `# Assumptions\n` +
-  `While you build, change or configure anything, call mcp__bws-assumptions__${TOOL_NAME} each time you make an assumption ` +
+  `While you build, change or configure anything, call mcp__bws-cockpit__${TOOL_NAME} each time you make an assumption ` +
   `the user did not state and could reasonably disagree with (a choice of library, location, naming, data shape, default, ` +
   `edge-case behaviour, scope). Record it and keep going; do not stop to ask about it. ` +
-  `The user reviews them in a side pane. When a message arrives headed "Assumption review", treat each WRONG item as a ` +
+  `The user reviews them in the dashboard pane. When a message arrives headed "Assumption review", treat each WRONG item as a ` +
   `correction: change the work that relied on it directly, then continue the task.`
 
 export function clip(text: string, max: number): string {
@@ -59,7 +59,7 @@ export function markSent(list: readonly Assumption[], ns: readonly number[]): As
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
-// The pane's collapsed line and the status line.
+// The tab's heading line.
 export function summary(list: readonly Assumption[]): string {
   const open = unreviewed(list).length
   const marked = ready(list).length
@@ -70,18 +70,12 @@ export function summary(list: readonly Assumption[]): string {
   return parts.join(' · ')
 }
 
-// What the status line shows; undefined clears it once nothing waits on the person.
-export function statusText(list: readonly Assumption[]): string | undefined {
-  if (active(list).length === 0) return undefined
-  return `${summary(list)} · /assumptions`
-}
-
 // The prompt that hands the verdicts to Claude. Wrong items lead: they are the work.
 export function verdictPrompt(items: readonly Assumption[], corrections: ReadonlyMap<number, string> = new Map()): string {
   const fix = (a: Assumption) => (corrections.get(a.n) ?? a.correction).trim()
   const wrong = items.filter(a => a.verdict === 'wrong')
   const right = items.filter(a => a.verdict === 'right')
-  const lines = ['Assumption review (from the assumptions pane):']
+  const lines = ['Assumption review (from the dashboard):']
   for (const a of wrong) {
     const c = fix(a)
     lines.push(c ? `- A${a.n} is WRONG: "${a.text}". Instead: ${c}` : `- A${a.n} is WRONG: "${a.text}". No correction given: ask me what it should be before changing it.`)

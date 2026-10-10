@@ -52,7 +52,7 @@ const PAUSED_STATE = stateJson({ status: 'PAUSED', updated: '2026-10-01T19:58:00
 const TASKS_W2C = '# W2c\nStatus: IN_PROGRESS\n\n## Tasks\n- [x] T01 rig\n- [x] T02 import\n- [ ] T03 clip\n\n## Needs the user\n- [ ] N1 pick the final clip: A or B\n- [x] N0 old answered\n'
 const TASKS_W1 = '# W1\nStatus: DONE\n\n## Tasks\n- [x] T01 a\n- [x] T02 b\n'
 
-type World = { state?: string; second?: boolean; stateMtime?: number; answers?: string }
+type World = { state?: string; second?: boolean; stateMtime?: number; answers?: string; surfaces?: string[] }
 
 let clockStart = 0
 const norm = (p: unknown) => String(p).split(String.fromCharCode(92)).join('/')
@@ -63,7 +63,7 @@ function world(on: On, w: World) {
   const runs: { argv: string[]; cwd?: string }[] = []
   const toasts: string[] = []
   on('session.cwd', () => ({ value: CWD }))
-  on('session.surfaces', () => ({ value: [] as never }))
+  on('session.surfaces', () => ({ value: (w.surfaces ?? []) as never }))
   on('ui.toast', ($, e) => {
     toasts.push(String((e as { text?: string }).text ?? ''))
     return { value: undefined }
@@ -118,8 +118,8 @@ function world(on: On, w: World) {
 const PANE = {
   plugin: 'bws-cockpit',
   component: 'Pane',
-  requestId: 'loop-watch',
-  props: { title: 'Loop', isFocused: false, bodyColumns: 110, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
+  requestId: 'dashboard',
+  props: { title: 'Dashboard', isFocused: false, bodyColumns: 110, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
 } as const
 
 // ---------- pure ----------
@@ -275,6 +275,22 @@ describe('loop watch', () => {
     expect(w.toasts.filter(t => /on session 7/.test(t)).length).toBe(1)
   })
 
+  test('an alert raises the dashboard on the Loop tab where a pane can draw', async ($, on) => {
+    world(on, { surfaces: ['terminal'] })
+    const opened: string[] = []
+    on('ui.panes', () => ({ value: [] as never }))
+    on('ui.open', ($, e) => {
+      opened.push(e.id)
+      return { value: { isPlaced: true } }
+    })
+    await $.command.run({ command: 'cockpit', args: '' } as never) // refresh: the idle and session alerts toast
+    expect(opened[0]).toBe('dashboard')
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect((await ui.find({ key: 'tab-loop' }))?.props?.variant).toBe('primary')
+    expect(await ui.find({ type: 'Text', text: /^kit$/ })).toBeDefined()
+    await ui.unmount()
+  })
+
   test('an open need has an Input; Enter records the answer with harness.py answer, then refreshes', async ($, on) => {
     const w = world(on, { state: PAUSED_STATE })
     await $.command.run({ command: 'loop-watch', args: '' } as never)
@@ -337,22 +353,17 @@ B, the overhead swing
     await ui.unmount()
   })
 
-  test('the loop chip and /cockpit carry the board URL', async ($, on) => {
+  test('/cockpit and the Loop tab carry the board URL', async ($, on) => {
     world(on, { state: PAUSED_STATE })
     const r = await $.command.run({ command: 'cockpit', args: '' } as never)
     expect(r.text).toContain('Loop: kit needs you · board http://localhost:8772/')
-    const band = await $.ui.mount({
-      plugin: 'bws-cockpit',
-      surface: 'terminal',
-      component: 'AbovePrompt',
-      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
-    })
-    const link = await band.find({ type: 'Link' })
-    expect(link?.text).toBe('board localhost:8772/')
-    await band.unmount()
+    await $.command.run({ command: 'loop-watch', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect((await ui.find({ type: 'Link' }))?.text).toBe('board http://localhost:8772/')
+    await ui.unmount()
   })
 
-  test('the band shows a loop chip and a 4: loop hotkey', async ($, on) => {
+  test('the bar shows a loop chip and a 4: loop hotkey; the Loop tab counts what needs you', async ($, on) => {
     world(on, { state: PAUSED_STATE })
     await $.command.run({ command: 'cockpit', args: '' } as never) // fills the band's view and the loops
     const band = await $.ui.mount({
@@ -361,25 +372,14 @@ B, the overhead swing
       component: 'AbovePrompt',
       props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
     })
-    // 120 columns: the loop gets its own tile, name and unit on one line, the state word on the next.
-    expect(await band.find({ key: 'tile-loop' })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /^loop$/ })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /^ kit W2c$/ })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /^needs you$/ })).toBeDefined()
-    expect(await band.find({ key: 'loop' })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /^loop needs you$/ })).toBeDefined()
+    expect((await band.find({ key: 'loop' }))?.props?.hotkey).toBe('4')
     await band.unmount()
-    // 80 columns: the grid's LOOP row carries the chip and the board on one line.
-    const grid = await $.ui.mount({
-      plugin: 'bws-cockpit',
-      surface: 'terminal',
-      component: 'AbovePrompt',
-      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 80, scroll: { offset: 0, bodyRows: 8 }, view: {} },
-    })
-    expect(await grid.find({ key: 'tile-loop' })).toBeUndefined()
-    expect(await grid.find({ type: 'Text', text: /^LOOP$/ })).toBeDefined()
-    expect(await grid.find({ type: 'Text', text: /^kit W2c needs you$/ })).toBeDefined()
-    expect((await grid.find({ type: 'Link' }))?.text).toBe('board localhost:8772/')
-    await grid.unmount()
+    await $.command.run({ command: 'loop-watch', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect((await ui.find({ key: 'tab-loop' }))?.props?.label).toMatch(/^Loop \d+$/)
+    expect((await ui.find({ key: 'tab-loop' }))?.props?.variant).toBe('primary')
+    await ui.unmount()
   })
 
   test('two loops: a Select switches between them, newest first', async ($, on) => {

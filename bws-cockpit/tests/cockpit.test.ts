@@ -359,8 +359,8 @@ describe('cockpit', () => {
     expect(r.blocks.map(b => b.name)).toEqual(['currentDate'])
   })
 
-  test('band draws the run and device rows on terminal and desktop', async ($, on) => {
-    world(on, { ...RUN_WORLD, surfaces: ['terminal'], procs: '', vram: '1000, 8188' })
+  test('the bar draws the run chip, live devices and the actions on terminal and desktop', async ($, on) => {
+    world(on, { ...RUN_WORLD, surfaces: ['terminal'], procs: 'blender.exe|9|blender', vram: '1000, 8188' })
     await $.command.run({ command: 'cockpit', args: '' } as never) // fills the view
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({
@@ -370,13 +370,18 @@ describe('cockpit', () => {
         props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
       })
       expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /10-02/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /2 open/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /^verify the draw anim in PIE$/ })).toBeDefined()
-      for (const label of ['UE', 'Unity', 'Blender', 'adb', 'VRAM']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^ 2 open$/ })).toBeDefined()
+      for (const label of ['Blender', 'VRAM']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeDefined()
+      // Off devices say nothing.
+      for (const label of ['UE', 'Unity', 'adb']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeUndefined()
       expect(await ui.find({ type: 'Text', text: /1\.0\/8\.0 GB/ })).toBeDefined()
-      expect(await ui.find({ key: 'resume' })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /RUN |next:|guard/ })).toBeUndefined()
+      const keys: [string, string][] = [['resume', '1'], ['dash', '2'], ['tab-assumptions', 'a'], ['tab-shelf', 's'], ['handoff', 'h'], ['idea', 'i'], ['enhance', 'e'], ['hide', '3']]
+      for (const [key, hotkey] of keys) expect((await ui.find({ key }))?.props?.hotkey).toBe(hotkey)
+      expect(await ui.find({ key: 'tab-board' })).toBeUndefined() // bws-board not loaded
+      expect(await ui.find({ key: 'loop' })).toBeUndefined() // no loop here
+      expect(await ui.find({ key: 'refresh' })).toBeUndefined()
+      expect(await ui.find({ key: 'tile-run' })).toBeUndefined()
+      expect(await ui.find({ type: 'Text', text: /next|guard|RUN/ })).toBeUndefined()
       await ui.unmount()
     }
   })
@@ -388,29 +393,8 @@ const BAND = {
   props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 80, scroll: { offset: 0, bodyRows: 8 }, view: {} },
 } as const
 
-describe('band layout', () => {
-  test('at 120 columns: run and devices tiles with round borders, buttons under them, no loop tile without a loop', async ($, on) => {
-    world(on, { ...RUN_WORLD, procs: 'blender.exe|9|blender', vram: '1000, 8188' })
-    await $.command.run({ command: 'cockpit', args: '' } as never)
-    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
-    const runTile = await ui.find({ key: 'tile-run' })
-    const devTile = await ui.find({ key: 'tile-devices' })
-    expect(runTile?.props?.borderStyle).toBe('round')
-    expect(devTile?.props?.borderStyle).toBe('round')
-    expect(devTile?.props?.width).toBe(30)
-    expect(runTile?.props?.width).toBe(119 - 30 - 1)
-    expect(await ui.find({ key: 'tile-loop' })).toBeUndefined()
-    expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^2 open$/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^verify the draw anim in PIE$/ })).toBeDefined()
-    expect(await ui.find({ key: 'resume' })).toBeDefined()
-    for (const label of ['UE', 'Unity', 'Blender', 'adb', 'VRAM']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeDefined()
-    expect(await ui.find({ key: 'refresh' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^(RUN|DEVICES|LOOP)$/ })).toBeUndefined()
-    await ui.unmount()
-  })
-
-  test('board chip: bws-board summary in the button row; hidden when alone, warning when asked', async ($, on) => {
+describe('action bar', () => {
+  test('board chip and button: bws-board summary; hidden when alone, warning when asked', async ($, on) => {
     world(on, { ...RUN_WORLD, procs: '', vram: '1000, 8188' })
     const summary = { value: null as null | { agents: number; openAsks: number; askedOfMe: number } }
     on('state.get', ($, e, next) => {
@@ -425,6 +409,7 @@ describe('band layout', () => {
     summary.value = { agents: 1, openAsks: 0, askedOfMe: 0 }
     ui = await mount(120)
     expect(await ui.find({ key: 'chip-board' })).toBeUndefined() // alone, nothing open
+    expect((await ui.find({ key: 'tab-board' }))?.props?.hotkey).toBe('b') // loaded: the tab button shows
     await ui.unmount()
     summary.value = { agents: 3, openAsks: 2, askedOfMe: 1 }
     ui = await mount(120)
@@ -439,51 +424,27 @@ describe('band layout', () => {
     await ui.unmount()
   })
 
-  test('under 90 columns: the borderless grid, a label column and one row per topic', async ($, on) => {
-    world(on, { ...RUN_WORLD, procs: '', vram: '1000, 8188' })
+  test('one row that wraps when narrow, on desktop too', async ($, on) => {
+    world(on, { ...RUN_WORLD, procs: '' })
     await $.command.run({ command: 'cockpit', args: '' } as never)
-    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 89 } })
-    expect(await ui.find({ key: 'tile-run' })).toBeUndefined()
-    expect(await ui.find({ key: 'grid-run' })).toBeDefined()
-    expect(await ui.find({ key: 'grid-devices' })).toBeDefined()
-    expect(await ui.find({ key: 'grid-loop' })).toBeUndefined() // no loop here
-    expect(await ui.find({ type: 'Text', text: /^RUN$/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^DEVICES$/ })).toBeDefined()
+    const ui = await $.ui.mount({ ...BAND, surface: 'desktop', props: { ...BAND.props, bodyColumns: 60 } })
+    const bar = await ui.find({ key: 'bar' })
+    expect(bar?.props?.flexDirection).toBe('row')
+    expect(bar?.props?.flexWrap).toBe('wrap')
     expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^verify the draw anim in PIE$/ })).toBeDefined()
-    expect(await ui.find({ key: 'resume' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^VRAM$/ })).toBeDefined()
     await ui.unmount()
   })
 
-  test('wide but short (under 6 band rows): the grid, since the borders would not fit', async ($, on) => {
-    world(on, RUN_WORLD)
+  test('a long run name is cut with ASCII dots', async ($, on) => {
+    world(on, {
+      dirs: { [`${CWD}/runs`]: [{ name: '2026-10-02-a-very-long-run-folder-name-for-the-bar', kind: 'dir', mtimeMs: 0 }], [`${CWD}/runs/2026-10-02-a-very-long-run-folder-name-for-the-bar`]: [{ name: 'RUNLOG.md', kind: 'file', mtimeMs: 1 }] },
+      files: { [`${CWD}/runs/2026-10-02-a-very-long-run-folder-name-for-the-bar/RUNLOG.md`]: '- Next: x\n' },
+    })
     await $.command.run({ command: 'cockpit', args: '' } as never)
-    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 140, maxRows: 4 } })
-    expect(await ui.find({ key: 'tile-run' })).toBeUndefined()
-    expect(await ui.find({ key: 'grid-run' })).toBeDefined()
-    await ui.unmount()
-  })
-
-  test('tiles on desktop too, and no run folder: the run tile says so, no resume button', async ($, on) => {
-    world(on, { procs: '' })
-    await $.command.run({ command: 'cockpit', args: '' } as never)
-    const ui = await $.ui.mount({ ...BAND, surface: 'desktop', props: { ...BAND.props, bodyColumns: 120 } })
-    expect(await ui.find({ key: 'tile-run' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^no run folder under runs\/$/ })).toBeDefined()
-    expect(await ui.find({ key: 'resume' })).toBeUndefined()
-    await ui.unmount()
-  })
-
-  test('a long next step is cut to the width with ASCII dots', async ($, on) => {
-    const long = 'W3 Game.Full.Kit (one live run), then the W3 visual check and the W2c visual check (one capture run each), then the W4 build'
-    world(on, { ...RUN_WORLD, files: { ...RUN_WORLD.files, [`${CWD}/runs/2026-10-02-bow-fix/RUNLOG.md`]: `- Next: ${long}\n` } })
-    await $.command.run({ command: 'cockpit', args: '' } as never)
-    const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-    const cut = await ui.find({ type: 'Text', text: /^W3 Game\.Full\.Kit/ })
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
+    const cut = await ui.find({ type: 'Text', text: /^a-very-long/ })
     expect(cut?.text.endsWith('...')).toBe(true)
-    expect(cut?.text.includes('…')).toBe(false)
-    expect(('bow-fix  10-02  2 open  › ' + (cut?.text ?? '')).length <= 79).toBe(true)
+    expect((cut?.text.length ?? 99) <= 28).toBe(true)
     await ui.unmount()
   })
 
@@ -543,12 +504,13 @@ describe('band layout', () => {
     await ui.unmount()
   })
 
-  test('no run folder: no run row and no resume button', async ($, on) => {
+  test('no run folder: "no run", no resume button; a down editor shows in error', async ($, on) => {
     world(on, { procs: 'UnrealEditor.exe|5|x', mcpJson: MCP_HTTP, isMcpUp: false })
     await $.command.run({ command: 'cockpit', args: '' } as never)
     const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
     expect(await ui.find({ key: 'resume' })).toBeUndefined()
-    expect(await ui.find({ key: 'refresh' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^no run$/ })).toBeDefined()
+    expect(await ui.find({ key: 'dash' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /:3091 down/ })).toBeDefined()
     await ui.unmount()
   })
