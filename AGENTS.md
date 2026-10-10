@@ -145,6 +145,8 @@ Local Doc: ./docs/mods.md
 - In the manifest's types contract (`types/index.d.ts`), an `import('…')` type makes the validator report every `PluginState` key as not declared. Write the shapes inline.
 - Never push `main`: its `runs/` holds private prompts and transcripts. Publish only the orphan `publish` branch:
   - Refresh it in a scratch worktree with `git checkout main -- bws-cockpit bws-shell-lint`.
-  - That checkout never deletes files the source commit dropped. Diff `git ls-files <dirs>` against `git ls-tree -r --name-only <commit> <dirs>` and `git rm` the leftovers before testing.
+  - That checkout never deletes files the source commit dropped. Use `git restore --source=<commit> --staged --worktree -- <dirs>` instead, then confirm with `git ls-files` vs `git ls-tree -r --name-only <commit>` and `git diff --cached --quiet <commit> -- <dirs>`.
+  - A fresh worktree has no `.claude-plugin/types/` (gitignored), so tsc fails with TS5083. Copy each mod's generated types folder in from the working tree first.
+- Install: the published repo is the `bws-mods` marketplace (`.claude-plugin/marketplace.json`, installed from `bsmi021/bws-claude-mods`). While `CLAUDE_CODE_PLUGIN_DIRS` lists a mod's source folder, that source copy shadows the installed copy, so nothing loads twice.
   - Remote `mods` is the private repo github.com/bsmi021/bws-claude-mods. Its push rule maps only `publish` to `main`, so `git push mods` never sends this repo's `main`.
   - Scan for names, project and game names, serials and paths first.

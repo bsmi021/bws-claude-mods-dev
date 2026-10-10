@@ -1,0 +1,21 @@
+Validating plugin manifest: C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\pubAll\bws-enhance\.claude-plugin\plugin.json
+
+  ❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
+  ❯ types ./types/index.d.ts declares state: bws-enhance.view
+
+Validating hooks: C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\pubAll\bws-enhance\hooks\hooks.json
+
+  ❯ ./register.tsx hooks: session.start, command.run{command=enhance}, prompt.submit, ui.close, ui.render{component=SessionMode}, ui.render{component=Pane, requestId=bws-enhance}
+  ❯ ./register.tsx gating hook without .catch: command.run{command=enhance}
+  ❯ ./register.tsx gating hook without .catch: prompt.submit
+  ❯ ./register.tsx gating hook without .catch: ui.close
+  ❯ ./register.tsx calls: $.clock.after (via send, start), $.command.list (via gather), $.command.register, $.fs.list (via walkTree), $.fs.read (via gather), $.model.complete (via enhance), $.prompt.fill (via finish, putInBox, revert, send), $.prompt.read (via enhanceDraft, finish, send), $.prompt.submit (via send), $.session.messages (via gather), $.session.model (via gather), $.session.root (via gather), $.session.surfaces, $.session.usage (via gather), $.state.get, $.state.set, $.tool.list (via gather), $.ui.close (via closeAll, finish), $.ui.open (via finish, start), $.ui.resolve, $.ui.toast (via enhanceDraft, placed)
+  ❯ ./register.tsx state writes: bws-enhance.view
+  ❯ ./register.tsx state reads: bws-enhance.view
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\pubAll\bws-enhance\README.md: This README has no line that installs "bws-enhance" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install bws-enhance --marketplace <owner>/<repo>
+
+✔ Validation passed

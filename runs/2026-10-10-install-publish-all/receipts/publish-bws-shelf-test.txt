@@ -1,0 +1,32 @@
+
+tests\shelf.test.ts:
+(pass) lib > shelf path: option, then CLAUDE_CONFIG_DIR, then home [2.41ms]
+(pass) lib > a missing or damaged file is an empty shelf; ids keep counting past the highest [1.45ms]
+(pass) lib > add trims and clips; close and reopen [1.03ms]
+(pass) lib > per project, case-insensitive, newest first; all projects with empty project [0.73ms]
+(pass) lib > status text: hidden at zero, singular and plural [0.31ms]
+(pass) lib > age, scope words, context line [0.57ms]
+(pass) mod > /idea shelves for this project with a toast and no transcript reply [71.48ms]
+(pass) mod > /idea headless prints the line; empty args print usage and save nothing [38.14ms]
+(pass) mod > a write keeps ideas another session added since [48.36ms]
+(pass) mod > shelve_idea from Claude: saved as Claude, result says to carry on, user is told [38.66ms]
+(pass) mod > list_ideas: this project by default, all on request [35.35ms]
+(pass) mod > close_idea marks done; unknown ids and bad statuses are refused [49.89ms]
+(pass) mod > other tools pass through untouched [29.96ms]
+(pass) mod > prompt.context adds one shelf line in attended sessions only [46.17ms]
+(pass) mod > prompt.context: nothing headless [30.22ms]
+(pass) mod > nudge off: no shelf line [29.53ms]
+(pass) mod > /shelf headless lists this project with details [30.72ms]
+(pass) mod > /shelf pane: lists this project, Done closes, All shows other projects [77.32ms]
+(pass) mod > Resume fills an empty box and closes the pane; a busy box is left alone [37.54ms]
+(pass) mod > Resume with text in the box: note, no fill [49.82ms]
+(pass) mod > an idea added while the pane is open redraws it [48.00ms]
+(pass) mod > indicator: this project count at session start, after /idea, after close, gone when empty [61.44ms]
+(pass) mod > indicator: a pane Done updates it [49.50ms]
+(pass) mod > indicator: a turn end picks up ideas from another session [54.06ms]
+(pass) mod > indicator: none headless, none when switched off [32.76ms]
+(pass) mod > indicator option off [30.16ms]
+
+ 26 pass
+ 0 fail
+Ran 26 tests across 1 file. [1.26s]

@@ -1,0 +1,16 @@
+== bws-assumptions
+Installing plugin "bws-assumptions@bws-mods"...✔ Successfully installed plugin: bws-assumptions@bws-mods (scope: user)
+== bws-board
+Installing plugin "bws-board@bws-mods"...✔ Successfully installed plugin: bws-board@bws-mods (scope: user)
+== bws-cockpit
+Installing plugin "bws-cockpit@bws-mods"...✔ Successfully installed plugin: bws-cockpit@bws-mods (scope: user)
+== bws-design-picker
+Installing plugin "bws-design-picker@bws-mods"...✔ Successfully installed plugin: bws-design-picker@bws-mods (scope: user)
+== bws-enhance
+Installing plugin "bws-enhance@bws-mods"...✔ Successfully installed plugin: bws-enhance@bws-mods (scope: user)
+== bws-notify
+Installing plugin "bws-notify@bws-mods"...✔ Successfully installed plugin: bws-notify@bws-mods (scope: user)
+== bws-shelf
+Installing plugin "bws-shelf@bws-mods"...✔ Successfully installed plugin: bws-shelf@bws-mods (scope: user)
+== bws-shell-lint
+Installing plugin "bws-shell-lint@bws-mods"...✔ Successfully installed plugin: bws-shell-lint@bws-mods (scope: user)

@@ -1,0 +1,26 @@
+== load-default.jsonl
+claude_code_version 2.1.296
+  bws-cockpit 0.14.0 bws-cockpit@inline C:/Projects/bws.mods.claude-code/bws-cockpit
+  bws-shell-lint 0.2.0 bws-shell-lint@inline C:/Projects/bws.mods.claude-code/bws-shell-lint
+  bws-notify 0.1.1 bws-notify@inline C:/Projects/bws.mods.claude-code/bws-notify
+  bws-design-picker 0.2.3 bws-design-picker@inline C:/Projects/bws.mods.claude-code/bws-design-picker
+  bws-enhance 0.2.0 bws-enhance@inline C:/Projects/bws.mods.claude-code/bws-enhance
+  bws-shelf 0.1.2 bws-shelf@inline C:/Projects/bws.mods.claude-code/bws-shelf
+  bws-assumptions 0.1.0 bws-assumptions@inline C:/Projects/bws.mods.claude-code/bws-assumptions
+  bws-board 0.3.0 bws-board@inline C:/Projects/bws.mods.claude-code/bws-board
+  bws tools: ['mcp__bws-assumptions__record_assumption', 'mcp__bws-board__board_ask', 'mcp__bws-board__board_decline', 'mcp__bws-board__board_done', 'mcp__bws-board__board_release', 'mcp__bws-board__board_send', 'mcp__bws-board__board_status', 'mcp__bws-board__board_take', 'mcp__bws-board__board_withdraw', 'mcp__bws-cockpit__find_project', 'mcp__bws-shelf__close_idea', 'mcp__bws-shelf__list_ideas', 'mcp__bws-shelf__shelve_idea']
+  bws plugin warnings: []
+  result: success False
+== load-installed.jsonl
+claude_code_version 2.1.296
+  bws-assumptions 0.1.0 bws-assumptions@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-assumptions/0.1.0
+  bws-board 0.2.0 bws-board@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-board/0.2.0
+  bws-cockpit 0.14.0 bws-cockpit@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-cockpit/0.14.0
+  bws-design-picker 0.2.3 bws-design-picker@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-design-picker/0.2.3
+  bws-enhance 0.2.0 bws-enhance@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-enhance/0.2.0
+  bws-notify 0.1.1 bws-notify@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-notify/0.1.1
+  bws-shelf 0.1.2 bws-shelf@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-shelf/0.1.2
+  bws-shell-lint 0.2.0 bws-shell-lint@bws-mods C:/Users/<u>/.claude/plugins/cache/bws-mods/bws-shell-lint/0.2.0
+  bws tools: ['mcp__bws-assumptions__record_assumption', 'mcp__bws-board__board_ask', 'mcp__bws-board__board_decline', 'mcp__bws-board__board_done', 'mcp__bws-board__board_release', 'mcp__bws-board__board_send', 'mcp__bws-board__board_status', 'mcp__bws-board__board_take', 'mcp__bws-board__board_withdraw', 'mcp__bws-cockpit__find_project', 'mcp__bws-shelf__close_idea', 'mcp__bws-shelf__list_ideas', 'mcp__bws-shelf__shelve_idea']
+  bws plugin warnings: []
+  result: success False

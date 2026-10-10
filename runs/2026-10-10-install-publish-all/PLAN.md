@@ -1,11 +1,11 @@
 # Install and publish all eight bws mods
 
 ## Finish line (all true)
-- [ ] All eight mods load locally, as installed plugins, in a fresh session (receipts/load-*)
-- [ ] Every mod passes validate, `claude plugin test`, and tsc 5.8.3 in a clean worktree of the source commit (receipts/checks-*)
-- [ ] Main is pushed to `private` (bws-claude-mods-dev, private)
-- [ ] `mods/main` holds all eight mods, each identical to the source commit (receipts/publish-*)
-- [ ] RUNLOG records the commit hashes and any blockers
+- [x] All eight mods load locally, as installed plugins, in a fresh session (receipts/load-*)
+- [x] Every mod passes validate, `claude plugin test`, and tsc 5.8.3 in a clean worktree of the source commit (receipts/checks-*)
+- [x] Main is pushed to `private` (bws-claude-mods-dev, private)
+- [x] `mods/main` holds all eight mods, each identical to the source commit (receipts/publish-*)
+- [x] RUNLOG records the commit hashes and any blockers
 
 ## Install method
 `docs/mods.md` ("Install or update a mod"): a mod installs as a plugin from a marketplace, with `claude plugin install <plugin>@<marketplace>`, then `/reload-plugins` in open sessions.

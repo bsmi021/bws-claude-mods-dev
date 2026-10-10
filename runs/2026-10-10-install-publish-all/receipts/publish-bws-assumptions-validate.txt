@@ -1,0 +1,21 @@
+Validating plugin manifest: C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\pubAll\bws-assumptions\.claude-plugin\plugin.json
+
+  ❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
+  ❯ types ./types/index.d.ts declares state: bws-assumptions.items, bws-assumptions.view
+
+Validating hooks: C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\pubAll\bws-assumptions\hooks\hooks.json
+
+  ❯ ./register.tsx hooks: session.start, prompt.compose, tool.call{tool=mcp__bws-assumptions__record_assumption}, command.run{command=assumptions}, ui.close, ui.render{component=Pane, requestId=bws-assumptions}
+  ❯ ./register.tsx answers its own command: command.run{command=assumptions}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-assumptions__record_assumption}
+  ❯ ./register.tsx gating hook without .catch: ui.close
+  ❯ ./register.tsx calls: $.clock.after (via send), $.command.register, $.prompt.submit (via send), $.session.surfaces, $.state.get, $.state.set, $.tool.register, $.ui.open (via show), $.ui.resolve, $.ui.status (via refreshStatus), $.ui.toast (via send)
+  ❯ ./register.tsx state writes: bws-assumptions.items, bws-assumptions.view
+  ❯ ./register.tsx state reads: bws-assumptions.items, bws-assumptions.view
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\pubAll\bws-assumptions\README.md: This README has no line that installs "bws-assumptions" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install bws-assumptions --marketplace <owner>/<repo>
+
+✔ Validation passed

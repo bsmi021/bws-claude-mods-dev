@@ -1,0 +1,18 @@
+
+tests\notify.test.ts:
+(pass) firstLine strips markup, takes the first non-empty line and cuts it [2.62ms]
+(pass) project and duration wordings [0.95ms]
+(pass) toast wordings carry project and conversation text [1.25ms]
+(pass) encode round-trips unicode [1.30ms]
+(pass) a permission ask launches a hidden toast with the project and the ask [50.05ms]
+(pass) a finished turn names the duration and the reply, a short turn is skipped [33.23ms]
+(pass) a stop with background work pending is not a finished turn [24.14ms]
+(pass) a subagent finish and an error each toast [28.46ms]
+(pass) the same toast twice within a few seconds is sent once [28.52ms]
+(pass) no surface (headless) sends nothing [34.75ms]
+(pass) switches turn the events off [28.35ms]
+(pass) prompt-suggestion forks are not subagent reports [25.88ms]
+
+ 12 pass
+ 0 fail
+Ran 12 tests across 1 file. [0.60s]
