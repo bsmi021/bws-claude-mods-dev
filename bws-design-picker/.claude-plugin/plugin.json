@@ -1,6 +1,6 @@
 {
   "name": "bws-design-picker",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "When Claude asks you to pick a design direction, each option is drawn as a small rendered mockup above the picker.",
   "author": {
     "name": "Brian"

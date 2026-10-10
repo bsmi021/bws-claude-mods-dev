@@ -133,19 +133,31 @@ export const textWidth = (text: string): number => {
   return n >= 2 ? n + 2 : n
 }
 
+/** The cell rows a pixel span covers whole (a cell is pixels 2r and 2r+1); empty when first > last. */
+const fullRows = (y0: number, y1: number) => ({ first: Math.ceil(y0 / 2), last: Math.floor(y1 / 2) - 1 })
+
 /**
- * A block's cells. A block that carries text is at least as wide as its label needs, up to the whole
- * frame, so the label is never clipped: it grows rightwards, and leftwards when it would pass the edge.
+ * A block's cells, x in cells and y in pixels. A block that carries text is at least as wide as its label
+ * needs, up to the whole frame, so the label is never clipped: it grows rightwards, and leftwards when it
+ * would pass the edge. It also covers at least one whole cell row, so its label never sits on a row the
+ * fill only half covers: a block too short for one grows to the cell edges around it (a pixel each way at most).
  */
 const box = (b: Block, W: number, H: number) => {
   let x0 = Math.round((b.x / 100) * W)
-  const y0 = Math.round((b.y / 100) * H)
+  let y0 = Math.round((b.y / 100) * H)
   let x1 = Math.max(x0 + 1, Math.min(W, Math.round(((b.x + b.w) / 100) * W)))
-  const y1 = Math.max(y0 + 1, Math.min(H, Math.round(((b.y + b.h) / 100) * H)))
-  const need = b.text ? Math.min(W, textWidth(b.text)) : 0
-  if (x1 - x0 < need) {
-    x1 = Math.min(W, x0 + need)
-    x0 = Math.max(0, x1 - need)
+  let y1 = Math.max(y0 + 1, Math.min(H, Math.round(((b.y + b.h) / 100) * H)))
+  if (b.text) {
+    const need = Math.min(W, textWidth(b.text))
+    if (x1 - x0 < need) {
+      x1 = Math.min(W, x0 + need)
+      x0 = Math.max(0, x1 - need)
+    }
+    const rows = fullRows(y0, y1)
+    if (rows.first > rows.last) {
+      y0 -= y0 % 2
+      y1 = Math.min(H, Math.max(y1 + (y1 % 2), y0 + 2))
+    }
   }
   return { x0, y0, x1, y1 }
 }
@@ -182,12 +194,14 @@ export function rasterize(spec: Spec, size: Size): Uint32Array {
       else put(c, r, UPPER_HALF, top, bot)
     }
   }
-  // Text on top, at cell resolution: one line, centred on the block's middle row.
+  // Text on top, at cell resolution: one line, on the middle of the rows the block covers whole.
   for (const b of spec.blocks) {
     const text = b.text ? printable(b.text) : ''
     if (!text) continue
     const { x0, y0, x1, y1 } = box(b, W, H)
-    const row = Math.min(bodyRows - 1, Math.floor((y0 + y1 - 1) / 4))
+    const rows = fullRows(y0, y1)
+    const middle = Math.floor((y0 + y1 - 1) / 4)
+    const row = Math.min(bodyRows - 1, Math.max(rows.first, Math.min(rows.last, middle)))
     const room = Math.max(1, x1 - x0 - (x1 - x0 >= 4 ? 2 : 0))
     const t = text.slice(0, room)
     const centred = b.shape !== 'rect'

@@ -53,6 +53,8 @@ or, to load it in every session, add the folder's absolute path to `CLAUDE_CODE_
 - A text block narrower than its label is widened to fit it (growing left at the right edge), so labels
   aren't clipped. A widened block can cover a neighbour, and a label longer than the whole card is cut at
   the card's edge.
+- A label always sits on a cell row its block covers whole. A text block too short for one grows to the
+  cell edges around it, by at most a pixel each way.
 - Generated mockups come from the option descriptions only, without your project's context.
 - Opus is slower than Haiku: the picker shows the "drawing" line until it answers.
 

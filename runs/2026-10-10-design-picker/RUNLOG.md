@@ -93,3 +93,13 @@ Checks: validate passed; plugin test 24/24; tsc clean.
   Commit a6b51c5, `git push mods` -> github.com/bsmi021/bws-claude-mods main (d15eb8f..a6b51c5).
 - Installed the repo's way: the folder is in `CLAUDE_CODE_PLUGIN_DIRS` (settings), so every new session loads it
   (confirmed in live-gen5-022-debug.log: `bws-design-picker@inline`), and this session after `/reload-plugins`.
+
+## 0.2.3: labels sit on rows their block covers whole (2026-10-10)
+- Cause: the text row was the block's middle cell row, and a cell is two pixel rows. On a short block starting
+  or ending mid-cell, that row was half fill and half neighbour, and the label's cell painted it whole, so the
+  label stuck out half a row ("Buy", "LOUD COFFEE" in live-gen-6-v022.png).
+- Fix in `box()`/`rasterize`: a text block with no whole cell row grows to the cell edges around it (at most a
+  pixel each way); the text row is clamped to the rows the block covers whole. Blocks without text are unchanged.
+- Test: a 2-pixel block starting on an odd pixel grows to two whole rows, with its label row free of half
+  blocks; a block that already covers a row keeps its height and its half-covered bottom row. It fails with
+  the fix stashed. 27/27, tsc clean, validate passed.

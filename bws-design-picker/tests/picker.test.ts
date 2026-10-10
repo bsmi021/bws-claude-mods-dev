@@ -127,6 +127,36 @@ test('a text block too narrow for its label is widened, never clipped', () => {
   expect(Array.from({ length: W }, (_, c) => bgAt(blueRow, c)).filter(b => b === 0x0000ff).length).toBe(4)
 })
 
+test('a label sits on a row its block covers whole', () => {
+  // 40 x 12 cells, no palette strip: 24 pixel rows, a cell is pixels 2r and 2r+1.
+  const W = 40
+  const spec = parseSpec(preview({
+    bg: '#000000',
+    blocks: [
+      { x: 10, y: 21, w: 40, h: 8, fill: '#ff0000', text: 'Buy' }, // pixels 5-6: half of cell 2, half of cell 3
+      { x: 60, y: 17, w: 30, h: 12, fill: '#00ff00', text: 'Go' }, // pixels 4-6: cell 2 whole, cell 3 half
+    ],
+  }))!
+  const words = rasterize(spec, { columns: W, rows: 12 })
+  const cell = (r: number, c: number) => ({ cp: words[(r * W + c) * 3]!, fg: words[(r * W + c) * 3 + 1]!, bg: words[(r * W + c) * 3 + 2]! })
+  const rowText = (r: number) => Array.from({ length: W }, (_, c) => String.fromCharCode(cell(r, c).cp)).join('')
+
+  // The short block grows to cells 2 and 3; the label's row is filled whole, with no half-block edge in it.
+  expect(rowText(2).slice(5, 8)).toBe('Buy')
+  for (let c = 4; c < 20; c++) {
+    expect(cell(2, c).bg).toBe(0xff0000)
+    expect(cell(2, c).cp).not.toBe(0x2580)
+    expect(cell(3, c)).toEqual({ cp: 0x20, fg: 0x01000000, bg: 0xff0000 })
+  }
+  expect(cell(1, 10).bg).toBe(0x000000)
+  expect(cell(4, 10).bg).toBe(0x000000)
+
+  // A block that already covers a whole row keeps its height: its label goes on that row,
+  // and its half-covered bottom row stays a half block.
+  expect(rowText(2).slice(24, 36)).toContain('Go')
+  expect(cell(3, 30)).toEqual({ cp: 0x2580, fg: 0x00ff00, bg: 0x000000 })
+})
+
 test('a label wider than the whole frame fills it and is cut at the frame', () => {
   const W = 20
   const long = 'A very long label that cannot fit'
