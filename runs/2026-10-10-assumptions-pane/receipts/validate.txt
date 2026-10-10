@@ -13,4 +13,9 @@ Validating hooks: C:\Projects\bws.mods.claude-code\bws-assumptions\hooks\hooks.j
   ❯ ./register.tsx state writes: bws-assumptions.items, bws-assumptions.view
   ❯ ./register.tsx state reads: bws-assumptions.items, bws-assumptions.view
 
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Projects\bws.mods.claude-code\bws-assumptions\README.md: This README has no line that installs "bws-assumptions" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install bws-assumptions --marketplace <owner>/<repo>
+
 ✔ Validation passed

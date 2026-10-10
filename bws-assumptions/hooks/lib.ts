@@ -63,10 +63,10 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 export function summary(list: readonly Assumption[]): string {
   const open = unreviewed(list).length
   const marked = ready(list).length
+  if (active(list).length === 0) return list.length === 0 ? '⚑ no assumptions yet' : `⚑ all reviewed · ${sent(list).length} sent`
   const parts = [`⚑ ${plural(active(list).length, 'assumption')}`]
   if (open > 0) parts.push(`${open} to review`)
   if (marked > 0) parts.push(`${marked} ready to send`)
-  if (active(list).length === 0) parts.push(`${sent(list).length} reviewed`)
   return parts.join(' · ')
 }
 

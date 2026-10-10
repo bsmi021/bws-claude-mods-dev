@@ -9,7 +9,7 @@ correction), press Send, and Claude fixes the work that relied on a wrong one.
   section to the system prompt: call it whenever you choose something the user didn't specify, then keep going without
   stopping to ask. The tool answers `Recorded as A3. Keep working…`.
 - The first assumption opens the **Assumptions** pane (docked beside the transcript in fullscreen from 110 columns, else
-  inline above the prompt). Collapsed it is one line: `⚑ 3 assumptions · 2 to review` and **Expand** (`e`).
+  inline above the prompt). Collapsed it is one line: `⚑ 3 assumptions · 2 to review` and **Expand** (`e`). `ctrl+x tab` gives the pane the keys: `Tab` walks Right / Wrong / the field, `Enter` presses, `e` expands or collapses, `s` sends; or click.
 - Expanded, each item shows `A<n> <assumption>`, its reason, and **Right** / **Wrong**. Wrong opens an `Instead:` field
   for the correction (Enter saves it; text typed but not saved is still sent). Pressing a verdict again clears it.
 - **Send N to Claude** (`s`) submits one prompt headed `Assumption review`, as your own message: each WRONG item with
@@ -51,4 +51,7 @@ Claude Code 2.1.296.
   prompt section only where the tool is offered, headless and narrow-terminal `/assumptions`.
 - Live (`claude -p`, headless): Claude called the tool on its own for two unstated choices while writing a script, with
   no permission prompt, and finished the task.
+- Interactive (Windows Terminal-sized tmux session, 160x50, terminal surface): the pane docked on the right; collapse /
+  expand, Right, Wrong + correction and Send all worked; Claude received the review as a user message and rewrote the
+  script to the correction. Desktop, VS Code and mobile were not tried live.
 - Not covered by tests: the person-close flag (the test kit can't raise a close with origin `person`).

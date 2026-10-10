@@ -183,7 +183,7 @@ export const register: Register = on => {
               (Input ? (
                 <Input
                   key={`fix-${a.n}`}
-                  label="Instead: "
+                  label="Instead"
                   placeholder="what it should be (empty: Claude asks you)"
                   value={drafts.get(a.n) ?? a.correction}
                   submitLabel="save"
@@ -201,7 +201,7 @@ export const register: Register = on => {
           </Text>
         )}
         <Box flexDirection="row" gap={1}>
-          <Button key="send" variant="primary" label={`Send ${toSend} to Claude`} hotkey="s" onPress={() => send($)} />
+          {open.length > 0 && <Button key="send" variant="primary" label={`Send ${toSend} to Claude`} hotkey="s" onPress={() => send($)} />}
           {done.length > 0 && <Button key="clear" label="Clear sent" hotkey="c" onPress={() => clearReviewed($)} />}
         </Box>
       </Box>

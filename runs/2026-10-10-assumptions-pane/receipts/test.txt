@@ -1,18 +1,18 @@
 
 tests\assumptions.test.ts:
-(pass) lib > numbers in order, never reuses a number after a clear [1.92ms]
-(pass) lib > a verdict pressed again goes back to open; sent items are frozen [0.48ms]
+(pass) lib > numbers in order, never reuses a number after a clear [1.97ms]
+(pass) lib > a verdict pressed again goes back to open; sent items are frozen [0.46ms]
 (pass) lib > verdict prompt: wrong first with the correction, missing correction asks, right kept [0.59ms]
 (pass) lib > a typed but unsaved correction is used over the saved one [0.22ms]
-(pass) lib > summary and status line [0.41ms]
-(pass) mod > the tool records, numbers, opens the pane and sets the status [45.11ms]
-(pass) mod > an empty assumption is refused [20.89ms]
-(pass) mod > collapsed to one line; expand, mark, correct and send hands the verdicts to Claude as the user [51.27ms]
-(pass) mod > send with nothing marked submits nothing [24.47ms]
-(pass) mod > the guide joins the system prompt only where the tool is offered [18.74ms]
-(pass) mod > headless /assumptions lists them as text [18.45ms]
-(pass) mod > /assumptions in a narrow terminal still answers with the list [20.83ms]
+(pass) lib > summary and status line [0.47ms]
+(pass) mod > the tool records, numbers, opens the pane and sets the status [46.50ms]
+(pass) mod > an empty assumption is refused [21.35ms]
+(pass) mod > collapsed to one line; expand, mark, correct and send hands the verdicts to Claude as the user [55.18ms]
+(pass) mod > send with nothing marked submits nothing [28.13ms]
+(pass) mod > the guide joins the system prompt only where the tool is offered [21.32ms]
+(pass) mod > headless /assumptions lists them as text [22.57ms]
+(pass) mod > /assumptions in a narrow terminal still answers with the list [20.50ms]
 
  12 pass
  0 fail
-Ran 12 tests across 1 file. [0.41s]
+Ran 12 tests across 1 file. [0.40s]

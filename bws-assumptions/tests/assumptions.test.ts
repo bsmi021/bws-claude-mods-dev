@@ -78,6 +78,8 @@ describe('lib', () => {
     expect(summary(list)).toBe('⚑ 3 assumptions · 2 to review · 1 ready to send')
     expect(statusText(list)).toBe('⚑ 3 assumptions · 2 to review · 1 ready to send · /assumptions')
     expect(statusText(markSent(list, [1, 2, 3]))).toBeUndefined()
+    expect(summary(markSent(list, [1, 2, 3]))).toBe('⚑ all reviewed · 3 sent')
+    expect(summary([])).toBe('⚑ no assumptions yet')
     expect(statusText([])).toBeUndefined()
     expect(listText([])).toBe('No assumptions recorded in this session.')
   })

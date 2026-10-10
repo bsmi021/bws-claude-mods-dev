@@ -19,7 +19,15 @@ assumption, so he can say right or wrong; on changes Claude makes them directly.
 - live-run.jsonl: `claude -p` weather-script task, Claude called record_assumption twice unprompted
   (wttr.in; argv city + weather.py), "Recorded as A1/A2", no permission denial for the tool.
 
+- Interactive (tmux 160x50, PowerShell, `claude --plugin-dir`): weather-script prompt; Claude recorded A1 (wttr.in) and
+  A2 (argv city, London). Pane docked right, expanded via /assumptions; ctrl+x tab focus, e collapse/expand, Tab+Enter
+  Right on A1, Wrong on A2, typed "read the city from the CITY env var, default Boston", Enter, Send. Claude got the
+  `Assumption review` prompt and edited weather.py to `os.environ.get("CITY") or "Boston"`, A1 kept. Status line cleared.
+  Receipts: tmux-expanded.txt, tmux-send-and-fix.txt.
+- Fixes from the live run: Input label doubled its colon (`Instead: :`); collapsed line read `0 assumptions · 2 reviewed`
+  (now `all reviewed · 2 sent`); Send hidden when nothing is open. Checks rerun: validate pass, 12/12, tsc exit 0.
+- The unasked auto-open did seat at 160 columns (first capture missed it: the pane is on the right edge).
+
 ## Open
-- Interactive check of the pane in a real terminal (see below for result).
 - Not tested: person-close flag; behaviour across /clear.
 - Not added to CLAUDE_CODE_PLUGIN_DIRS or the publish branch (Brian's call).
