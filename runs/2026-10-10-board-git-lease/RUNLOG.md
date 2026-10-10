@@ -48,6 +48,7 @@ Script: `live-git.sh`, run with `live-settings.json` (gitLeaseMinutes 1). Haiku,
 - Every git command and refusal is in the history files under `receipts/live*/history/`.
 
 ## Decisions and assumptions
+Brian confirmed A15–A19 in the assumption review on 2026-10-10.
 - A15: the lease lasts 2 min after the last git command, and ends at turn end.
 - A16: the lease is per working tree.
 - A17: the verb list.
