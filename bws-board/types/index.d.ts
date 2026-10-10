@@ -54,9 +54,9 @@ declare module 'claude-code' {
     'bws-board': {
       // this process's role: not keyed by session id, so it outlives /clear, /resume and /branch
       role: string | null
-      // this session's own card as it last wrote it, with its cursors; keyed by session id, so a
-      // new id (after /clear, /resume, /branch) starts a new card
-      own: BoardOwn | null
+      // each session's own card as it last wrote it, with its cursors, by session id: a new id
+      // (after /clear, /resume, /branch) starts a new card; the newest few are kept
+      own: Record<string, BoardOwn>
       // for the band chip and the pane
       summary: BoardSummary | null
       // the board as last read, for the pane

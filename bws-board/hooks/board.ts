@@ -384,6 +384,8 @@ export function news(views: readonly AskView[], self: Self, seen: Readonly<Recor
     if (seen[key] === undefined) lines.push(line)
   }
   const from = (v: AskView) => who(b.cards[v.from], v.from)
+  // This session's own latest act on an ask, from its card on the board.
+  const lastAct = (askId: string) => (b.cards[self.id]?.acts ?? []).filter(a => a.askId === askId).at(-1)
   for (const v of views) {
     if (v.from === self.id) {
       if (v.view === 'taken' && v.taker) tell(`${v.id}:taken:${v.taker}`, `- your ask ${v.id} was taken by ${who(b.cards[v.taker], v.taker)}`)
@@ -394,8 +396,7 @@ export function news(views: readonly AskView[], self: Self, seen: Readonly<Recor
     if (isForMe(v.to, self) && (v.view === 'open' || v.view === 'declined'))
       tell(`${v.id}:new`, `- ${v.urgent ? 'URGENT ' : ''}ask ${v.id} from ${from(v)} to ${toText(v.to, b)}: ${v.text}`)
     else if (isForMe(v.to, self)) next[`${v.id}:new`] = seen[`${v.id}:new`] ?? now
-    if (v.taker === self.id) next[`${v.id}:took`] = now
-    if (v.view === 'withdrawn' && seen[`${v.id}:took`] !== undefined) tell(`${v.id}:withdrawn`, `- ask ${v.id} you took was withdrawn by ${from(v)}`)
+    if (v.view === 'withdrawn' && lastAct(v.id)?.kind === 'take') tell(`${v.id}:withdrawn`, `- ask ${v.id} you took was withdrawn by ${from(v)}`)
   }
   return { lines, seen: next }
 }

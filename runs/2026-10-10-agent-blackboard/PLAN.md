@@ -1,6 +1,6 @@
 # PLAN: bws-board, a shared blackboard for a team of Claude Code agents
 
-Status: **building** (go given 2026-10-10). T1 done; T2 scaffold done (register.tsx is a stub).
+Status: **building** (go given 2026-10-10). T1-T4 and T6 done (44/44 tests); T5 waits on 193b884d; T8 live run next.
 
 ## Definition of done for v0.1 (finish line, all true)
 - [ ] **Live two-session request** (the acceptance check), in a scratch git repo with two `claude -p` sessions, A with `BWS_AGENT_ROLE=api` and B with `BWS_AGENT_ROLE=tests`:
@@ -145,10 +145,10 @@ What is **not** possible, or is a limit:
 ## Tasks (in order, after the gate clears)
 1. [x] T1 `bws-board/hooks/board.ts`, pure: port bus.ts (key, liveness, claims, redact incl. the shelf #1 fix, text), add per-file merge, ask/act merge, role resolve, wake rate limit. Plus `tests/board.test.ts`.
 2. [x] T2 Scaffold: manifest, hooks.json, types contract (`role`, `self`, `summary`, `seen`), copied generated types + hand-added `mcp__bws-board__*` inputs.
-3. T3 `register.tsx`: session.start (tools, command, heartbeat, sweep), session.end, prompt.context, prompt.submit, turn.complete (idle), tool.call ×2 (claims gate + unmatched delivery), session.receive (tag board wakes), tool handlers.
-4. T4 Plugin tests: two sessions over one stubbed fs folder (ask → take → done, claim deny, role routing, torn-file read, wake rate limit).
+3. [x] T3 `register.tsx`: session.start (tools, command, heartbeat, sweep), session.end, prompt.context, prompt.submit, turn.complete (idle), tool.call ×2 (claims gate + unmatched delivery), session.receive (tag board wakes), tool handlers.
+4. [x] T4 Plugin tests: two sessions over one stubbed fs folder (ask → take → done, claim deny, role routing, torn-file read, wake rate limit).
 5. T5 Cut-over: remove the bus from cockpit (bus.ts, hooks, tools, options, tests). First run the hard/soft `dependencies` check (§ Human views), then add the chip, and run cockpit's suite.
-6. T6 Pane + `/board` text.
+6. [x] T6 Pane + `/board` text (built in T3; the pane is drawn but not yet checked interactively).
 7. T7 validate + test + tsc receipts for both plugins.
 8. T8 Live two-session acceptance run + the claim/deny run, with receipts.
 9. T9 README, `CLAUDE_CODE_PLUGIN_DIRS`, fresh-session load check, RUNLOG, commit. The publish branch is updated only when Brian asks.

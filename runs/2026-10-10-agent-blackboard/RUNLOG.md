@@ -33,5 +33,13 @@ The real question is where this lives, not whether it can be built.
 - T2 scaffold: manifest 0.1.0 with options (board, claimMinutes, urgentWake, wakeMinutes); types contract with state role/own/summary/lines and the McpToolInputs augmentation; types copied from cockpit; register.tsx stub.
 - Checks: validate passed, tsc exit 0, 30/30 tests (receipts/t1-*). bws-board is not yet in CLAUDE_CODE_PLUGIN_DIRS, so no session loads it.
 
+- T3 `register.tsx`: session.start (8 tools, /board, first sync, sweep, 20 s heartbeat), prompt.context (bwsBoard block when a peer is live or an ask waits), prompt.submit (busy + task + news), turn.complete (idle), the claims gate on tool.call, the unmatched tool.call that delivers news, session.end (tombstone), the 8 tool handlers, /board [role <name> | pane], and the Board pane. The run folder now comes from this session's own writes under runs/, not from cockpit's state. Left out: the session.receive hook (nothing needed it).
+- Validate rule: `act` (which takes `$`) was moved to top level.
+- T4 `tests/plugin.test.ts`, 14 two-session tests over one stubbed folder. They found two things:
+  - (a) The `own` state was a single value, so a second session in the same process reset the first's cursors. It is now a map by session id, keeping the newest 4. That also fits a real process across /clear.
+  - (b) "An ask you took was withdrawn" needed a news pass between take and withdraw. It now reads the session's own take act.
+- Also learned: `session.send` hooks see `to` as a string, not `{ sessionId }`.
+- Checks: validate passed, tsc exit 0, 44/44 tests (receipts/t4-*).
+
 ## Next step
-T3: register.tsx wiring. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.
+T8: a live two-session acceptance run in a scratch repo. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.

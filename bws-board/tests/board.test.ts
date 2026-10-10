@@ -340,7 +340,11 @@ describe('asks', () => {
     expect(forA2.lines).toEqual([`- your ask ${q.id} is done by tests (bbbbbbbb): green`])
 
     b = board(card(A, { role: 'api', asks: [{ ...q, state: 'withdrawn' }] }), card(B, { role: 'tests', acts: [{ askId: q.id, kind: 'take', at: NOW }] }))
-    expect(news(askViews(b, NOW, STALE_MS), tests, bTook.seen, NOW, b).lines).toEqual([`- ask ${q.id} you took was withdrawn by api (aaaaaaaa)`])
+    const told = news(askViews(b, NOW, STALE_MS), tests, bTook.seen, NOW, b)
+    expect(told.lines).toEqual([`- ask ${q.id} you took was withdrawn by api (aaaaaaaa)`])
+    expect(news(askViews(b, NOW, STALE_MS), tests, told.seen, NOW, b).lines).toEqual([])
+    // Taken and withdrawn before any news pass ran for the taker: still told.
+    expect(news(askViews(b, NOW, STALE_MS), tests, {}, NOW, b).lines).toContain(`- ask ${q.id} you took was withdrawn by api (aaaaaaaa)`)
   })
 
   test('urgent wake: named live sessions only, once per receiver per window', () => {
