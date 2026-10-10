@@ -64,7 +64,41 @@ export type LoopView = {
 
 export type LoopActionNote = { text: string; at: number; isError: boolean }
 
+// ---------- Session Bus ----------
+
+// The same shapes as hooks/bus.ts's BusEntry and Inbox (the manifest's types contract is read alone).
+export type BusOwnEntry = {
+  sessionId: string
+  cwd: string
+  startedAt: number
+  seenAt: number
+  status: 'busy' | 'idle'
+  task: string
+  run: string | null
+  lastFile: string | null
+  claims: { path: string; since: number; at: number }[]
+  outbox: { seq: number; to: string; text: string; at: number }[]
+}
+
+export type BusOwn = {
+  sessionId: string
+  joinedAt: number
+  seq: number
+  entry: BusOwnEntry
+  cursors: Record<string, number>
+  pending: { from: string; seq: number; text: string; at: number }[]
+  // live peers already announced to this conversation; null until its first sync
+  known: string[] | null
+}
+
 declare module 'claude-code' {
+  // The Session Bus tools' inputs, here because the generated MCP types list only the tools the
+  // engine saw at its last interactive load, and a test run regenerates them.
+  interface McpToolInputs {
+    'mcp__bws-cockpit__bus_status': { task?: string }
+    'mcp__bws-cockpit__bus_send': { to: string; text: string }
+    'mcp__bws-cockpit__bus_release': { paths?: string[] }
+  }
   interface PluginState {
     'bws-cockpit': {
       view: CockpitView | null
@@ -75,6 +109,9 @@ declare module 'claude-code' {
       stopArmedAt: number | null
       // Finish-Line Guard: run folders this conversation's own tool calls wrote to, keyed by its start
       touched: { startedAt: number; folders: string[] } | null
+      // Session Bus: this session's own entry as it last wrote it, its read cursors and unread
+      // messages, keyed by session id so a /clear or resume (a new id) starts fresh
+      bus: BusOwn | null
     }
   }
 }

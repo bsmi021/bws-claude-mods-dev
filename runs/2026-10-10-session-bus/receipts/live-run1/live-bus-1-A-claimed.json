@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "folder": "C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-mods-claude-code/193b884d-fed8-4496-b100-79070c7db795/scratchpad/bus-live",
+  "sessions": {
+    "b63d8443-1255-4c4a-be18-49dfd34d5cac": {
+      "sessionId": "b63d8443-1255-4c4a-be18-49dfd34d5cac",
+      "cwd": "C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-mods-claude-code\\193b884d-fed8-4496-b100-79070c7db795\\scratchpad\\bus-live",
+      "startedAt": 1791640600885,
+      "seenAt": 1791640602752,
+      "status": "busy",
+      "task": "Use the Write tool to overwrite notes.txt with the single line: from A. Then run this Bash command …",
+      "run": null,
+      "lastFile": null,
+      "claims": [],
+      "outbox": []
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # bws-cockpit
 
-A Claude Code mod. It puts the active run and live editor/device state above the prompt, and guards calls to Unreal, Unity and adb.
+A Claude Code mod. It puts the active run and live editor/device state above the prompt, guards calls to Unreal, Unity and adb, and keeps sessions in one folder from editing the same files (Session Bus).
 
 Built from a 30-day review of one developer's Claude Code sessions across Unreal, Unity, web and Android work, which found:
 - 94 resume prompts and 47 "where are we" prompts
@@ -84,6 +84,39 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 - **Resumed sessions:** in a resumed session, before its first request there is nothing to fork, so the handoff is built from the transcript rows instead.
 - **Start prompt:** the reply shows a short start prompt for the next session, and puts it on the clipboard where there is one.
 
+### Session Bus
+Keeps Claude Code sessions open in the same project folder from clipping each other's edits.
+- **Bus file:** one per folder, `<CLAUDE_CONFIG_DIR or ~/.claude>/bws-cockpit/bus/<folder>.json`. The folder is the git repo root (the main tree's, for a worktree), else where the session started. It sits outside the repo, so nothing shows in git.
+- **Each session's entry** holds:
+  - its id and when it started
+  - busy or idle
+  - what it is working on: the first line of the latest prompt, with `key=…`/`token=…` values and long key-like strings replaced by `[redacted]`, or what Claude sets with `bus_status`
+  - its run folder
+  - the files it claimed
+  - the messages it sent
+- **Writes:** each session writes only its own entry, then reads the file back and writes again if a simultaneous write dropped it. A heartbeat every 20 s keeps the entry live, headless sessions included.
+- **Joining:** a new conversation (also after `/clear` or a resume) is told which other sessions are live here, their tasks and claims, and how to reach them (`bwsBus` context block). A session alone in the folder gets no block. A session already running hears of a newcomer as a notice.
+- **Claims:**
+  - An Edit, Write or NotebookEdit claims the file for its session.
+  - Another live session's Edit, Write or NotebookEdit of that file is refused. The refusal names the holder and its task, and says how to ask for the file.
+  - When two sessions claim at the same moment, the earlier claim holds the file.
+  - A claim lapses `busClaimMinutes` after the session's last edit of the file, or when the session leaves.
+  - Paths compare case-insensitively with either slash.
+  - Nothing is ever approved.
+- **Tools:**
+  - `bus_status { task? }`: lists the live peers, their claims and your unread messages, and sets this session's task.
+  - `bus_send { to, text }`: `to` is a session id, its first 8 characters, or `all`. The text is redacted the same way and capped at 2000 characters.
+  - `bus_release { paths? }`: releases the given files, or every claim when none are given.
+- **Delivery:**
+  - The heartbeat picks up messages addressed to this session and toasts them.
+  - The model reads them after its next tool result, or with the next prompt.
+  - They're framed as coming from another session, never from the user.
+- **Leaving:**
+  - On exit, `/clear`, resume or the end of a `-p` run, the session removes its entry at once.
+  - A session that crashed stops beating. After 90 s its entry no longer counts, and the next write prunes it.
+- **Fails open:** if the bus file can't be read or written, edits pass and one toast says so.
+- **Not covered:** writes made through Bash or PowerShell (`sed -i`, redirects) are not claim-checked.
+
 ### Worker model pin
 - **`workerModel`** (e.g. `claude-sonnet-5-5`): subagents of the types in `workerAgentTypes` (default `general-purpose,claude`) run on it whenever the Agent call names no model.
 - **Left alone:** an explicit `model` in the call still wins, for the complex task. Forks always inherit, and other types (Explore, Plan, plugin agents with their own model) are not touched.
@@ -144,30 +177,33 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `projectRoots` | `C:/Projects` | Folders that hold your projects, separated by `;` |
 | `workerModel` | (empty: off) | Model for subagents whose Agent call names none |
 | `workerAgentTypes` | `general-purpose,claude` | Subagent types the worker model applies to |
+| `sessionBus` | `true` | The Session Bus |
+| `busClaimMinutes` | `30` | A file claim lapses this long after the session's last edit of it |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`; Edit/Write/NotebookEdit/Bash/PowerShell, observe only, to see which run folders the session writes), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Hooks | `session.start`, `session.end` (Session Bus: leave the bus), `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`; Edit/Write/NotebookEdit/Bash/PowerShell, to see which run folders the session writes, and to refuse an Edit/Write/NotebookEdit of a file another live session claimed; every tool call, observe only, to hand the model queued bus messages; the plugin's own `bus_status`, `bus_send`, `bus_release`), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
 | Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
-| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
+| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; reads and writes the Session Bus file `<config dir>/bws-cockpit/bus/<folder>.json` |
 | Prompts | `$.prompt.submit` for resume |
 | Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
 | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
-| Tools | registers `find_project` |
+| Tools | registers `find_project`, `bus_status`, `bus_send`, `bus_release` |
+| Session | `$.session.id`, `$.session.repo`, `$.session.root` (the bus folder); env reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` |
 
-It writes no files.
+The only file it writes on its own is the Session Bus file under the Claude config folder. /handoff writes `HANDOFF.md` when you run it.
 
 ## Tested
 
-Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 7.6.
+Claude Code 2.1.287 through 2.1.296 (0.12.0 on 2.1.296), Windows 11, Git Bash + PowerShell 7.6.
 
 | Check | Result |
 |---|---|
 | `claude plugin validate` | passed |
-| `claude plugin test` (0.11.0, Claude Code 2.1.296) | 121/121. 0.11.0: the band as three bordered tiles at 120 columns (borders, widths, content, no loop tile without a loop, desktop, no run folder) and the borderless grid under 90 columns and under 6 band rows; the loop tile and the grid LOOP row with the board link. 0.10.2: /handoff picks its folder from the session's own writes (a worker-freshened folder is ignored; found with finishLine off too). 0.10.1 adds the shared band slot (another mod's band drawn under ours on terminal and desktop, the whole slot handed on when hidden, nothing added when no other band draws). 0.10.0 (112/112, three runs in a row) added: run-folder ownership (a worker-written folder and a read of its checklist claim nothing; a shell write claims it; a new conversation forgets), imperative hand-backs from real replies ("tell me when", "say go", "when you next ask"; "say if you want" still blocks), `(proposed-task)` and `<ownerName>:` items parked, the evidence check off by default and on by option, the run-folder context skipped with no surface, the board URL in the loop chip and `/cockpit`, and the low-VRAM pass-through for overrides in a `$args` array, render runs, an explicit screen percentage, and a startup-script `-ini` that is not an override. The Repo Sessions tests went with the pane; the registry parsing kept in `peers.ts` is still tested. Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch, /handoff, the worker model pin, the Project Locator and the Finish-Line Guard |
+| `claude plugin test` (0.12.0, Claude Code 2.1.296) | 136/136. 0.12.0 adds the Session Bus: two sessions over one shared bus file (the second is told of the first, its task and claim; its Write of the claimed file, spelled with backslashes and other case, is refused and never runs; another file passes; bus_status and bus_send; each entry gone at exit), a peer's message and join notice reaching the model after the next tool result, once, and toasted; a stale peer's claim not blocking and the peer pruned; a bus that cannot be written never blocking an edit (one toast); `sessionBus: false` touching nothing; and the pure helpers (file key, parsing, pruning, path folding, claim lapse, simultaneous claims, task redaction, unread cursors, send targets). 0.11.0: 121/121. 0.11.0: the band as three bordered tiles at 120 columns (borders, widths, content, no loop tile without a loop, desktop, no run folder) and the borderless grid under 90 columns and under 6 band rows; the loop tile and the grid LOOP row with the board link. 0.10.2: /handoff picks its folder from the session's own writes (a worker-freshened folder is ignored; found with finishLine off too). 0.10.1 adds the shared band slot (another mod's band drawn under ours on terminal and desktop, the whole slot handed on when hidden, nothing added when no other band draws). 0.10.0 (112/112, three runs in a row) added: run-folder ownership (a worker-written folder and a read of its checklist claim nothing; a shell write claims it; a new conversation forgets), imperative hand-backs from real replies ("tell me when", "say go", "when you next ask"; "say if you want" still blocks), `(proposed-task)` and `<ownerName>:` items parked, the evidence check off by default and on by option, the run-folder context skipped with no surface, the board URL in the loop chip and `/cockpit`, and the low-VRAM pass-through for overrides in a `$args` array, render runs, an explicit screen percentage, and a startup-script `-ini` that is not an override. The Repo Sessions tests went with the pane; the registry parsing kept in `peers.ts` is still tested. Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch, /handoff, the worker model pin, the Project Locator and the Finish-Line Guard |
 | Finish-Line Guard live (`claude -p`, `finishLineHeadless` on) | Claude ticked one of two tasks and tried to stop. The guard blocked it with the open item named, and Claude did the second task. In a run told to skip the second task, Claude instead marked it `(needs …)` and the guard let it stop. 0.10.0 (2.1.296, Haiku 5.5, scratch repo with two open items): a session that ran a script which appended to the run folder's RUNLOG (as a harness worker does) was not blocked; a session that appended to the RUNLOG with Edit was blocked with both items named, then did both and ticked them |
 | Type-check against the 2.1.296 declarations (tsc 5.9.3, strict, noUncheckedIndexedAccess) | clean |
 | Corpus replay: the guard's classifiers over 8,277 real Bash/PowerShell commands from 30 days | Unity rewrites: 3, all real launches. UE GUI launches: 72, all real. Mentions in `echo`, Get-CimInstance filters, heredocs, comments and `$x = '...exe'` assignments are ignored |
@@ -178,6 +214,7 @@ Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 
 | Worker pin live | A parent on claude-opus-5-5 spawned three subagents: general-purpose with no model ran on claude-sonnet-5-5 (toast shown), Explore kept claude-opus-5-5, and an explicit `haiku` stayed on Haiku |
 | Guard pass-through live (0.10.0, `vramThresholdMb` 1 to force pressure) | A `Start-Process … -ArgumentList $a` whose `$a` array carried the `-ini` overrides ran (nonexistent path, so PowerShell said the file was missing); the same launch without them was refused with the argument to add |
 | Repo Sessions live (2.1.288, removed in 0.10.0) | headless `claude -p "/repo-sessions"` in this repo listed the other live session here with its latest prompt (read from the tail of a real 5 MB history.jsonl), and the 5 sessions in other repos under their repo names. The docked pane was checked by eye in fullscreen. A `$.session.send({ to: { sessionId } })` from a scratch probe mod to a live peer returned `isDelivered: true`; the peer received the text as a cross-session message and replied. From the pane, a message to a default-mode session showed `◆ held`, then `✓ approved and delivered` once its person approved it |
+| Session Bus live (0.12.0, 2.1.296, Haiku 5.5, two `claude -p` sessions in one scratch git repo) | A wrote notes.txt (claimed on the bus) and stayed open on a background sleep. B was told "1 other Claude Code session(s) are live" with A's task and `claims: notes.txt`; its Edit of notes.txt was refused with the claim text and the file stayed `from A`; its `bus_send` reached A after A's background task finished, framed as from another session (A did not act on it as an instruction). B's entry was gone as soon as B exited, and the bus was empty once A exited |
 | Interactive terminal band | drawn live with the run line, the device row and the hotkeys |
 
 Only commands where the tool is in command position trigger the guard. That is the first word of a segment, after `VAR=` prefixes, `timeout N`, `nohup`, `&`, `$x =` or `Start-Process -FilePath`. Anything quoted, commented, inside a heredoc or here-string, or mentioned by `echo` or `grep` is ignored.
@@ -186,3 +223,4 @@ Untested:
 - the Desktop app
 - a live unreal-mcp block (port down)
 - a live running or paused loop (tests cover it)
+- the Session Bus between two interactive terminal sessions (checked live with two `claude -p` sessions only), and its toast
