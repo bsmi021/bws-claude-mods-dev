@@ -5,14 +5,15 @@ Status: **awaiting Brian's approval.** No code changes until approved. Steps bec
 ## Finish line (Definition of done)
 | # | Check | Proof |
 |---|---|---|
-| D1 | bws-cockpit (the only touched mod) passes tsc 5.8 strict + noUncheckedIndexedAccess against its tsconfig.json | `receipts/tsc.txt`, exit 0 |
-| D2 | Claude Code loads it with no validation errors; validate lists every new hook and API call | `receipts/validate.txt`; `/plugin` shows bws-cockpit active and no bws-assumptions / bws-shelf |
+| D1 | bws-cockpit and bws-board (the two touched mods) each pass tsc 5.8 strict + noUncheckedIndexedAccess against its tsconfig.json | `receipts/tsc.txt`, exit 0 |
+| D2 | Claude Code loads both with no validation errors; validate lists every new hook and API call | `receipts/validate.txt`; `/plugin` shows bws-cockpit active and no bws-assumptions / bws-shelf |
 | D3 | `claude plugin test` passes, including moved assumption and shelf tests and new dashboard tests | `receipts/test.txt` |
 | D4 | Brian has seen each tab (Assumptions, Shelf, Board, Loop) and each bar item render and respond, plus the proactive triggers | his confirmation + screenshots in `receipts/ui/` |
 | D5 | RUNLOG.md lists what changed and what was parked | the file |
 
 ## Decisions (from the interview, 2 rounds)
 - **Architecture: fold into bws-cockpit.** bws-assumptions and bws-shelf move in whole and are retired. bws-board stays separate (it owns the guards); cockpit draws a read-only Board tab from its state.
+- **Board pane (A8 corrected):** bws-board drops its own pane; `/board pane` redirects to the dashboard's Board tab, falling back to the text listing when cockpit is absent. One board view.
 - **Tabs:** Assumptions, Shelf, Board, plus Loop only while a harness loop is live. No Run tab.
 - **Action bar:** cockpit's tile band becomes one slim row above the prompt: status chips + actions. Run/device detail lives in the chips and in `/cockpit`.
 - **Bar actions:** Dashboard + tab keys, Resume run, Handoff, Idea, Enhance.
@@ -25,7 +26,7 @@ Status: **awaiting Brian's approval.** No code changes until approved. Steps bec
 | bws-assumptions 0.1.0 | Pane "Assumptions" (collapse/expand, Right/Wrong/Instead/Send/Clear sent); status line | /assumptions | `items`, `view` | session.start, prompt.compose, tool.call(record_assumption), command.run, ui.render Pane, ui.close | **moved into cockpit, plugin retired** |
 | bws-shelf 0.1.2 | Pane "Shelf" (▶ ✓ ✗, a scope, c close); status line | /idea, /shelf [all] | `view`; data in `~/.claude/idea-shelf/shelf.json` | session.start, prompt.context, turn.complete, tool.call ×3, command.run ×2, ui.render Pane | **moved into cockpit, plugin retired** (same shelf.json, no data migration) |
 | bws-cockpit 0.14.0 | AbovePrompt tile band (Run/Devices/Loop/Guard, board chip, 1 Resume 2 Refresh 3 Hide 4 Loop); Pane "Loop · name" | /cockpit /resume-run /loop-watch /projects /handoff | view, isHidden, loops, loopSelected, loopAction, stopArmedAt, touched; reads `bws-board.summary` | many (see README) | **hosts the dashboard + slim bar** → 0.15.0 |
-| bws-board 0.4.0 | Pane "Board" (read-only + Close); toasts | /board [role/pane/digest] | role, own, summary, lines | — | untouched; cockpit reads `summary` + `lines` |
+| bws-board 0.4.0 | Pane "Board" (read-only + Close); toasts | /board [role/pane/digest] | role, own, summary, lines | — | **0.5.0: own pane removed; `/board pane` → dashboard Board tab**; keeps writing `summary` + `lines` for cockpit |
 | bws-enhance 0.2.0 | transient Pane, footer ✦ button | /enhance (immediate, needs args) | view | — | untouched; bar's Enhance runs `/enhance <draft>` |
 | bws-design-picker, bws-notify, bws-shell-lint | overlay / toasts only | none | — | — | untouched, no tab |
 
@@ -59,7 +60,8 @@ run 3 open · UE● VRAM 5.1/8 · loop running · board 2·1 for you · ⚑ 2 ·
 | `/idea <text>` | Unchanged (immediate, toast only) |
 | `/loop-watch` | Opens the dashboard on Loop. Headless: text (unchanged) |
 | `/cockpit`, `/resume-run`, `/handoff`, `/projects` | Unchanged |
-| `/board …`, `/enhance …` | Unchanged (their own plugins) |
+| `/board pane` | Opens the dashboard on Board (bws-board runs `/dashboard board`, deferred with `$.clock.after`). Without cockpit loaded: prints the board as `/board` does |
+| `/board`, `/board role`, `/board digest`, `/enhance …` | Unchanged (their own plugins) |
 
 Tools after the move: `mcp__bws-cockpit__record_assumption`, `…__shelve_idea`, `…__list_ideas`, `…__close_idea` (were `mcp__bws-assumptions__*` / `mcp__bws-shelf__*`). The system-prompt sections and first-message lines name the new tools.
 
@@ -83,15 +85,17 @@ Tools after the move: `mcp__bws-cockpit__record_assumption`, `…__shelve_idea`,
    (c) a Button press that switches the tab key in `$.state` redraws the pane;
    (d) re-`$.ui.open` of an open, unfocused pane raises it after an unasked open;
    (e) how a test session loads the worktree cockpit without the DIRS copy (shell-level `CLAUDE_CODE_PLUGIN_DIRS` vs the settings `env` block);
-   (f) `on('state.set', { plugin: 'bws-board', key: 'summary' })` passes validate and fires in cockpit.
+   (f) `on('state.set', { plugin: 'bws-board', key: 'summary' })` passes validate and fires in cockpit;
+   (g) a `command.run` hook can start another plugin's command via `$.command.run` deferred with `$.clock.after` (a direct call may deadlock, as `$.prompt.submit` does), and `$.command.list()` tells whether `dashboard` exists for the fallback.
    Record results in RUNLOG. If (a) fails mid-turn, Enhance shows dim and inactive while Claude works.
 2. **Move code:** `bws-assumptions/hooks/lib.ts` → `bws-cockpit/hooks/assumptions.ts`; `bws-shelf/hooks/lib.ts` → `bws-cockpit/hooks/shelf.ts`; their tests → `bws-cockpit/tests/`. Pure modules, same rules as lib.ts.
 3. **Merge hooks into `register.tsx`** under the validator's one-unmatched-hook-per-event rule: fold into the existing session.start, prompt.context, turn.complete; add prompt.compose and ui.close once; matched tool.call/command.run hooks per tool/command. Replace the Loop pane render with the `dashboard` pane render (tab strip + four bodies). Drop the two status lines.
 4. **Slim bar:** rewrite the AbovePrompt render as one row of chips + buttons (tiles and grid removed; their content stays in `/cockpit`). Keep the shared-slot behavior.
 5. **Proactive T1–T6** as tabled, with a module `raise(tab)` helper in register.tsx (the only new helper).
 6. **Types + config:** `types/index.d.ts` gains the assumption/shelf/dashboard state keys and the four tool inputs (McpToolInputs augmentation). `plugin.json` userConfig gains `shelfPath`, `shelfNudge`, `handoffNudgePercent`; version 0.15.0.
-7. **Tests:** moved tests green; new: tab switch, counts, raise-vs-focused, closed-by-hand suppression, T4 once, T5 conditions, each bar button's effect (stubs), board tab absent/present.
-8. **Checks:** validate, test, tsc → receipts.
+6b. **bws-board 0.5.0:** remove the Board pane render, its `ui.open`/`ui.close` calls and the pane-only code; `/board pane` → deferred `$.command.run({ command: 'dashboard', args: 'board' })` when `dashboard` is listed, else the `/board` text. `summary` and `lines` stay. README: pane section rewritten.
+7. **Tests:** moved tests green; new: tab switch, counts, raise-vs-focused, closed-by-hand suppression, T4 once, T5 conditions, each bar button's effect (stubs), board tab absent/present. bws-board: pane tests replaced by redirect + fallback tests.
+8. **Checks:** validate, test, tsc for both mods → receipts.
 9. **Live:** the worktree's cockpit via `--plugin-dir` (old two plugins and the DIRS cockpit excluded, per spike e) in a fresh fullscreen session; Brian checks each tab, each bar item, T1–T5; screenshots to `receipts/ui/`.
 10. **Retire** (after D4 passes): `claude plugin uninstall bws-assumptions@bws-mods` and `bws-shelf@bws-mods`; remove both from `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` and from `.claude-plugin/marketplace.json`; delete both folders (git keeps history); update cockpit README (dashboard, bar, moved features, tested surfaces). Merge the worktree branch to main, remove the worktree. Commit; push `private`.
 11. RUNLOG: what changed, what was parked.
@@ -108,7 +112,7 @@ Tools after the move: `mcp__bws-cockpit__record_assumption`, `…__shelve_idea`,
 - A5 Hide stays on the bar, Refresh leaves it
 - A6 handoff nudge once per session at 70%
 - A7 retirement = uninstall + DIRS + marketplace + delete folders
-- A8 `/board pane` and bws-board untouched
+- A8 (corrected by Brian: bws-board drops its pane; `/board pane` redirects)
 - Hotkeys as in the layout above (digits kept where the action survives, letters for new)
 - The Assumptions collapsed one-line mode is removed (tab count replaces it)
 - Idea shelves the prompt-box draft and clears the box; an empty box toasts "type the idea first"
