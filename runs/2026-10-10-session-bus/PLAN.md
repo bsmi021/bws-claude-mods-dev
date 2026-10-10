@@ -55,7 +55,8 @@
 - [x] T6 README, version 0.12.0, RUNLOG, commit
 
 ## Parked (follow-ups, not built)
-- Bash/PowerShell writes (`sed -i`, redirects) are not claim-checked: only Edit/Write/NotebookEdit.
+- ~~Bash/PowerShell writes (`sed -i`, redirects) are not claim-checked~~ done in 0.13.0 (see RUNLOG).
+- Shell writes still not modelled: `git checkout/restore -- <file>`, `rm`, script writes (`python -c open(..,'w')`, `node -e`), variable paths.
 - A band chip / `/bus` command showing peers.
 - Live push via `$.session.send` instead of the next tool result/prompt.
 - pid liveness (peers.ts tasklist) on top of heartbeat staleness.

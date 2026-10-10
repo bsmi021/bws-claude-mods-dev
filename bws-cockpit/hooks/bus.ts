@@ -135,9 +135,12 @@ const tidy = (p: string) => {
   return out.join('/')
 }
 
+// Git Bash spells C:/x as /c/x.
+const unMsys = (p: string) => p.replace(/^\/([a-z])(?=\/|$)/i, '$1:')
+
 // A file as the bus compares it: absolute, forward slashes, lowercase (Windows paths ignore case).
 export function normFile(path: string, cwd: string): string {
-  const p = toSlash(path.trim())
+  const p = unMsys(toSlash(path.trim()))
   const abs = /^[a-z]:\//i.test(p) || p.startsWith('/') ? p : `${toSlash(cwd)}/${p}`
   return tidy(abs).toLowerCase()
 }
@@ -303,7 +306,7 @@ export function denyText(holder: BusEntry, file: string, folder: string, now: nu
   return (
     `bws-cockpit session bus: ${relTo(file, folder)} is claimed by another live session in this folder, ` +
     `${shortId(holder.sessionId)} (${holder.task || 'no task recorded'}; last edit ${agoText(now - (claim?.at ?? now))}). ` +
-    `Editing it here would clip that session's work. Ask it to release the file with ${TOOL_PREFIX}bus_send (to "${shortId(holder.sessionId)}"), ` +
+    `Changing it here would clip that session's work. Ask it to release the file with ${TOOL_PREFIX}bus_send (to "${shortId(holder.sessionId)}"), ` +
     `work on something else, or tell the user. The claim lapses in about ${left} min without further edits, or when that session exits.`
   )
 }

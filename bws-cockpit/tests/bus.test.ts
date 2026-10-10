@@ -17,6 +17,52 @@ import {
   withoutEntry,
 } from '../hooks/bus'
 import type { BusEntry, BusFile } from '../hooks/bus'
+import { writeTargets } from '../hooks/shell'
+import type { Dialect } from '../hooks/shell'
+
+const paths = (cmd: string, dialect: Dialect = 'bash') => writeTargets(cmd, dialect).map(t => `${t.via}:${t.path}${t.isGuess ? '?' : ''}`)
+
+describe('shell write targets', () => {
+  test('bash: redirects, tee, sed -i, cp and mv', () => {
+    expect(paths('echo hi > out.txt 2>&1')).toEqual(['redirect:out.txt'])
+    expect(paths('cmd >> "logs/a b.log" 2>/dev/null')).toEqual(['redirect:logs/a b.log'])
+    expect(paths('make &> build.log')).toEqual(['redirect:build.log'])
+    expect(paths('git diff | tee -a d.patch | head')).toEqual(['tee:d.patch'])
+    expect(paths("sed -i 's/a/b/' src/x.ts src/y.ts")).toEqual(['sed -i:src/x.ts', 'sed -i:src/y.ts'])
+    expect(paths("sed -i.bak -e 's/a/b/' -e 's/c/d/' f.txt")).toEqual(['sed -i:f.txt'])
+    expect(paths("sed -i \\\n  -e 's/x > y/z/' \\\n  notes.md")).toEqual(['sed -i:notes.md'])
+    expect(paths("sed -n 's/a/b/p' f.txt")).toEqual([])
+    expect(paths('cp a/x.json b/y.json')).toEqual(['cp:b/y.json', 'cp:b/y.json/x.json?'])
+    expect(paths('cp a.txt b.txt dir/')).toEqual(['cp:dir/a.txt', 'cp:dir/b.txt'])
+    expect(paths('mv old.txt new.txt')).toEqual(['mv:new.txt', 'mv:new.txt/old.txt?', 'mv source:old.txt'])
+  })
+
+  test('powershell: write cmdlets, Copy-Item and Move-Item, redirects', () => {
+    expect(paths('Set-Content -Path notes.txt -Value "x > y"', 'powershell')).toEqual(['cmdlet:notes.txt'])
+    expect(paths("Add-Content log.md 'line'", 'powershell')).toEqual(['cmdlet:log.md'])
+    expect(paths('$t | Out-File -Encoding utf8 -FilePath out\\r.txt', 'powershell')).toEqual(['cmdlet:out\\r.txt'])
+    expect(paths('New-Item -ItemType Directory -Path d; New-Item -Path f.txt -Force', 'powershell')).toEqual(['cmdlet:f.txt'])
+    expect(paths('Move-Item a.js, b.json -Destination dest', 'powershell')).toEqual(['mv:dest/a.js', 'mv:dest/b.json', 'mv source:a.js', 'mv source:b.json'])
+    expect(paths('.\\gradlew.bat build *> runs/x/build.log', 'powershell')).toEqual(['redirect:runs/x/build.log'])
+  })
+
+  test('cd moves where relative writes land; one it cannot follow drops them', () => {
+    expect(paths('cd sub && echo x > a.txt')).toEqual(['redirect:sub/a.txt'])
+    expect(paths('cd /c/proj && cd src && sed -i s/a/b/ m.ts')).toEqual(['sed -i:/c/proj/src/m.ts'])
+    expect(paths('cd "$R" && echo x > a.txt > /c/proj/b.txt')).toEqual(['redirect:/c/proj/b.txt'])
+    expect(paths('Set-Location C:\\proj; Set-Content x.txt 1', 'powershell')).toEqual(['cmdlet:C:\\proj/x.txt'])
+  })
+
+  test('not writes: mentions, quotes, heredoc and here-string bodies, comparisons, arrows, variables, devices', () => {
+    expect(paths('echo "a > b" && grep -n "tee x" f')).toEqual([])
+    expect(paths("python - <<'EOF'\nopen('x','w').write('a > b')\nEOF")).toEqual([])
+    expect(paths("git commit -m @'\nfix: Brian's a > b case\n'@", 'powershell')).toEqual([])
+    expect(paths('[[ "$a" > "$b" ]] && (( n > 3 )) && echo ok')).toEqual([])
+    expect(paths("node -e 'const f = x => x' && awk '{print > \"o\"}' f")).toEqual([])
+    expect(paths('echo x > "$R/log.txt"; cmd > /dev/null; cmd 2>$null; cp a ~/b; cmd > out*.txt')).toEqual([])
+    expect(paths('Write-Output (1 -gt 0) 2>&1 | Out-Null', 'powershell')).toEqual([])
+  })
+})
 
 const CWD = 'C:/proj'
 const CFG = 'C:/cfg'
@@ -289,6 +335,28 @@ describe('session bus', () => {
     w.who.id = B
     expect((await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/a.ts', old_string: 'a', new_string: 'b' } as never)).deny).toBeUndefined()
     expect((await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/b.ts', old_string: 'a', new_string: 'b' } as never)).deny).toBeDefined()
+  })
+
+  test("a shell command that writes another session's file is refused; its own writes claim", async ($, on) => {
+    const w = busWorld(on)
+    // A claims parser.ts by editing it.
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/src/parser.ts', old_string: 'a', new_string: 'b' } as never)
+    w.who.id = B
+    // B's sed -i, redirect (Git Bash spelling) and Set-Content of it are refused and never run.
+    const sed = await $.tool.call({ tool: 'Bash', command: "sed -i 's/a/b/' src/parser.ts && echo done" } as never)
+    expect(sed.deny ?? '').toContain('src/parser.ts is claimed by another live session in this folder, aaaaaaaa')
+    expect(sed.deny ?? '').toContain('This command writes it: src/parser.ts.')
+    expect((await $.tool.call({ tool: 'Bash', command: 'cd /c/proj && cat x > src/Parser.ts' } as never)).deny).toBeDefined()
+    expect((await $.tool.call({ tool: 'PowerShell', command: 'Set-Content -Path src\\parser.ts -Value x' } as never)).deny).toBeDefined()
+    expect(w.reached.filter(r => r.startsWith('b:'))).toEqual([])
+    // Reading it, or writing another file, runs; the write inside the folder claims it, a /tmp log does not.
+    expect((await $.tool.call({ tool: 'Bash', command: 'grep -n parse src/parser.ts > /tmp/hits.txt' } as never)).deny).toBeUndefined()
+    expect((await $.tool.call({ tool: 'Bash', command: 'cp src/parser.ts src/lexer.ts' } as never)).deny).toBeUndefined()
+    expect(w.reached.filter(r => r.startsWith('b:'))).toHaveLength(2)
+    expect(parseBus(w.files[BUS], CWD).sessions[B]?.claims.map(c => c.path)).toEqual(['c:/proj/src/lexer.ts'])
+    // ... so A may not now overwrite lexer.ts from its shell.
+    w.who.id = A
+    expect((await $.tool.call({ tool: 'Bash', command: 'echo x >> src/lexer.ts' } as never)).deny ?? '').toContain('bbbbbbbb')
   })
 
   test('a broken bus never blocks an edit', async ($, on) => {

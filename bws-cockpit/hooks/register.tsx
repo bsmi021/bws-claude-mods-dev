@@ -18,7 +18,7 @@ import {
   shorten,
 } from './lib'
 import type { Probe } from './lib'
-import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand, lowVramArg, normPath } from './shell'
+import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand, lowVramArg, normPath, writeTargets } from './shell'
 import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
@@ -693,22 +693,46 @@ async function takePending($: EngineInterface): Promise<Inbox[]> {
 
 // The edit check: a file another live session claimed is refused; otherwise this session claims it.
 // Returns the refusal text, or undefined to let the edit go on.
-async function busClaim($: EngineInterface, lim: BusLimits, path: string): Promise<string | undefined> {
-  const ctx = await busCtx($)
-  if (ctx === undefined) return undefined
-  const file = normFile(path, ctx.cwd)
-  const now = await $.clock.now()
-  const cur = await read($, busOwn)
-  const mine = cur !== null && cur.sessionId === ctx.selfId ? cur.entry.claims.find(c => c.path === file) : undefined
-  const holder = claimHolder(await readBus($, ctx), ctx.selfId, file, now, lim, mine)
-  if (holder !== undefined) return denyText(holder, file, ctx.folder, now, lim)
-  await busSync($, ctx, (own, f, t) => ({ ...own, entry: { ...own.entry, lastFile: file, claims: addClaim(own.entry.claims, file, t, lim.claimMs) } }), true)
-  return undefined
+// Files a tool call is about to write. `claim`: whether the write also claims the file for this
+// session. Edit, Write and NotebookEdit claim their file; a shell write claims a file inside the bus
+// folder that it plainly names (not cp/mv's guess at dest/<name>), so logs in /tmp claim nothing.
+type BusWrite = { path: string; claim: boolean; isShell: boolean }
+
+function busWrites(e: Record<string, unknown>): BusWrite[] {
+  if (e.tool === 'Edit' || e.tool === 'Write') return typeof e.file_path === 'string' ? [{ path: e.file_path, claim: true, isShell: false }] : []
+  if (e.tool === 'NotebookEdit') return typeof e.notebook_path === 'string' ? [{ path: e.notebook_path, claim: true, isShell: false }] : []
+  if ((e.tool === 'Bash' || e.tool === 'PowerShell') && typeof e.command === 'string') {
+    return writeTargets(e.command, dialectOf(e.tool)).map(t => ({ path: t.path, claim: t.isGuess !== true, isShell: true }))
+  }
+  return []
 }
 
-const editTarget = (e: Record<string, unknown>): string | undefined => {
-  if (e.tool === 'Edit' || e.tool === 'Write') return typeof e.file_path === 'string' ? e.file_path : undefined
-  if (e.tool === 'NotebookEdit') return typeof e.notebook_path === 'string' ? e.notebook_path : undefined
+// The write check: a file another live session claimed is refused; otherwise this session claims
+// the files it writes. Returns the refusal text, or undefined to let the call go on.
+async function busClaim($: EngineInterface, lim: BusLimits, writes: readonly BusWrite[]): Promise<string | undefined> {
+  const ctx = await busCtx($)
+  if (ctx === undefined) return undefined
+  const inFolder = `${normFile(ctx.folder, ctx.cwd)}/`
+  const files = [...new Map(writes.map(w => [normFile(w.path, ctx.cwd), w] as const))]
+  const now = await $.clock.now()
+  const cur = await read($, busOwn)
+  const claims = cur !== null && cur.sessionId === ctx.selfId ? cur.entry.claims : []
+  const bus = await readBus($, ctx)
+  for (const [file, w] of files) {
+    const holder = claimHolder(bus, ctx.selfId, file, now, lim, claims.find(c => c.path === file))
+    if (holder === undefined) continue
+    const text = denyText(holder, file, ctx.folder, now, lim)
+    return w.isShell ? `${text} (This command writes it: ${w.path}.)` : text
+  }
+  const toClaim = files.filter(([file, w]) => w.claim && (!w.isShell || file.startsWith(inFolder))).map(([file]) => file)
+  const last = toClaim[toClaim.length - 1]
+  if (last === undefined) return undefined
+  await busSync(
+    $,
+    ctx,
+    (own, f, t) => ({ ...own, entry: { ...own.entry, lastFile: last, claims: toClaim.reduce((cs, file) => addClaim(cs, file, t, lim.claimMs), own.entry.claims) } }),
+    true,
+  )
   return undefined
 }
 
@@ -879,19 +903,21 @@ export const register: Register = (on, options) => {
 
   // Ownership: a run folder counts for this session only once its own tool calls write to it.
   // Recorded even with finishLine off, since /handoff picks its folder the same way.
-  // Session Bus: an Edit, Write or NotebookEdit of a file another live session claimed is refused.
+  // Session Bus: an Edit, Write or NotebookEdit of a file another live session claimed is refused,
+  // and so is a Bash or PowerShell command that writes one (redirect, tee, sed -i, cp/mv, the
+  // PowerShell write cmdlets; command position only, as the guard reads commands).
   on('tool.call', { tool: ['Edit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'] }, async ($, e, next) => {
     const input = e as unknown as Record<string, unknown>
-    const target = o.bus.isOn ? editTarget(input) : undefined
-    if (target !== undefined) {
+    const writes = o.bus.isOn ? busWrites(input) : []
+    if (writes.length > 0) {
       let refusal: string | undefined
       try {
-        refusal = await busClaim($, o.bus.lim, target)
+        refusal = await busClaim($, o.bus.lim, writes)
       } catch (err) {
         noteBusFailure($, err)
       }
       if (refusal !== undefined) {
-        $.ui.toast(`bus: refused an edit of ${target}: another session here claimed it`, { timeoutMs: 6000 })
+        $.ui.toast(`bus: refused ${e.tool === 'Bash' || e.tool === 'PowerShell' ? 'a command that writes' : 'an edit of'} a file another session here claimed`, { timeoutMs: 6000 })
         return { deny: refusal }
       }
     }

@@ -78,6 +78,27 @@ Finish line in PLAN.md.
   - validate passed in the worktree (receipts/publish-validate.txt).
   - Committed `dadac39` and ran `git push mods`: `eafc731..dadac39 publish -> main` (receipts/publish-push.txt). `mods/main` is now `dadac39`. The worktree was removed.
 
+## Follow-up 1: claim-check shell writes (0.13.0)
+- Brief: a Bash or PowerShell command that writes a file another live session claimed is refused, using the command-position parser in shell.ts. Replay over the real-command corpus before shipping.
+- A peer session (ad933363) asked over the bus whether I was committing 0.12.0. Its picture was out of date, so I replied with the commits and the publish, and asked it to stay off bws-cockpit while this change was in flight.
+- Built `writeTargets(cmd, dialect)` in `hooks/shell.ts` (pure). It works per segment from `splitSegments` and `invocationOf`, and adds a lexer that resolves quotes and escapes and pulls out redirect targets. What it finds:
+  - bash: redirects, tee, sed -i, cp/mv (handles `-t`, a folder destination, and mv sources)
+  - PowerShell: the write cmdlets, Copy-Item and Move-Item (handles comma lists and `*>`)
+  - `cd` / `Set-Location` tracking
+  - It skips paths built from variables, globs, `~`, devices and shares, and skips `[[ > ]]`, `(( > ))` and arrows.
+- `bus.ts` `normFile` now folds Git Bash `/c/x` into `c:/x`.
+- In `register.tsx`, the existing Edit/Write/NotebookEdit/Bash/PowerShell `tool.call` hook now calls `busClaim` with every write in the call: one bus read, refuse on the first claimed file, otherwise claim. Shell writes claim only files inside the bus folder that the command plainly names, never cp/mv's guessed dest/name.
+- Corpus replay (`corpus_build.py` + `corpus_replay.mts`; corpus in the scratchpad, not committed): 77,784 distinct commands from 30 days, day-job projects excluded, with receipts/corpus-replay-write-targets.md.
+  - The first pass flagged 82 odd targets, which turned into three fixes:
+    - `sed -i \` line continuations produced a newline "file"
+    - PowerShell `@'…'@` here-string bodies containing an apostrophe and `>` produced redirects (`git commit -m @'…'@`)
+    - `Move-Item a, b dest` comma lists
+  - After the fixes: 10,627 commands write a file it can name. Redirect 8,999, sed -i 2,737, cp 1,709, tee 587, cmdlet 459, mv 259 plus 167 sources. 49 µs per command.
+  - Two odd targets remain, both real writes: `cp -r bin2 bin3`, and a stray `E=1` argument to `sed -i`.
+  - Samples of every kind were read by hand.
+- Checks: validate passed, 143/143 tests (7 new), tsc clean (receipts/validate.txt, plugin-test.txt, tsc.txt). Version 0.13.0. README updated (claims, not covered, capabilities, tested).
+- Not done: a live run of a shell write from a second session. The plugin tests cover the hook end to end over a shared bus file. Parked shell writes: git checkout/restore, rm, script writes, variable paths.
+
 ## Outcome
 Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published as `publish` dadac39 = `mods/main`.
 
