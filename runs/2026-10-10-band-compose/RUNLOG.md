@@ -22,3 +22,14 @@ The AbovePrompt band is a single slot. A mod either draws a tree there or passes
 
 ## Next step
 None. A live check comes the first time a second band mod exists.
+
+## Publish refresh (2026-10-10)
+- Scratch worktree `../_bws_publish` on `publish`. Ran `git checkout main -- bws-cockpit bws-shell-lint`, so publish now carries bws-cockpit 0.10.1 and bws-shell-lint 0.2.0.
+- The private-name scan (names, project and game names, serials, paths, run-folder paths) found:
+  - in the new code: the owner's name in a `finish.ts` comment and in four Finish-Line test strings; test phrases from private projects (tablet/notebook, takes, landmarker, pose model); a run-folder path in a `lint.ts` comment
+  - already published in 0.9.0: `com.bws.inkwell` in a cockpit test
+  - Fixed on main in `4dc55aa` (`scrub_publish.py`). The checks passed again on main: validate x2, 115/115, 17/17, tsc x2.
+- Kept by design, as in earlier refreshes: the manifest author fields and the LICENSE holder. The `AppData` hits in the shell-lint fixture are the scrubbed `C:\Users\dev\...` paths.
+- Top README: the Finish-Line line now says the guard counts the run folder this session wrote to, and the evidence check is optional.
+- From the publish tree: validate passed for both plugins; tests 115/115 and 17/17.
+- Committed `202d456` on `publish` (19 files) and ran `git push mods`, which maps `publish` to `main`: `851f859..202d456`. `mods/main` = `202d456`. This repo's `main` was not pushed.
