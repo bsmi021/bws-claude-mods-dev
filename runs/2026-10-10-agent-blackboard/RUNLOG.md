@@ -69,7 +69,7 @@ The real question is where this lives, not whether it can be built.
   - A's board_status, B's board_status and a separate `/board` run all listed `4cc42c37-1 · done by tests (a1eeca7d) … (note: 12 passed)`.
   - After exit all three cards were tombstones with no claims. B's kept its done act.
 - Final checks: validate passed, tsc exit 0, 45/45 tests (receipts/validate.txt, tsc.txt, plugin-test.txt). README written.
-- Not verified: urgent wake of an idle interactive session (it is covered by tests with session.send stubbed), and the Board pane drawn in a terminal.
+- Not verified live: the urgent wake of an idle interactive session (tests only, with session.send stubbed), the Board pane in a terminal, and the day-old sweep (`del` via `$.process.run`, stub only). Confirmed: run 4's transcripts contain no cockpit bus text, so `--settings` did keep cockpit's bus out.
 
 ## Next step
 T5 cut-over (remove the bus from cockpit, add bws-board to CLAUDE_CODE_PLUGIN_DIRS in the same step, band chip). It waits for 193b884d's reply or Brian's OK, because 193b884d last changed the bus code in cockpit. Adding bws-board to the plugin dirs before then would run two coordination systems in every session. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.

@@ -86,4 +86,9 @@ Claude Code 2.1.296 on Windows 11, headless (`claude -p`):
   - `/board` and both sessions' `board_status` listed the same ask.
   - Every card was a tombstone after exit.
 
-Not yet verified: the urgent wake of an idle interactive session, and the Board pane in a terminal.
+Not yet verified live, only in tests:
+- the urgent wake of an idle interactive session;
+- the Board pane drawn in a terminal;
+- the day-old card sweep (`del` through `$.process.run`).
+
+In the live run, cockpit's Session Bus was switched off, and its text was absent from all three transcripts.
