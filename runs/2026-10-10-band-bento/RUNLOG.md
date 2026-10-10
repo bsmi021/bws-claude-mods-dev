@@ -33,3 +33,16 @@ Brian picked option A, three bordered tiles (run, devices, loop), falling back a
 
 ## Next step
 Brian looks at the band. A screenshot pass (drive-screen) only if he wants a receipt. The publish branch is still on 0.10.2.
+
+## Publish refresh (2026-10-10)
+- Scratch worktree `../_bws_publish` on `publish`. publish was at `28a30d7`, after another session's bws-design-picker 0.2.2 and 0.2.3. `git checkout main -- bws-cockpit` brought in 0.11.0 (5 files).
+- Private-name scan:
+  - added lines: clean
+  - full tree:
+    - manifest authors and the LICENSE holder (kept by design)
+    - `runs/2026-10-10-x` (a synthetic test folder)
+    - "pixel" and "deck" in bws-design-picker (screen pixels; a layout word)
+    - `steel-deck-bridge.js` in the shell-lint fixture (already scrubbed and published)
+  - No changes needed.
+- From the publish tree: validate passed; 121/121.
+- Committed `9d875b0` on `publish`. `git push mods`: `28a30d7..9d875b0`. `mods/main` = `9d875b0`. This repo's `main` was not pushed; the worktree is removed.
