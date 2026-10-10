@@ -24,7 +24,12 @@ Refresh the orphan `publish` branch from main per AGENTS.md, drop bws-assumption
 - Committed `bc96bc7` on publish; `git push mods`: `9351fec..bc96bc7 publish -> main`; after fetch `mods/main` =
   `bc96bc7`. Worktree removed.
 
+## Installed copies updated
+- `claude plugin marketplace update bws-mods` (re-cloned from GitHub), then `claude plugin update` for both:
+  bws-cockpit 0.14.0 → 0.15.0, bws-board 0.2.0 → 0.5.0, user scope, all exit 0 (`receipts/install-update.txt`).
+- `claude plugin list` shows both enabled at 0.15.0 / 0.5.0; the cache holds `bws-cockpit/0.15.0` and
+  `bws-board/0.5.0` with matching plugin.json versions (the old version folders are still beside them).
+
 ## Next step
-None. The installed `@bws-mods` copies of cockpit and board on this machine are still 0.14.0 / 0.2.0 (shadowed by the
-source folders on `CLAUDE_CODE_PLUGIN_DIRS`); `claude plugin marketplace update bws-mods` then `claude plugin update`
-for both would bring them to the published versions.
+None. Sessions pick up the update on restart; while the source folders are on `CLAUDE_CODE_PLUGIN_DIRS`, the
+source copies (same versions) load instead.

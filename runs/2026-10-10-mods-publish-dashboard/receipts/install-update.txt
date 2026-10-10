@@ -1,0 +1,33 @@
+> claude plugin marketplace update bws-mods
+Updating marketplace: bws-mods...Refreshing marketplace cache (timeout: 120s)…
+Cloning repository (timeout: 120s): git@github.com:bsmi021/bws-claude-mods.git
+Replacing the existing marketplace clone…
+Clone complete, validating marketplace…
+✔ Successfully updated marketplace: bws-mods
+exit 0
+> claude plugin update bws-cockpit@bws-mods
+Checking for updates for plugin "bws-cockpit@bws-mods"…
+✔ Plugin "bws-cockpit" updated from 0.14.0 to 0.15.0 for scope user. Restart to apply changes.
+exit 0
+> claude plugin update bws-board@bws-mods
+Checking for updates for plugin "bws-board@bws-mods"…
+✔ Plugin "bws-board" updated from 0.2.0 to 0.5.0 for scope user. Restart to apply changes.
+exit 0
+> claude plugin list
+  ❯ bws-board@bws-mods
+    Version: 0.5.0
+    Scope: user
+    Status: ✔ enabled
+--
+  ❯ bws-cockpit@bws-mods
+    Version: 0.15.0
+    Scope: user
+    Status: ✔ enabled
+0.14.0/
+0.15.0/
+/c/Users/bsmi0/.claude/plugins/cache/bws-mods/bws-cockpit/0.14.0/: "version": "0.14.0"
+/c/Users/bsmi0/.claude/plugins/cache/bws-mods/bws-cockpit/0.15.0/: "version": "0.15.0"
+0.2.0/
+0.5.0/
+/c/Users/bsmi0/.claude/plugins/cache/bws-mods/bws-board/0.2.0/: "version": "0.2.0"
+/c/Users/bsmi0/.claude/plugins/cache/bws-mods/bws-board/0.5.0/: "version": "0.5.0"
