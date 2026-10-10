@@ -1,0 +1,27 @@
+bws-cockpit main-vs-publish files differing: 
+bws-design-picker main-vs-publish files differing: 
+bws-enhance main-vs-publish files differing: bws-enhance/README.md 
+bws-notify main-vs-publish files differing: 
+bws-shell-lint main-vs-publish files differing: 
+diff --git a/bws-enhance/README.md b/bws-enhance/README.md
+index 1ec356b..62735cc 100644
+--- a/bws-enhance/README.md
++++ b/bws-enhance/README.md
+@@ -8,7 +8,7 @@ The rewrite is grounded in what this session actually has:
+ - the project root, a file tree of it (2 levels, at most 150 entries; skips .git, node_modules, runs, build/output and engine cache folders), and the last few messages, so "it" / "that bug" resolve
+ - Anthropic's prompting best practices, plus per-family notes for the model that will run the prompt
+   (Opus: explicit minimal scope; Sonnet: keep going until the checks pass, no extra tests/docs; Haiku: run the check before reporting done).
+-  Sources: the [prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices), the per-model prompting pages, and [Claude Code best practices](https://code.claude.com/docs/en/best-practices).
++  Source summary: `runs/2026-10-10-prompt-enhancer/receipts/anthropic-prompting-guidance.md`.
+ 
+ ## Use
+ 
+@@ -49,7 +49,7 @@ In `~/.claude/keybindings.json`:
+ ```
+ claude --plugin-dir ./bws-enhance
+ ```
+-or add the folder's absolute path to `CLAUDE_CODE_PLUGIN_DIRS`.
++or add `C:/Projects/bws.mods.claude-code/bws-enhance` to `CLAUDE_CODE_PLUGIN_DIRS`.
+ 
+ ## Tested
+ 

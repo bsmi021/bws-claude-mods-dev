@@ -1,0 +1,33 @@
+
+tests\picker.test.ts:
+(pass) hex normalizes and rejects [1.88ms]
+(pass) parseSpec reads a design preview and ignores everything else [1.17ms]
+(pass) galleries number cards as the picker numbers options [0.45ms]
+(pass) stripSpecs drops only parsed specs from previews [0.30ms]
+(pass) toBase64 matches btoa [0.51ms]
+(pass) rasterize fills every cell with a printable glyph and puts text and the palette in place [10.83ms]
+(pass) a text block too narrow for its label is widened, never clipped [1.11ms]
+(pass) a label sits on a row its block covers whole [2.19ms]
+(pass) a label wider than the whole frame fills it and is cut at the frame [0.34ms]
+(pass) printable drops non-ASCII and wide characters [0.14ms]
+(pass) layout keeps the cards in one row within the room around the dialog [0.54ms]
+(pass) galleryCells puts numbered labels over mockups side by side [2.88ms]
+(pass) toSvg is one svg with the text escaped [0.69ms]
+(pass) the call loses its specs before the dialog opens, and the dialog draws them from state [68.03ms]
+(pass) a dialog whose previews still hold specs draws the gallery from them [50.94ms]
+(pass) a non-design call passes through unchanged [35.56ms]
+(pass) a question without design previews is left to the engine untouched [25.94ms]
+(pass) prompt.compose adds the section only when AskUserQuestion is offered [34.87ms]
+(pass) isDesignQuestion tells how-it-looks from how-it-works [0.60ms]
+(pass) wantsGenerated only when no option carries a spec [0.28ms]
+(pass) genPrompt numbers the directions with their descriptions [0.20ms]
+(pass) galleryFromReply reads fenced JSON and skips bad specs [0.48ms]
+(pass) a design question without specs gets a generated gallery while the dialog is open [49.22ms]
+(pass) while the model draws, the dialog says so [40.01ms]
+(pass) an answer before the drawing is done aborts the model call [33.07ms]
+(pass) a non-design question makes no model call [35.36ms]
+(pass) autoGenerate off makes no model call [31.12ms]
+
+ 27 pass
+ 0 fail
+Ran 27 tests across 1 file. [0.74s]

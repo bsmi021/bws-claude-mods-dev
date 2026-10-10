@@ -1,0 +1,14 @@
+Validating plugin manifest: C:\Projects\bws.mods.claude-code\bws-shell-lint\.claude-plugin\plugin.json
+
+Validating hooks: C:\Projects\bws.mods.claude-code\bws-shell-lint\hooks\hooks.json
+
+  ❯ ./register.ts hooks: tool.call{tool=Bash}
+  ❯ ./register.ts gating hook without .catch: tool.call{tool=Bash}
+  ❯ ./register.ts calls: $.ui.toast
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Projects\bws.mods.claude-code\bws-shell-lint\README.md: This README has no line that installs "bws-shell-lint" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install bws-shell-lint --marketplace <owner>/<repo>
+
+✔ Validation passed
