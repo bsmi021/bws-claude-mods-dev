@@ -1,0 +1,1 @@
+Do these steps in order. 1) Call mcp__bws-board__board_ask with to "tests", urgent true, and text "CI is red on main: please run the auth suite (the command: echo 12 passed) and mark this ask done with its output". 2) Call mcp__bws-board__board_ask again with to "tests", urgent true, and text "Still red, any news?". 3) Reply with both tool results verbatim.

@@ -86,9 +86,12 @@ Claude Code 2.1.296 on Windows 11, headless (`claude -p`):
   - `/board` and both sessions' `board_status` listed the same ask.
   - Every card was a tombstone after exit.
 
-Not yet verified live, only in tests:
-- the urgent wake of an idle interactive session;
-- the Board pane drawn in a terminal;
-- the day-old card sweep (`del` through `$.process.run`).
+Interactive, two Windows Terminal sessions (`runs/2026-10-10-agent-blackboard/receipts/ui/`):
+- **Urgent wake.** An urgent ask from `api` started a turn in idle `tests` 21 ms later, as a cross-session message from
+  `bws-board`. A second urgent ask in the same window returned "Not woken again".
+- **Board pane.** `/board pane` opened the pane, and it redrew by itself as the second agent joined and the asks came in. At
+  half width it moves below the transcript.
+
+Not yet verified live, only in tests: the day-old card sweep (`del` through `$.process.run`).
 
 In the live run, cockpit's Session Bus was switched off, and its text was absent from all three transcripts.

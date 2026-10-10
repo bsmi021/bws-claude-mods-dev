@@ -71,5 +71,21 @@ The real question is where this lives, not whether it can be built.
 - Final checks: validate passed, tsc exit 0, 45/45 tests (receipts/validate.txt, tsc.txt, plugin-test.txt). README written.
 - Not verified live: the urgent wake of an idle interactive session (tests only, with session.send stubbed), the Board pane in a terminal, and the day-old sweep (`del` via `$.process.run`, stub only). Confirmed: run 4's transcripts contain no cockpit bus text, so `--settings` did keep cockpit's bus out.
 
+## 2026-10-10 (interactive check, session 2)
+- Brian asked for live verification of the urgent wake and the Board pane in two interactive terminals via wt.exe, with screenshots.
+- Setup in `ui/`:
+  - `open-session.ps1` launches wt.exe. `--size` is a top-level wt option and must come before `new-tab`.
+  - `launch-session.ps1` clears CLAUDECODE, CLAUDE_CODE_ENTRYPOINT, CLAUDE_CODE_CHILD_SESSION and NO_COLOR, then runs claude.exe with the opening prompt from a file, --plugin-dir bws-board, live-settings.json (cockpit bus off), haiku and acceptEdits.
+  - B (tests) opened with `/board pane`; A (api) opened with two urgent asks to tests.
+- Results (receipts/ui):
+  - 01: the folder-trust dialog for the new scratch repo.
+  - 02: B idle with the Board pane open ("Board · 1 agent · 0 open asks").
+  - 03: A got "Woke a370585b" for the first ask and "Not woken again (woken in the last 5 min)" for the second.
+  - 04/05: idle B started a turn by itself from "Message from @board-ui-e7: [bws-board] Urgent ask 55d98975-1 …". It declined the ask (it judged `echo 12 passed` not a real test run). The pane redrew live to "2 agents · 2 open asks · 2 for you", listing the declined ask and the open one.
+  - 05 was captured snapped to half width, where the pane re-seats as a bordered box below the transcript. screenctl's shot restores the window, so that one is a direct screen capture.
+- Transcript evidence (receipts/ui/transcript-evidence.txt): A's board_ask result at 16:13:03.767; B's transcript opens at 16:13:03.788 with `<cross-session-message … from-plugin="bws-board">`, then board_decline.
+- Driving incident: my first `/exit` attempt set MSYS_NO_PATHCONV for the whole command, which broke the script path, so only Enter was sent to each window. Screenshots showed nothing was submitted (the ghost suggestions stayed unsent). The retry used the script's Windows path. Both sessions exited, both cards are tombstones, and both windows closed.
+- Still not verified live: the day-old sweep.
+
 ## Next step
 T5 cut-over (remove the bus from cockpit, add bws-board to CLAUDE_CODE_PLUGIN_DIRS in the same step, band chip). It waits for 193b884d's reply or Brian's OK, because 193b884d last changed the bus code in cockpit. Adding bws-board to the plugin dirs before then would run two coordination systems in every session. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.
