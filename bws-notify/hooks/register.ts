@@ -1,6 +1,6 @@
 // bws-notify: Windows toasts that carry the project and what happened, launched with no console window.
 import type { EngineInterface, Register } from 'claude-code'
-import { encode, failure, isReport, needsInput, subagentDone, turnDone, type Toast } from './text.ts'
+import { encode, failure, isReport, needsInput, subagentDone, turnDone, type Toast } from './text'
 
 const DEDUPE_MS = 8000
 

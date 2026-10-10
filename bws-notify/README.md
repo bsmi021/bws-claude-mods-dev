@@ -42,7 +42,7 @@ To load it in every session, add its absolute path to `CLAUDE_CODE_PLUGIN_DIRS` 
 
 Claude Code 2.1.289, Windows 11, fullscreen terminal layout.
 
-- **Static:** `claude plugin validate` passes.
+- **Static:** `claude plugin validate` passes. tsc 5.9.3 (strict, noUncheckedIndexedAccess) is clean against the 2.1.296 declarations as of 0.1.1.
 - **Automated:** `claude plugin test` passes 12 of 12 (wordings, the base64 round trip, the hidden launch's arguments, duration and minimum length, background-task stops, repeat suppression, headless, the switches, suggestion forks).
 - **Live:** the toast script ran with no error, and Windows listed the toasts in Action Center, including real ones the loaded mod sent for a permission wait, a finished turn and subagent stops. The banner is confirmed drawn on screen. Earlier none appeared while Windows Terminal was fullscreen, and that was Do Not Disturb, not the mod.
 - **Not verified:** the desktop app, VS Code and mobile surfaces were not tried; the toast is a Windows feature and does not use the mod's pane or band drawing.

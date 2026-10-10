@@ -1,6 +1,6 @@
 import { test, expect, mock } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { duration, encode, firstLine, isReport, needsInput, project, subagentDone, turnDone } from '../hooks/text.ts'
+import { duration, encode, firstLine, isReport, needsInput, project, subagentDone, turnDone } from '../hooks/text'
 
 const CWD = 'C:/Projects/my-game'
 
@@ -62,7 +62,7 @@ test('a permission ask launches a hidden toast with the project and the ask', as
   const w = world(on)
   await $.classic.Notification({ cwd: CWD, message: 'Claude needs your permission to use Edit', notification_type: 'permission_prompt' } as never)
   expect(w.launches.length).toBe(1)
-  const [exe, flag1, flag2, vbs, payload] = w.launches[0]
+  const [exe, flag1, flag2, vbs = '', payload = ''] = w.launches[0] ?? []
   expect([exe, flag1, flag2]).toEqual(['wscript.exe', '//B', '//Nologo'])
   expect(vbs.replace(/\\/g, '/')).toMatch(/bin\/notify\.vbs$/)
   expect(decode(payload)).toEqual({ title: 'my-game · needs you', body: 'Claude needs your permission to use Edit' })
@@ -73,7 +73,7 @@ test('a finished turn names the duration and the reply, a short turn is skipped'
   await $.prompt.submit({ text: 'do it' } as never)
   await w.clock.advance(60_000)
   await $.classic.Stop(stop())
-  expect(decode(w.launches[0][4])).toEqual({ title: 'my-game · done (1m 0s)', body: 'Done. The parser is in.' })
+  expect(decode(w.launches[0]?.[4] ?? '')).toEqual({ title: 'my-game · done (1m 0s)', body: 'Done. The parser is in.' })
   await $.prompt.submit({ text: 'again' } as never)
   await w.clock.advance(5_000)
   await $.classic.Stop(stop({ last_assistant_message: 'quick' }))
@@ -90,7 +90,7 @@ test('a subagent finish and an error each toast', async ($, on) => {
   const w = world(on)
   await $.classic.SubagentStop({ cwd: CWD, agent_type: 'Explore', last_assistant_message: 'Found 3 callers.' } as never)
   await $.classic.StopFailure({ cwd: CWD, error: 'rate_limit', error_details: 'Usage limit reached' } as never)
-  expect(w.launches.map(l => decode(l[4]).title)).toEqual(['my-game · Explore finished', 'my-game · error: rate_limit'])
+  expect(w.launches.map(l => decode(l[4] ?? '').title)).toEqual(['my-game · Explore finished', 'my-game · error: rate_limit'])
 })
 
 test('the same toast twice within a few seconds is sent once', async ($, on) => {
