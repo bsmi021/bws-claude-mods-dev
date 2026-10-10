@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "nextId": 3,
+  "ideas": [
+    {
+      "id": 1,
+      "text": "live-check idea: try the dashboard on a narrow terminal",
+      "by": "user",
+      "project": "C:/Projects/bws.mods.wt-dashboard",
+      "createdAt": 1791600000000,
+      "status": "dropped",
+      "closedAt": 1791668797157
+    },
+    {
+      "id": 2,
+      "text": "try a compact bar layout at 120 columns",
+      "by": "user",
+      "project": "C:/Projects/bws.mods.wt-dashboard",
+      "createdAt": 1791669065269,
+      "status": "open"
+    }
+  ]
+}

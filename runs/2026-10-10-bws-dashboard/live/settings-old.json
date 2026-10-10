@@ -1,0 +1,19 @@
+{
+  "env": {
+    "CLAUDE_CODE_PLUGIN_DIRS": "C:/Projects/bws.mods.claude-code/bws-cockpit;C:/Projects/bws.mods.wt-dashboard/bws-board;C:/Projects/bws.mods.claude-code/bws-shell-lint;C:/Projects/bws.mods.claude-code/bws-notify;C:/Projects/bws.mods.claude-code/bws-design-picker;C:/Projects/bws.mods.claude-code/bws-enhance"
+  },
+  "enabledPlugins": {
+    "bws-cockpit@bws-mods": false,
+    "bws-assumptions@bws-mods": false,
+    "bws-shelf@bws-mods": false,
+    "bws-board@bws-mods": false
+  },
+  "pluginConfigs": {
+    "bws-cockpit": {
+      "options": {
+        "shelfPath": "C:/Projects/bws.mods.claude-code/runs/2026-10-10-bws-dashboard/live/shelf.json",
+        "handoffNudgePercent": 1
+      }
+    }
+  }
+}

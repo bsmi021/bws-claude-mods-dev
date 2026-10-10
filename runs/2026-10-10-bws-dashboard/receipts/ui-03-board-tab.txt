@@ -1,0 +1,50 @@
+│                                            ✕
+ ▐▛███▛█   Claude Code v2.1.296                          │1: Assumptions 2 2: Shelf 1 [ Board ]
+▝▜██████▀  Sonnet 5.5 with high effort · Claude Max   │Board · 2 agents · 0 open asks
+ ▝▝   ▝▝   C:\Projects\bws.mods.wt-dashboard          │This session: no role (6c10f10a) · Call
+│mcp__bws-cockpit__record_assumption twice:
+│first 'The greeting text is Hello, world',
+❯ /cockpit│then 'Th…
+  ⎿  bws-cockpit:Run:runs/2026-10-10-session-bus│- 03b38c38 · busy · Plan approved. Implement
+Finishline:[x]claude--versioncheckedagainstthe2.1.296baseline(receipts/claude-version.txt)│steps 0–9 from PLAN.md, then stop before step
+Next:(nonextsteprecordedinRUNLOG)│10 (retiring the old plugins… · run
+Openitems:0│2026-10-10-bws-dashboard · seen 3s ago
+UEup·Unityopen·Blenderoff·adbnone·VRAM6.4/8.0GB(pressure)│  claims:
+│c:/users/bsmi0/appdata/local/temp/claude/c--pr
+❯ Call mcp__bws-cockpit__record_assumption twice: first 'The greeting text is Hello, world', then 'The script lives in a   │ojects-bws-mods-claude-code/03b38c38-cc63-42c4
+  scratch folder'. Do nothing else and reply ok.│-b627-8f1d88b640d9/scratchpad/band.tsx,
+│c:/projects/bws.mods.wt-dashboard/bws-cockpit/
+●bws-cockpit - record_assumption (MCP)(assumption:"ThegreetingtextisHello,world")│tests/loop.test.ts,
+  ⎿  RecordedasA1.Keepworkingonthisassumption;theuserwillconfirmorcorrectitfromthedashboard.│c:/users/bsmi0/appdata/local/temp/claude/c--pr
+ │ojects-bws-mods-claude-code/03b38c38-cc63-42c4
+●bws-cockpit - record_assumption (MCP)(assumption:"Thescriptlivesinascratchfolder")│-b627-8f1d88b640d9/scratchpad/bar-tests.ts,
+  ⎿  RecordedasA2.Keepworkingonthisassumption;theuserwillconfirmorcorrectitfromthedashboard.│c:/projects/bws.mods.wt-dashboard/bws-cockpit/
+│hooks/register.tsx, c:/projects/bws.mods.wt-da
+●ok│shboard/bws-board/tests/plugin.test.ts,
+│c:/projects/bws.mods.wt-dashboard/bws-cockpit/
+✻Baked for 5s · done 5:43 PM│tests/dashboard.test.ts, runs/2026-10-10-bws-d
+│ashboard/receipts/ui-01-start.txt,
+│runs/2026-10-10-bws-dashboard/receipts/ui-02-a
+│ssumptions-raised.txt,
+│runs/2026-10-10-bws-dashboard/followups.md,
+│runs/2026-10-10-bws-dashboard/receipts/ui-03-b
+│oard-tab.txt (+12 more)
+│No asks on the board.
+│
+│
+│
+│
+│
+│
+│
+ │
+│
+                                                 │
+                                     │
+│
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⚠ Transcript saving is off — inherited CLAUDE_CODE_CHILD_SESSION marker · restart with CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1 to keep future transcripts
+[Sonnet 5.5] | bws.mods.wt-dashboard | bws-dashboard | [----------] 7% | v2.1.296✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle)

@@ -1,0 +1,50 @@
+ ▝▝   ▝▝ C:\Projects\bws.mods.wt-dashboard│                                            ✕
+                                           │1: Assumptions [ Shelf ] 3: Board
+      │💡 0 open ideas · bws.mods.wt-dashboard
+❯ /cockpit  │Nothing shelved. /idea <text> adds one; Claude
+  ⎿  bws-cockpit:Run:runs/2026-10-10-session-bus                 │adds its own tangents.
+Finishline:[x]claude--versioncheckedagainstthe2.1.296baseline(receipts/claude-version.txt)│#1 dropped
+     Next: (nonextsteprecordedinRUNLOG)│[ All projects ]
+     Open items: 0    │▶ resume (fills the prompt box) · ✓ done · ✗
+UE up · Unity open · Blender off · adb none · VRAM 6.4/8.0 GB(pressure)│drop
+                                 │
+❯ Call mcp__bws-cockpit__record_assumption twice: first 'The greeting text is Hello, world', then 'The script lives in a   │
+  scratch folder'. Do nothing else and reply ok.│
+│
+● bws-cockpit - record_assumption (MCP)(assumption: "The greeting text is Hello, world")│
+  ⎿  Recorded as A1. Keep working on this assumption; the user will confirm or correct it from the dashboard.│
+│
+●bws-cockpit - record_assumption (MCP)(assumption:"Thescript lives in a scratch folder")│
+  ⎿  RecordedasA2.Keepworkingonthisassumption;theuserwillconfirmorcorrectitfromthedashboard.│
+ │
+●ok                                 │
+                                                          │
+✻Baked for 5s · done 5:43 PM│
+   │
+› Prompt from the bws-cockpit plugin│
+❯ Assumption review (from the dashboard):│
+  - A1 is WRONG: "The greeting text is Hello, world". Instead: Hi from the dashboard│
+  - A2 is right: "The script lives in a scratch folder". Keep it.│
+│
+  Apply each correction now: change the work already done that relied on a wrong assumption, then continue the task. Do │
+  not record these as new assumptions.│
+│
+● A1 is corrected to "Hi from the dashboard". Nothing needed changing, because the earlier task only recorded the│
+  assumptions and wrote no script or file. A2 stays as is.│
+│
+ The board ask from03b38c38says no action is needed, so Ileft it alone.                                │
+                                   │
+✻Cooked for 2s · done 5:45 PM│
+                                                           [-]│
+next:│
+ 1: Show assumptions│
+2:Openthedashboard│
+ 3:Recordnextassumptionpair                                      │
+  0: dismiss│
+│
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 1
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⚠ Transcript saving is off — inherited CLAUDE_CODE_CHILD_SESSION marker · restart with CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1 to keep future transcripts
+[Sonnet 5.5] | bws.mods.wt-dashboard | bws-dashboard | [----------] 7% | v2.1.296✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle)

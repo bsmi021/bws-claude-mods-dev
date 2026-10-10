@@ -1,0 +1,50 @@
+│                                            ✕
+ ▐▛███▛█   Claude Code v2.1.296               │[ Assumptions 2 ] 2: Shelf 1 3: Board
+▝▜██████▀  Sonnet 5.5 with high effort · Claude Max   │⚑ 2 assumptions · 2 ready to send
+ ▝▝   ▝▝   C:\Projects\bws.mods.wt-dashboard         │A1 The greeting text is Hello, world
+                 │[ Right ] [ ✗ Wrong ]
+│Instead:what it should be (empty: Claude asks…
+❯ /cockpit│
+  ⎿  bws-cockpit:Run:runs/2026-10-10-session-bus│A2 The script lives in a scratch folder
+Finishline:[x]claude--versioncheckedagainstthe2.1.296baseline(receipts/claude-version.txt)│[ ✓ Right ] [ Wrong ]
+Next:(nonextsteprecordedinRUNLOG)│[ Send 2 to Claude ]
+Openitems:0│
+UEup·Unityopen·Blenderoff·adbnone·VRAM6.4/8.0GB(pressure)│
+│
+❯ Call mcp__bws-cockpit__record_assumption twice: first 'The greeting text is Hello, world', then 'The script lives in a   │
+  scratch folder'. Do nothing else and reply ok.│
+│
+●bws-cockpit - record_assumption (MCP)(assumption:"ThegreetingtextisHello,world")│
+  ⎿  RecordedasA1.Keepworkingonthisassumption;theuserwillconfirmorcorrectitfromthedashboard.│
+ │
+●bws-cockpit - record_assumption (MCP)(assumption:"Thescriptlivesinascratchfolder")│
+  ⎿  RecordedasA2.Keepworkingonthisassumption;theuserwillconfirmorcorrectitfromthedashboard.│
+│
+●ok│
+│
+✻Baked for 5s · done 5:43 PM│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+ │
+│
+                                                 │
+                                     │
+│
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 1
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⚠ Transcript saving is off — inherited CLAUDE_CODE_CHILD_SESSION marker · restart with CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1 to keep future transcripts
+[Sonnet 5.5] | bws.mods.wt-dashboard | bws-dashboard | [----------] 7% | v2.1.296✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle)

@@ -1,0 +1,50 @@
+│                                            ✕
+ ▐▛███▛█   Claude Code v2.1.296│[ Assumptions ] 2: Shelf 3: Board
+▝▜██████▀  Sonnet 5.5 with high effort · Claude Max│⚑ no assumptions yet
+ ▝▝   ▝▝   C:\Projects\bws.mods.wt-dashboard│Nothing to review. Claude records assumptions
+│here as it builds.
+│
+❯ /cockpit                                                                                                                 │
+  ⎿  bws-cockpit:Run:runs/2026-10-10-session-bus│
+Finishline:[x]claude--versioncheckedagainstthe2.1.296baseline(receipts/claude-version.txt)│
+Next:(nonextsteprecordedinRUNLOG)│
+Openitems:0│
+UEup·Unityopen·Blenderoff·adbnone·VRAM7.1/8.0GB(pressure)│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+│
+session-bus done● UE● Unity● VRAM 7.1/8.0 GB● board 3 · 0 open│1: resume2: dasha: asms: shelf[-]│
+b: board  h: handoff  i: idea  e: enhance  3: hide                              │
+│
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⚠ Transcript saving is off — inherited CLAUDE_CODE_CHILD_SESSION marker · restart with CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1 to keep future transcripts
+[Sonnet 5.5] | bws.mods.wt-dashboard | bws-dashboard | [----------] 0% | v2.1.296✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle)

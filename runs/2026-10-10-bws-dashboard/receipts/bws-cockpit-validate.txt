@@ -1,0 +1,46 @@
+Validating plugin manifest: C:\Projects\bws.mods.wt-dashboard\bws-cockpit\.claude-plugin\plugin.json
+
+  ❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
+  ❯ types ./types/index.d.ts declares state: bws-board.summary, bws-board.lines, bws-cockpit.view, bws-cockpit.isHidden, bws-cockpit.loops, bws-cockpit.loopSelected, bws-cockpit.loopAction, bws-cockpit.stopArmedAt, bws-cockpit.touched, bws-cockpit.assumptions, bws-cockpit.dash, bws-cockpit.shelf, bws-cockpit.handoffNudge
+
+Validating hooks: C:\Projects\bws.mods.wt-dashboard\bws-cockpit\hooks\hooks.json
+
+  ❯ ./register.tsx hooks: command.run{command=handoff}, agent.spawn, command.run{command=projects}, tool.call{tool=mcp__bws-cockpit__find_project}, tool.call{tool=Glob}, prompt.submit, tool.call{tool=Edit|Write|NotebookEdit|Bash|PowerShell}, classic.Stop, turn.complete, session.start, prompt.context, command.run{command=cockpit}, command.run{command=resume-run}, command.run{command=loop-watch}, command.run{command=dashboard}, command.run{command=assumptions}, command.run{command=idea}, command.run{command=shelf}, prompt.compose, tool.call{tool=mcp__bws-cockpit__record_assumption}, tool.call{tool=mcp__bws-cockpit__shelve_idea}, tool.call{tool=mcp__bws-cockpit__list_ideas}, tool.call{tool=mcp__bws-cockpit__close_idea}, ui.close, state.set{plugin=bws-board, key=summary}, ui.render{component=Pane, requestId=dashboard}, ui.render{component=AbovePrompt}, tool.call{tool=/"^mcp__unreal[\\w-]*__"/}, tool.call{tool=Bash|PowerShell, command=/"adb"/i}, tool.call{tool=Bash|PowerShell, command=/"unity"/… [+68 chars]
+  ❯ ./register.tsx answers its own command: command.run{command=handoff}
+  ❯ ./register.tsx answers its own command: command.run{command=projects}
+  ❯ ./register.tsx answers its own command: command.run{command=cockpit}
+  ❯ ./register.tsx answers its own command: command.run{command=resume-run}
+  ❯ ./register.tsx answers its own command: command.run{command=loop-watch}
+  ❯ ./register.tsx answers its own command: command.run{command=assumptions}
+  ❯ ./register.tsx answers its own command: command.run{command=idea}
+  ❯ ./register.tsx answers its own command: command.run{command=shelf}
+  ❯ ./register.tsx gating hook without .catch: agent.spawn
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-cockpit__find_project}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=Glob}
+  ❯ ./register.tsx gating hook without .catch: prompt.submit
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=Edit|Write|NotebookEdit|Bash|PowerShell}
+  ❯ ./register.tsx gating hook without .catch: classic.Stop
+  ❯ ./register.tsx gating hook without .catch: command.run{command=dashboard}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-cockpit__record_assumption}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-cockpit__shelve_idea}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-cockpit__list_ideas}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-cockpit__close_idea}
+  ❯ ./register.tsx gating hook without .catch: ui.close
+  ❯ ./register.tsx gating hook without .catch: state.set{plugin=bws-board, key=summary}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=/"^mcp__unreal[\\w-]*__"/}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=Bash|PowerShell, command=/"adb"/i}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=Bash|PowerShell, command=/"unity"/i}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=Bash|PowerShell, command=/"UnrealEditor\\.exe"/i}
+  ❯ ./register.tsx calls: $.clock.after, $.clock.every, $.clock.now, $.clock.sleep (via isPortUp), $.command.list (via pressEnhance), $.command.register, $.command.run (via pressEnhance), $.env.get (via shelfFile), $.fs.exists (via loadShelf, scanDir), $.fs.list (via findLoops, readRunFolder, scanDir, scanProjects), $.fs.read (via findLoops, loadShelf, readMcpJson, readRunFolder, scanDir, writeHandoff), $.fs.stat (via findLoops, scanDir), $.fs.write (via changeShelf, writeHandoff), $.http.fetch (via isPortUp), $.model.complete (via writeHandoff), $.model.fork (via writeHandoff), $.process.run (via answerNeed, runLoopCommand, runProbe), $.prompt.fill (via onResumeIdea, pressIdea), $.prompt.read (via onResumeIdea, openDash, pressEnhance, pressIdea), $.prompt.submit (via sendReview, submitResume), $.session.cwd, $.session.messages (via writeHandoff), $.session.model (via writeHandoff), $.session.root (via sessionRoot), $.session.surfaces, $.session.usage (via isNudged, noteTouched, nudgeHando… [+294 chars]
+  ❯ ./register.tsx env writes: nothing
+  ❯ ./register.tsx env reads: CLAUDE_CONFIG_DIR, HOME, USERPROFILE
+  ❯ ./register.tsx state writes: bws-cockpit.assumptions, bws-cockpit.dash, bws-cockpit.handoffNudge, bws-cockpit.isHidden, bws-cockpit.loopAction, bws-cockpit.loopSelected, bws-cockpit.loops, bws-cockpit.shelf, bws-cockpit.stopArmedAt, bws-cockpit.touched, bws-cockpit.view
+  ❯ ./register.tsx state reads: bws-board.lines, bws-board.summary, bws-cockpit.assumptions, bws-cockpit.dash, bws-cockpit.handoffNudge, bws-cockpit.isHidden, bws-cockpit.loopAction, bws-cockpit.loopSelected, bws-cockpit.loops, bws-cockpit.shelf, bws-cockpit.stopArmedAt, bws-cockpit.touched, bws-cockpit.view
+  ❯ ./register.tsx state of other plugins, not checked (run validate in a session with them enabled): bws-board.lines, bws-board.summary
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Projects\bws.mods.wt-dashboard\bws-cockpit\README.md: This README has no line that installs "bws-cockpit" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install bws-cockpit --marketplace <owner>/<repo>
+
+✔ Validation passed
