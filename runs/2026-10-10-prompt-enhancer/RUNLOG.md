@@ -14,6 +14,11 @@ ground the rewrite in Anthropic's prompting guidance, per model.
   target model = `$.session.model()`, per-family notes are our inference (docs give no rewriter guidance).
 - Checks: validate pass, 16/16 tests, tsc 5.6 strict clean. Live headless runs: receipts/live-headless*.jsonl.
 
+## Not verified
+- Interactive terminal: pane placement, focus-on-result + s/r/d hotkeys, the ctrl+x ctrl+p chord pressing the footer button.
+  Covered by kit tests (trees validate on terminal+desktop, presses work) but not seen in a real terminal: drive-screen needs
+  Brian's explicit handover. Engine refusals would show as a dim `bws-enhance: ...` line in a hot-reloading session.
+
 ## Next
-- Interactive terminal check (pane, focus hotkeys, chord) — see below.
+- Brian: `claude --plugin-dir ./bws-enhance`, try `/enhance <rough>`, then type a draft + ctrl+x ctrl+p. If good, add the folder to CLAUDE_CODE_PLUGIN_DIRS.
 - Parked: auto-enhance on submit; enhance option inside other plugins' bands.
