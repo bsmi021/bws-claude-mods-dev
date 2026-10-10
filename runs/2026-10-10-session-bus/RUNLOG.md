@@ -99,8 +99,16 @@ Finish line in PLAN.md.
 - Checks: validate passed, 143/143 tests (7 new), tsc clean (receipts/validate.txt, plugin-test.txt, tsc.txt). Version 0.13.0. README updated (claims, not covered, capabilities, tested).
 - Not done: a live run of a shell write from a second session. The plugin tests cover the hook end to end over a shared bus file. Parked shell writes: git checkout/restore, rm, script writes, variable paths.
 
+- Publish 0.13.0 (Brian's request):
+  - By then main held bws-cockpit 0.14.0 (`3f6bfd9`, another session), which moves the bus to bws-board. bws-board is unpublished, so I published 0.13.0 as asked, from `ee31074`. It stands on its own.
+  - Worktree of `publish` (dadac39), then `git checkout ee31074 -- bws-cockpit`. The only changes were the six 0.13.0 files.
+  - Scanned the 374 added lines. One hit: a corpus test string named Brian, changed to "it's" in the publish copy only (main's copy was already gone in 0.14.0). The author field in plugin.json was already published.
+  - Top-level README row: claims now cover shell writes.
+  - In the worktree, validate passed and 143/143 tests passed (receipts/publish13-*).
+  - Committed `1fa871e` and pushed: `dadac39..1fa871e publish -> main`. The worktree was removed.
+
 ## Outcome
-Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published as `publish` dadac39 = `mods/main`.
+Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published 0.13.0 as `publish` 1fa871e = `mods/main`.
 
 ## Next step
 Parked follow-ups (PLAN.md): claim-check Bash/PowerShell writes, a band chip or `/bus` command, push delivery through `$.session.send`, and pid liveness.
