@@ -482,6 +482,9 @@ async function refreshLoops($: EngineInterface, o: Options) {
       // A loop that was already complete when the session opened is old news.
       if (a.level === 'info' && isFirstLoopScan) continue
       $.ui.toast(`loop ${lp.name}: ${a.text}`, { timeoutMs: 8000 })
+      // News for the person: bring the Loop tab up, on this loop.
+      await update($, loopSelected, () => lp.name)
+      await settle(raise($, 'loop'))
     }
   }
   isFirstLoopScan = false

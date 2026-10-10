@@ -6,10 +6,6 @@
   "description": "Claude Code mods for game and app development on Windows.",
   "plugins": [
     {
-      "name": "bws-assumptions",
-      "source": "./bws-assumptions"
-    },
-    {
       "name": "bws-board",
       "source": "./bws-board"
     },
@@ -28,10 +24,6 @@
     {
       "name": "bws-notify",
       "source": "./bws-notify"
-    },
-    {
-      "name": "bws-shelf",
-      "source": "./bws-shelf"
     },
     {
       "name": "bws-shell-lint",

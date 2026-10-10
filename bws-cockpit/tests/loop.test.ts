@@ -52,7 +52,7 @@ const PAUSED_STATE = stateJson({ status: 'PAUSED', updated: '2026-10-01T19:58:00
 const TASKS_W2C = '# W2c\nStatus: IN_PROGRESS\n\n## Tasks\n- [x] T01 rig\n- [x] T02 import\n- [ ] T03 clip\n\n## Needs the user\n- [ ] N1 pick the final clip: A or B\n- [x] N0 old answered\n'
 const TASKS_W1 = '# W1\nStatus: DONE\n\n## Tasks\n- [x] T01 a\n- [x] T02 b\n'
 
-type World = { state?: string; second?: boolean; stateMtime?: number; answers?: string }
+type World = { state?: string; second?: boolean; stateMtime?: number; answers?: string; surfaces?: string[] }
 
 let clockStart = 0
 const norm = (p: unknown) => String(p).split(String.fromCharCode(92)).join('/')
@@ -63,7 +63,7 @@ function world(on: On, w: World) {
   const runs: { argv: string[]; cwd?: string }[] = []
   const toasts: string[] = []
   on('session.cwd', () => ({ value: CWD }))
-  on('session.surfaces', () => ({ value: [] as never }))
+  on('session.surfaces', () => ({ value: (w.surfaces ?? []) as never }))
   on('ui.toast', ($, e) => {
     toasts.push(String((e as { text?: string }).text ?? ''))
     return { value: undefined }
@@ -273,6 +273,22 @@ describe('loop watch', () => {
     const idle = w.toasts.filter(t => /no tool activity/.test(t))
     expect(idle.length).toBe(1)
     expect(w.toasts.filter(t => /on session 7/.test(t)).length).toBe(1)
+  })
+
+  test('an alert raises the dashboard on the Loop tab where a pane can draw', async ($, on) => {
+    world(on, { surfaces: ['terminal'] })
+    const opened: string[] = []
+    on('ui.panes', () => ({ value: [] as never }))
+    on('ui.open', ($, e) => {
+      opened.push(e.id)
+      return { value: { isPlaced: true } }
+    })
+    await $.command.run({ command: 'cockpit', args: '' } as never) // refresh: the idle and session alerts toast
+    expect(opened[0]).toBe('dashboard')
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect((await ui.find({ key: 'tab-loop' }))?.props?.variant).toBe('primary')
+    expect(await ui.find({ type: 'Text', text: /^kit$/ })).toBeDefined()
+    await ui.unmount()
   })
 
   test('an open need has an Input; Enter records the answer with harness.py answer, then refreshes', async ($, on) => {

@@ -1,6 +1,8 @@
 # bws-cockpit
 
-A Claude Code mod. It puts the active run and live editor/device state above the prompt, and guards calls to Unreal, Unity and adb.
+A Claude Code mod. It puts a dashboard pane beside the transcript (Assumptions, Shelf, Board and Loop tabs), a one-row action bar above the prompt with the active run and live editor/device state, and guards calls to Unreal, Unity and adb.
+
+0.15.0 folds in what were two separate mods, bws-assumptions and bws-shelf: their tools, commands and state now live here, and those plugins are retired.
 
 Built from a 30-day review of one developer's Claude Code sessions across Unreal, Unity, web and Android work, which found:
 - 94 resume prompts and 47 "where are we" prompts
@@ -11,38 +13,59 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
 
 ## What it does
 
-### Run Cockpit
-- **Band above the prompt** (terminal and Desktop):
-  - What it shows:
-    - **Run:** newest `runs/<folder>` in the session's folder, its open items (`- [ ]` in PLAN.md and TASKS.md), and the next step from RUNLOG.md.
-    - **Devices:** UE editors and the unreal-mcp port, Unity, Blender, adb devices, and VRAM used/total (`pressure` when the low-VRAM rule would apply).
-    - **Loop:** the harness loop's name, current unit, state and board link, while a loop is live.
-    - **Guard:** the last thing the guard did, for ten minutes.
-    - **Board:** with [bws-board](../bws-board/README.md) loaded, a chip in the button row reads `board 3 · 2 open · 1 for you`:
-      - It shows the live sessions on this repository's board, the open asks, and the asks waiting on this session (warning-colored while there are any).
-      - It is hidden while this session is alone with nothing open, and when bws-board is not loaded.
-      - It reads bws-board's `summary` state; cockpit does not list bws-board as a dependency, so it loads without it.
-  - **Layout at 90 body columns and up** (with at least 6 band rows): three round-bordered tiles side by side. Run takes the remaining width, devices and loop are 30 columns each, and the loop tile only appears while a loop is live. The buttons and the guard note sit under the tiles. Box borders take no title, so the tiles carry none.
-  - **Narrower or shorter:** a borderless grid, as tall as the old band. A dim label column (`RUN`, `DEVICES`, `LOOP`) and one row per topic, with the buttons at the end of the devices row.
-  - Buttons: `1` Resume run, `2` Refresh, `3` Hide, `4` Loop.
-  - Refreshes every `refreshSeconds` and after each turn.
-  - Shares the slot: the band above the prompt holds one tree, so when another mod draws a band there too, bws-cockpit draws it under its own rows (by the prompt) instead of hiding it. Hidden (`3`), or while a survey shows, it hands the whole slot on. Both bands' digit hotkeys stay live, so two mods that bind the same digit will clash.
+### Dashboard
+- **One pane, `Dashboard`**, docked right of the transcript in fullscreen from 110 columns, else inline above the prompt. Its own tab strip:
+  - `Assumptions` (count: unsent), `Shelf` (count: this project's open ideas), `Board` (count: asks waiting on this session), and `Loop` while a harness loop is live or you picked it with `/loop-watch`.
+  - The picked tab is drawn as the primary button. With the pane focused, `1`–`4` switch tabs; each tab keeps its own keys.
+  - With nothing picked, it shows the first tab with something waiting.
+- **Opening it:** `/dashboard [assumptions|shelf|board|loop]`, `/assumptions`, `/shelf [all]`, `/loop-watch`, `/board pane` (bws-board), or the bar. Opened over an empty prompt box it takes the keys; `Esc` hands them back, the pane stays.
+- **Proactive:** news for you brings its tab up:
+  - Claude records an assumption → Assumptions.
+  - An ask addressed to this session appears on bws-board → Board (cockpit watches bws-board's `summary` writes, so it comes at once).
+  - A loop alert (needs you, stalled, driver dead, all done) → Loop, on that loop.
+  - Session start with unsent assumptions or open ideas for the project → the dashboard opens on that tab. Not after `/clear`, `/resume` or `/branch` (no `session.start` there).
+  - The dashboard is opened if closed, or switched to the tab if open, but only while you are not using it (pane not focused); then only the tab count changes. Opened without being asked, a pane is placed only from 144 terminal columns (110 for one you opened before).
+  - Closed by you (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's chips still count. Any asked open clears that.
+- **Headless:** `claude -p "/dashboard"` prints every tab as text.
+
+### Action bar (above the prompt, terminal and Desktop)
+- One row that wraps when narrow:
+  - **Chips:** the run folder name with its open count (`- [ ]` in PLAN.md and TASKS.md), devices that are up or in trouble (UE and its unreal-mcp port, Unity, Blender, adb, VRAM used/total, warning on `pressure`), the loop state while a loop is live, the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), `⚑ N` unsent assumptions (warning while any are unreviewed), `💡 N` open ideas.
+  - **Buttons:** `1` resume run, `2` dashboard open/close, `a` Assumptions, `s` Shelf, `b` Board (with bws-board loaded), `4` Loop (with a loop), `h` handoff, `i` idea, `e` enhance, `3` hide.
+- Digits answer from an empty prompt box; letters need the bar focused (`ctrl+x tab`; it moves the keys bar → pane → prompt).
+- **`i` idea** shelves the prompt box's draft and clears the box. **`e` enhance** runs bws-enhance's `/enhance` on the draft (mid-turn it queues until the turn ends); without bws-enhance it says so. **`h` handoff** writes HANDOFF.md as `/handoff` does, and is highlighted after the handoff nudge.
+- The guard's last action shows on a row under the bar for ten minutes.
+- Refreshes every `refreshSeconds` and after each turn; `/cockpit` probes on demand.
+- Shares the slot: the band above the prompt holds one tree, so when another mod draws a band there too, bws-cockpit draws it under its own row instead of hiding it. Hidden (`3`), or while a survey shows, it hands the whole slot on. Both bands' digit hotkeys stay live, so two mods that bind the same digit will clash.
+- Known: Hide has no way back within the session, and the bar draws only once the first refresh has landed.
 - **`/resume-run`** queues a prompt that resumes the newest run folder: it reads RUNLOG/PLAN/TASKS, restates the finish line and the next step, checks the receipts, then continues.
-- **`/cockpit`** gives the same status as text, for sessions where nothing draws.
+- **`/cockpit`** gives the run, devices, loop and guard as text, for sessions where nothing draws.
 - **First-message context.** Every new interactive conversation gets one short block naming the newest run folder, its next step and its open count, with a note to confirm before resuming it. `claude -p` and SDK sessions (no surface) skip it: harness workers get their run folder in their prompt.
 
-### Loop Watch (harness loops)
-- **`/loop-watch`** opens a pane for this project's harness loop. It reads `Tools/<name>/loop.json`, then `<harnessDir>/state.json` and each unit's `TASKS.md`, and shows:
+### Assumptions (tab)
+- Claude records each assumption it makes with `mcp__bws-cockpit__record_assumption` (`assumption`, optional `why`). A short system-prompt section, added only where the tool is offered, tells it to call it for choices you didn't specify and keep going. The tool answers `Recorded as A3. Keep working…`.
+- The tab lists `A<n> <assumption>`, its reason, and **Right** / **Wrong**. Wrong opens an `Instead:` field for the correction (Enter saves it; text typed but not saved is still sent). Pressing a verdict again clears it.
+- **Send N to Claude** (`s`) submits one prompt headed `Assumption review`, as your own message: each WRONG item with its correction (or "ask me what it should be"), then the confirmed ones, then "apply each correction now". If Claude is busy it runs when the turn ends. **Clear sent** (`c`) removes sent items.
+- The list is the session's (`$.state`): it survives a hot reload. Numbers never repeat in a session. Mobile has no text field: Wrong there sends "ask me what it should be".
+
+### Shelf (tab)
+- `/idea <text>` adds an idea to this project's shelf; it runs mid-turn and only toasts. Claude shelves its own tangents with `mcp__bws-cockpit__shelve_idea {text, detail?}` (always loaded); `list_ideas {scope?}` and `close_idea {id, status}` load through ToolSearch.
+- The tab lists this project's open ideas, newest first, eight at a time: `▶` puts the idea in the prompt box unsent (the box must be empty), `✓` marks it done, `✗` drops it. `a` toggles this project / all projects.
+- An attended conversation gets one line of context with its first message: the open-idea count and the instruction to shelve tangents rather than follow them (`shelfNudge`).
+- One JSON file holds every project's ideas, so all sessions share the shelf: `<CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json` (the same file bws-shelf used), or `shelfPath`. Every change re-reads the file before writing it; done and dropped ideas stay with `closedAt`. The count refreshes after each turn, which picks up other sessions' ideas.
+
+### Loop Watch (Loop tab)
+- **`/loop-watch`** opens the dashboard's Loop tab for this project's harness loop. It reads `Tools/<name>/loop.json`, then `<harnessDir>/state.json` and each unit's `TASKS.md`, and shows:
   - the driver status and how long ago it updated
   - the board link
   - one row per unit: the current-unit marker, status, sessions, cost and task progress, plus the running worker's last tool and its age
   - totals, and the driver's message
-  - open needs, each with an input box: type your answer and press Enter. That runs `python <harness.py> answer <unit> <N> <your text>` in the repo root and refreshes the pane. The text goes as a single argument with no shell, so quotes and `&` pass as typed. An empty answer is refused.
-  - needs already answered in the unit's `ANSWERS.md` show `answered: ...` instead of the box. Once every open need is answered, the pane says `all needs answered · r resumes the loop`. `harness.py answer` records the answer but does not resume the loop.
+  - open needs, each with an input box: type your answer and press Enter. That runs `python <harness.py> answer <unit> <N> <your text>` in the repo root and refreshes the tab. The text goes as a single argument with no shell, so quotes and `&` pass as typed. An empty answer is refused.
+  - needs already answered in the unit's `ANSWERS.md` show `answered: ...` instead of the box. Once every open need is answered, the tab says `all needs answered · r resumes the loop`. `harness.py answer` records the answer but does not resume the loop.
   - on a surface without input boxes (mobile), and in the headless text, the exact `answer` command is shown instead
   - a picker when the project has more than one loop
 - **Layout:** in a narrow docked sidebar each unit takes two lines (name, then dim numbers). At 60 columns and up it's one line, and at 90 and up the status word is added.
-- **Alerts:** each one toasts once and lights the band's `loop` chip:
+- **Alerts:** each one toasts once, lights the bar's `loop` chip and raises the Loop tab:
   - the driver says RUNNING but its 30 s heartbeat has stopped for 3 min or more ("looks dead")
   - the running worker has made no tool call for 20 min or more
   - the current unit is on 6 or more sessions
@@ -53,8 +76,8 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
   - `r` resume runs `harness.py start --resume`
   - `s` stop runs `harness.py stop`, only on a second press within 10 s
   - `g` refreshes
-  - The result of each action shows in the pane.
-- **Band:** a `loop` chip (running, needs you, stalled, stopped) with the board link beside it, and the hotkey `4: loop`, which opens the pane. `/cockpit` prints the loop and its board URL too.
+  - The result of each action shows in the tab.
+- **Bar:** a `loop` chip (running, needs you, stalled, stopped) and the hotkey `4: loop`, which opens the tab. `/cockpit` prints the loop and its board URL too.
 - **Without a pane** (headless `claude -p "/loop-watch"`), the same summary comes back as text.
 
 ### Finish-Line Guard
@@ -87,6 +110,8 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
   - An existing HANDOFF.md is kept as `HANDOFF.<yyyymmdd-hhmm>.md`.
 - **Resumed sessions:** in a resumed session, before its first request there is nothing to fork, so the handoff is built from the transcript rows instead.
 - **Start prompt:** the reply shows a short start prompt for the next session, and puts it on the clipboard where there is one.
+- **The bar's `h`** writes it the same way (no focus text) and toasts the result's first line.
+- **Nudge:** once per session, when the context passes `handoffNudgePercent` (default 70%), a toast says it's time for a handoff and `h` is highlighted on the bar until a handoff is written.
 
 ### Worker model pin
 - **`workerModel`** (e.g. `claude-sonnet-5-5`): subagents of the types in `workerAgentTypes` (default `general-purpose,claude`) run on it whenever the Agent call names no model.
@@ -137,8 +162,8 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `vramThresholdMb` | `4096` | VRAM in use that counts as pressure |
 | `lowVramCvars` | (built-in set) | Comma-separated `cvar=value` list |
 | `adbPath` | `adb` | adb executable |
-| `refreshSeconds` | `30` | Band re-probe interval |
-| `backgroundProbe` | `true` | Off stops the timed, per-turn and session-start probes (they start powershell, nvidia-smi and adb, which can flash a console window on Windows). `/cockpit`, the refresh button and the guard still probe on demand |
+| `refreshSeconds` | `30` | Bar re-probe interval |
+| `backgroundProbe` | `true` | Off stops the timed, per-turn and session-start probes (they start powershell, nvidia-smi and adb, which can flash a console window on Windows). `/cockpit` and the guard still probe on demand |
 | `loopIdleMinutes` | `20` | Alert when the running worker has made no tool call for this long |
 | `loopSessionAlert` | `6` | Alert when the current unit reaches this many sessions |
 | `loopDriverStaleMinutes` | `3` | Alert when a RUNNING driver's heartbeat stops |
@@ -151,21 +176,25 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `projectRoots` | `C:/Projects` | Folders that hold your projects, separated by `;` |
 | `workerModel` | (empty: off) | Model for subagents whose Agent call names none |
 | `workerAgentTypes` | `general-purpose,claude` | Subagent types the worker model applies to |
+| `shelfPath` | (empty) | The idea shelf file; empty: `<CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json` |
+| `shelfNudge` | `true` | The shelf line in a conversation's opening context |
+| `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`; Edit/Write/NotebookEdit/Bash/PowerShell, observe only, to see which run folders the session writes), `ui.render` (AbovePrompt, the loop-watch Pane), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
-| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop Watch pane: `python <harness.py> start --resume`, `stop` and `answer` |
+| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `prompt.compose` (the assumptions guide), `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff, dashboard, assumptions, idea, shelf), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea`; Edit/Write/NotebookEdit/Bash/PowerShell, observe only, to see which run folders the session writes), `ui.render` (AbovePrompt, the dashboard Pane), `ui.close` (your close of the dashboard), `state.set` (observes bws-board's `summary` writes; never changes them), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop tab: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
-| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md` |
-| Prompts | `$.prompt.submit` for resume |
+| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; reads and writes the shelf file; writes `HANDOFF.md` (keeping the previous one) |
+| Prompts | `$.prompt.submit` for resume and the assumption review; `$.prompt.read`/`fill` for the bar's idea and enhance and the Shelf's ▶; `$.command.run` for bws-enhance's `/enhance` |
 | Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
 | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
-| Tools | registers `find_project` |
+| Tools | registers `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea` |
+| State | reads bws-board's `summary` and `lines` (no dependency: absent, the Board tab says so) |
 
-It writes no files.
+It writes only the shelf file and HANDOFF.md.
 
 ## Tested
 
@@ -173,6 +202,7 @@ Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 
 
 | Check | Result |
 |---|---|
+| 0.15.0 (2.1.296) | Dashboard pane, one-row bar, bws-assumptions and bws-shelf folded in. validate passed; tsc 5.8.3 clean; 162/162 tests (tabs and counts, raise vs a focused pane, closed from the bar, session-start open, the handoff nudge, a loop alert raising the Loop tab, the bar's idea/enhance/tab/dash buttons, the moved assumption and shelf tests). Live in a 170-column tmux terminal with Sonnet (`runs/2026-10-10-bws-dashboard/receipts/ui-*.txt`): the dashboard opened at start on Shelf; Claude's `record_assumption` calls switched it to Assumptions; an ask from another session switched it to Board; the handoff toast and highlight; in-pane tab keys, Right/Wrong/Instead/Send/Clear sent, the shelf scope, ✗ and ▶; `/board pane`; the bar's 2, a, s, b, i, e, h and 3. Then checked by Brian in his own session. Not tried live: bar `1` resume, `4` and the Loop tab with a real loop (tests only), ✓ in the Shelf tab (tests), the Desktop app |
 | 0.14.0 (2.1.296) | Session Bus removed (back to 0.11.0's hooks); board chip added. validate passed, with `bws-board.summary` listed as another plugin's state, so no dependency is needed. 122/122 tests, including the chip: hidden without bws-board and when alone, `board 3 · 2 open · 1 for you` in warning color in the tiles, `board 2 · 0 open` in the grid. tsc clean. A fresh `claude -p "/board"` with both plugins in `CLAUDE_CODE_PLUGIN_DIRS` loaded both, listed no `bus_*` tools, and printed the board. The chip has not been checked by eye in an interactive band yet |
 | `claude plugin validate` | passed |
 | `claude plugin test` (0.11.0, Claude Code 2.1.296) | 121/121. 0.11.0: the band as three bordered tiles at 120 columns (borders, widths, content, no loop tile without a loop, desktop, no run folder) and the borderless grid under 90 columns and under 6 band rows; the loop tile and the grid LOOP row with the board link. 0.10.2: /handoff picks its folder from the session's own writes (a worker-freshened folder is ignored; found with finishLine off too). 0.10.1 adds the shared band slot (another mod's band drawn under ours on terminal and desktop, the whole slot handed on when hidden, nothing added when no other band draws). 0.10.0 (112/112, three runs in a row) added: run-folder ownership (a worker-written folder and a read of its checklist claim nothing; a shell write claims it; a new conversation forgets), imperative hand-backs from real replies ("tell me when", "say go", "when you next ask"; "say if you want" still blocks), `(proposed-task)` and `<ownerName>:` items parked, the evidence check off by default and on by option, the run-folder context skipped with no surface, the board URL in the loop chip and `/cockpit`, and the low-VRAM pass-through for overrides in a `$args` array, render runs, an explicit screen percentage, and a startup-script `-ini` that is not an override. The Repo Sessions tests went with the pane; the registry parsing kept in `peers.ts` is still tested. Earlier: parsing, command-position rules, every guard path, pass-through, band layout on terminal and desktop, Loop Watch, /handoff, the worker model pin, the Project Locator and the Finish-Line Guard |
