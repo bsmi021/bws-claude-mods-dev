@@ -31,3 +31,8 @@ assumption, so he can say right or wrong; on changes Claude makes them directly.
 ## Open
 - Not tested: person-close flag; behaviour across /clear.
 - Not added to CLAUDE_CODE_PLUGIN_DIRS or the publish branch (Brian's call).
+
+## Session 2: loads every session
+- Brian OK'd it: appended `C:/Projects/bws.mods.claude-code/bws-assumptions` to `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` (env block).
+- Fresh `claude -p` (inherited var unset, so settings supply it): init lists all seven plugins incl. bws-assumptions 0.1.0 and the tool; reply OK.
+  Receipt: receipts/plugin-dirs-load.jsonl.
