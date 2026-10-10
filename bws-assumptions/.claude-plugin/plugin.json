@@ -1,0 +1,9 @@
+{
+  "name": "bws-assumptions",
+  "version": "0.1.0",
+  "description": "Claude records each assumption it makes while building; a small side pane lists them with Right / Wrong, and one Send hands your verdicts and corrections back so Claude applies them.",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts"
+}
