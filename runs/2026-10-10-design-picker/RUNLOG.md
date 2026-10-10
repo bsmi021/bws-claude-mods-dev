@@ -76,3 +76,11 @@ Checks: validate passed; plugin test 24/24; tsc clean.
 - Tests: narrow block widened with its fill (Ethiopia in 4 cells), right-edge pill shifted left, a block
   without text keeps its width, a label longer than the frame is cut at the frame. 26/26, tsc clean, validate passed.
 - Trade-off: a widened block can cover a neighbour; prompts still ask for labels that fit.
+
+## Live check of 0.2.2 (2026-10-10)
+- `receipts/live-gen-6-v022.png`, `receipts/live-gen5-022-debug.log`: claude-opus-5-5 answered in 28188 ms, no
+  render warnings. All three generated mockups show every label whole (SUBSCRIBE, Fresh every week, Rwanda, Buy...).
+- The spec isn't logged, so the screenshot can't show which blocks (if any) were widened rather than sized
+  right by Opus; the widening itself is covered by the 0.2.2 unit tests.
+- Still visible: some labels sit on a row a block only half-covers ("Buy", "LOUD COFFEE"), the half-cell
+  text-row placement, not clipping.
