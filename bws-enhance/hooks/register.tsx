@@ -83,9 +83,8 @@ async function finish($: EngineInterface, rough: string, model: string) {
   // The box still holds nothing or the rough draft: replace it. Anything else was typed meanwhile: keep it.
   const box = (await $.prompt.read()).text.trim()
   const isFilled = box === '' || box === rough ? (await $.prompt.fill({ text: r.text })).isFilled : false
+  // The pane stays unfocused (re-opening it with focus does not move the keys, seen live): Enter in the box sends.
   await update($, view, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled }))
-  // Focused with Send ringed, so Enter or s sends at once; Esc hands the keys back to the prompt for editing.
-  if (isFilled) await placed($, await $.ui.open({ id: PANE, title: 'Enhanced prompt', focus: true }))
 }
 
 // A pane that waits undrawn (a narrow terminal) would hide Send: say so; Enter in the box still sends.
@@ -237,7 +236,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         <Text>
-          {v.isFilled ? '✦ The enhanced prompt is in the box. Send it, or Esc to edit first.' : '✦ Enhanced prompt ready. The box had other text, so it was left alone.'}
+          {v.isFilled ? '✦ The enhanced prompt is in the box: edit it, then Enter to send.' : '✦ Enhanced prompt ready. The box had other text, so it was left alone.'}
         </Text>
         {!v.isFilled && <Text dimColor>{v.enhanced}</Text>}
         <Box flexDirection="row" gap={1}>

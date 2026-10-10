@@ -163,14 +163,14 @@ describe('mod', () => {
     expect(seen.asks).toEqual([])
   })
 
-  test('interactive: fills the box, focuses the pane, Send submits the box as the user', async ($, on) => {
+  test('interactive: fills the box, opens the pane once, Send submits the box as the user', async ($, on) => {
     const { seen, clock, setBox } = world(on)
     const r = await $.command.run({ command: 'enhance', args: 'fix the login thing' } as never)
     expect(r.text).toBeUndefined()
     expect(seen.opened[0]).toEqual({ id: 'bws-enhance', focus: undefined })
     await clock.advance(50)
     expect(seen.fills).toEqual([ENHANCED])
-    expect(seen.opened.at(-1)).toEqual({ id: 'bws-enhance', focus: true })
+    expect(seen.opened.length).toBe(1)
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...PANE, surface })
       expect(await ui.find({ type: 'Text', text: /in the box/ })).toBeDefined()

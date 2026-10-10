@@ -14,11 +14,19 @@ ground the rewrite in Anthropic's prompting guidance, per model.
   target model = `$.session.model()`, per-family notes are our inference (docs give no rewriter guidance).
 - Checks: validate pass, 16/16 tests, tsc 5.6 strict clean. Live headless runs: receipts/live-headless*.jsonl.
 
-## Not verified
-- Interactive terminal: pane placement, focus-on-result + s/r/d hotkeys, the ctrl+x ctrl+p chord pressing the footer button.
-  Covered by kit tests (trees validate on terminal+desktop, presses work) but not seen in a real terminal: drive-screen needs
-  Brian's explicit handover. Engine refusals would show as a dim `bws-enhance: ...` line in a hot-reloading session.
+## Live check (drive-screen, Brian handed over ~3 min)
+Windows Terminal, fullscreen layout, `claude --plugin-dir ./bws-enhance`. Receipts 01-09 in receipts/.
+- 01: footer `✦ enhance` button drawn.
+- 02: `/enhance what does bws-notify do, dont change anything` -> rewrite in box, pane docked with Send/Revert/Dismiss.
+- 03: Enter sent it as a normal user turn; pane closed, box cleared. (Read-only answer followed.)
+- 04/05: typed a draft + ctrl+x ctrl+p while Claude was mid-turn -> pane "Enhancing…", then rewrite replaced the draft. Chord works.
+- 06: `r` went into the box: re-opening the pane with `focus: true` did NOT move focus. Removed that code.
+- 07/08: ctrl+x tab then `r` still typed into the box: pane hotkeys not reached (maybe focus cycles band first). Open.
+- 09: clicking Revert restored the draft and closed the pane.
+- First launch failed: wt split the command on `;` (known trap); relaunched via a .ps1 file. Both windows closed after.
+- Rewrite quality note: for "bws-notify" it said "find where it lives" because it gets no file tree. Fine; parked.
 
 ## Next
-- Brian: `claude --plugin-dir ./bws-enhance`, try `/enhance <rough>`, then type a draft + ctrl+x ctrl+p. If good, add the folder to CLAUDE_CODE_PLUGIN_DIRS.
-- Parked: auto-enhance on submit; enhance option inside other plugins' bands.
+- Pane hotkeys: find why ctrl+x tab does not land in the pane (try a second ctrl+x tab, or close+reopen with focus). Needs another drive.
+- Parked: auto-enhance on submit; give the rewriter a shallow file tree of the project root.
+- Brian: add the folder to CLAUDE_CODE_PLUGIN_DIRS if keeping it.

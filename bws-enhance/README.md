@@ -16,14 +16,14 @@ The rewrite is grounded in what this session actually has:
 | --- | --- |
 | Enhance a rough prompt | `/enhance <rough prompt>` (works while Claude is busy) |
 | Enhance the draft already in the box | `ctrl+x ctrl+p` (needs the keybinding below) |
-| Send the enhanced prompt | `Enter` (pane focused, Send selected), `s`, or `Esc` then `Enter` in the box |
-| Revert to your rough prompt | `r` / **Revert** in the pane |
-| Dismiss / cancel | `d` / `c`, or `Esc` / `ctrl+x x` on the pane |
+| Send the enhanced prompt | `Enter` in the box (it holds the rewrite), or click **Send** |
+| Revert to your rough prompt | click **Revert** |
+| Dismiss / cancel | click **Dismiss** / **Cancel**, or `ctrl+x x` on the pane |
 
-The enhanced prompt replaces the prompt box. A small pane opens with **Send / Revert / Dismiss**; it takes keyboard focus
-when the result lands with **Send** selected, so `Enter` or `s` sends immediately, and `Esc` hands the keys back to the box to edit first. **Send** sends the
-box as it is, edits included, as your own words. If you typed something else while it was working, the box is left alone and
-the pane offers **Put in box**.
+The enhanced prompt replaces the prompt box; edit it there and press `Enter` to send it as your own words. A small pane
+shows **Send / Revert / Dismiss**. **Send** sends the box as it is, edits included. If you typed something else while it was
+working, the box is left alone and the pane offers **Put in box**. The buttons also have hotkeys (`s` `r` `p` `d` `c`) for when the
+pane holds the keyboard, but focusing it with `ctrl+x tab` did not reach them in the live check.
 
 Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output.
 
@@ -56,7 +56,8 @@ Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes. Automated
 trees on terminal and desktop, presses, fill/submit/revert, failure path, options). Type-check: tsc 5.6 strict. Live: headless
 `claude -p "/enhance ..."` runs return grounded rewrites.
 
-0.1.0: not yet verified in a real interactive terminal: the pane's placement and focus, the hotkeys, and the `ctrl+x ctrl+p` chord.
-If the chord does nothing, set `chordAction` to `app:toggleDiffNoiseFilter` or `app:toggleReplTab` (same kind of idle action) and
-rebind; `claude --debug` logs a refusal if the engine rejects the action.
+Live in Windows Terminal (fullscreen layout, 2026-10-10): `/enhance` filled the box and docked the pane; `Enter` sent the
+rewrite; `ctrl+x ctrl+p` enhanced a typed draft, also while Claude was mid-turn; clicking **Revert** restored the draft and
+closed the pane. Not working yet: pane hotkeys (keys went to the prompt box, even after `ctrl+x tab`).
+Not tried: main-screen (inline) layout, desktop app.
 VS Code / mobile / cloud draw no mod UI; use `/enhance` and copy the rewrite.
