@@ -124,16 +124,31 @@ const inShape = (b: Block, px: number, py: number, x0: number, y0: number, x1: n
   return true
 }
 
-const box = (b: Block, W: number, H: number) => {
-  const x0 = Math.round((b.x / 100) * W)
-  const y0 = Math.round((b.y / 100) * H)
-  const x1 = Math.max(x0 + 1, Math.min(W, Math.round(((b.x + b.w) / 100) * W)))
-  const y1 = Math.max(y0 + 1, Math.min(H, Math.round(((b.y + b.h) / 100) * H)))
-  return { x0, y0, x1, y1 }
-}
-
 /** Printable width-1 characters only: the Raster refuses a whole tree over one bad code point. */
 export const printable = (s: string): string => s.replace(/[^\x20-\x7e]/g, '')
+
+/** Cells a label needs: its characters plus a cell of padding each side (none for one character). */
+export const textWidth = (text: string): number => {
+  const n = printable(text).length
+  return n >= 2 ? n + 2 : n
+}
+
+/**
+ * A block's cells. A block that carries text is at least as wide as its label needs, up to the whole
+ * frame, so the label is never clipped: it grows rightwards, and leftwards when it would pass the edge.
+ */
+const box = (b: Block, W: number, H: number) => {
+  let x0 = Math.round((b.x / 100) * W)
+  const y0 = Math.round((b.y / 100) * H)
+  let x1 = Math.max(x0 + 1, Math.min(W, Math.round(((b.x + b.w) / 100) * W)))
+  const y1 = Math.max(y0 + 1, Math.min(H, Math.round(((b.y + b.h) / 100) * H)))
+  const need = b.text ? Math.min(W, textWidth(b.text)) : 0
+  if (x1 - x0 < need) {
+    x1 = Math.min(W, x0 + need)
+    x0 = Math.max(0, x1 - need)
+  }
+  return { x0, y0, x1, y1 }
+}
 
 /**
  * The mockup as `columns x rows` cells, two pixels a cell (upper half-block: fg the top pixel, bg the bottom).

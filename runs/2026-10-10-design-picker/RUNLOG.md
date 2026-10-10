@@ -68,3 +68,11 @@ Checks: validate passed; plugin test 24/24; tsc clean.
   No clipped labels, no overlaps, every mockup matches its description. The cost is about 2.5x Haiku's
   wait (11 s), with the "drawing" line showing meanwhile.
 - Checks: plugin test 24/24, tsc clean, validate passed.
+
+## 0.2.2: text blocks never clip their labels (2026-10-10)
+- `box()` in lib.ts widens a text-bearing block to `textWidth(label)` (characters + 1 cell padding each side),
+  capped at the card width, growing left when it would pass the right edge. Fill and label grow together.
+  Blocks without text are unchanged.
+- Tests: narrow block widened with its fill (Ethiopia in 4 cells), right-edge pill shifted left, a block
+  without text keeps its width, a label longer than the frame is cut at the frame. 26/26, tsc clean, validate passed.
+- Trade-off: a widened block can cover a neighbour; prompts still ask for labels that fit.

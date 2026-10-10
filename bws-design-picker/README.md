@@ -50,6 +50,9 @@ or add the folder to `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` (Bri
 - One gallery per dialog: the first design question's. The section asks Claude for one design question per call.
 - Thumbnails cannot be clicked; the numbers match the picker's options.
 - Text inside the terminal mockups is ASCII only (the Raster refuses wide glyphs).
+- A text block narrower than its label is widened to fit it (growing left at the right edge), so labels
+  aren't clipped. A widened block can cover a neighbour, and a label longer than the whole card is cut at
+  the card's edge.
 - Generated mockups come from the option descriptions only, without your project's context.
 - Opus is slower than Haiku: the picker shows the "drawing" line until it answers.
 

@@ -1,6 +1,6 @@
 import { test, expect } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { MAX_ROWS, SECTION, galleries, galleryCells, galleryFromReply, gallerySvg, genPrompt, hex, isDesignQuestion, wantsGenerated, layout, parseSpec, printable, rasterize, stripSpecs, toBase64, toSvg } from '../hooks/lib'
+import { MAX_ROWS, SECTION, galleries, galleryCells, galleryFromReply, gallerySvg, genPrompt, hex, isDesignQuestion, wantsGenerated, layout, parseSpec, printable, rasterize, stripSpecs, textWidth, toBase64, toSvg } from '../hooks/lib'
 
 const SPEC = {
   bg: '#0f172a',
@@ -95,6 +95,48 @@ test('rasterize fills every cell with a printable glyph and puts text and the pa
   expect(words[(last * 40 + 0) * 3 + 2]).toBe(0x0f172a)
   expect(words[(last * 40 + 20) * 3 + 2]).toBe(0x38bdf8)
   expect(words[(last * 40 + 39) * 3 + 2]).toBe(0xf8fafc)
+})
+
+test('a text block too narrow for its label is widened, never clipped', () => {
+  const W = 40
+  const spec = parseSpec(preview({
+    bg: '#000000',
+    blocks: [
+      { x: 10, y: 10, w: 10, h: 20, fill: '#ff0000', text: 'Ethiopia' }, // 4 cells for 8 characters
+      { x: 95, y: 50, w: 5, h: 20, fill: '#00ff00', text: 'Shop now', shape: 'pill' }, // at the right edge
+      { x: 0, y: 80, w: 10, h: 15, fill: '#0000ff' }, // no text: keeps its 4 cells
+    ],
+  }))!
+  const words = rasterize(spec, { columns: W, rows: 12 })
+  const rows = Array.from({ length: 12 }, (_, r) => Array.from({ length: W }, (_, c) => String.fromCharCode(words[(r * W + c) * 3]!)).join(''))
+  const bgAt = (r: number, c: number) => words[(r * W + c) * 3 + 2]
+  const eth = rows.findIndex(r => r.includes('Ethiopia'))
+  expect(eth).toBeGreaterThanOrEqual(0)
+  // grown rightwards from its own left edge: label plus a cell each side, all on the block's fill
+  const at = rows[eth]!.indexOf('Ethiopia')
+  expect(at).toBe(5)
+  for (let c = 4; c < 14; c++) expect(bgAt(eth, c)).toBe(0xff0000)
+  expect(bgAt(eth, 14)).toBe(0x000000)
+  // at the right edge it grows leftwards instead, and stays inside the frame
+  const shop = rows.findIndex(r => r.includes('Shop now'))
+  expect(shop).toBeGreaterThanOrEqual(0)
+  expect(rows[shop]!.indexOf('Shop now')).toBe(31)
+  // a block without text is drawn at its own width
+  const blue = [...words].findIndex((_, i) => i % 3 === 2 && words[i] === 0x0000ff)
+  const blueRow = Math.floor((blue - 2) / 3 / W)
+  expect(Array.from({ length: W }, (_, c) => bgAt(blueRow, c)).filter(b => b === 0x0000ff).length).toBe(4)
+})
+
+test('a label wider than the whole frame fills it and is cut at the frame', () => {
+  const W = 20
+  const long = 'A very long label that cannot fit'
+  const spec = parseSpec(preview({ bg: '#000000', blocks: [{ x: 40, y: 20, w: 10, h: 30, fill: '#ffffff', text: long }] }))!
+  const words = rasterize(spec, { columns: W, rows: 8 })
+  const rows = Array.from({ length: 8 }, (_, r) => Array.from({ length: W }, (_, c) => String.fromCharCode(words[(r * W + c) * 3]!)).join(''))
+  const row = rows.find(r => r.includes('A very'))!
+  expect(row).toBe(' ' + long.slice(0, W - 2) + ' ')
+  expect(textWidth('Shop')).toBe(6)
+  expect(textWidth('X')).toBe(1)
 })
 
 test('printable drops non-ASCII and wide characters', () => {
