@@ -1,0 +1,15 @@
+=== mode=toolshell
+session.start surfaces=0 []
+prompt.submit surfaces=0 child: hwnd=0 visible=n/a pid=83528
+=== mode=plain
+session.start surfaces=0 []
+prompt.submit surfaces=0 child: hwnd=0 visible=n/a pid=29524
+exit=0 out='ok'
+=== mode=plain
+session.start surfaces=0 []
+prompt.submit surfaces=0 child: hwnd=0 visible=n/a pid=24668
+exit=0 out='done'
+=== mode=nowin
+session.start surfaces=0 []
+prompt.submit surfaces=0 child: hwnd=0 visible=n/a pid=56760
+exit=0 out='Done. `echo hi` printed `hi` and git is version 2.54.0.windows.1. `Get-Date` returned Tuesday, October 6, 2026 2:19:23 A'

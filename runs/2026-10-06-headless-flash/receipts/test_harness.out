@@ -1,0 +1,20 @@
+  4 runs allowed, the 5th refused, per task; gate runs exempt
+PASS budget (1 s)
+  worker gate once -> driver reused the receipt; restart from disk reused it too (1 gate run in total)
+PASS receipt (1 s)
+  a code change after the gate -> driver reran it; uncommitted tree refused; 3rd gate in a session refused
+PASS stale (4 s)
+  unapproved wide edit -> session stopped, paused (3); WIDE answer -> resumed to DONE
+PASS wide (2 s)
+  stuck task -> killed in seconds, STUCK.md, next prompt points at it, paused after 2; silent -> hung kill
+PASS watchdog (16 s)
+  a 12 s gate under 3 s stuck/silent limits -> not killed, receipt reused, marker removed
+PASS longgate (13 s)
+  NUL-filled state.json -> restored from .bak; both bad -> rebuilt, verified from disk via the receipt
+PASS state (1 s)
+  failing precondition -> repair command ran -> loop started
+PASS repair (1 s)
+  start detached; killed driver -> status STOPPED, supervise relaunched it; stop -> left alone; crash loop -> halted
+PASS supervisor (6 s)
+
+all passed
