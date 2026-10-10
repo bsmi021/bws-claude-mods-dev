@@ -1,0 +1,5 @@
+{
+  "pluginConfigs": {
+    "bws-cockpit": { "options": { "sessionBus": false } }
+  }
+}

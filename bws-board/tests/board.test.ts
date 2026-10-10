@@ -287,6 +287,18 @@ describe('asks', () => {
     expect(askViews(after, NOW, STALE_MS)[0]?.view).toBe('done')
   })
 
+  test('a done made just before the doer exited still reads done; its take does not hold', () => {
+    const q = ask('aaaaaaaa-1', 'role:tests')
+    const doer = card(B, { acts: [{ askId: q.id, kind: 'take', at: NOW - 100 }, { askId: q.id, kind: 'done', at: NOW - 50, note: '12 passed' }] })
+    const gone = tombstone(doer, NOW)
+    expect(gone.acts.map(a => a.kind)).toEqual(['done'])
+    const views = askViews(board(card(A, { asks: [q] }), gone), NOW, STALE_MS)
+    expect(views[0]).toMatchObject({ view: 'done', by: B, note: '12 passed' })
+    expect(settleAsks([q], views)?.[0]).toMatchObject({ state: 'done', by: B })
+    const tookThenLeft = tombstone(card(C, { acts: [{ askId: q.id, kind: 'take', at: NOW - 100 }] }), NOW)
+    expect(askViews(board(card(A, { asks: [q] }), tookThenLeft), NOW, STALE_MS)[0]?.view).toBe('open')
+  })
+
   test('a decline on a named ask shows; on an ask to anyone it stays open', () => {
     const named = ask('aaaaaaaa-1', 'role:tests')
     const any = ask('aaaaaaaa-2', 'anyone')

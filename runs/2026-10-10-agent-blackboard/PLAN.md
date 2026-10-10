@@ -1,9 +1,9 @@
 # PLAN: bws-board, a shared blackboard for a team of Claude Code agents
 
-Status: **building** (go given 2026-10-10). T1-T4 and T6 done (44/44 tests); T5 waits on 193b884d; T8 live run next.
+Status: **building** (go given 2026-10-10). T1-T4, T6-T8 done (45/45 tests, live acceptance passed in run 4). T5 cut-over and the CLAUDE_CODE_PLUGIN_DIRS part of T9 wait on 193b884d / Brian.
 
 ## Definition of done for v0.1 (finish line, all true)
-- [ ] **Live two-session request** (the acceptance check), in a scratch git repo with two `claude -p` sessions, A with `BWS_AGENT_ROLE=api` and B with `BWS_AGENT_ROLE=tests`:
+- [x] **Live two-session request** (the acceptance check; receipts/live, run 4), in a scratch git repo with two `claude -p` sessions, A with `BWS_AGENT_ROLE=api` and B with `BWS_AGENT_ROLE=tests`:
   1. A calls `board_ask { to: "tests", text }`.
   2. B sees the request on its next tool result.
   3. B calls `board_take`, then `board_done { note }`.
@@ -12,10 +12,10 @@ Status: **building** (go given 2026-10-10). T1-T4 and T6 done (44/44 tests); T5 
 
   Proof: `receipts/live-A.jsonl`, `receipts/live-B.jsonl`, and the two board files.
   The script drives B with a prompt that calls `board_status` after a short delay, so B is still running tool calls after A's file lands. That is the bus's `live.sh` pattern.
-- [ ] **Claims survive the move.** The bus's live case still passes under bws-board: A claims a file, B's Edit is denied naming A, and A's entry is gone after A exits. Proof: `receipts/live-claim-*`.
-- [ ] `claude plugin validate ./bws-board` passes, and its inventory lists every hook and `$` call below (`receipts/validate.txt`).
-- [ ] `claude plugin test` passes in bws-board (ported bus tests + request/role/wake tests). Cockpit's suite passes with the bus removed.
-- [ ] tsc 5.x (strict, noUncheckedIndexedAccess) is clean for both plugins.
+- [x] **Claims survive the move** (refusal shown live in receipts/live; cockpit's bus not yet removed, see T5). The bus's live case still passes under bws-board: A claims a file, B's Edit is denied naming A, and A's entry is gone after A exits. Proof: `receipts/live-claim-*`.
+- [x] `claude plugin validate ./bws-board` passes, and its inventory lists every hook and `$` call below (`receipts/validate.txt`).
+- [ ] `claude plugin test` passes in bws-board (bws-board part done: 45/45) (ported bus tests + request/role/wake tests). Cockpit's suite passes with the bus removed.
+- [ ] tsc 5.x (strict, noUncheckedIndexedAccess) is clean for both plugins (bws-board done; cockpit after T5).
 - [ ] README written. bws-board is added to `CLAUDE_CODE_PLUGIN_DIRS`, and a fresh session loads cockpit and board without errors. Committed.
 
 ## Design
@@ -149,8 +149,8 @@ What is **not** possible, or is a limit:
 4. [x] T4 Plugin tests: two sessions over one stubbed fs folder (ask → take → done, claim deny, role routing, torn-file read, wake rate limit).
 5. T5 Cut-over: remove the bus from cockpit (bus.ts, hooks, tools, options, tests). First run the hard/soft `dependencies` check (§ Human views), then add the chip, and run cockpit's suite.
 6. [x] T6 Pane + `/board` text (built in T3; the pane is drawn but not yet checked interactively).
-7. T7 validate + test + tsc receipts for both plugins.
-8. T8 Live two-session acceptance run + the claim/deny run, with receipts.
+7. [x] T7 receipts for bws-board (cockpit's after T5).
+8. [x] T8 Live two-session acceptance run + the claim/deny run, with receipts (run 4; runs 1-3 kept as live-run1..3).
 9. T9 README, `CLAUDE_CODE_PLUGIN_DIRS`, fresh-session load check, RUNLOG, commit. The publish branch is updated only when Brian asks.
 
 ## Follow-ups (parked)

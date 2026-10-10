@@ -129,6 +129,10 @@ describe('board: two sessions', () => {
     expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_take', id: 'aaaaaaaa-1' } as never))).toContain('Took ask aaaaaaaa-1.')
     expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_done', id: 'aaaaaaaa-1', note: '12 passed' } as never))).toContain('Marked ask aaaaaaaa-1 done.')
 
+    // B exits before A has looked: the done survives in B's tombstone.
+    await $.session.end({ reason: 'other', sessionId: B, resume: {} } as never)
+    expect(cardOf(w.files, B)?.acts.map(a => a.kind)).toEqual(['done'])
+
     // A hears it is done on its next tool result, and records the outcome in its own card.
     w.who.id = A
     await w.clock.advance(20_000)
@@ -136,21 +140,10 @@ describe('board: two sessions', () => {
     expect(ctxOf(r2)).toContain('- your ask aaaaaaaa-1 is done by tests (bbbbbbbb): 12 passed')
     expect(cardOf(w.files, A)?.asks[0]).toMatchObject({ id: 'aaaaaaaa-1', state: 'done', by: B, note: '12 passed' })
 
-    // /board in both sessions shows the same ask, done.
-    const boardA = (await $.command.run({ command: 'board', args: '' } as never)) as { text?: string }
-    w.who.id = B
-    const boardB = (await $.command.run({ command: 'board', args: '' } as never)) as { text?: string }
-    const line = '- aaaaaaaa-1 · done by tests (bbbbbbbb) · api (aaaaaaaa) → tests: Run the auth suite against /login (note: 12 passed)'
-    expect(boardA.text).toContain(line)
-    expect(boardB.text).toContain(line)
-
-    // B exits: a tombstone; A's done ask stays done.
-    await $.session.end({ reason: 'prompt_input_exit', sessionId: B, resume: {} } as never)
+    // /board shows the ask done, by the session that left.
     expect(w.live()).toEqual([A])
-    expect(cardOf(w.files, B)?.gone).toBe(true)
-    w.who.id = A
-    const boardA2 = (await $.command.run({ command: 'board', args: '' } as never)) as { text?: string }
-    expect(boardA2.text).toContain('- aaaaaaaa-1 · done by')
+    const boardA = (await $.command.run({ command: 'board', args: '' } as never)) as { text?: string }
+    expect(boardA.text).toContain('- aaaaaaaa-1 · done by tests (bbbbbbbb) · api (aaaaaaaa) → tests: Run the auth suite against /login (note: 12 passed)')
   })
 
   test('a claimed file is refused to the other session, by Edit and by shell; release frees it', async ($, on) => {

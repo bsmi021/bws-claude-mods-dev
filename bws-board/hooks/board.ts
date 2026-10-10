@@ -144,8 +144,14 @@ export const newCard = (sessionId: string, cwd: string, now: number, role: strin
   acts: [],
 })
 
-// What a session leaves behind on exit: its id and the time, nothing it held.
-export const tombstone = (c: Card, now: number): Card => ({ ...newCard(c.sessionId, c.cwd, c.startedAt, c.role), seenAt: now, gone: true })
+// What a session leaves behind on exit: its id, the time and the asks it finished (an outcome is
+// final, and the asker may not have read it yet); nothing it held.
+export const tombstone = (c: Card, now: number): Card => ({
+  ...newCard(c.sessionId, c.cwd, c.startedAt, c.role),
+  seenAt: now,
+  acts: c.acts.filter(a => a.kind === 'done'),
+  gone: true,
+})
 
 // The board from one read of the folder. A file that does not parse keeps the last good copy of
 // that card; a card whose file is gone is dropped.
@@ -293,15 +299,18 @@ export const toText = (to: string, b?: Board) => {
   return who(b?.cards[id], id)
 }
 
-// Every ask on the board as it stands: the asker's record, then the live sessions' acts on it.
+// Every ask on the board as it stands: the asker's record, then the other sessions' acts on it.
 // Asks from sessions no longer live are not shown. Per session only its latest act counts; a done
-// beats a take, and the earliest take (then the smaller id) holds the ask.
+// beats a take, and the earliest take (then the smaller id) holds the ask. Takes and declines count
+// while their session is live; a done counts from any card still in the folder, so an ask finished
+// just before its doer exited still reads done.
 export function askViews(b: Board, now: number, staleMs: number): AskView[] {
   const live = Object.values(b.cards).filter(c => isLive(c, now, staleMs))
   const latest = new Map<string, { id: string; act: Act }[]>()
-  for (const c of live) {
+  for (const c of Object.values(b.cards)) {
+    const isOn = isLive(c, now, staleMs)
     const last = new Map<string, Act>()
-    for (const a of c.acts) if ((last.get(a.askId)?.at ?? -1) <= a.at) last.set(a.askId, a)
+    for (const a of c.acts) if ((isOn || a.kind === 'done') && (last.get(a.askId)?.at ?? -1) <= a.at) last.set(a.askId, a)
     for (const a of last.values()) latest.set(a.askId, [...(latest.get(a.askId) ?? []), { id: c.sessionId, act: a }])
   }
   const order = (x: { id: string; act: Act }, y: { id: string; act: Act }) => x.act.at - y.act.at || (x.id < y.id ? -1 : 1)

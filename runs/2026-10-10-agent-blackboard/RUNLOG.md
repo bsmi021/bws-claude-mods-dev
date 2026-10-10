@@ -41,5 +41,35 @@ The real question is where this lives, not whether it can be built.
 - Also learned: `session.send` hooks see `to` as a string, not `{ sessionId }`.
 - Checks: validate passed, tsc exit 0, 44/44 tests (receipts/t4-*).
 
+- T8 live run 1 (receipts/live-run1): partial.
+  - **Worked:** B's opening context listed A (api, busy, its claim) and "Open asks for this session: 6a63575c-1 · open · api → tests". B's Edit of notes.txt was denied by bws-board, naming api and its task. board_take worked. Both board_status listings agreed.
+  - **Gaps, all in the test setup:**
+    - Claude Code's built-in rule blocked A's `sleep 75`, so A finished before B answered.
+    - B refused to post a made-up "12 passed", which is correct model behavior; it needed a real command.
+    - Clearing CLAUDE_CODE_PLUGIN_DIRS in the shell had no effect, because the user settings' env wins, so cockpit's bus ran too.
+  - **Fixes for run 2:**
+    - A waits with an until-loop on its own card recording the ask as done. The same heartbeat queues the news, so the tool result that ends the loop must carry it.
+    - A then holds on a flag file until /board has run.
+    - B runs `echo 12 passed` as the suite.
+    - `--settings live-settings.json` sets cockpit's sessionBus to false.
+
+- T8 live run 2 (receipts/live-run2): B again got the intro with the open ask and was refused A's file. But A's `until grep ... <board dir>` was blocked by the sandbox's read rule (the board folder is outside A's working dir), so A exited. Its tombstone correctly removed the ask before B took it: B got `No ask "e7c36715-1" on the board`. Fix for run 3: the script watches A's card and drops a flag in the scratch repo, and A waits only on that flag.
+
+- T8 live run 3 (receipts/live-run3) found a **real bug**:
+  - **What passed:** B was told about the ask, was refused A's file, took the ask, ran `echo 12 passed`, and marked it done. B's board_status showed "done by tests (note: 12 passed)".
+  - **The bug:** B exited seconds later. Its tombstone dropped its acts, so A's next heartbeat found no done. A and a /board run both saw the ask as `open`.
+  - **Fix:** a tombstone keeps its `done` acts, since an outcome is final. askViews counts a done from any card file still present, while takes and declines count only from live cards.
+  - New unit test, and the plugin test now has B exit before A looks. 45/45.
+
+- T8 live run 4 (receipts/live): **passed**. Every point held:
+  - B's opening context listed `4cc42c37-1 · open · api → tests`.
+  - B's Edit of notes.txt was refused by bws-board, and the file stayed `from A`.
+  - B took the ask, ran `echo 12 passed`, and marked it done.
+  - A's next tool result carried "your ask 4cc42c37-1 is done by tests (a1eeca7d): 12 passed".
+  - A's board_status, B's board_status and a separate `/board` run all listed `4cc42c37-1 · done by tests (a1eeca7d) … (note: 12 passed)`.
+  - After exit all three cards were tombstones with no claims. B's kept its done act.
+- Final checks: validate passed, tsc exit 0, 45/45 tests (receipts/validate.txt, tsc.txt, plugin-test.txt). README written.
+- Not verified: urgent wake of an idle interactive session (it is covered by tests with session.send stubbed), and the Board pane drawn in a terminal.
+
 ## Next step
-T8: a live two-session acceptance run in a scratch repo. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.
+T5 cut-over (remove the bus from cockpit, add bws-board to CLAUDE_CODE_PLUGIN_DIRS in the same step, band chip). It waits for 193b884d's reply or Brian's OK, because 193b884d last changed the bus code in cockpit. Adding bws-board to the plugin dirs before then would run two coordination systems in every session. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.

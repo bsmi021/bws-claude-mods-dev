@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "sessionId": "4cc42c37-a106-49f8-903e-2b94cd09cf18",
+  "role": "api",
+  "cwd": "C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-mods-claude-code\\ad933363-8d84-4954-8a2a-654846d31924\\scratchpad\\board-live",
+  "startedAt": 1791646358607,
+  "seenAt": 1791646417674,
+  "status": "idle",
+  "task": "",
+  "run": null,
+  "lastFile": null,
+  "claims": [],
+  "outbox": [],
+  "asks": [],
+  "acts": [],
+  "gone": true
+}

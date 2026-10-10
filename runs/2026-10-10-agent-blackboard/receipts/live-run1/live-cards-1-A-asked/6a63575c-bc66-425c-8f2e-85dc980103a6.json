@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "sessionId": "6a63575c-bc66-425c-8f2e-85dc980103a6",
+  "role": "api",
+  "cwd": "C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects-bws-mods-claude-code\\ad933363-8d84-4954-8a2a-654846d31924\\scratchpad\\board-live",
+  "startedAt": 1791645996774,
+  "seenAt": 1791646004526,
+  "status": "busy",
+  "task": "Do these steps in order. 1) Use the Write tool to overwrite notes.txt with the single line: from A.…",
+  "run": null,
+  "lastFile": "c:/users/bsmi0/appdata/local/temp/claude/c--projects-bws-mods-claude-code/ad933363-8d84-4954-8a2a-654846d31924/scratchpad/board-live/notes.txt",
+  "claims": [
+    {
+      "path": "c:/users/bsmi0/appdata/local/temp/claude/c--projects-bws-mods-claude-code/ad933363-8d84-4954-8a2a-654846d31924/scratchpad/board-live/notes.txt",
+      "since": 1791646002276,
+      "at": 1791646002276
+    }
+  ],
+  "outbox": [],
+  "asks": [
+    {
+      "id": "6a63575c-1",
+      "to": "role:tests",
+      "text": "Run the auth suite against /login",
+      "urgent": false,
+      "at": 1791646004526,
+      "state": "open"
+    }
+  ],
+  "acts": []
+}
