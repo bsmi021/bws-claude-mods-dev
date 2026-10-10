@@ -46,6 +46,6 @@ Claude Code 2.1.296 on Windows.
   - Asked to shelve a tangent, Claude called `shelve_idea` with no permission prompt or denial, then finished
     the task.
   - `/shelf` printed the list.
-- Interactive terminal (0.1.0, by eye): the pane, ▶ ✓ ✗ and the scope toggle. Not yet re-checked by eye: 0.1.1's
-  wrapping and focus, which are covered by tests only. Not checked: Desktop. Mod UI does not show in VS Code chat or
+- Interactive terminal, checked by eye: the pane, ▶ ✓ ✗ and the scope toggle (0.1.0); wrapped text, focus on open,
+  and `a`/Esc without a click (0.1.1). Not checked: Desktop. Mod UI does not show in VS Code chat or
   cloud sessions; there, ask Claude to list ideas.

@@ -61,4 +61,8 @@ available in later conversations.
   draft it opens without focus.
 - Tests now check the focus request (empty box, draft, already open) and `wrap: 'wrap'` on the idea text: 20 pass.
   `validate-0.1.1.txt` passes; `tsc-0.1.1.txt` is empty (exit 0).
-- Not yet checked by eye: how the wrapped rows look and whether focus takes in a real terminal (no screen handover this round).
+- Interactive check (drive-screen, Brian handed over the screen; scratch shelf reset, with one other-project idea):
+  - `ui-12`: a 209-character `/idea`, then `/shelf`. The idea wraps over 6 lines with a hanging indent under the
+    `▶ ✓ ✗` buttons. The focus hint line shows with no click, so the pane holds the keys.
+  - `ui-13`: `a` with no click switched to all projects (2 ideas, each wrapped with its project); the prompt box stayed empty.
+  - `ui-14`: Esc closed the pane. Session exited, window closed. The scratch file holds #1 and #2, both open.
