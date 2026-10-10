@@ -52,7 +52,7 @@ Ship items 1–5 from `runs/2026-10-10-mods-review` as one release, with the fin
 - `live-fl-owned.jsonl`: the session appended to the RUNLOG with Edit and was blocked with both items named. Claude then made both files and ticked T1 and T2.
 - `live-guard-args.jsonl` (`vramThresholdMb` 1): a `Start-Process -ArgumentList $a` with the overrides in `$a` ran. Without them it was refused.
 - Context gate (T7): the scratch repo had a run folder in all 3 headless transcripts (`~/.claude/projects/...-scratchpad-live-repo/`), and the `# bwsCockpit` block appears 0 times in them. Before 0.10.0 every one of those sessions got it.
-- Not checked live: the band's board link on a real terminal (covered by a test only; it needs a real loop on a real terminal).
+- Board link (T8), live 2026-10-10: an interactive `claude` (2.1.296) opened in a new Windows Terminal window in the pit-maneuver repo with `backgroundProbe` on. The `pitu` loop was PAUSED, not resumed for this check. The band's chip row read `● loop pitu INP-04 needs you  board localhost:8771/`, with the board drawn as an underlined link (`receipts/live-band-board-link.png`).
 
 ## Not done (parked)
 - Editor lease, the harness-template Monitor line, the Locator Glob path rewrite, and the publish-branch refresh.
