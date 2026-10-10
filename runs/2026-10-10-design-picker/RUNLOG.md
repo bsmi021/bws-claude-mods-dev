@@ -51,3 +51,10 @@ Evidence:
   "You picked Warm craft".
 
 Checks: validate passed; plugin test 24/24; tsc clean.
+
+## Recheck: tightened GEN_SYSTEM (2026-10-10)
+- One live run, `live-gen-4-tightened.png` / `live-gen3-debug.log` (Haiku answered in 11025 ms, 2443 chars).
+- No text block overlaps another in any of the three cards (before: "ShoVis", "RoOrder photo").
+- Still seen: labels clipped to their block's width ("Shop b", "ORDER N", "Ethiop", "Colomb", "Brazi"). That's
+  width truncation, not overlap; possible follow-up to pick a smaller font/shorter label or widen text blocks.
+- Sample size is one run; Haiku output varies.
