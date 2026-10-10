@@ -1,0 +1,22 @@
+
+tests\enhance.test.ts:
+(pass) lib > instruction paths: loaded first, project files added once, case-insensitive [2.15ms]
+(pass) lib > instruction text is capped per file and overall [0.61ms]
+(pass) lib > commands: user and plugin first, built-ins last, own command left out [0.35ms]
+(pass) lib > mcp server names, conversation tail, reply cleanup [0.74ms]
+(pass) lib > per-model notes follow the target family [0.56ms]
+(pass) mod > headless: /enhance answers with the rewrite, grounded in instructions, skills and the model [51.87ms]
+(pass) mod > the model option picks the enhancer model [30.29ms]
+(pass) mod > no argument: usage, no model call [24.33ms]
+(pass) mod > interactive: fills the box, focuses the pane, Send submits the box as the user [47.38ms]
+(pass) mod > Revert puts the rough prompt back [31.47ms]
+(pass) mod > text typed while waiting is kept; Put in box offers the rewrite [36.92ms]
+(pass) mod > a failed model call shows the reason and fills nothing [33.91ms]
+(pass) mod > footer button: the chord enhances the draft in the box and replaces it [33.65ms]
+(pass) mod > footer button with an empty box only toasts [31.32ms]
+(pass) mod > chordAction empty: the footer is left to the engine [26.83ms]
+(pass) mod > prompts the person sends themselves pass through untouched [26.09ms]
+
+ 16 pass
+ 0 fail
+Ran 16 tests across 1 file. [0.69s]

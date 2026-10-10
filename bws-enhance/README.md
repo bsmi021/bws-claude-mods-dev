@@ -1,0 +1,57 @@
+# bws-enhance
+
+Turns a vague prompt into a specific one Claude Code can act on, then lets you send it.
+
+The rewrite is grounded in what this session actually has:
+- the instruction files the session loaded (user and project `CLAUDE.md`), plus the project's `AGENTS.md` / `CLAUDE.md` / `.claude/CLAUDE.md`
+- installed skills and slash commands (names + one-line descriptions), connected MCP servers
+- the project root and the last few messages, so "it" / "that bug" resolve
+- Anthropic's prompting best practices, plus per-family notes for the model that will run the prompt
+  (Opus: explicit minimal scope; Sonnet: keep going until the checks pass, no extra tests/docs; Haiku: run the check before reporting done).
+  Source summary: `runs/2026-10-10-prompt-enhancer/receipts/anthropic-prompting-guidance.md`.
+
+## Use
+
+| Action | Keys |
+| --- | --- |
+| Enhance a rough prompt | `/enhance <rough prompt>` (works while Claude is busy) |
+| Enhance the draft already in the box | `ctrl+x ctrl+p` (needs the keybinding below) |
+| Send the enhanced prompt | `Enter` in the box, or `s` / **Send** in the pane |
+| Revert to your rough prompt | `r` / **Revert** in the pane |
+| Dismiss / cancel | `d` / `c`, or `Esc` / `ctrl+x x` on the pane |
+
+The enhanced prompt replaces the prompt box. A small pane opens with **Send / Revert / Dismiss**; it takes keyboard focus
+when the result lands, so `s` sends immediately, and `Esc` hands the keys back to the box to edit first. **Send** sends the
+box as it is, edits included, as your own words. If you typed something else while it was working, the box is left alone and
+the pane offers **Put in box**.
+
+Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output.
+
+## The chord
+
+Mods can't define new keybinding actions. Instead, the footer shows a small `✦ enhance` button that borrows an engine
+action; whatever chord you bind to that action presses the button from the prompt. Default action:
+`app:toggleDiffPreSession` (only Claude Code's old diff panel handles it, which isn't used while the built-in `cc-plugin-diff` mod is on).
+In `~/.claude/keybindings.json`:
+
+```json
+{ "bindings": [ { "context": "Global", "bindings": { "ctrl+x ctrl+p": "app:toggleDiffPreSession" } } ] }
+```
+
+## Options (`/plugin` → bws-enhance)
+
+- `model`: model that rewrites the prompt (default `sonnet`).
+- `chordAction`: the engine action the footer button borrows; empty hides the button.
+
+## Load
+
+```
+claude --plugin-dir ./bws-enhance
+```
+or add `C:/Projects/bws.mods.claude-code/bws-enhance` to `CLAUDE_CODE_PLUGIN_DIRS`.
+
+## Tested
+
+Claude Code 2.1.296. `claude plugin validate`, `claude plugin test` (16 tests), tsc strict, live `claude -p` runs.
+Terminal surface: see the run folder RUNLOG for what was verified interactively. Desktop: pane covered by tests only.
+VS Code / mobile / cloud: no mod UI; use `/enhance` there and read the reply.

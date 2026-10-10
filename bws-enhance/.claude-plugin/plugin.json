@@ -1,0 +1,23 @@
+{
+  "name": "bws-enhance",
+  "version": "0.1.0",
+  "description": "/enhance <rough prompt>, or a chord on the draft in the box: rewrites a vague prompt into a specific, actionable one using this project's instructions, installed skills and commands, MCP servers, the recent conversation and Anthropic's prompting guidance for the session's model, puts it in the prompt box, and offers Send / Revert in a small pane.",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Enhancer model",
+      "description": "Model alias or id that rewrites the prompt (sonnet, opus, haiku, or a full id).",
+      "default": "sonnet"
+    },
+    "chordAction": {
+      "type": "string",
+      "title": "Chord action for 'enhance the draft'",
+      "description": "An engine keybinding action the footer's enhance button borrows; bind a chord to it in ~/.claude/keybindings.json (Global). Default app:toggleDiffPreSession, which nothing else handles while the cc-plugin-diff mod is on. Empty hides the button.",
+      "default": "app:toggleDiffPreSession"
+    }
+  }
+}
