@@ -66,3 +66,12 @@ available in later conversations.
     `▶ ✓ ✗` buttons. The focus hint line shows with no click, so the pane holds the keys.
   - `ui-13`: `a` with no click switched to all projects (2 ideas, each wrapped with its project); the prompt box stayed empty.
   - `ui-14`: Esc closed the pane. Session exited, window closed. The scratch file holds #1 and #2, both open.
+
+## 0.1.2: open-idea count under the prompt
+- `$.ui.status` pins `💡 N shelved idea(s) · /shelf` for this project; `undefined` clears it at zero. It is the
+  plugin's own status line, so it doesn't collide with bws-enhance's `SessionMode` footer hook or bws-cockpit's band.
+- It refreshes at `session.start`, after /idea, shelve_idea, close_idea and the pane's Done/Drop, and at each
+  `turn.complete` (new unmatched hook), which picks up other sessions' writes. It is skipped headless. Option `indicator`.
+- Checks: `tests-0.1.2.txt` 26 pass (6 new), `validate-0.1.2.txt` passes, `tsc-0.1.2.txt` is empty (exit 0).
+  `live-0.1.2-load.jsonl`: a fresh headless session loads 0.1.2 from settings and `/idea` saves.
+- Not checked by eye: how the status line looks in a terminal.

@@ -16,6 +16,7 @@ import {
   resumePrompt,
   serializeShelf,
   setStatus,
+  statusText,
   shelfPath,
   slash,
   type By,
@@ -33,6 +34,7 @@ const IDLE: ShelfView = { isAll: false, root: '', ideas: [], now: 0, note: '' }
 const view = atom({ plugin: 'bws-shelf', key: 'view' } as const, IDLE)
 
 let pathOption = ''
+let isIndicator = true
 
 async function filePath($: EngineInterface) {
   const path = shelfPath(pathOption, await $.env.get('CLAUDE_CONFIG_DIR'), (await $.env.get('USERPROFILE')) ?? (await $.env.get('HOME')))
@@ -90,14 +92,27 @@ async function openPane($: EngineInterface, isAll: boolean) {
   if (!r.isPlaced) $.ui.toast(`Shelf: pane not shown (${r.reason}). /shelf in a wider window, or ask Claude to list ideas.`)
 }
 
-// A change from a command or a tool redraws an open pane.
-async function redrawIfOpen($: EngineInterface) {
+// The open-idea count for this project as the plugin's status line under the prompt. Never throws: it is decoration.
+async function showCount($: EngineInterface) {
+  if (!isIndicator) return
+  try {
+    if ((await $.session.surfaces()).length === 0) return
+    $.ui.status(statusText(openIdeas(await load($), await root($)).length))
+  } catch {
+    // a missing home folder or an unreadable file leaves the last line standing
+  }
+}
+
+// A change from a command or a tool redraws an open pane and the count.
+async function changed($: EngineInterface) {
   if (await isOpen($)) await refreshView($, (await read($, view)).isAll)
+  await showCount($)
 }
 
 async function onClose($: EngineInterface, idea: Idea, status: Status) {
   await close($, idea.id, status)
   await refreshView($, (await read($, view)).isAll, `#${idea.id} ${status === 'done' ? 'done' : 'dropped'}`)
+  await showCount($)
 }
 
 async function onResume($: EngineInterface, idea: Idea) {
@@ -120,6 +135,7 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
 export const register: Register = (on, options) => {
   pathOption = String(options.shelfPath ?? '')
   const isNudge = options.nudge !== false
+  isIndicator = options.indicator !== false
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -170,6 +186,13 @@ export const register: Register = (on, options) => {
         required: ['id', 'status'],
       },
     })
+    await showCount($)
+    return next(e)
+  })
+
+  // Another session may have changed the shelf: recount once each turn ends.
+  on('turn.complete', async ($, e, next) => {
+    void showCount($)
     return next(e)
   })
 
@@ -179,7 +202,7 @@ export const register: Register = (on, options) => {
     const isHeadless = (await $.session.surfaces()).length === 0
     try {
       const idea = await shelve($, text, undefined, 'user')
-      await redrawIfOpen($)
+      await changed($)
       if (isHeadless) return { text: `Shelved #${idea.id}: ${idea.text}` }
       $.ui.toast(`Shelved #${idea.id}`)
       return {}
@@ -209,7 +232,7 @@ export const register: Register = (on, options) => {
     if (text === '') return { deny: 'shelve_idea needs text: the idea in one line.' }
     try {
       const idea = await shelve($, text, str(input.detail) || undefined, 'claude')
-      await redrawIfOpen($)
+      await changed($)
       $.ui.toast(`Claude shelved #${idea.id}: ${idea.text}`)
       return { result: `Shelved as #${idea.id}. Don't pursue it now; continue the current task.` }
     } catch (err) {
@@ -238,7 +261,7 @@ export const register: Register = (on, options) => {
     try {
       const idea = await close($, id, status)
       if (!idea) return { deny: `No idea #${id} on the shelf.` }
-      await redrawIfOpen($)
+      await changed($)
       return { result: `#${id} is ${status}: ${idea.text}` }
     } catch (err) {
       return { deny: `Could not update the shelf: ${String(err)}` }

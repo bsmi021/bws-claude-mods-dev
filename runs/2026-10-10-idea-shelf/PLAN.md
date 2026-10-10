@@ -10,7 +10,7 @@
 - Checks green: validate, plugin test, tsc strict. One live `-p` receipt. Then added to user `CLAUDE_CODE_PLUGIN_DIRS`.
 
 ## Parked
-- Band/footer indicator with the open count.
+- ~~Band/footer indicator with the open count~~: done in 0.1.2 as `$.ui.status`.
 - Auto-detecting tangents in the user's prompt.
 - Cross-machine sync.
 

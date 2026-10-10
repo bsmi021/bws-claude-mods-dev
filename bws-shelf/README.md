@@ -18,6 +18,9 @@ Park tangents instead of following them. You shelve an idea with `/idea`; Claude
   - `mcp__bws-shelf__shelve_idea {text, detail?}` is always loaded. Its result tells Claude to carry on with the
     current task, and you get a toast.
   - `mcp__bws-shelf__list_ideas {scope?}` and `mcp__bws-shelf__close_idea {id, status}` load through ToolSearch.
+- A status line under the prompt shows this project's open-idea count, `💡 3 shelved ideas · /shelf`. It is hidden when the
+  shelf is empty. It updates at session start, after every change made in this session, and at the end of each turn,
+  which picks up ideas other sessions added.
 - An attended conversation gets one line of context with its first message: the open-idea count at that moment, and
   the instruction to shelve tangents rather than follow them.
 
@@ -30,7 +33,8 @@ One JSON file holds every project's ideas, so all sessions share the same shelf:
 
 ## Options (`pluginConfigs["bws-shelf"].options`)
 - `shelfPath`: the shelf file. Empty uses the default above.
-- `nudge` (default true): the per-prompt context line.
+- `nudge` (default true): the context line at the start of a conversation.
+- `indicator` (default true): the open-idea count under the prompt.
 
 ## Load
 - Development: `claude --plugin-dir ./bws-shelf`. It is also listed in the user `CLAUDE_CODE_PLUGIN_DIRS`.
@@ -47,5 +51,6 @@ Claude Code 2.1.296 on Windows.
     the task.
   - `/shelf` printed the list.
 - Interactive terminal, checked by eye: the pane, ▶ ✓ ✗ and the scope toggle (0.1.0); wrapped text, focus on open,
-  and `a`/Esc without a click (0.1.1). Not checked: Desktop. Mod UI does not show in VS Code chat or
+  and `a`/Esc without a click (0.1.1). The 0.1.2 count line is covered by tests only, not checked by eye. Not checked:
+  Desktop. Mod UI does not show in VS Code chat or
   cloud sessions; there, ask Claude to list ideas.

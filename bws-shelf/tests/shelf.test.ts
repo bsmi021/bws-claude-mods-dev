@@ -1,6 +1,6 @@
 import { test, expect, mock, describe } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { addIdea, age, contextLine, EMPTY, isAllScope, listText, openIdeas, parseShelf, serializeShelf, setStatus, shelfPath } from '../hooks/lib'
+import { addIdea, age, contextLine, statusText, EMPTY, isAllScope, listText, openIdeas, parseShelf, serializeShelf, setStatus, shelfPath } from '../hooks/lib'
 
 const HOME = 'C:/Users/me'
 const FILE = `${HOME}/.claude/idea-shelf/shelf.json`
@@ -17,7 +17,7 @@ function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: NOW })
   const files: Record<string, string> = {}
   if (w.shelf !== undefined) files[FILE] = w.shelf
-  const seen = { toasts: [] as string[], fills: [] as string[], opened: [] as { id: string; focus?: boolean; closeOnEscape?: boolean }[], closed: [] as string[] }
+  const seen = { toasts: [] as string[], fills: [] as string[], opened: [] as { id: string; focus?: boolean; closeOnEscape?: boolean }[], closed: [] as string[], status: [] as (string | undefined)[] }
   let box = w.box ?? ''
   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
   on('session.root', () => ({ value: w.root ?? `${ROOT}\\` }))
@@ -39,6 +39,14 @@ function world(on: On, w: World = {}) {
     seen.toasts.push(String((e as unknown as { text: string }).text ?? e))
     return { value: undefined as never }
   })
+  on('ui.status', ($, e) => {
+    seen.status.push(e.text)
+    return { value: undefined }
+  })
+  on('turn.complete', () => ({ text: '' }) as never)
+  on('tool.register', ($, e) => ({ value: { tool: e.name } }) as never)
+  on('command.register', ($, e) => ({ value: { command: e.name } }) as never)
+  on('session.start', () => ({ cwd: ROOT }) as never)
   on('ui.panes', () => ({ value: (w.panes ?? []).map(id => ({ id })) as never }))
   on('ui.open', ($, e) => {
     seen.opened.push({ id: e.id, focus: e.focus, closeOnEscape: e.closeOnEscape })
@@ -118,6 +126,12 @@ describe('lib', () => {
     expect(openIdeas(s, '').map(i => i.id)).toEqual([3, 2, 1])
     expect(listText(openIdeas(s, ROOT), NOW, false, true)).toBe('#3 game idea two  (Claude, 2m)\n    see src/ai.ts\n#1 game idea one  (you, 1h)')
     expect(listText(openIdeas(s, ''), NOW, true, false)).toContain('#2 site idea  (Claude, 1m, site)')
+  })
+
+  test('status text: hidden at zero, singular and plural', () => {
+    expect(statusText(0)).toBeUndefined()
+    expect(statusText(1)).toBe('💡 1 shelved idea · /shelf')
+    expect(statusText(4)).toBe('💡 4 shelved ideas · /shelf')
   })
 
   test('age, scope words, context line', () => {
@@ -273,5 +287,47 @@ describe('mod', () => {
     const ui = await $.ui.mount(PANE)
     expect(await ui.find({ type: 'Text', text: /#4 fresh one/ })).toBeDefined()
     await ui.unmount()
+  })
+
+  test('indicator: this project count at session start, after /idea, after close, gone when empty', async ($, on) => {
+    const { seen } = world(on, { shelf: seeded() })
+    await $.session.start({ cwd: ROOT } as never)
+    expect(seen.status.at(-1)).toBe('💡 2 shelved ideas · /shelf')
+    await $.command.run({ command: 'idea', args: 'third' } as never)
+    expect(seen.status.at(-1)).toBe('💡 3 shelved ideas · /shelf')
+    for (const id of [1, 3, 4]) await $.tool.call({ tool: 'mcp__bws-shelf__close_idea', id, status: 'done' } as never)
+    expect(seen.status.at(-1)).toBeUndefined()
+  })
+
+  test('indicator: a pane Done updates it', async ($, on) => {
+    const { seen, openShelf } = world(on, { shelf: seeded() })
+    await openShelf($)
+    const ui = await $.ui.mount(PANE)
+    await ui.press({ key: 'done-3' })
+    await ui.unmount()
+    expect(seen.status.at(-1)).toBe('💡 1 shelved idea · /shelf')
+  })
+
+  test('indicator: a turn end picks up ideas from another session', async ($, on) => {
+    const { seen, files, shelf, clock } = world(on, { shelf: seeded() })
+    await $.session.start({ cwd: ROOT } as never)
+    files[FILE] = serializeShelf(addIdea(shelf(), { text: 'from another session', by: 'user', project: ROOT, now: NOW }).shelf)
+    await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never)
+    await clock.settle()
+    expect(seen.status.at(-1)).toBe('💡 3 shelved ideas · /shelf')
+  })
+
+  test('indicator: none headless, none when switched off', async ($, on) => {
+    const { seen } = world(on, { surfaces: [], shelf: seeded() })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.command.run({ command: 'idea', args: 'x' } as never)
+    expect(seen.status).toEqual([])
+  })
+
+  test('indicator option off', { options: { indicator: false } }, async ($, on) => {
+    const { seen } = world(on, { shelf: seeded() })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.command.run({ command: 'idea', args: 'x' } as never)
+    expect(seen.status).toEqual([])
   })
 })
