@@ -115,8 +115,16 @@ Finish line in PLAN.md.
   - In the worktree, validate passed for both. Tests: board 45/45, cockpit 122/122 (receipts/publish14-*).
   - Committed `e07a3a5` and pushed: `1fa871e..e07a3a5 publish -> main`. The worktree was removed.
 
+- Publish bws-board 0.2.0 (Brian's request):
+  - Source `0162120`. The working tree holds another session's uncommitted 0.3.0, which I left alone; the worktree checkout reads the commit only.
+  - `git checkout 0162120 -- bws-board`. The file list and contents of bws-board and bws-cockpit matched `0162120` exactly, with no leftovers.
+  - Scanned the 946 added lines. Hits: only the neutral test ids, plus a relative `runs/` reference to unpublished receipts (the 0.1.0 README has the same kind).
+  - Top-level README: the bws-board row now mentions history and `/board digest`.
+  - In the worktree, validate passed and 61/61 tests passed (receipts/publish-board020-*).
+  - Committed `55f3a76` and pushed: `e07a3a5..55f3a76 publish -> main`. The worktree was removed.
+
 ## Outcome
-Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published bws-board 0.1.0 + bws-cockpit 0.14.0 as `publish` e07a3a5 = `mods/main`.
+Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published bws-board 0.2.0 + bws-cockpit 0.14.0 as `publish` 55f3a76 = `mods/main`.
 
 ## Next step
 Parked follow-ups (PLAN.md): claim-check Bash/PowerShell writes, a band chip or `/bus` command, push delivery through `$.session.send`, and pid liveness.
