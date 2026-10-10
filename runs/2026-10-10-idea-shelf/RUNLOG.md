@@ -28,11 +28,28 @@ available in later conversations.
 - `live-from-settings.jsonl`: a fresh `claude -p "/shelf"` with no `--plugin-dir` loaded bws-shelf from settings and
   answered from the real, empty shelf.
 
+## Interactive check (drive-screen, Brian handed over the screen)
+- A new terminal session (`live.ps1`/`launch.ps1`) ran with `--settings` pointing at a scratch shelf. The shelf was seeded
+  with one idea from another project, so the real shelf was untouched.
+- `ui-02`: two `/idea` commands left the transcript empty and saved #2 and #3 to the file.
+- `ui-03`: `/shelf` opened a right-side pane: "2 open ideas · bws.mods.claude-code", rows `▶ ✓ ✗ #n text`, [All projects] [Close].
+- `ui-04`: clicking All projects showed 3 ideas, including the other project's #1. `ui-05`: with the pane focused (one click
+  inside it), `a` switched back to this project.
+- `ui-06`: ✓ on #2 showed the note "#2 done". `ui-07`: ✗ on #1 in the all view showed "#1 dropped". The file has #1
+  dropped and #2 done, each with `closedAt`.
+- `ui-08`: ▶ on #3 put "Pick up shelved idea #3: ..." in the box, unsent, closed the pane and showed the toast; #3 stays open.
+- Box cleared, session exited, window closed.
+- Findings:
+  - The pane opens on the right at about 40 columns, so idea text is cut with an ellipsis.
+  - The pane opens without focus, so `a`/`c` need a click inside it first; the buttons work on click.
+- One slip: the first launch's window hung below the taskbar. Closing it, `/exit` went through Git Bash path conversion
+  (`C:/Program Files/Git/exit`) and may have reached that session as a one-line prompt. Relaunched; `MSYS_NO_PATHCONV=1` after that.
+
 ## Not verified
-- The pane in an interactive terminal or Desktop, checked by eye. Only the test harness covers it so far.
+- The pane in Claude Desktop.
 - A permission prompt for `shelve_idea` in default (non-auto) interactive mode. If one shows, allow-list `mcp__bws-shelf__*`.
 
 ## Next / follow-ups (parked)
-- Live check of the pane (drive-screen), when Brian hands over the screen.
+- Pane: wrap idea text instead of cutting it in the narrow side pane; maybe open it focused when the box is empty.
 - Refresh the `publish` branch with bws-shelf (name scan first).
 - Band or footer indicator with the open count.
