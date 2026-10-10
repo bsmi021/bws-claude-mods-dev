@@ -1,0 +1,24 @@
+ 2668 python-heredoc file edit  {'interactive': 934, 'headless': 1734}
+  174 harness sleep block  {'interactive': 13, 'headless': 161}
+  104 long-command: cat > file heredoc  {'interactive': 21, 'headless': 83}
+   79 long-command: python heredoc  {'headless': 62, 'interactive': 17}
+   79 Monitor InputValidationError  {'headless': 79}
+   77 shell call hit 10-min cap  {'interactive': 22, 'headless': 55}
+   38   ...of which a wait loop  {}
+   13 headless write-permission ungranted  {'headless': 13}
+    1 other InputValidationError  {'headless': 1}
+== Monitor InputValidationError
+   ('-bws-android-scribe', '<tool_use_error>InputValidationError: [\n  {\n    "code": "custom",\n    "path": [],\n    "message": "exactly one of command or ws"\n  }\n]\n\nThis tool\'s schema was not sent to the API — it was not in the discovered-tool set derived 
+   ('-bws-android-scribe', "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nThe required parameter `description` is missing\n\nThis tool's schema was not sent to the API — it was not in the discovered-tool set derived from messag
+   ('-bws-android-scribe', "<tool_use_error>InputValidationError: Monitor failed due to the following issue:\nThe required parameter `description` is missing\n\nThis tool's schema was not sent to the API — it was not in the discovered-tool set derived from messag
+== shell call hit 10-min cap
+   ('-bws-android-scribe', 'mkdir -p /c/Projects/bws.android.scribe/runs/2026-10-04-m8-f1-design/drafts && cat > /c/Projects/bws.android.scribe/runs/2026-10-04-m8-f1-de')
+   ('-bws-android-scribe', "sed -i 's/^- \\[ \\] T05 Commit/- [x] T05 Commit/; s/^- \\[ \\] T06 Manifest/- [x] T06 Manifest/' runs/2026-10-04-m8-f2-art/TASKS.md && until gr")
+   ('-bws-applications-motion-capt', 'python -I - <<\'EOF\'\np = "src/mocap_engine/hands.py"\ns = open(p, encoding="utf-8").read()\npairs = [\n ("    world = np.full((n, 2, 21, 3), np.')
+   ('-bws-game-pit-maneuver', 'cd /c/Projects/bws.game.pit-maneuver; U="$LOCALAPPDATA/Unity/bin/unity.exe"; "$U" projects open "C:\\Projects\\bws.game.pit-maneuver" 2>&1|tai')
+   ('-bws-game-pit-maneuver', 'until [ -s /c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-pit-maneuver/0d055c9d-61b9-4977-9c5e-b79cdda44edb/tasks/bel21wcx6.o')
+   ('-bws-game-pit-maneuver', 'until [ -f /c/Projects/bws.game.pit-maneuver/runs/2026-10-08-pitu-tgt-01-civilian-traffic-behaviour/evidence/final-done.txt ]; do sleep 15; ')
+   ('-bws-game-pit-maneuver', 'cd /c/Projects/bws.game.pit-maneuver; powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1 -Tag aud05 2>&1 | tail -15 | tee ')
+   ('-bws-game-pit-maneuver', 'cd /c/Projects/bws.game.pit-maneuver; until grep -q "exit=" runs/2026-10-04-pitu-plt-05-build-pipeline/evidence/dev-build-2.txt; do sleep 10')
+== other InputValidationError
+   ('-bws-game-pit-maneuver', 'PushNotification', '<tool_use_error>InputValidationError: [\n  {\n    "code": "invalid_value",\n    "values": [\n      "proactive"\n    ],\n    "path": [\n      "status"\n    ],\n    "messa')

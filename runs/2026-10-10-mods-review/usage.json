@@ -1,0 +1,3669 @@
+{
+ "window": [
+  "2026-10-03T04:00:00+00:00",
+  "2026-10-10T11:14:56.183632+00:00"
+ ],
+ "n_files": 571,
+ "sessions": {
+  "top": 493,
+  "sub": 119,
+  "headless": 408,
+  "interactive": 37
+ },
+ "n_prompts": 834,
+ "n_tools": 35847,
+ "n_errors": 1262,
+ "projects": [
+  {
+   "project": "C--Projects-bws-game-pit-maneuver",
+   "sessions": 265,
+   "interactive": 1,
+   "headless": 263,
+   "sub": 4,
+   "prompts": 298,
+   "tools": 15672,
+   "errs": 684,
+   "compacts": 1,
+   "days": 7
+  },
+  {
+   "project": "C--Projects-bws-game-tms",
+   "sessions": 60,
+   "interactive": 18,
+   "headless": 23,
+   "sub": 68,
+   "prompts": 262,
+   "tools": 10622,
+   "errs": 238,
+   "compacts": 17,
+   "days": 7
+  },
+  {
+   "project": "C--Projects-bws-android-scribe",
+   "sessions": 20,
+   "interactive": 1,
+   "headless": 18,
+   "sub": 0,
+   "prompts": 38,
+   "tools": 1874,
+   "errs": 61,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Projects-tms-heim",
+   "sessions": 11,
+   "interactive": 4,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 36,
+   "tools": 1529,
+   "errs": 37,
+   "compacts": 4,
+   "days": 3
+  },
+  {
+   "project": "C--Projects-tms-issues",
+   "sessions": 45,
+   "interactive": 0,
+   "headless": 45,
+   "sub": 0,
+   "prompts": 45,
+   "tools": 1286,
+   "errs": 61,
+   "compacts": 0,
+   "days": 4
+  },
+  {
+   "project": "C--Projects-tms-ui",
+   "sessions": 17,
+   "interactive": 1,
+   "headless": 15,
+   "sub": 17,
+   "prompts": 33,
+   "tools": 1229,
+   "errs": 53,
+   "compacts": 2,
+   "days": 1
+  },
+  {
+   "project": "C--Projects-tms-save",
+   "sessions": 17,
+   "interactive": 1,
+   "headless": 15,
+   "sub": 4,
+   "prompts": 24,
+   "tools": 793,
+   "errs": 31,
+   "compacts": 0,
+   "days": 2
+  },
+  {
+   "project": "C--projects",
+   "sessions": 2,
+   "interactive": 1,
+   "headless": 0,
+   "sub": 11,
+   "prompts": 4,
+   "tools": 769,
+   "errs": 42,
+   "compacts": 1,
+   "days": 1
+  },
+  {
+   "project": "C--Projects-tms-items",
+   "sessions": 13,
+   "interactive": 0,
+   "headless": 13,
+   "sub": 4,
+   "prompts": 13,
+   "tools": 717,
+   "errs": 17,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Projects-prototype-pit-manuever",
+   "sessions": 4,
+   "interactive": 1,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 29,
+   "tools": 571,
+   "errs": 25,
+   "compacts": 1,
+   "days": 2
+  },
+  {
+   "project": "C--Projects-bws-applications-motion-capture-studio",
+   "sessions": 4,
+   "interactive": 2,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 10,
+   "tools": 367,
+   "errs": 8,
+   "compacts": 0,
+   "days": 2
+  },
+  {
+   "project": "C--Projects-battle-souls",
+   "sessions": 2,
+   "interactive": 1,
+   "headless": 0,
+   "sub": 5,
+   "prompts": 2,
+   "tools": 208,
+   "errs": 1,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Users-bsmi0--claude",
+   "sessions": 2,
+   "interactive": 1,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 14,
+   "tools": 74,
+   "errs": 3,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Projects-bws-mods-claude-code",
+   "sessions": 6,
+   "interactive": 2,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 6,
+   "tools": 53,
+   "errs": 1,
+   "compacts": 0,
+   "days": 2
+  },
+  {
+   "project": "C--Projects-bws-portfolio",
+   "sessions": 2,
+   "interactive": 1,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 2,
+   "tools": 36,
+   "errs": 0,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-game-pit-maneuver-1fce326c-9aad-4196-b5a4-fd1db48a6d72-scratchpad-haiku-test",
+   "sessions": 5,
+   "interactive": 0,
+   "headless": 5,
+   "sub": 3,
+   "prompts": 5,
+   "tools": 20,
+   "errs": 0,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Users-bsmi0--codex-generated-images",
+   "sessions": 2,
+   "interactive": 1,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 1,
+   "tools": 12,
+   "errs": 0,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp-claude-C--Projects-bws-game-tms-be310135-4a22-4d3e-a479-3ef9fdb2c520-scratchpad-haikuprobe",
+   "sessions": 4,
+   "interactive": 0,
+   "headless": 4,
+   "sub": 3,
+   "prompts": 4,
+   "tools": 11,
+   "errs": 0,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Projects-bws-mods-claude-code-runs-2026-10-06-headless-flash",
+   "sessions": 4,
+   "interactive": 0,
+   "headless": 4,
+   "sub": 0,
+   "prompts": 4,
+   "tools": 4,
+   "errs": 0,
+   "compacts": 0,
+   "days": 1
+  },
+  {
+   "project": "C--Users-bsmi0",
+   "sessions": 5,
+   "interactive": 1,
+   "headless": 0,
+   "sub": 0,
+   "prompts": 1,
+   "tools": 0,
+   "errs": 0,
+   "compacts": 0,
+   "days": 2
+  },
+  {
+   "project": "C--Users-bsmi0-AppData-Local-Temp",
+   "sessions": 3,
+   "interactive": 0,
+   "headless": 3,
+   "sub": 0,
+   "prompts": 3,
+   "tools": 0,
+   "errs": 0,
+   "compacts": 0,
+   "days": 2
+  }
+ ],
+ "tools": [
+  [
+   "Bash",
+   23474
+  ],
+  [
+   "Read",
+   3870
+  ],
+  [
+   "Write",
+   1971
+  ],
+  [
+   "PowerShell",
+   1287
+  ],
+  [
+   "Edit",
+   1201
+  ],
+  [
+   "Grep",
+   839
+  ],
+  [
+   "Monitor",
+   837
+  ],
+  [
+   "mcp__claude_ai_Figma__get_screenshot",
+   449
+  ],
+  [
+   "SendMessage",
+   310
+  ],
+  [
+   "mcp__claude_ai_Figma__use_figma",
+   246
+  ],
+  [
+   "mcp__unreal-mcp__call_tool",
+   236
+  ],
+  [
+   "Glob",
+   159
+  ],
+  [
+   "ToolSearch",
+   155
+  ],
+  [
+   "AskUserQuestion",
+   136
+  ],
+  [
+   "Agent",
+   123
+  ],
+  [
+   "Artifact",
+   109
+  ],
+  [
+   "SubagentHandback",
+   57
+  ],
+  [
+   "WebFetch",
+   56
+  ],
+  [
+   "TaskStop",
+   50
+  ],
+  [
+   "Skill",
+   44
+  ],
+  [
+   "WebSearch",
+   43
+  ],
+  [
+   "ScheduleWakeup",
+   34
+  ],
+  [
+   "mcp__claude_ai_Figma__get_figma_skill",
+   31
+  ],
+  [
+   "mcp__unreal-mcp__describe_toolset",
+   25
+  ],
+  [
+   "ListAgents",
+   23
+  ],
+  [
+   "mcp__claude_ai_Figma__get_metadata",
+   21
+  ],
+  [
+   "mcp__codegraph__codegraph_explore",
+   12
+  ],
+  [
+   "mcp__unreal-mcp__list_toolsets",
+   11
+  ],
+  [
+   "mcp__claude_ai_Figma__upload_assets",
+   5
+  ],
+  [
+   "bash",
+   5
+  ],
+  [
+   "PushNotification",
+   5
+  ],
+  [
+   "ArtifactComments",
+   3
+  ],
+  [
+   "Advisor",
+   2
+  ],
+  [
+   "mcp__claude_ai_Figma__whoami",
+   2
+  ],
+  [
+   "mcp__claude_ai_Figma__create_new_file",
+   2
+  ],
+  [
+   "CronCreate",
+   2
+  ],
+  [
+   "CronDelete",
+   2
+  ],
+  [
+   "bash_placeholder",
+   1
+  ],
+  [
+   "Workflow",
+   1
+  ],
+  [
+   "mcp__claude_ai_Figma__get_design_context",
+   1
+  ],
+  [
+   "mcp__claude_ai_Figma__get_variable_defs",
+   1
+  ],
+  [
+   "SendFeedback",
+   1
+  ],
+  [
+   "mcp__puppetmaster__puppetmaster_codex",
+   1
+  ],
+  [
+   "mcp__puppetmaster__puppetmaster_list_models",
+   1
+  ],
+  [
+   "mcp__puppetmaster__puppetmaster_start_codex",
+   1
+  ],
+  [
+   "mcp__puppetmaster__puppetmaster_await_job",
+   1
+  ],
+  [
+   "mcp__claude_ai_Figma__search_design_system",
+   1
+  ]
+ ],
+ "tool_errors": [
+  [
+   "Bash",
+   829
+  ],
+  [
+   "PowerShell",
+   145
+  ],
+  [
+   "Monitor",
+   80
+  ],
+  [
+   "Read",
+   53
+  ],
+  [
+   "Edit",
+   38
+  ],
+  [
+   "Glob",
+   25
+  ],
+  [
+   "mcp__unreal-mcp__call_tool",
+   19
+  ],
+  [
+   "mcp__claude_ai_Figma__use_figma",
+   15
+  ],
+  [
+   "Write",
+   13
+  ],
+  [
+   "Grep",
+   13
+  ],
+  [
+   "Agent",
+   6
+  ],
+  [
+   "TaskStop",
+   5
+  ],
+  [
+   "bash",
+   5
+  ],
+  [
+   "AskUserQuestion",
+   3
+  ],
+  [
+   "?",
+   3
+  ],
+  [
+   "Artifact",
+   2
+  ],
+  [
+   "Skill",
+   2
+  ],
+  [
+   "Advisor",
+   2
+  ],
+  [
+   "bash_placeholder",
+   1
+  ],
+  [
+   "PushNotification",
+   1
+  ],
+  [
+   "mcp__puppetmaster__puppetmaster_codex",
+   1
+  ],
+  [
+   "mcp__unreal-mcp__describe_toolset",
+   1
+  ]
+ ],
+ "err_buckets": [
+  [
+   "other",
+   535
+  ],
+  [
+   "shell-lint deny",
+   197
+  ],
+  [
+   "file not found",
+   157
+  ],
+  [
+   "timeout/killed",
+   118
+  ],
+  [
+   "permission/denied",
+   72
+  ],
+  [
+   "python error",
+   70
+  ],
+  [
+   "edit mismatch",
+   36
+  ],
+  [
+   "glob/grep timeout",
+   28
+  ],
+  [
+   "path quoting",
+   16
+  ],
+  [
+   "compile/build",
+   13
+  ],
+  [
+   "exit code only",
+   6
+  ],
+  [
+   "cockpit guard",
+   6
+  ],
+  [
+   "user rejected",
+   6
+  ],
+  [
+   "command not found",
+   2
+  ]
+ ],
+ "err_by_tool": [
+  [
+   [
+    "Bash",
+    "other"
+   ],
+   372
+  ],
+  [
+   [
+    "Bash",
+    "shell-lint deny"
+   ],
+   197
+  ],
+  [
+   [
+    "PowerShell",
+    "other"
+   ],
+   103
+  ],
+  [
+   [
+    "Bash",
+    "file not found"
+   ],
+   91
+  ],
+  [
+   [
+    "Monitor",
+    "timeout/killed"
+   ],
+   79
+  ],
+  [
+   [
+    "Bash",
+    "python error"
+   ],
+   69
+  ],
+  [
+   [
+    "Read",
+    "file not found"
+   ],
+   50
+  ],
+  [
+   [
+    "Bash",
+    "permission/denied"
+   ],
+   46
+  ],
+  [
+   [
+    "Edit",
+    "edit mismatch"
+   ],
+   33
+  ],
+  [
+   [
+    "Bash",
+    "timeout/killed"
+   ],
+   27
+  ],
+  [
+   [
+    "Glob",
+    "glob/grep timeout"
+   ],
+   24
+  ],
+  [
+   [
+    "mcp__unreal-mcp__call_tool",
+    "other"
+   ],
+   17
+  ],
+  [
+   [
+    "Bash",
+    "path quoting"
+   ],
+   16
+  ],
+  [
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "other"
+   ],
+   14
+  ],
+  [
+   [
+    "PowerShell",
+    "timeout/killed"
+   ],
+   12
+  ],
+  [
+   [
+    "Write",
+    "permission/denied"
+   ],
+   10
+  ],
+  [
+   [
+    "Grep",
+    "file not found"
+   ],
+   10
+  ],
+  [
+   [
+    "PowerShell",
+    "compile/build"
+   ],
+   9
+  ],
+  [
+   [
+    "Agent",
+    "permission/denied"
+   ],
+   6
+  ],
+  [
+   [
+    "TaskStop",
+    "other"
+   ],
+   5
+  ],
+  [
+   [
+    "bash",
+    "other"
+   ],
+   5
+  ],
+  [
+   [
+    "PowerShell",
+    "file not found"
+   ],
+   5
+  ],
+  [
+   [
+    "PowerShell",
+    "exit code only"
+   ],
+   4
+  ],
+  [
+   [
+    "PowerShell",
+    "permission/denied"
+   ],
+   4
+  ],
+  [
+   [
+    "Bash",
+    "compile/build"
+   ],
+   4
+  ],
+  [
+   [
+    "Write",
+    "edit mismatch"
+   ],
+   3
+  ],
+  [
+   [
+    "Edit",
+    "permission/denied"
+   ],
+   3
+  ],
+  [
+   [
+    "Read",
+    "other"
+   ],
+   3
+  ],
+  [
+   [
+    "PowerShell",
+    "cockpit guard"
+   ],
+   3
+  ],
+  [
+   [
+    "?",
+    "permission/denied"
+   ],
+   3
+  ],
+  [
+   [
+    "Artifact",
+    "other"
+   ],
+   2
+  ],
+  [
+   [
+    "Bash",
+    "cockpit guard"
+   ],
+   2
+  ],
+  [
+   [
+    "Skill",
+    "other"
+   ],
+   2
+  ],
+  [
+   [
+    "Advisor",
+    "other"
+   ],
+   2
+  ],
+  [
+   [
+    "PowerShell",
+    "glob/grep timeout"
+   ],
+   2
+  ],
+  [
+   [
+    "Grep",
+    "glob/grep timeout"
+   ],
+   2
+  ],
+  [
+   [
+    "Bash",
+    "exit code only"
+   ],
+   2
+  ],
+  [
+   [
+    "Edit",
+    "other"
+   ],
+   2
+  ],
+  [
+   [
+    "Bash",
+    "user rejected"
+   ],
+   2
+  ],
+  [
+   [
+    "AskUserQuestion",
+    "user rejected"
+   ],
+   2
+  ]
+ ],
+ "err_examples": {
+  "shell-lint deny": [
+   [
+    "",
+    "Bash",
+    "python3 - <<'EOF'\nimport json\nr=json.load(open('index.json'))\nfor x in r:\n    if x['act'].startswith('flag') or x['act']=='' :\n        print",
+    "<tool_use_error>bws-shell-lint [py-backslash]: on this machine a backslash run not followed by \" is halved before bash runs, so Python would get `print(x['id'],'|',x['conf'],'|',x['loc'][:90].replace('C:\\Projects\\',''),'|',x['act'][:200])` "
+   ],
+   [
+    "",
+    "Bash",
+    "mkdir -p /c/Projects/runs/2026-10-09-prompt-audit/apply && cat > /c/Projects/runs/2026-10-09-prompt-audit/apply/apply_high.py <<'EOF'\n\"\"\"App",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 8689 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "",
+    "Bash",
+    "S=/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects/40ea1378-d4ba-4a2e-aa83-cd279dd39baa/scratchpad; D=$S/w_g2_08; mkdir -p $D; cd $D; R=",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 7884 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'EOF'\np='core/data/src/main/kotlin/com/bws/inkwell/core/data/db/Entities.kt'\ns=open(p,encoding='utf-8').read()\n# low_confidence o",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 8076 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "mkdir -p runs/2026-10-03-m7-d6-notes/scratch && cat > core/model/src/test/kotlin/com/bws/inkwell/core/model/ai/NotesTest.kt <<'EOF'\npackage ",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 7916 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'EOF'\np='core/pil/src/main/kotlin/com/bws/inkwell/core/pil/PageRecognizer.kt'\ns=open(p,encoding='utf-8').read()\n\n# imports\ns=s.re",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 9238 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sed -i '/^import com.bws.inkwell.core.model.ai.AiTurn$/d' core/pil/src/androidTest/kotlin/com/bws/inkwell/core/pil/RecognitionDeviceTest.kt ",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 9343 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sed -i 's/^- \\[ \\] T04/- [x] T04/; s/^Status: IN_PROGRESS/Status: NEEDS_USER/' runs/2026-10-03-m7-d4-read-carefully/TASKS.md && cat > runs/2",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 8816 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cat > runs/2026-10-03-m7-d8-images/HANDOFF.md <<'EOF'\n# D8 \u2014 Images: HANDOFF\n\n**State (session 1, 2026-10-03): code done.** Code commit `4c0",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 8149 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'PYEOF'\nd='feature/editor/src/main/kotlin/com/bws/inkwell/feature/editor/'\ndef edit(p, old, new):\n    s=open(d+p,encoding='utf-8'",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 8966 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cat > scratch/latency_ab7.sh <<'EOF'\n#!/usr/bin/env bash\n# AC-REG-01 A/B driver (D10, adapted from M4 B9's latency_ab.sh). Rule: evidence/ac",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 7862 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "python - <<'EOF'\np='core/ai/src/test/kotlin/com/bws/inkwell/core/ai/AiSettingsStoreTest.kt'\ns=open(p,encoding='utf-8').read()\ns=s.rstrip()\na",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 9344 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-applications-motion-capt",
+    "Bash",
+    "python -I - <<'EOF'\np = \"integrations/blender/import_mocap.py\"\ns = open(p, encoding=\"utf-8\").read()\na = s.index(\"    rate = num / den\\n    l",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 8919 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "cat > Assets/_Game/Sim.Tests/World/RouteLayoutRulesTests.cs <<'EOF'\nusing System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 15859 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write t"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "R=runs/2026-10-06-pitu-wld-08-route-i1-interstate && cat > $R/evidence/EVIDENCE.md <<'EOF'\n# WLD-08 evidence map\n| Check | Evidence |\n|---|-",
+    "<tool_use_error>bws-shell-lint [long-command]: this Bash command is 8823 chars (each ' counts 4) and the Windows Bash tool cuts commands past ~7.7k, so bash would fail with \"unexpected EOF\". Fix: write the script to a file with the Write to"
+   ]
+  ],
+  "other": [
+   [
+    "",
+    "Artifact",
+    "",
+    "Nothing was published or removed: this publish touches files whose published content is not what you last saw, and sending your copy could discard content you have not read. Already published, and not read as published or listed by you in t"
+   ],
+   [
+    "",
+    "Bash",
+    "sleep 150; ls /c/Projects/runs/2026-10-09-prompt-audit/drafts",
+    "<tool_use_error>Blocked: sleep 150 followed by: ls /c/Projects/runs/2026-10-09-prompt-audit/drafts. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep 2; done`). To wait for a command you started, use run"
+   ],
+   [
+    "",
+    "Bash",
+    "cd /c/Projects/runs/2026-10-09-prompt-audit && python -I - <<'EOF'\nimport re\nd=open('PROPOSED.diff',encoding='utf-8').read()\nparts=re.split(",
+    "Exit code 1 # ===== hunk 58 | g4-battle-souls-22 | g4-battle-souls.md | DISPOSITION: apply ===== --- a/.claude/commands/systems-audit.md +++ /dev/null @@ -1,57 +0,0 @@ -(delete file; same for test-cases.md, test-planning.md, and .agents/ski"
+   ],
+   [
+    "",
+    "PowerShell",
+    "cd C:\\Projects\\tms-heim; Get-Item .git -Force -ErrorAction SilentlyContinue | Select FullName,Attributes; Test-Path .gitignore; git --versio",
+    "Exit code 128 git version 2.54.0.windows.1 FullName Attributes -------- ---------- C:\\Projects\\tms-heim\\.git Hidden, Directory, NotContentIndexed True fatal: not a git repository (or any of the parent directories): .git"
+   ],
+   [
+    "",
+    "PowerShell",
+    "cd C:\\Projects\\tms-heim; Get-ChildItem .git -Force | Select Name,Length | ft -auto | Out-String; git -C C:\\Projects\\tms-heim status 2>&1 | S",
+    "Exit code 128 Name Length ---- ------ objects fatal: not a git repository (or any of the parent directories): .git"
+   ],
+   [
+    "",
+    "PowerShell",
+    "$base='C:\\Projects\\bws.game.tms'\nfunction FHash($p){ if(-not (Test-Path $p)){return 'MISSING'}; $t=[IO.File]::ReadAllText($p) -replace \"`r`n",
+    "Exit code 1 Invoke-Expression: Variable reference is not valid. ':' was not followed by a valid variable name character. Consider using ${} to delimit the name."
+   ],
+   [
+    "",
+    "Bash",
+    "cd /c/Projects/battle-souls && diff .claude/skills/refresh-systems-index/SKILL.md .agents/skills/refresh-systems-index/SKILL.md; echo ---; f",
+    "Exit code 1 35c35 < {\"id\":\"<Module>.<FeatureShortName>\",\"module\":\"<Module>\",\"feature\":\"<Human-readable>\",\"summary\":\"<1-2 sentences: WHAT + WHY/HOW it fits architecture>\",\"entry_points\":[\"<Class to read first>\"],\"key_types\":[\"<Other importan"
+   ],
+   [
+    "",
+    "Bash",
+    "cd /c/Projects/xwing/XvT; git blame --date=short -L 8,8 .claude/skills/ue-test/SKILL.md | cut -c1-120; git blame --date=short -L 8,8 .agents",
+    "Exit code 2 83015d8ff (Brian Smith 2026-09-08 8) 1. Gate: `Get-Process UnrealEditor -ErrorAction SilentlyContinue` in PowerShell. If b2f265747 (Brian Smith 2026-09-21 8) 1. Gate: identify the XvT editor by its process command line; an unrel"
+   ],
+   [
+    "",
+    "Bash",
+    "cd /c/Projects/bws.iron-canopy && grep -c canopy skills-lock.json; md5sum .claude/skills/canopy-harness/SKILL.md .agents/skills/canopy-harne",
+    "Exit code 1 0 7c09fe8c889b83832f6f749207b1c4ae *.claude/skills/canopy-harness/SKILL.md 7c09fe8c889b83832f6f749207b1c4ae *.agents/skills/canopy-harness/SKILL.md canopy-harness/ .claude/agents/px1-character-animator.md .claude/agents/px1-core"
+   ],
+   [
+    "",
+    "PowerShell",
+    "git -C C:\\Projects\\tms-heim rev-parse --show-toplevel 2>&1; git -C C:\\Projects\\tms-heim log -1 --format=%H%n%ad 2>&1 | Select-Object -First ",
+    "Exit code 128 fatal: not a git repository (or any of the parent directories): .git fatal: not a git repository (or any of the parent directories): .git"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 60; cd /c/Projects/bws.android.scribe; tail -15 runs/2026-10-02-m7-d2-model-roles/gate-s2.log; git status --short",
+    "<tool_use_error>Blocked: sleep 60 followed by: cd /c/Projects/bws.android.scribe tail -15 runs/2026-10-02-m7-d2-model-roles/gate-s2.log git status --short. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sle"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "cd C:\\Projects\\bws.android.scribe; .\\gradlew.bat ktlintFormat --console=plain *> runs\\2026-10-03-m7-d6-notes\\scratch\\fmt2.log; \"format exit ",
+    "Exit code 1 format exit 1 > runs\\2026-10-03-m7-d6-notes\\scratch\\fmt2.log:340:* What went wrong: runs\\2026-10-03-m7-d6-notes\\scratch\\fmt2.log:341:Execution failed for task ':core:model:runKtlintFormatOverMainSourceSet' (registered by plugin "
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "Start-Sleep -Seconds 240; Get-Content C:\\Projects\\bws.android.scribe\\runs\\2026-10-03-m7-d6-notes\\scratch\\run-t02.log -Tail 5",
+    "<tool_use_error>Blocked: Start-Sleep 240 followed by: Get-Content C:\\Projects\\bws.android.scribe\\runs\\2026-10-03-m7-d6-notes\\scratch\\run-t02.log -Tail 5. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 60; cat /c/Projects/bws.android.scribe/runs/2026-10-03-m7-d10-device-pass/raw/chat20.out",
+    "<tool_use_error>Blocked: sleep 60 followed by: cat /c/Projects/bws.android.scribe/runs/2026-10-03-m7-d10-device-pass/raw/chat20.out. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep 2; done`). To wait f"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "sleep 240; tail -5 /c/Projects/bws.android.scribe/runs/2026-10-03-m7-d4-read-carefully/scratch/run1.log",
+    "<tool_use_error>Blocked: sleep 240 followed by: tail -5 /c/Projects/bws.android.scribe/runs/2026-10-03-m7-d4-read-carefully/scratch/run1.log. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep 2; done`). "
+   ]
+  ],
+  "python error": [
+   [
+    "",
+    "Bash",
+    "grep -n 'g2-heim-core-14' PROPOSED.diff; grep -n 'compliance-review' index.json | head -3; python -I - <<'EOF'\nimport json\nfor r in json.loa",
+    "Exit code 1 196: \"loc\": \"`.agents/skills/tms-heim-scene-spatial-index/SKILL.md:41-43,69-73,96-98,101-103`, `references/authoring-and-validation.md:55-61,77-85`; `tms-heim-monastery-compliance-review/SKILL.md:180,192-193`, `re\", 246: \"loc\": "
+   ],
+   [
+    "",
+    "Bash",
+    "export PYTHONIOENCODING=utf-8 && python -I - <<'EOF'\ndef show(p, rng):\n    L=open(p,encoding='utf-8').read().split('\\n')\n    for a,b in rng:",
+    "Exit code 1 == goap 182: ctx.DistanceToTarget < weapon.Range 183: ``` 184: 185: ## Code Templates 186: 187: Core type templates available in `assets/templates/`: 188: - `WorldState.cs.template` 189: - `ActionDefinition.cs.template` 190: - `"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cat > runs/2026-10-03-m7-d5-chat-split/edit_t03_tests.py <<'EOF'\np = 'core/model/src/test/kotlin/com/bws/inkwell/core/model/ai/SkillsTest.kt",
+    "Exit code 1 Traceback (most recent call last): File \"C:\\Projects\\bws.android.scribe\\runs\\2026-10-03-m7-d5-chat-split\\edit_t03_tests.py\", line 29, in <module> assert s.count(a) == 1, a[:70] ^^^^^^^^^^^^^^^ AssertionError: public fun `the rou"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "adb devices -l; S=\"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-android-scribe/edd5f1a1-58da-495b-9f18-57fa1577d99f/scratchpad/t",
+    "Exit code 1 List of devices attached 47171HFH80BF5R device product:tangorpro model:Pixel_Tablet device:tangorpro transport_id:2 adb.exe: device '57251FDCQ001LB' not found adb.exe: device '57251FDCQ001LB' not found adb.exe: device '57251FDCQ"
+   ],
+   [
+    "-bws-applications-motion-capt",
+    "Bash",
+    "f=\"/c/Users/bsmi0/Documents/Codex/2026-10-06/eav/outputs/motion-capture-critique.html\"; wc -c \"$f\"; python -c \"\nimport sys,html,re\nt=open(sy",
+    "Exit code 1 35708 /c/Users/bsmi0/Documents/Codex/2026-10-06/eav/outputs/motion-capture-critique.html Traceback (most recent call last): File \"<string>\", line 10, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\e"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'EOF'\nimport re\nt=open('runs/2026-10-04-pitu-harness/logs/VEH-17-wgate-0.log',encoding='utf-8',errors='replace').read()\n# JSON-is",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 4, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\re\\__init__.py\", line 224, in finditer return _compile(pattern, flags).finditer(string) ^^^^"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "cd /c/Projects/bws.game.pit-maneuver; R=runs/2026-10-06-pitu-veh-01-vehicle-art-and-damage-spec; printf 'bin/\\nobj/\\n' > $R/scratch/dotnet/.",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 7, in <module> AssertionError: | 7 | `grille` | Bodywork | panel | - | Front | 0.83 /tmp/spec.bak docs/VEHICLE-SPEC.md differ: char 44, line 1"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'EOF'\nimport re,json\nd=json.load(open('sim-tests-all.json',encoding='utf-8-sig').read().rsplit('}\\ntests:',1)[0]+'}' if False els",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 2, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\json\\__init__.py\", line 293, in load return loads(fp.read(), ^^^^^^^ AttributeError: 'str' o"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'EOF'\np='Assets/_Game/Editor.Tests/LightingRigTests.cs'\ns=open(p,encoding='utf-8').read()\ns=s.replace('Assert.LessOrEqual(housing",
+    "Exit code 1 \"errors\": [], \"warnings\": [], \"errors\": 0, Traceback (most recent call last): File \"<stdin>\", line 3, in <module> KeyError: 'Summary'"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "R=runs/2026-10-09-pitu-plt-01-performance-budgets-and-profiling; python - <<'E'\nimport re,json\nt=open('runs/2026-10-09-pitu-plt-01-performan",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 3, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\re\\__init__.py\", line 224, in finditer return _compile(pattern, flags).finditer(string) ^^^^"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "cd /c/Projects/bws.game.pit-maneuver; cp Logs/ab1.tsv runs/2026-10-09-pitu-wld-23-region-optimisation/evidence/ab1.tsv; python - <<'EOF'\nimp",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 9, in <module> ValueError: could not convert string to float: 'render.cpu\\n'"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python runs/2026-10-06-pitu-wld-21-wet-road-and-rain/docs_edit2.py && tail -c 900 docs/GDD.md | cut -c1-400",
+    "Exit code 1 Traceback (most recent call last): File \"C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-06-pitu-wld-21-wet-road-and-rain\\docs_edit2.py\", line 17, in <module> rep(\"| Wheel paths | Not a separate effect. The wheel-path cell (`asph"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "cd /c/Projects/bws.game.pit-maneuver/runs/2026-10-09-pitu-tgt-08-tier-scaling-and-willingness && sed -i 's/^- \\[~\\] T02/- [x] T02/; s/^- \\[ ",
+    "Exit code 1 Traceback (most recent call last): File \"<string>\", line 1, in <module> ModuleNotFoundError: No module named 'matplotlib'"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'EOF'\nimport re,json\ns=open('hazard-sim-tests-run1.txt',encoding='utf8',errors='replace').read()\ni=s.index('{')\n# find json end\nj",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 5, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\json\\decoder.py\", line 354, in raw_decode obj, end = self.scan_once(s, idx) ^^^^^^^^^^^^^^^^"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'EOF'\nimport json,re\nt=open(\"runs/2026-10-09-pitu-aud-03-procedural-impact-and-crash-audio/evidence/impact-tests-1.txt\",encoding=",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 3, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\json\\__init__.py\", line 346, in loads return _default_decoder.decode(s) ^^^^^^^^^^^^^^^^^^^^"
+   ]
+  ],
+  "glob/grep timeout": [
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ],
+   [
+    "",
+    "Glob",
+    "",
+    "Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific path or pattern."
+   ]
+  ],
+  "path quoting": [
+   [
+    "",
+    "Bash",
+    "cd /c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects/40ea1378-d4ba-4a2e-aa83-cd279dd39baa/scratchpad/w && sed -i 's|\\.read()\\.split|.read",
+    "Exit code 1 File \"C:\\Users\\bsmi0\\AppData\\Local\\Temp\\claude\\C--Projects\\40ea1378-d4ba-4a2e-aa83-cd279dd39baa\\scratchpad\\w\\mk.py\", line 3 lines = open(src, encoding=\"utf-8\", newline=\"\").read().replace(\" ^ SyntaxError: unterminated string lite"
+   ],
+   [
+    "-battle-souls",
+    "Bash",
+    "cd /c/Projects/battle-souls/Assets; for f in _SoulsFramework/SoulsAI/Data/EnemyArchetypeSO.cs; do sed -n 1,145p $f; fi; done 2>/dev/null | h",
+    "Exit code 2 /usr/bin/bash: eval: line 1: syntax error near unexpected token `fi' /usr/bin/bash: eval: line 1: `cd /c/Projects/battle-souls/Assets; for f in _SoulsFramework/SoulsAI/Data/EnemyArchetypeSO.cs; do sed -n 1,145p $f; fi; done 2>/d"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cd /c/Projects/bws.android.scribe/core/data/src/main/kotlin/com/bws/inkwell/core/data && python - <<'EOF'\n# entity\np='db/Entities.kt'\ns=open",
+    "Exit code 2 /usr/bin/bash: -c: line 130: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cd /c/Projects/bws.android.scribe/runs/2026-10-03-m7-d9-budget-integration/d10 && python - <<'EOF'\ns=open('d10_tools.py',encoding='utf-8').r",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 2, in <module> File \"<frozen importlib._bootstrap_external>\", line 995, in exec_module File \"<frozen importlib._bootstrap_external>\", line 1133, in get_code File \"<frozen i"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'EOF'\nimport re\nc='Assets/_Game/Editor/World/DowntownStreetKit.cs'\nt=open(c,encoding='utf-8').read()\nt=t.replace('''    /// The D",
+    "Exit code 2 /usr/bin/bash: -c: line 84: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'EOF'\np='runs/2026-10-05-pitu-uix-01-ui-toolkit-architecture/run-play.py'\ns=open(p).read()\ns=s.replace('''subprocess.run([u, \"com",
+    "Exit code 1 File \"C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-05-pitu-uix-01-ui-toolkit-architecture\\run-play.py\", line 14 print(\"start attempt\", attempt, \"->\", r[-200:].replace(\" ^ SyntaxError: unterminated string literal (detected at l"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "cat > tools/pitu-harness/dry-run-check.py <<'E'\n#!/usr/bin/env python\n\"\"\"Worker-free dry run of the harness against two sample units (FND-06",
+    "Exit code 2 /usr/bin/bash: -c: line 126: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cd /c/Projects/bws.game.tms/runs/2026-10-03-camera-polish/step6-draft && python - <<'EOF'\np='apply_step6.py'\nt=open(p,encoding='utf-8').read",
+    "Exit code 1 File \"C:\\Projects\\bws.game.tms\\runs\\2026-10-03-camera-polish\\step6-draft\\apply_step6.py\", line 60 rep(\"Private/Camera/TmsCameraCollision.cpp\", '#include \"Engine/World.h\" ^ SyntaxError: unterminated string literal (detected at li"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cd /c/Projects/bws.game.tms; python - <<'EOF'\np = \"runs/2026-10-09-kennelman-inspect/fix/fixarm2.py\"\ns = open(p).read()\ndef rep(a, b, n=1):\n",
+    "Exit code 2 /usr/bin/bash: -c: line 124: unexpected EOF while looking for matching `''"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "python - <<'EOF'\nimport json\nd=json.load(open('runs/2026-10-07-harness/183532-full/automation/live-results.json'))\ns=json.dumps(d)\nprint(len",
+    "Exit code 1 973 Traceback (most recent call last): File \"<stdin>\", line 6, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\re\\__init__.py\", line 217, in findall return _compile(pattern, flags).findall(string) ^^"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cd C:/Projects/bws.game.tms && python runs/2026-10-03-camera-polish/step5-agent2-draft/apply.py && python - <<'EOF'\nfrom pathlib import Path",
+    "Exit code 1 applied TmsCameraGroupTests.cpp (237 lines) applied TmsCameraInteriorTests.cpp (156 lines) applied TmsCameraSettingsTests.cpp (264 lines) Traceback (most recent call last): File \"<stdin>\", line 6, in <module> File \"C:\\Users\\bsmi"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cd C:/Projects/bws.game.tms && python - <<'EOF'\nimport re\nfrom pathlib import Path\nfor f in [\"TmsCameraInteriorTests.cpp\",\"TmsCameraSettings",
+    "Exit code 1 Traceback (most recent call last): File \"<stdin>\", line 6, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\re\\__init__.py\", line 186, in sub return _compile(pattern, flags).sub(repl, string, count) ^"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cd C:/Projects/bws.game.tms/runs/2026-10-03-camera-polish/fulltier-fixes && python - <<'PYEOF'\nfrom pathlib import Path\np=Path(\"apply_fullti",
+    "Exit code 1 File \"C:\\Projects\\bws.game.tms\\runs\\2026-10-03-camera-polish\\fulltier-fixes\\apply_fulltier_fixes.py\", line 46 (\" D.WaitUntil(TEXT(\\\"the first Thrall dies\\\"), [St](FTmsScenarioDriver&) { return St->KillFrame >= 0; }, 2.f); ^ Synt"
+   ],
+   [
+    "-tms-heim",
+    "Bash",
+    "cd /c/Projects/bws.game.tms/Tools/Content && python -I - <<'EOF'\np=\"courtyard_materials.py\"; s=open(p,encoding=\"utf-8\").read()\n# floor: drop",
+    "Exit code 1 7 File \"courtyard_materials.py\", line 151 \"float3 p = DFDemote(Parameters.AbsoluteWorldPosition); ^ SyntaxError: unterminated string literal (detected at line 151)"
+   ],
+   [
+    "-tms-heim",
+    "Bash",
+    "cd /c/Projects/tms-heim/runs/2026-10-03-swordsman-v2-kitbash && python - <<'EOF'\nfrom PIL import Image\nimport base64, io, json\nR = \"C:/Proje",
+    "Exit code 2 /usr/bin/bash: -c: line 50: unexpected EOF while looking for matching `''"
+   ]
+  ],
+  "file not found": [
+   [
+    "",
+    "Bash",
+    "cd /c/Projects/bws.applications.reaction-avatar-studio && git ls-files | grep -E '^(README.md|docs/(reaction-avatar-studio-spec-v0.1 \\(1\\).m",
+    "Exit code 2 README.md docs/dependency-inventory.md docs/module-contracts-v1.md docs/reaction-avatar-module-contracts-v1.md docs/reaction-avatar-studio-spec-v0.1 (1).md docs/validation.md package-lock.json package.json scripts/build.mjs scri"
+   ],
+   [
+    "",
+    "Bash",
+    "cd /c/Projects/bws.iron-canopy && git rev-parse --is-inside-work-tree; ls -la AGENTS.md CLAUDE.md 2>&1; find .claude -name '*.md' -not -path",
+    "Exit code 1 true ls: cannot access 'CLAUDE.md': No such file or directory -rw-r--r-- 1 bsmi0 197609 5455 Sep 26 07:40 AGENTS.md -rw-r--r-- 1 bsmi0 197609 3178 Oct 2 12:34 .claude/agents/px1-character-animator.md -rw-r--r-- 1 bsmi0 197609 21"
+   ],
+   [
+    "",
+    "Bash",
+    "cd /c/Projects/tms-heim && ls -la .git | head; ls .git/HEAD 2>&1",
+    "Exit code 2 total 112 drwxr-xr-x 1 bsmi0 197609 0 Oct 9 12:59 ./ drwxr-xr-x 1 bsmi0 197609 0 Oct 9 12:59 ../ drwxr-xr-x 1 bsmi0 197609 0 Oct 9 12:59 objects/ ls: cannot access '.git/HEAD': No such file or directory"
+   ],
+   [
+    "-bws-android-scribe",
+    "Read",
+    "",
+    "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+   ],
+   [
+    "-bws-android-scribe",
+    "Read",
+    "",
+    "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe."
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "export ANDROID_SERIAL=47171HFH80BF5R MSYS_NO_PATHCONV=1; adb uninstall com.bws.inkwell.abmain; adb uninstall com.bws.inkwell.abm7; adb shell",
+    "Exit code 128 Success Success package:com.bws.inkwell package:com.bws.ironcanopy disabled 0 {\"dataUseNoticeAcknowledged\":true,\"transcriptionAllowedMonth\":\"2026-10\"} fatal: cannot change to '/c/Projects/bws.android.scribe': No such file or d"
+   ],
+   [
+    "-bws-android-scribe",
+    "mcp__claude_ai_Figma__use_figma",
+    "",
+    "Error: in clone: The node with id \"122:19\" does not exist at mkBtn (PLUGIN_1_SOURCE:43:28) at mkCard (PLUGIN_1_SOURCE:76:27) Figma Debug UUID: bc96c15b-3551-4347-b53b-f5f5cb770063"
+   ],
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "cat \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-android-scribe/9ec27d42-9ae1-4f81-90fd-5724a7dea700/tasks/bt2pb4h14.output\"; l",
+    "Exit code 1 page_chat exit=1 notebook_chat exit=1 images exit=1 notes exit=1 [exited with code 0] drafts/transcript.png Traceback (most recent call last): File \"<stdin>\", line 3, in <module> File \"C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Pytho"
+   ],
+   [
+    "-bws-android-scribe",
+    "Read",
+    "",
+    "File does not exist. Note: your current working directory is C:\\Projects\\bws.android.scribe\\runs\\2026-10-04-m8-f5-audit."
+   ],
+   [
+    "-bws-applications-motion-capt",
+    "Bash",
+    "find . -type f | head -100; echo ---; find . -type f | wc -l; echo ---; ls ~/.codex/config.toml .codex ~/.gemini/settings.json .gemini GEMIN",
+    "Exit code 128 ./.claude/settings.local.json ./docs/architecture-and-design-decisions.md ./docs/requirements.md ./docs/technology-decisions.md --- 4 --- ls: cannot access '.codex': No such file or directory ls: cannot access '.gemini': No su"
+   ],
+   [
+    "-bws-applications-motion-capt",
+    "Bash",
+    "S=/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-applications-motion-capture-studio/c3e9a60d-03ea-46cf-b2c2-b1a2c393ffb7/scratchpa",
+    "Exit code 1 |---|---|---| | T01 20261007-000002 | +0\u00b0: +19.9\u00b0 (no limit); +90\u00b0: -70.1\u00b0 \u2717 | +0\u00b0: +17.8\u00b0 (no limit); +90\u00b0: -72.2\u00b0 \u2717 | Traceback (most recent call last): File \"<string>\", line 2, in <module> FileNotFoundError: [Errno 2] No such"
+   ],
+   [
+    "-bws-applications-motion-capt",
+    "Bash",
+    "S=/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-applications-motion-capture-studio/c3e9a60d-03ea-46cf-b2c2-b1a2c393ffb7/scratchpa",
+    "Exit code 1 quick: 17.13 s cold, import ok hq: 19.92 s cold, import ok | DEV 20261007-000001 | 39.05 s (20.51 s raw) \u2713 | 43.6 s (22.9 s raw) \u2713 | | T01 20261007-000002 | 32.61 s (17.13 s raw) \u2713 | 37.93 s (19.92 s raw) \u2713 | Traceback (most rec"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Read",
+    "",
+    "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.pit-maneuver."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Read",
+    "",
+    "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.pit-maneuver."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Read",
+    "",
+    "File does not exist. Note: your current working directory is C:\\Projects\\bws.game.pit-maneuver."
+   ]
+  ],
+  "compile/build": [
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "cd C:\\Projects\\bws.android.scribe; .\\gradlew.bat ktlintFormat --console=plain *> runs\\2026-10-03-m7-d6-notes\\scratch\\fmt.log; \"exit $LASTEXI",
+    "Exit code 1 exit 1 > Task :core:data:runKtlintFormatOverAndroidTestSourceSet [Incubating] Problems report is available at: file:///C:/Projects/bws.android.scribe/build/reports/problems/problems-report.html FAILURE: Build failed with an exce"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "Set-Location C:\\Projects\\bws.android.scribe; $env:AB_SUFFIX='.abm7'; & .\\gradlew.bat -I runs\\2026-10-03-m7-d10-device-pass\\scratch\\ab-init.g",
+    "Exit code 1 Deprecated Gradle features were used in this build, making it incompatible with Gradle 10. You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins."
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "cd C:\\Projects\\bws.android.scribe; python tools/m7-harness/run_budget.py status; ./gradlew.bat ktlintFormat 2>&1 | Select-Object -Last 25",
+    "Exit code 1 session 1, budget 4 runs per task, current task T02 [Incubating] Problems report is available at: file:///C:/Projects/bws.android.scribe/build/reports/problems/problems-report.html FAILURE: Build failed with an exception. * What"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "cd C:\\Projects\\bws.android.scribe; ./gradlew.bat :core:model:detekt :core:pil:detekt :feature:editor:detekt :feature:settings:detekt :core:a",
+    "Exit code 1 runs\\2026-10-03-m7-d9-budget-integration\\scratch\\det2.log:5:> Task :feature:editor:detekt FAILED runs\\2026-10-03-m7-d9-budget-integration\\scratch\\det2.log:6:Successfully generated markdown at file:///C:/Projects/bws.android.scri"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "cd C:\\Projects\\bws.android.scribe; (Get-Content feature/editor/src/main/kotlin/com/bws/inkwell/feature/editor/BudgetGuard.kt -Raw) -replace ",
+    "Exit code 1 runs\\2026-10-03-m7-d9-budget-integration\\scratch\\fmt4.log:334:[Incubating] Problems report is available at: file:///C:/Projects/bws.android.scribe/build/reports/problems/problems-report.html runs\\2026-10-03-m7-d9-budget-integrat"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    ".\\gradlew.bat ktlintFormat --console=plain *> $null; .\\gradlew.bat ktlintCheck detekt --continue --console=plain *> runs/2026-10-03-m7-d5-ch",
+    "Exit code 1 1 runs\\2026-10-03-m7-d5-chat-split\\run-t04b.log:331:> Task :core:pil:detekt FAILED runs\\2026-10-03-m7-d5-chat-split\\run-t04b.log:332:Successfully generated markdown at file:///C:/Projects/bws.android.scribe/core/pil/build/report"
+   ],
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    ".\\gradlew.bat ktlintFormat --console=plain *> $null; .\\gradlew.bat ktlintCheck detekt :core:model:test :core:pil:testDebugUnitTest --continu",
+    "Exit code 1 1 runs\\2026-10-03-m7-d5-chat-split\\run-t05.log:380:> Task :core:pil:detekt FAILED runs\\2026-10-03-m7-d5-chat-split\\run-t05.log:385:e: C:\\Projects\\bws.android.scribe\\core\\pil\\src\\main\\kotlin\\com\\bws\\inkwell\\core\\pil\\InkwellAgent."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "PowerShell",
+    "$u=\"$env:LOCALAPPDATA\\Unity\\bin\\unity.exe\"; $p=\"C:\\Projects\\bws.game.pit-maneuver\"\nfor($i=0;$i -lt 10;$i++){ $r = & $u command editor_status",
+    "Exit code 6 { \"status\": \"ready\", \"compiling\": false, \"domainReloadInProgress\": false, \"playMode\": \"stopped\", \"lastHeartbeat\": \"2026-10-07T17:20:01.1483308Z\", \"projectPath\": \"C:\\\\Projects\\\\bws.game.pit-maneuver\", \"unityVersion\": \"6000.6.0f1\""
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "PowerShell",
+    "$u=\"$env:LOCALAPPDATA\\Unity\\bin\\unity.exe\"; $p=\"C:\\Projects\\bws.game.pit-maneuver\"; Start-Sleep 20; & $u recompile --project-path $p --stric",
+    "Exit code 6 { \"success\": false, \"command\": \"recompile\", \"data\": { \"status\": \"completed\", \"compiling\": false, \"failed\": true, \"compilationFailed\": true, \"errors\": [ { \"type\": \"compile-error\", \"raw\": \"Assets\\\\_Game\\\\Game\\\\Fx\\\\VehicleFireFx.cs"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cd /c/Projects/bws.game.tms && tail -30 /c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-tms/52105b0b-bd27-49b7-96a9-46012059f4",
+    "Exit code 1 Save Content dialog: clicked Don't Save; evidence C:\\Projects\\bws.game.tms\\Saved\\Harness\\editor\\save-content-20261008-203935.png Save Content dialog: clicked Don't Save; evidence C:\\Projects\\bws.game.tms\\Saved\\Harness\\editor\\sav"
+   ],
+   [
+    "-bws-game-tms",
+    "Bash",
+    "grep -a \"error\" Saved/Harness/editor/build.log | head -5 | cut -c1-250; python Tools/Harness/editor.py status",
+    "Exit code 1 C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Source\\Runtime\\Core\\Public\\String\\FormatStringSanErrors.inl(40,1): error C2338: static_assert failed: 'missing format specifier (Is there a missing '%' somewhere?)' TMS editor pid none |"
+   ],
+   [
+    "-tms-issues",
+    "Bash",
+    "python Tools/Harness/run.py full --mode headless --only TMS.Full.Groups.UngroupedPassPacing --only TMS.Full.Groups.ObservedHeal --only TMS.F",
+    "Exit code 1 TMS harness full: FAIL | tests 0/0 | beats red 12 green 0 verified 0 | infra failed 0 | harness complete no | headless | 0 s PROBLEM build failed report: C:\\Projects\\tms-issues\\runs\\2026-10-07-harness\\174649-full\\report.html"
+   ],
+   [
+    "-tms-issues",
+    "Bash",
+    "python Tools/Harness/run.py full --mode headless --only TMS.Full.Threat",
+    "Exit code 1 TMS harness full: FAIL | tests 0/0 | beats red 12 green 0 verified 0 | infra failed 0 | harness complete no | headless | 0 s PROBLEM build failed report: C:\\Projects\\tms-issues\\runs\\2026-10-07-harness\\164645-full\\report.html"
+   ]
+  ],
+  "timeout/killed": [
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: [ { \"code\": \"custom\", \"path\": [], \"message\": \"exactly one of command or ws\" } ] This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. Without t"
+   ],
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "echo waiting",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-android-scribe",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Monitor",
+    "cd /c/Projects/bws.game.pit-maneuver/runs/2026-10-06-pitu-wld-16-route-c3-county-line; for i in $(seq 1 100); do [ -f GATE-RUNNING.json ] ||",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "d=$(ls -d runs/2026-10-09-pitu-veh-17*); grep -n \"N1\" $d/TASKS.md | cut -c1-3800; python tools/pitu-harness/harness.py status 2>&1 | grep -E",
+    "Exit code 2 11: - note: session 4 gate (06:03) failed 1244/1246: `PursuerTacticsTests.Tier3BlocksAndCallsOneRoadblock` and `Tier4BlocksAndCallsTwoRoadblocks` (TGT-10B) failed with `Unhandled log message: [Error] Failed to handle /api/exec r"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Monitor",
+    "",
+    "<tool_use_error>InputValidationError: Monitor failed due to the following issue: The required parameter `description` is missing This tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history"
+   ]
+  ],
+  "exit code only": [
+   [
+    "-bws-android-scribe",
+    "PowerShell",
+    "cd C:\\Projects\\bws.android.scribe; .\\gradlew.bat ktlintCheck detekt :core:model:test :core:pil:testDebugUnitTest :core:ai:testDebugUnitTest ",
+    "Exit code 1"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "cat \"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-pit-maneuver/f42dc9ab-821c-4790-959a-91b1f457063c/tasks/b7j4o7si8.output\"",
+    "Exit code 2"
+   ],
+   [
+    "-bws-game-tms",
+    "PowerShell",
+    "Get-Process UnrealEditor,blender -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,@{n='MB';e={[int]($_.WorkingSet64/1MB)}},MainW",
+    "Exit code 1"
+   ],
+   [
+    "-prototype-pit-manuever",
+    "PowerShell",
+    "$u=\"C:\\Users\\bsmi0\\AppData\\Local\\Unity\\bin\\unity.exe\"; $d=\"C:\\Projects\\prototype.pit-manuever\\runs\\2026-10-03-gdd-concepts\\unity-cli\"; $r = ",
+    "Exit code 6"
+   ],
+   [
+    "-prototype-pit-manuever",
+    "PowerShell",
+    "$u=\"C:\\Users\\bsmi0\\AppData\\Local\\Unity\\bin\\unity.exe\"; $d=\"C:\\Projects\\prototype.pit-manuever\\runs\\2026-10-03-gdd-concepts\\unity-cli\"; $r = ",
+    "Exit code 6"
+   ],
+   [
+    "-tms-items",
+    "Bash",
+    "cd /c/Projects/tms-items; ls Source/TMSTests/Private/Items/ 2>/dev/null; wc -l Source/TMSTests/Private/Items/*.cpp 2>/dev/null",
+    "Exit code 1"
+   ]
+  ],
+  "cockpit guard": [
+   [
+    "-bws-android-scribe",
+    "Bash",
+    "wc -l docs/DESIGN-SYSTEM.md; adb shell wm size; adb shell wm density; python -c \"\nimport json;d=json.load(open('design/claude-design/tokens.",
+    "<tool_use_error>bws-cockpit: no Android device is ready (adb devices: none attached). Ask the user to connect and unlock the device, then retry.</tool_use_error>"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "sed -i 's/                Wall = Frames(100, 10f, 0, 0f), Sim = /                Game = Frames(100, 9f, 0, 0f), Wall = Frames(100, 10f, 0, 0",
+    "<tool_use_error>bws-cockpit: no Unity editor is running, so the unity CLI pipeline has nothing to talk to. Launch it first (unity open <project> --args -automated) and wait for the pipeline to come up, or ask the user.</tool_use_error>"
+   ],
+   [
+    "-bws-game-tms",
+    "mcp__unreal-mcp__call_tool",
+    "",
+    "<tool_use_error>bws-cockpit: Unreal MCP at http://127.0.0.1:3092/mcp is not reachable: an editor is running but its MCP port does not answer (still loading, or MCP not started). Start or wait for the editor (if other editors or Blender are "
+   ],
+   [
+    "-bws-game-tms",
+    "PowerShell",
+    "Start-Process -FilePath \"C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.0f1\\Editor\\Unity.exe\" -ArgumentList '-projectpath','C:\\Projects\\tms-heim' ",
+    "<tool_use_error>bws-cockpit: Unity must start with -automated (modal dialogs otherwise block the pipeline). Add it to -ArgumentList (e.g. \"open\",\"<project>\",\"--args\",\"-automated\" for the unity CLI, or \"-projectPath\",\"<project>\",\"-automated\""
+   ],
+   [
+    "-tms-heim",
+    "PowerShell",
+    "$env:PROMO_NAME=\"promo_r1\"; $env:PROMO_RES=\"1920x1080\"; $env:PROMO_WARM=\"75\"\nRemove-Item C:\\Projects\\tms-heim\\runs\\2026-10-06-courtyard-prom",
+    "<tool_use_error>bws-cockpit: other GPU apps are running (VRAM 4.0/8.0 GB), so UE must launch with the low-VRAM overrides. Add this element to -ArgumentList and run again: '-ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPe"
+   ],
+   [
+    "-tms-heim",
+    "PowerShell",
+    "$env:PROMO_NAME=\"promo_r1\"; $env:PROMO_RES=\"1920x1080\"; $env:PROMO_WARM=\"75\"\nRemove-Item C:\\Projects\\tms-heim\\runs\\2026-10-06-courtyard-prom",
+    "<tool_use_error>bws-cockpit: other GPU apps are running (VRAM 4.0/8.0 GB), so UE must launch with the low-VRAM overrides. Add this element to -ArgumentList and run again: '-ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPe"
+   ]
+  ],
+  "edit mismatch": [
+   [
+    "-bws-android-scribe",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: if require_files and (not ref_file.is_file() or not ref_file.read_bytes().startswith(b\"PNG \")): raise AssetError(f\"missing or invalid reference PNG: {reference}\")</tool_use_error>"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: $rf = \"runs6-10-06-pitu-wld-05c-downtown-environment-kit-part-c-parking-\"</tool_use_error>"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: function Bail([string]$msg, [int]$code) { \"BUILD FAILED: $msg\"; exit $code } </tool_use_error>"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Edit",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-bws-game-tms",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: if (TestEqual(TEXT(\"AT9: one sweep clink and one pair (Played then Cooldown)\"), Clinks.Num(), 3)) { TestTrue(TEXT(\"AT9: the pair is Played then Cooldown at the same t_ms\"), Clinks"
+   ],
+   [
+    "-bws-game-tms",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: src_ids = sorted({m for _, r in rows for m in re.findall(r'[A-Z]{3}-\\d{2}', r[0])})</tool_use_error>"
+   ],
+   [
+    "-bws-game-tms",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: TestEqual(TEXT(\"no candidates: none\"), PickLockCandidate(TArray<FLockScoreInput>(), W, AimOffset), static_cast<int32>(INDEX_NONE));</tool_use_error>"
+   ],
+   [
+    "-bws-game-tms",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: if (Moveset) { Moveset->PlayReaction(TmsGuardTags::Tag(TEXT(\"Moveset.Reaction.GuardHit\")), T); } break;</tool_use_error>"
+   ],
+   [
+    "-bws-game-tms",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: if (Moveset) { Moveset->PlayReaction(TmsGuardTags::Tag(TEXT(\"Moveset.Reaction.GuardHit\")), T); } break;</tool_use_error>"
+   ],
+   [
+    "-prototype-pit-manuever",
+    "Edit",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-prototype-pit-manuever",
+    "Edit",
+    "",
+    "<tool_use_error>String to replace not found in file. String: `C:\\Projectsws.game.pit-maneuver`</tool_use_error>"
+   ],
+   [
+    "-tms-heim",
+    "Write",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-tms-heim",
+    "Edit",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ],
+   [
+    "-tms-heim",
+    "Edit",
+    "",
+    "<tool_use_error>File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.</tool_use_error>"
+   ]
+  ],
+  "permission/denied": [
+   [
+    "-bws-game-pit-maneuver",
+    "PowerShell",
+    "cd C:\\Projects\\bws.game.pit-maneuver; $r='runs\\2026-10-05-pitu-uxd-01-figma-design-system'; (Get-Content $r\\TASKS.md -Raw) -replace '- \\[ \\]",
+    "Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Irreversible Local Destruction]. If you have other tasks that don't depend on this action, continue working on those. IMPORTANT: You *may* attempt to ac"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Edit",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\TASKS.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\evidence\\ui-sound-checklist.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\Assets\\_Game\\Game\\Ui\\UiSoundCue.cs, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\PLAN.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\Assets\\_Game\\Game\\Ui\\UiSoundCue.cs, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\Assets\\_Game\\Editor\\Audio\\setup_ui_sounds.cs, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Bash",
+    "python - <<'E'\np='tools/run-tests.ps1'\ns=open(p,encoding='utf-8').read()\ns=s.replace('''# PlayMode cannot run synchronously (play mode reloa",
+    "Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Modify Shared Resources]. If you have other tasks that don't depend on this action, continue working on those. IMPORTANT: You *may* attempt to accomplis"
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Edit",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\TASKS.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Edit",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\TASKS.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\RUNLOG.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\Assets\\_Game\\Game\\Ui\\UiSoundCues.cs, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\Assets\\_Game\\Game\\Ui\\UiSoundCues.cs, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\IMPLEMENTATION_PLAN.md, but you haven't granted it yet."
+   ],
+   [
+    "-bws-game-pit-maneuver",
+    "Write",
+    "",
+    "Claude requested permissions to write to C:\\Projects\\bws.game.pit-maneuver\\runs\\2026-10-07-pitu-aud-05-ui-sound-set\\AUDIO_SPECIFICATION.md, but you haven't granted it yet."
+   ]
+  ],
+  "user rejected": [
+   [
+    "-bws-game-tms",
+    "Bash",
+    "git show --stat --format= HEAD | grep -v style-pack | head; git status -sb | head -2; timeout 600 git push origin main 2>&1 | tail -20",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Note: The user"
+   ],
+   [
+    "-bws-game-tms",
+    "AskUserQuestion",
+    "",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said: The user wants to clarify these questions. Th"
+   ],
+   [
+    "-bws-game-tms",
+    "AskUserQuestion",
+    "",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Note: The user"
+   ],
+   [
+    "-prototype-pit-manuever",
+    "PowerShell",
+    "cd C:\\Projects\\bws.game.pit-maneuver; foreach($f in \"DOTweenUpgradeManager.dll\",\"DOTweenUpgradeManager.XML\"){ $g=(git show \"HEAD:Assets/Plug",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Note: The user"
+   ],
+   [
+    "-prototype-pit-manuever",
+    "PowerShell",
+    "& \"C:\\Projects\\prototype.pit-manuever\\runs\\2026-10-03-gdd-concepts\\unity-cli\\verify.ps1\" -Tag pre-housekeeping",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Note: The user"
+   ],
+   [
+    "-tms-ui",
+    "Bash",
+    "for i in $(seq 1 58); do if grep -q \"Total execution time\\|Result: \" runs/2026-10-09-ui-desc-focus/build1.log 2>/dev/null; then break; fi; s",
+    "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Note: The user"
+   ]
+  ],
+  "command not found": [
+   [
+    "-bws-game-tms",
+    "Bash",
+    "cd /c/Projects/bws.game.tms/docs/design/ui-gallery && (python -m http.server 8791 --directory gallery >/dev/null 2>&1 &); sleep 1; GAL_BASE=",
+    "Exit code 127 PASS cap-icon ['cap-icon'] PASS cap-desc ['cap-desc', 'outside-stage'] PASS desc-no-cue ['desc-no-cue'] PASS focus-clipped ['focus-clipped'] PASS escapes-frame ['escapes-frame'] matrix.html 83002 nav.html 36677 index.html 5760"
+   ],
+   [
+    "-prototype-pit-manuever",
+    "PowerShell",
+    "foreach($id in 78088,68024,63324){ $p=Get-CimInstance Win32_Process -Filter \"ProcessId=$id\"; \"{0} start={1} parent={2}`n   {3}\" -f $id,$p.Cr",
+    "Exit code 1 78088 start=10/4/2026 5:57:20 PM parent=89264 C:\\Users\\bsmi0\\AppData\\Local\\Programs\\Python\\Python312\\python.exe C:\\Projects\\bws.game.pit-maneuver\\tools\\pitu-harness\\harness.py serve 68024 start=10/4/2026 10:29:59 PM parent=15072"
+   ]
+  ]
+ },
+ "mcp_errors": [
+  [
+   "unreal-mcp",
+   20
+  ],
+  [
+   "claude_ai_Figma",
+   15
+  ],
+  [
+   "puppetmaster",
+   1
+  ]
+ ],
+ "mcp_err_ex": {
+  "claude_ai_Figma": [
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "Error: in clone: The node with id \"122:19\" does not exist at mkBtn (PLUGIN_1_SOURCE:43:28) at mkCard (PLUGIN_1_SOURCE:76:27) Figma Debug UUID: bc96c15b-3551-4347-b53b-f5f5cb770063"
+   ],
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "Error: in deleteComponentProperty: Invalid component property name at <anonymous> (PLUGIN_1_SOURCE:21:89) Figma Debug UUID: 18077b7c-7035-4cfe-ade2-58befc1aeb64"
+   ],
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "TypeError: cannot read property 'resize' of undefined at <anonymous> (PLUGIN_1_SOURCE:23:91) Figma Debug UUID: 5f4c0a5d-1dbe-4ea9-94e8-74c1718c9f9e"
+   ],
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "TypeError: cannot set property 'visible' of null at tiers (PLUGIN_1_SOURCE:40:259) Figma Debug UUID: 5e500b56-6d8b-49a8-b7e4-525d96931c16"
+   ],
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "Error: in setBoundVariable: invalid field for text node: 'paddingBottom' at <anonymous> (PLUGIN_1_SOURCE:48:109) Figma Debug UUID: d021c484-5c77-4b31-8d5f-a076502e26e7"
+   ],
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "Error: in set_x: This property cannot be overridden in an instance: relative-transform at set (<input>:75:11) at setBar (PLUGIN_1_SOURCE:78:561) at <anonymous> (PLUGIN_1_SOURCE:79:198) Figma Debug UUI"
+   ],
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "Error: in set_x: This property cannot be overridden in an instance: relative-transform at set (<input>:75:11) at replay (PLUGIN_1_SOURCE:47:152) Figma Debug UUID: fbcdde64-04fe-4272-8653-f2f95867879c"
+   ],
+   [
+    "mcp__claude_ai_Figma__use_figma",
+    "Error: in query: Invalid selector: unexpected character '/' at position 16 at <anonymous> (PLUGIN_3_SOURCE:4:25) Figma Debug UUID: 2d087cd5-8acf-4f3b-abbd-0c0a0141800b"
+   ]
+  ],
+  "unreal-mcp": [
+   [
+    "mcp__unreal-mcp__call_tool",
+    "Function \"get_properties\", input param \"instance\" is required by the function input schema Json, but is missing from the incoming function input params Json. Function schema Json - {\"type\":\"object\",\"p"
+   ],
+   [
+    "mcp__unreal-mcp__call_tool",
+    "Function \"ListSections\", input params are required by the function input schema Json, but incoming function input params Json is empty. Function schema Json - {\"type\":\"object\",\"properties\":{\"container"
+   ],
+   [
+    "mcp__unreal-mcp__call_tool",
+    "<tool_use_error>bws-cockpit: Unreal MCP at http://127.0.0.1:3092/mcp is not reachable: an editor is running but its MCP port does not answer (still loading, or MCP not started). Start or wait for the "
+   ],
+   [
+    "mcp__unreal-mcp__call_tool",
+    "Tool 'editor_toolset.toolsets.object.ObjectTools.set_properties' not found"
+   ],
+   [
+    "mcp__unreal-mcp__call_tool",
+    "SetObjectProperties on '/Game/Feedback/Mix/SM_Music.SM_Music' (SoundSubmix): the following properties could not be set: ParentSubmix"
+   ],
+   [
+    "mcp__unreal-mcp__call_tool",
+    "SetObjectProperties on '/Game/Feedback/Mix/SM_SFX.SM_SFX' (SoundSubmix): the following properties could not be set: ChildSubmixes"
+   ],
+   [
+    "mcp__unreal-mcp__call_tool",
+    "Tool 'EditorToolset.EditorAppToolset.CaptureViewport' not found"
+   ],
+   [
+    "mcp__unreal-mcp__call_tool",
+    "Function \"CaptureViewport\", input param \"annotations\" needs a default value.Function input params Json - {\"captureTransform\":{\"location\":{\"x\":0,\"y\":430,\"z\":160},\"rotation\":{\"pitch\":-8,\"yaw\":-90,\"roll\""
+   ]
+  ],
+  "puppetmaster": [
+   [
+    "mcp__puppetmaster__puppetmaster_codex",
+    "{ \"command\": \"python -m puppetmaster codex You are a senior game designer helping a solo indie dev (Brian: 30+ yrs coding, ships on Steam/itch.io; wants serious side income; solo, scope-limited) turn "
+   ]
+  ]
+ },
+ "slash": [
+  [
+   "resume",
+   7
+  ],
+  [
+   "clear",
+   6
+  ],
+  [
+   "model",
+   6
+  ],
+  [
+   "interview",
+   4
+  ],
+  [
+   "compact",
+   4
+  ],
+  [
+   "harness-loop",
+   4
+  ],
+  [
+   "unreal-mcp",
+   3
+  ],
+  [
+   "save-harness",
+   3
+  ],
+  [
+   "config",
+   2
+  ],
+  [
+   "architecture-change",
+   2
+  ],
+  [
+   "blender-inspect:model-inspection",
+   2
+  ],
+  [
+   "blender-synty-enforcement",
+   2
+  ],
+  [
+   "claude-api",
+   1
+  ],
+  [
+   "unity-humble-design",
+   1
+  ],
+  [
+   "init",
+   1
+  ],
+  [
+   "pitu-harness",
+   1
+  ],
+  [
+   "claude-md-management:revise-claude-md",
+   1
+  ],
+  [
+   "reload-skills",
+   1
+  ],
+  [
+   "tms-ai-animate",
+   1
+  ],
+  [
+   "voice",
+   1
+  ],
+  [
+   "gh1-harness",
+   1
+  ],
+  [
+   "ufb1-harness",
+   1
+  ],
+  [
+   "goal",
+   1
+  ],
+  [
+   "precog",
+   1
+  ],
+  [
+   "blender-lowpoly-medieval",
+   1
+  ],
+  [
+   "ui-harness",
+   1
+  ],
+  [
+   "effort",
+   1
+  ]
+ ],
+ "skills": [
+  [
+   "precog",
+   10
+  ],
+  [
+   "interview",
+   8
+  ],
+  [
+   "artifact-design",
+   4
+  ],
+  [
+   "unreal-mcp",
+   4
+  ],
+  [
+   "harness-loop",
+   3
+  ],
+  [
+   "gh1-harness",
+   2
+  ],
+  [
+   "tms-ai-animate",
+   2
+  ],
+  [
+   "synty-character-kitbash",
+   2
+  ],
+  [
+   "blender-inspect:model-inspection",
+   2
+  ],
+  [
+   "keep-tasks",
+   1
+  ],
+  [
+   "claude_ai_Figma:figma-use",
+   1
+  ],
+  [
+   "architecture-change",
+   1
+  ],
+  [
+   "figma-use",
+   1
+  ],
+  [
+   "blender-lowpoly-medieval",
+   1
+  ],
+  [
+   "synty-asset-index-search",
+   1
+  ],
+  [
+   "plugin-authoring",
+   1
+  ]
+ ],
+ "agents": [
+  [
+   "general-purpose",
+   84
+  ],
+  [
+   "ui-haiku",
+   17
+  ],
+  [
+   "Explore",
+   10
+  ],
+  [
+   "items-haiku",
+   4
+  ],
+  [
+   "save-haiku",
+   4
+  ],
+  [
+   "gh1-haiku",
+   3
+  ],
+  [
+   "ufb-haiku",
+   1
+  ]
+ ],
+ "agent_model": [
+  [
+   [
+    "general-purpose",
+    "-"
+   ],
+   34
+  ],
+  [
+   [
+    "general-purpose",
+    "sonnet"
+   ],
+   21
+  ],
+  [
+   [
+    "ui-haiku",
+    "-"
+   ],
+   17
+  ],
+  [
+   [
+    "general-purpose",
+    "haiku"
+   ],
+   15
+  ],
+  [
+   [
+    "general-purpose",
+    "opus"
+   ],
+   14
+  ],
+  [
+   [
+    "Explore",
+    "-"
+   ],
+   10
+  ],
+  [
+   [
+    "items-haiku",
+    "-"
+   ],
+   4
+  ],
+  [
+   [
+    "save-haiku",
+    "-"
+   ],
+   4
+  ],
+  [
+   [
+    "gh1-haiku",
+    "-"
+   ],
+   3
+  ],
+  [
+   [
+    "ufb-haiku",
+    "-"
+   ],
+   1
+  ]
+ ],
+ "hook_events": [
+  [
+   [
+    "hook_system_message",
+    "SessionStart:startup",
+    ""
+   ],
+   18
+  ],
+  [
+   [
+    "hook_cancelled",
+    "UserPromptSubmit",
+    "codegraph prompt-hook"
+   ],
+   16
+  ],
+  [
+   [
+    "hook_system_message",
+    "SessionStart:resume",
+    ""
+   ],
+   9
+  ],
+  [
+   [
+    "hook_non_blocking_error",
+    "UserPromptSubmit",
+    "codegraph prompt-hook"
+   ],
+   1
+  ]
+ ],
+ "hook_ex": {
+  "('hook_cancelled', 'UserPromptSubmit', 'codegraph prompt-hook')": [
+   "{\"type\": \"hook_cancelled\", \"hookName\": \"UserPromptSubmit\", \"toolUseID\": \"8fc7f8a8-8de3-4f8b-93cc-fde2370e5040\", \"hookEvent\": \"UserPromptSubmit\", \"command\": \"codegraph prompt-hook\", \"durationMs\": 15299, \"timedOut\": true, \"timeoutMs\": 15000}",
+   "{\"type\": \"hook_cancelled\", \"hookName\": \"UserPromptSubmit\", \"toolUseID\": \"d15592d8-c626-4c40-bd3a-31dcda9266b8\", \"hookEvent\": \"UserPromptSubmit\", \"command\": \"codegraph prompt-hook\", \"durationMs\": 16087, \"timedOut\": true, \"timeoutMs\": 15000}",
+   "{\"type\": \"hook_cancelled\", \"hookName\": \"UserPromptSubmit\", \"toolUseID\": \"036d9c86-db25-4640-92e2-a87abcddd96f\", \"hookEvent\": \"UserPromptSubmit\", \"command\": \"codegraph prompt-hook\", \"durationMs\": 19027, \"timedOut\": true, \"timeoutMs\": 15000}"
+  ],
+  "('hook_non_blocking_error', 'UserPromptSubmit', 'codegraph prompt-hook')": [
+   "{\"type\": \"hook_non_blocking_error\", \"hookName\": \"UserPromptSubmit\", \"toolUseID\": \"cefcb11b-fd02-4e97-b6c8-79f009b43c2e\", \"hookEvent\": \"UserPromptSubmit\", \"stderr\": \"Failed with non-blocking status code: No stderr output\", \"stdout\": \"\", \"exitCode\": 66, \"command\": \"codegraph prompt-hook\", \"durationMs\": 52}"
+  ],
+  "('hook_system_message', 'SessionStart:startup', '')": [
+   "{\"type\": \"hook_system_message\", \"content\": \"TMS editor already open (pid 99324); unreal-mcp answers at http://127.0.0.1:3092/mcp.\", \"hookName\": \"SessionStart:startup\", \"toolUseID\": \"15398024-24ee-4cb2-8bc7-f547ebf69ff3\", \"hookEvent\": \"SessionStart\"}",
+   "{\"type\": \"hook_system_message\", \"content\": \"TMS editor already open (pid 48220); unreal-mcp NOT answering at http://127.0.0.1:3092/mcp. Issue agent PRs open: #100, #70.\", \"hookName\": \"SessionStart:startup\", \"toolUseID\": \"479d376d-9d73-4214-925e-fd86aa8faca8\", \"hookEvent\": \"SessionStart\"}",
+   "{\"type\": \"hook_system_message\", \"content\": \"TMS editor launching in the low-memory profile (Config/Harness/EditorLaunch.json).\", \"hookName\": \"SessionStart:startup\", \"toolUseID\": \"23bd48b5-48c2-4ade-a472-c77aa55dd2d9\", \"hookEvent\": \"SessionStart\"}"
+  ],
+  "('hook_system_message', 'SessionStart:resume', '')": [
+   "{\"type\": \"hook_system_message\", \"content\": \"TMS editor launching in the low-memory profile (Config/Harness/EditorLaunch.json).\", \"hookName\": \"SessionStart:resume\", \"toolUseID\": \"f0bd51fc-a5bf-4136-abe0-cd9a2f340f8a\", \"hookEvent\": \"SessionStart\"}",
+   "{\"type\": \"hook_system_message\", \"content\": \"TMS editor already open (pid 39248); unreal-mcp NOT answering at http://127.0.0.1:3092/mcp.\", \"hookName\": \"SessionStart:resume\", \"toolUseID\": \"89f77372-f2da-4fab-9629-50cb7c74a014\", \"hookEvent\": \"SessionStart\"}",
+   "{\"type\": \"hook_system_message\", \"content\": \"TMS editor launching in the low-memory profile (Config/Harness/EditorLaunch.json).\", \"hookName\": \"SessionStart:resume\", \"toolUseID\": \"21d6d9d7-8dee-443f-9820-90691698e1ea\", \"hookEvent\": \"SessionStart\"}"
+  ]
+ },
+ "api_errors": [
+  [
+   "{'message': 'Connection error.', 'formatted': \"Can't reach the API server \u2014 check your int",
+   54
+  ],
+  [
+   "{'message': 'Connection error.', 'formatted': 'Connection dropped (ECONNRESET)', 'connecti",
+   4
+  ],
+  [
+   "{'message': 'Connection error.', 'formatted': 'Unable to connect to API (EACCES)', 'connec",
+   2
+  ],
+  [
+   "{'message': 'Connection error.', 'formatted': 'Connection refused \u2014 a firewall or proxy ma",
+   1
+  ]
+ ],
+ "interrupts": [
+  [
+   "C--Projects-bws-game-tms",
+   6
+  ],
+  [
+   "C--Projects-tms-heim",
+   3
+  ],
+  [
+   "C--Projects-tms-ui",
+   2
+  ],
+  [
+   "C--Projects-prototype-pit-manuever",
+   1
+  ]
+ ],
+ "n_corrections": 3,
+ "cmd_first": [
+  [
+   [
+    "Bash",
+    "python"
+   ],
+   5167
+  ],
+  [
+   [
+    "Bash",
+    "grep"
+   ],
+   3253
+  ],
+  [
+   [
+    "Bash",
+    "sed"
+   ],
+   3234
+  ],
+  [
+   [
+    "Bash",
+    "cat"
+   ],
+   2283
+  ],
+  [
+   [
+    "Bash",
+    "git"
+   ],
+   1437
+  ],
+  [
+   [
+    "Bash",
+    "ls"
+   ],
+   1135
+  ],
+  [
+   [
+    "Bash",
+    "U=\"$LOCALAPPDATA/Unity/bin/unity.exe\""
+   ],
+   495
+  ],
+  [
+   [
+    "Bash",
+    "tail"
+   ],
+   378
+  ],
+  [
+   [
+    "Bash",
+    "for"
+   ],
+   367
+  ],
+  [
+   [
+    "Bash",
+    "mkdir"
+   ],
+   317
+  ],
+  [
+   [
+    "Bash",
+    "sleep"
+   ],
+   301
+  ],
+  [
+   [
+    "Bash",
+    "export"
+   ],
+   278
+  ],
+  [
+   [
+    "Bash",
+    "echo"
+   ],
+   253
+  ],
+  [
+   [
+    "Bash",
+    "gh"
+   ],
+   242
+  ],
+  [
+   [
+    "Bash",
+    "until"
+   ],
+   202
+  ],
+  [
+   [
+    "Bash",
+    "wc"
+   ],
+   192
+  ],
+  [
+   [
+    "PowerShell",
+    "Get-CimInstance"
+   ],
+   180
+  ],
+  [
+   [
+    "Bash",
+    "timeout"
+   ],
+   134
+  ],
+  [
+   [
+    "Bash",
+    "powershell"
+   ],
+   125
+  ],
+  [
+   [
+    "Bash",
+    "find"
+   ],
+   123
+  ],
+  [
+   [
+    "Bash",
+    "cd"
+   ],
+   118
+  ],
+  [
+   [
+    "Bash",
+    "head"
+   ],
+   105
+  ],
+  [
+   [
+    "PowerShell",
+    "powershell"
+   ],
+   103
+  ],
+  [
+   [
+    "PowerShell",
+    "Set-Location"
+   ],
+   98
+  ],
+  [
+   [
+    "Bash",
+    "rm"
+   ],
+   94
+  ],
+  [
+   [
+    "Bash",
+    "date"
+   ],
+   89
+  ],
+  [
+   [
+    "Bash",
+    "cp"
+   ],
+   88
+  ],
+  [
+   [
+    "PowerShell",
+    "$u=\"C:\\Users\\bsmi0\\AppData\\Local\\Unity\\b"
+   ],
+   80
+  ],
+  [
+   [
+    "PowerShell",
+    "$u=\"$env:LOCALAPPDATA\\Unity\\bin\\unity.ex"
+   ],
+   69
+  ],
+  [
+   [
+    "Bash",
+    "\"$LOCALAPPDATA/Unity/bin/unity.exe\""
+   ],
+   65
+  ],
+  [
+   [
+    "PowerShell",
+    "Add-Type"
+   ],
+   56
+  ],
+  [
+   [
+    "Bash",
+    "curl"
+   ],
+   56
+  ],
+  [
+   [
+    "Bash",
+    "\"/c/Program"
+   ],
+   54
+  ],
+  [
+   [
+    "PowerShell",
+    "git"
+   ],
+   52
+  ],
+  [
+   [
+    "Bash",
+    "python3"
+   ],
+   50
+  ],
+  [
+   [
+    "PowerShell",
+    "Get-Process"
+   ],
+   50
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-10-07-pitu-veh-16-vehicle-li"
+   ],
+   48
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-10-09-pitu-plt-01-performanc"
+   ],
+   48
+  ],
+  [
+   [
+    "Bash",
+    "PYTHONIOENCODING=utf-8"
+   ],
+   47
+  ],
+  [
+   [
+    "PowerShell",
+    "\"stray"
+   ],
+   47
+  ],
+  [
+   [
+    "Bash",
+    "S=\"C:/Users/bsmi0/AppData/Local/Temp/cla"
+   ],
+   46
+  ],
+  [
+   [
+    "Bash",
+    "dotnet"
+   ],
+   41
+  ],
+  [
+   [
+    "Bash",
+    "tasklist"
+   ],
+   40
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-10-07-pitu-wld-22-civilian-t"
+   ],
+   39
+  ],
+  [
+   [
+    "Bash",
+    "bash"
+   ],
+   38
+  ],
+  [
+   [
+    "Bash",
+    "printf"
+   ],
+   36
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-10-09-kennelman-inspect/fix"
+   ],
+   33
+  ],
+  [
+   [
+    "PowerShell",
+    "$u"
+   ],
+   31
+  ],
+  [
+   [
+    "Bash",
+    "awk"
+   ],
+   30
+  ],
+  [
+   [
+    "Bash",
+    "S=/c/Users/bsmi0/AppData/Local/Temp/clau"
+   ],
+   29
+  ],
+  [
+   [
+    "Bash",
+    "E=runs/2026-10-07-pitu-wld-22-civilian-t"
+   ],
+   29
+  ],
+  [
+   [
+    "Bash",
+    "R=runs/2026-10-06-pitu-wld-05c-downtown-"
+   ],
+   29
+  ],
+  [
+   [
+    "PowerShell",
+    "$p"
+   ],
+   28
+  ],
+  [
+   [
+    "Bash",
+    "PYTHONPATH=."
+   ],
+   28
+  ],
+  [
+   [
+    "PowerShell",
+    "Start-Sleep"
+   ],
+   27
+  ],
+  [
+   [
+    "Bash",
+    "E=\"/c/Program"
+   ],
+   27
+  ],
+  [
+   [
+    "Bash",
+    "L=/c/Projects/tms-heim/runs/2026-10-06-c"
+   ],
+   27
+  ],
+  [
+   [
+    "Bash",
+    "D=runs/2026-10-07-pitu-uix-15-ui-motion-"
+   ],
+   25
+  ],
+  [
+   [
+    "PowerShell",
+    ".\\gradlew.bat"
+   ],
+   23
+  ],
+  [
+   [
+    "PowerShell",
+    "python"
+   ],
+   23
+  ]
+ ],
+ "polls": [
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   1638
+  ],
+  [
+   "C--Projects-bws-game-tms",
+   345
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   228
+  ],
+  [
+   "C--Projects-tms-ui",
+   80
+  ],
+  [
+   "C--Projects-prototype-pit-manuever",
+   77
+  ],
+  [
+   "C--Projects-tms-heim",
+   63
+  ],
+  [
+   "C--Projects-tms-save",
+   56
+  ],
+  [
+   "C--Projects-tms-items",
+   30
+  ],
+  [
+   "C--Projects-tms-issues",
+   14
+  ],
+  [
+   "C--Projects-bws-mods-claude-code",
+   10
+  ],
+  [
+   "C--Projects-bws-applications-motion-capture-studio",
+   8
+  ],
+  [
+   "C--projects",
+   6
+  ],
+  [
+   "C--Projects-bws-portfolio",
+   5
+  ],
+  [
+   "C--Users-bsmi0--claude",
+   5
+  ],
+  [
+   "C--Projects-battle-souls",
+   1
+  ]
+ ],
+ "long_runs": [
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   606,
+   "python - <<'EOF'\np='Assets/_Game/Editor/World/RouteOptimiser.cs'\ns=open(p).read()\ns=s.replace(\"\"\" Props under <see cref=\"NoShadowPieceM\"/> stop casting shadows."
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   602,
+   "sed -i 's/^- \\[ \\] T05 Commit/- [x] T05 Commit/; s/^- \\[ \\] T06 Manifest/- [x] T06 Manifest/' runs/2026-10-04-m8-f2-art/TASKS.md && until grep -q \"notes exit=\" "
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   602,
+   "cd /c/Projects/bws.game.pit-maneuver; R=runs/2026-10-05-pitu-wld-01-route-bake-pipeline; for f in Pit.Sim.Tests.World.RoadBakeTests Pit.Editor.Tests.RouteBakeTe"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   602,
+   "F=/c/Projects/bws.game.pit-maneuver/runs/2026-10-05-pitu-wld-01-route-bake-pipeline/unity-tests-Pit.Sim.Tests.World.RoadBakeTests.txt; until grep -q \"tests: tot"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   602,
+   "F=\"C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-pit-maneuver/80089bcf-6db6-4ee7-a3cd-8d3f41ff4da5/tasks/b64p8chjv.output\"; until [ \"$(grep -c '"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   602,
+   "dotnet test runs/2026-10-08-pitu-spc-12a-pedestrian-ai-and-sim-participation-part/scratch/dotnet/p.csproj -c Release --filter \"Name~TenMinuteSoak\" --logger \"con"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   602,
+   "U=\"$LOCALAPPDATA/Unity/bin/unity.exe\"; bash runs/2026-10-07-pitu-spc-11-pedestrian-content/scratch/compile.sh && until \"$U\" command editor_status --project-path"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   602,
+   "until grep -q '^exit=' /tmp/gate-s6.txt; do sleep 20; done; tail -25 /tmp/gate-s6.txt"
+  ],
+  [
+   "C--Projects-bws-android-scribe",
+   601,
+   "mkdir -p /c/Projects/bws.android.scribe/runs/2026-10-04-m8-f1-design/drafts && cat > /c/Projects/bws.android.scribe/runs/2026-10-04-m8-f1-design/draft_art.py <<"
+  ],
+  [
+   "C--Projects-bws-applications-motion-capture-studio",
+   601,
+   "python -I - <<'EOF'\np = \"src/mocap_engine/hands.py\"\ns = open(p, encoding=\"utf-8\").read()\npairs = [\n (\"    world = np.full((n, 2, 21, 3), np.nan)\\n    score = np"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "cd /c/Projects/bws.game.pit-maneuver; powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1 -Tag aud05 2>&1 | tail -15 | tee runs/2026-10-07-pitu"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "cd /c/Projects/bws.game.pit-maneuver; until grep -q \"exit=\" runs/2026-10-04-pitu-plt-05-build-pipeline/evidence/dev-build-2.txt; do sleep 10; done; cat runs/202"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "cd /c/Projects/bws.game.pit-maneuver; git checkout ProjectSettings/ProjectSettings.asset; rm -rf Assets/_TerrainAutoUpgrade Assets/_TerrainAutoUpgrade.meta\ngit "
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "git status --short | head; powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-tests.ps1 -Mode EditMode -Filter Pit.Sim.Tests.Pedestrians.PedestrianRe"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-tests.ps1 -Filter Pit.Editor.Tests.ContentDefTests -TimeoutSeconds 600 2>&1 | grep -E \"tests:|TEST"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "R=runs/2026-10-08-pitu-fix-01-cleanup-of-the-veh-09-to-veh-14-review-findings; until rg -q \"PASS|FAIL|refus\" $R/evidence/gate-output.txt 2>/dev/null; do sleep 1"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "until [ -s /c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-pit-maneuver/49b83b4a-9cfd-4f95-98a8-5cd5f867a52a/tasks/b66eeju4t.output ]; do sleep 20"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "python - <<'EOF'\np='Assets/_Game/UI.Tests/HudCoreTests.cs'\ns=open(p,encoding='utf-8').read()\ns=s.replace('''            var start = HudReadout.From(w.Game);\n   "
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "f=\"/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-pit-maneuver/680bda23-f9f2-4dca-9deb-317e69da18cc/tasks/bsmont72d.output\"; until grep -qiE 'PAS"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "bash runs/2026-10-09-pitu-wld-23-region-optimisation/run-perf.sh \"Heavy-Night-Fog-Pc\" > /tmp/base.log 2>&1; tail -3 /tmp/base.log; mkdir -p runs/2026-10-09-pitu"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "cd /c/Projects/bws.game.pit-maneuver; until grep -q ABDONE Logs/ab1.tsv 2>/dev/null; do sleep 30; done; cat Logs/ab1.tsv | cut -f1-3,5-11,14-"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "$U=\"$env:LOCALAPPDATA\\Unity\\bin\\unity.exe\"; cd C:\\Projects\\bws.game.pit-maneuver\n& $U assets import \"$env:APPDATA\\Unity\\Asset Store-5.x\\Decimate\\Shaders\\Grid Ma"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "U=\"$LOCALAPPDATA/Unity/bin/unity.exe\"; \"$U\" recompile --project-path C:/Projects/bws.game.pit-maneuver --strict --json --no-banner --timeout 300 2>&1 | grep -E "
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "F=/c/Projects/bws.game.pit-maneuver/runs/2026-10-09-pitu-par-04-js-versus-c-trace-diff/evidence/gate-output.txt; until grep -q \"^exit \" $F; do sleep 20; done; t"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "bash runs/2026-10-07-pitu-spc-11-pedestrian-content/scratch/compile.sh && U=\"$LOCALAPPDATA/Unity/bin/unity.exe\" && rm -rf Logs/pedestrians && cat > runs/2026-10"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "sed -i 's/Is.InRange(1.55f, 1.95f), v.id + \" height\"/Is.InRange(1.55f, 2.0f), v.id + \" height\"/' Assets/_Game/Pedestrians.Tests/PedestrianContentTests.cs && gre"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "until grep -q FULL-DONE /c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-pit-maneuver/cd970029-8677-4b84-ad7d-d290e46b7f93/tasks/b53p212kj.output; "
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "cd C:\\Projects\\bws.game.pit-maneuver; powershell -NoProfile -File runs/2026-10-06-pitu-wld-21-wet-road-and-rain/rc.ps1 2>&1 | Select-String \"errors|status|error"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "until grep -q '^exit=' /tmp/gate-s6.txt; do sleep 20; done; tail -25 /tmp/gate-s6.txt"
+  ],
+  [
+   "C--Projects-bws-game-pit-maneuver",
+   601,
+   "until grep -q \"RESULT fresh\" /c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-game-pit-maneuver/f987c3df-4ccf-453a-893c-89ef2a2cb221/tasks/bem0e28vn.out"
+  ]
+ ],
+ "n_long_runs": 259,
+ "mods": {
+  "shell_lint": {
+   "denies": [
+    [
+     "long-command",
+     183
+    ],
+    [
+     "py-backslash",
+     12
+    ],
+    [
+     "dq-trailing-backslash",
+     2
+    ]
+   ],
+   "next_shell_result": [
+    [
+     [
+      "py-backslash",
+      "ok"
+     ],
+     11
+    ],
+    [
+     [
+      "long-command",
+      "ok"
+     ],
+     174
+    ],
+    [
+     [
+      "long-command",
+      "error"
+     ],
+     7
+    ],
+    [
+     [
+      "dq-trailing-backslash",
+      "ok"
+     ],
+     2
+    ]
+   ],
+   "examples": [
+    [
+     "C--projects",
+     "py-backslash",
+     "python3 - <<'EOF'\nimport json\nr=json.load(open('index.json'))\nfor x in r:\n    if x['act'].startswith('flag') or x['act']=='' :\n        print(x['id'],'|',x['conf'],'|',x['loc'][:90].replace('C:\\\\Projec"
+    ],
+    [
+     "C--projects",
+     "long-command",
+     "mkdir -p /c/Projects/runs/2026-10-09-prompt-audit/apply && cat > /c/Projects/runs/2026-10-09-prompt-audit/apply/apply_high.py <<'EOF'\n\"\"\"Apply selected hunks from PROPOSED.diff to worktrees (and compu"
+    ],
+    [
+     "C--projects",
+     "long-command",
+     "S=/c/Users/bsmi0/AppData/Local/Temp/claude/C--Projects/40ea1378-d4ba-4a2e-aa83-cd279dd39baa/scratchpad; D=$S/w_g2_08; mkdir -p $D; cd $D; R=/c/Projects/tms-heim; SK=$R/.agents/skills\ncp $SK/tms-heim-t"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "python - <<'EOF'\np='core/data/src/main/kotlin/com/bws/inkwell/core/data/db/Entities.kt'\ns=open(p,encoding='utf-8').read()\n# low_confidence on transcript_block and transcript_version_block\nold_tb=\"\"\"  "
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "mkdir -p runs/2026-10-03-m7-d6-notes/scratch && cat > core/model/src/test/kotlin/com/bws/inkwell/core/model/ai/NotesTest.kt <<'EOF'\npackage com.bws.inkwell.core.model.ai\n\nimport kotlinx.coroutines.run"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "python - <<'EOF'\np='core/pil/src/main/kotlin/com/bws/inkwell/core/pil/PageRecognizer.kt'\ns=open(p,encoding='utf-8').read()\n\n# imports\ns=s.replace('import com.bws.inkwell.core.model.ai.AiRequest\\n','im"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "sed -i '/^import com.bws.inkwell.core.model.ai.AiTurn$/d' core/pil/src/androidTest/kotlin/com/bws/inkwell/core/pil/RecognitionDeviceTest.kt && python - <<'EOF'\np='core/pil/src/test/kotlin/com/bws/inkw"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "sed -i 's/^- \\[ \\] T04/- [x] T04/; s/^Status: IN_PROGRESS/Status: NEEDS_USER/' runs/2026-10-03-m7-d4-read-carefully/TASKS.md && cat > runs/2026-10-03-m7-d4-read-carefully/HANDOFF.md <<'EOF'\n# D4 \u2014 Rea"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "cat > runs/2026-10-03-m7-d8-images/HANDOFF.md <<'EOF'\n# D8 \u2014 Images: HANDOFF\n\n**State (session 1, 2026-10-03): code done.** Code commit `4c01ab5` on `feat/m7-ai`. No tablet work and no live calls were"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "python - <<'PYEOF'\nd='feature/editor/src/main/kotlin/com/bws/inkwell/feature/editor/'\ndef edit(p, old, new):\n    s=open(d+p,encoding='utf-8').read()\n    assert old in s,(p,old[:50])\n    open(d+p,'w',e"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "cat > scratch/latency_ab7.sh <<'EOF'\n#!/usr/bin/env bash\n# AC-REG-01 A/B driver (D10, adapted from M4 B9's latency_ab.sh). Rule: evidence/ac-reg-01/THRESHOLD.md.\n# Needs GOOGLE_API_KEY in the environm"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "long-command",
+     "python - <<'EOF'\np='core/ai/src/test/kotlin/com/bws/inkwell/core/ai/AiSettingsStoreTest.kt'\ns=open(p,encoding='utf-8').read()\ns=s.rstrip()\nassert s.endswith(\"}\")\ns=s[:-1]+'''\n    @Test\n    public fun "
+    ],
+    [
+     "C--Projects-bws-applications-motion-capture-studio",
+     "long-command",
+     "python -I - <<'EOF'\np = \"integrations/blender/import_mocap.py\"\ns = open(p, encoding=\"utf-8\").read()\na = s.index(\"    rate = num / den\\n    last_q = {}\")\nb = s.index(\"    scene.frame_start = 1\\n\")\nnew "
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cat > Assets/_Game/Sim.Tests/World/RouteLayoutRulesTests.cs <<'EOF'\nusing System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing NUnit.Framework;\nusing Pit.Sim.World;\n\nnamespace Pit.Sim.Te"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "R=runs/2026-10-06-pitu-wld-08-route-i1-interstate && cat > $R/evidence/EVIDENCE.md <<'EOF'\n# WLD-08 evidence map\n| Check | Evidence |\n|---|---|\n| T01 layout (spline, spawn, exit, checkpoints, hazard s"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "python - <<'EOF'\np='Assets/_Game/Sim/Rules/GameConfig.cs'\ns=open(p,encoding='utf-8').read()\ns=s.replace('PursuitSurvived, TimeExpired, OutOfSector }','PursuitSurvived, TimeExpired, OutOfSector, ExitRe"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "python - <<'EOF'\nimport re\np='runs/2026-10-04-pitu-sim-02-sim-data-model-and-road-geometry/TASKS.md'\ns=open(p).read().replace('- [ ] T01','- [~] T01',1)\nopen(p,'w').write(s)\nEOF\nmkdir -p Assets/_Game/"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cd /c/Projects/bws.game.pit-maneuver/Assets/_Game && mkdir -p Occupants Occupants.Tests Editor/Occupants && \nsed 's/Pit.Pedestrians/Pit.Occupants/g' Pedestrians/Pit.Pedestrians.asmdef > Occupants/Pit."
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cd /c/Projects/bws.game.pit-maneuver; mkdir -p Assets/_Game/Sim/Replay; cat > Assets/_Game/Sim/Replay/ReplayClip.cs <<'EOF'\nusing System;\nusing System.Collections.Generic;\nusing Pit.Sim.Facade;\nusing "
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "python - <<'EOF'\np='Assets/_Game/Editor/World/RouteD2.cs'\ns=open(p,encoding='utf-8').read()\na=s.index('        public static List<Dress> Dressing()')\nb=s.index('        /// <summary>Centre-line contro"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "python - <<'EOF'\nimport re\np='Assets/_Game/Editor/World/RouteI3.cs'\ns=open(p,encoding='utf-8').read()\n\n# ---- header summary\ns=s.replace('''    /// Route I3, Station 9 (WLD-10, GDD 72): the second aut"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "python - <<'EOF'\np='Assets/_Game/Editor.Tests/RouteI3Tests.cs'\ns=open(p,encoding='utf-8').read()\ni=s.index('            Assert.AreEqual(4, marks.Count(')\nj=s.index('\\n',i)\ns=s[:i]+s[j+1:]\na=s.index(' "
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "python - <<'E'\np='docs/GDD.md'\ns=open(p,encoding='utf-8').read()\nif not s.endswith('\\n'): s+='\\n'\ns+='''\n## 124. Civilian traffic behaviour (TGT-01, 2026-10-08)\nDecided by the build agent within GDD 6"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cd /c/Projects/bws.game.pit-maneuver/Assets/_Game\npython - <<'EOF'\np=\"Audio/AudioBootstrap.cs\"\ns=open(p).read()\ns=s.replace(\"\"\"            ServiceRegistry.Register(service);\n        }\"\"\",\"\"\"          "
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cd /c/Projects/bws.game.pit-maneuver/Assets/_Game\ncat > UI.Tests/UiSoundTests.cs <<'EOF'\nusing System;\nusing System.Collections.Generic;\nusing System.IO;\nusing NUnit.Framework;\nusing Pit.Editor.UiThem"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cat >> docs/SIM-NUMERICS.md <<'EOF'\n\n## Parity decision: bit-exact, oracle = Chrome's V8 (SIM-01, 2026-10-04)\n\n**Decision: the C# sim reproduces the prototype's floating-point results bit for bit, not"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cat > runs/2026-10-06-pitu-wld-19-route-s3-suburb/edit_s3.py <<'PYEOF'\n\"\"\"One-off: turns the copied RouteS3.cs (a sed copy of RouteS2.cs) into Route S3 (Linden Park). Working file, kept as evidence.\"\""
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cd /c/Projects/bws.game.pit-maneuver/Assets/_Game && mkdir -p Game/Build Editor/Build && cat > Game/Build/BuildInfo.cs <<'E'\nusing System;\nusing System.IO;\nusing UnityEngine;\n\nnamespace Pit.Game.Build"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "mkdir -p /c/Projects/bws.game.pit-maneuver/Assets/_Game/UI/Motion && cd /c/Projects/bws.game.pit-maneuver/Assets/_Game/UI/Motion && \ncat > UiMotion.cs <<'E'\nusing System;\nusing Pit.Game.Services;\nusin"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "long-command",
+     "cat > Assets/_Game/Sim.Tests/Collision/PhysicsStepTests.cs <<'EOF'\nusing System;\nusing System.Collections.Generic;\nusing NUnit.Framework;\nusing Pit.Sim.Collision;\nusing Pit.Sim.Numerics;\nusing Pit.Sim"
+    ]
+   ]
+  },
+  "guard": {
+   "counts": [
+    [
+     "ue low-vram",
+     7
+    ],
+    [
+     "unreal-mcp down",
+     2
+    ],
+    [
+     "unity -automated",
+     2
+    ],
+    [
+     "adb no device",
+     1
+    ],
+    [
+     "unity not running",
+     1
+    ],
+    [
+     "glob refused",
+     1
+    ]
+   ],
+   "examples": {
+    "adb no device": [
+     [
+      "C--Projects-bws-android-scribe",
+      "Bash",
+      "wc -l docs/DESIGN-SYSTEM.md; adb shell wm size; adb shell wm density; python -c \"\nimport json;d=json.load(open('design/claude-design/tokens.json'));print(list(d",
+      "<tool_use_error>bws-cockpit: no Android device is ready (adb devices: none attached). Ask the user to connect and unlock the device, then retry.</tool_use_error>"
+     ]
+    ],
+    "unity not running": [
+     [
+      "C--Projects-bws-game-pit-maneuver",
+      "Bash",
+      "sed -i 's/                Wall = Frames(100, 10f, 0, 0f), Sim = /                Game = Frames(100, 9f, 0, 0f), Wall = Frames(100, 10f, 0, 0f), Sim = /' Assets/",
+      "<tool_use_error>bws-cockpit: no Unity editor is running, so the unity CLI pipeline has nothing to talk to. Launch it first (unity open <project> --args -automated) and wait for the pipeline to come up, or ask the user.</tool_use_error>"
+     ]
+    ],
+    "unreal-mcp down": [
+     [
+      "C--Projects-bws-game-tms",
+      "mcp__unreal-mcp__call_tool",
+      "",
+      "<tool_use_error>bws-cockpit: Unreal MCP at http://127.0.0.1:3092/mcp is not reachable: an editor is running but its MCP port does not answer (still loading, or MCP not started). Start or wait for the editor (if other editors or Blender are open, launch with low-VRAM flags), then retry. Ask the user "
+     ],
+     [
+      "C--Projects-bws-mods-claude-code",
+      "Bash",
+      "cd /c/Projects/bws.mods.claude-code && sed -n 1305,1380p bws-cockpit/hooks/register.tsx; cat bws-notify/hooks/register.ts | head -120; cat bws-notify/bin/notify",
+      "              {fit(`guard ${v.lastGuard}`, width - 2)}\n            </Text>\n          </Box>\n        ) : null}\n      </Box>\n    )\n  })\n\n  // ---------- Editor & Device Guard ----------\n\n  on('tool.call', { tool: /^mcp__unreal[\\w-]*__/ }, async ($, e, next) => {\n    if (!o.guard) return next(e)\n    co"
+     ]
+    ],
+    "unity -automated": [
+     [
+      "C--Projects-bws-game-tms",
+      "PowerShell",
+      "Start-Process -FilePath \"C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.0f1\\Editor\\Unity.exe\" -ArgumentList '-projectpath','C:\\Projects\\tms-heim' -PassThru | Select I",
+      "<tool_use_error>bws-cockpit: Unity must start with -automated (modal dialogs otherwise block the pipeline). Add it to -ArgumentList (e.g. \"open\",\"<project>\",\"--args\",\"-automated\" for the unity CLI, or \"-projectPath\",\"<project>\",\"-automated\" for Unity.exe) and run again.</tool_use_error>"
+     ],
+     [
+      "C--Users-bsmi0--claude",
+      "Bash",
+      "cd /c/Projects/bws.mods.claude-code && ls -la bws-cockpit/hooks bws-cockpit/.claude-plugin bws-shell-lint/hooks; wc -l bws-cockpit/hooks/* bws-shell-lint/hooks/",
+      "bws-cockpit/.claude-plugin:\ntotal 16\ndrwxr-xr-x 1 bsmi0 197609    0 Oct  2 22:02 ./\ndrwxr-xr-x 1 bsmi0 197609    0 Oct  2 21:51 ../\n-rw-r--r-- 1 bsmi0 197609 5229 Oct  2 22:02 plugin.json\ndrwxr-xr-x 1 bsmi0 197609    0 Oct  2 08:09 types/\n\nbws-cockpit/hooks:\ntotal 153\ndrwxr-xr-x 1 bsmi0 197609     0"
+     ]
+    ],
+    "ue low-vram": [
+     [
+      "C--Projects-bws-mods-claude-code",
+      "Bash",
+      "ls; ls runs | tail -20; for d in */.claude-plugin; do echo \"== $d\"; cat $d/plugin.json | head -20; done; ls ~/.claude/projects | head -50; find ~/.claude/projec",
+      "AGENTS.md\nbws-cockpit/\nbws-notify/\nbws-shell-lint/\ndocs/\nruns/\n2026-10-02-cockpit-guard-mod/\n2026-10-02-finish-line-guard/\n2026-10-02-handoff-model-pin/\n2026-10-02-loop-watch/\n2026-10-02-mods-summary/\n2026-10-02-project-locator/\n2026-10-02-repo-sessions-pane/\n2026-10-02-shell-lint-mod/\n2026-10-02-us"
+     ],
+     [
+      "C--Projects-bws-mods-claude-code",
+      "Bash",
+      "ls bws-cockpit bws-cockpit/hooks bws-notify bws-shell-lint; wc -l bws-cockpit/hooks/*.ts* bws-notify/hooks/* bws-shell-lint/hooks/*; sed -n 1,200p bws-cockpit/R",
+      "bws-cockpit:\nREADME.md\nhooks/\ntests/\ntsconfig.json\ntypes/\n\nbws-cockpit/hooks:\nfinish.ts\nhandoff.ts\nhooks.json\nlib.ts\nloop.ts\npeers.ts\nprojects.ts\nregister.tsx\nshell.ts\n\nbws-notify:\nREADME.md\nbin/\nhooks/\ntests/\ntsconfig.json\n\nbws-shell-lint:\nREADME.md\nhooks/\ntests/\ntsconfig.json\n    94 bws-cockpit/ho"
+     ],
+     [
+      "C--Projects-tms-heim",
+      "PowerShell",
+      "$env:PROMO_NAME=\"promo_r1\"; $env:PROMO_RES=\"1920x1080\"; $env:PROMO_WARM=\"75\"\nRemove-Item C:\\Projects\\tms-heim\\runs\\2026-10-06-courtyard-promo\\render_promo.log -",
+      "<tool_use_error>bws-cockpit: other GPU apps are running (VRAM 4.0/8.0 GB), so UE must launch with the low-VRAM overrides. Add this element to -ArgumentList and run again: '-ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPercentage=50,[SystemSettings]:r.Streaming.PoolSize=768,[Syste"
+     ],
+     [
+      "C--Projects-tms-heim",
+      "PowerShell",
+      "$env:PROMO_NAME=\"promo_r1\"; $env:PROMO_RES=\"1920x1080\"; $env:PROMO_WARM=\"75\"\nRemove-Item C:\\Projects\\tms-heim\\runs\\2026-10-06-courtyard-promo\\render_promo.log -",
+      "<tool_use_error>bws-cockpit: other GPU apps are running (VRAM 4.0/8.0 GB), so UE must launch with the low-VRAM overrides. Add this element to -ArgumentList and run again: '-ini:Engine:[SystemSettings]:t.MaxFPS=30,[SystemSettings]:r.ScreenPercentage=50,[SystemSettings]:r.Streaming.PoolSize=768,[Syste"
+     ],
+     [
+      "C--Users-bsmi0--claude",
+      "Bash",
+      "cd /c/Projects/bws.mods.claude-code && ls; for d in bws-cockpit bws-shell-lint; do echo \"=== $d\"; ls -la $d; cat $d/.claude-plugin/plugin.json 2>/dev/null; cat ",
+      "AGENTS.md\nbws-cockpit/\nbws-shell-lint/\ndocs/\nruns/\n=== bws-cockpit\ntotal 41\ndrwxr-xr-x 1 bsmi0 197609     0 Oct  2 21:51 ./\ndrwxr-xr-x 1 bsmi0 197609     0 Oct  2 21:49 ../\ndrwxr-xr-x 1 bsmi0 197609     0 Oct  2 22:02 .claude-plugin/\n-rw-r--r-- 1 bsmi0 197609 22675 Oct  2 22:07 README.md\ndrwxr-xr-x "
+     ],
+     [
+      "C--Users-bsmi0--claude",
+      "Bash",
+      "cd /c/Projects/bws.mods.claude-code && grep -n -i \"auto\\|unasked\\|announce\" bws-cockpit/README.md | head -15; grep -n \"peersAnnounced\" bws-cockpit/hooks/registe",
+      "10:- repeated reminders about `-automated` and low-VRAM launches\n70:- **Opens unasked** when a new interactive session appears in this repo. That only happens in the fullscreen layout, and the engine seats an unasked pane only from 144 columns. Each session triggers it once, so closing the pane keep"
+     ]
+    ],
+    "glob refused": [
+     [
+      "C--Projects-bws-mods-claude-code",
+      "Bash",
+      "cd ~/.claude && python -c \"\nimport json;s=json.load(open('settings.json'))\nprint(json.dumps(s.get('env',{}),indent=1)); print(json.dumps(s.get('pluginConfigs',{",
+      "{\r\n \"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS\": \"1\",\r\n \"ENABLE_EXPERIMENTAL_MCP_CLI\": \"true\",\r\n \"CLAUDE_CODE_NEW_INIT\": \"1\",\r\n \"CLAUDE_CODE_USE_POWERSHELL_TOOL\": \"1\",\r\n \"ENABLE_TOOL_SEARCH\": \"true\",\r\n \"NO_FLICKER_MODE\": \"1\",\r\n \"CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS\": \"150000\",\r\n \"CLAUDE_CODE_MAX_OUTPU"
+     ]
+    ]
+   }
+  },
+  "finish_line": {
+   "blocks": [
+    [
+     "open items",
+     17
+    ],
+    [
+     "evidence",
+     13
+    ]
+   ],
+   "sessions": 10,
+   "visible_line": 0,
+   "tools_after_block": {
+    "open items": {
+     "n": 17,
+     "zero": 8,
+     "median": 1
+    },
+    "evidence": {
+     "n": 13,
+     "zero": 2,
+     "median": 4
+    }
+   },
+   "examples": [
+    [
+     "C--Projects-bws-android-scribe",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-03-m7-d10-device-pass still has 17 open items: T02 [AC-OCR7-01] Verify on the Pixel Tablet: Background transcript ready \u2264 60 s p90 aft...; T03 [AC-OCR7-02] Verify on the Pixel Tablet: Read carefully \u2264 10 s p50, \u2264 60 s p90 over...; T04 [AC-OCR7-03] Verify on the Pixel Tablet: No trace in a 1-hour mixed session contain...; T05 [AC-OCR7-04] Verify on the Pixel Ta"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-03-m7-d10-device-pass still has 17 open items: T02 [AC-OCR7-01] Verify on the Pixel Tablet: Background transcript ready \u2264 60 s p90 aft...; T03 [AC-OCR7-02] Verify on the Pixel Tablet: Read carefully \u2264 10 s p50, \u2264 60 s p90 over...; T04 [AC-OCR7-03] Verify on the Pixel Tablet: No trace in a 1-hour mixed session contain...; T05 [AC-OCR7-04] Verify on the Pixel Ta"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-03-m7-d10-device-pass still has 4 open items: T03 [AC-OCR7-02] Verify on the Pixel Tablet: Read carefully \u2264 10 s p50, \u2264 60 s p90 over...; T16 [GATE] With everything committed, python tools/m7-harness/harness.py gate passes. I...; T17 [HANDOFF] Final HANDOFF.md and RUNLOG.md written; the bundle's row in docs/M7-TRACK...; N4 (device) AC-OCR7-02 (T03, per N3 \"Re-"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-03-m7-d10-device-pass still has 4 open items: T03 [AC-OCR7-02] Verify on the Pixel Tablet: Read carefully \u2264 10 s p50, \u2264 60 s p90 over...; T16 [GATE] With everything committed, python tools/m7-harness/harness.py gate passes. I...; T17 [HANDOFF] Final HANDOFF.md and RUNLOG.md written; the bundle's row in docs/M7-TRACK...; N4 (device) AC-OCR7-02 (T03, per N3 \"Re-"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-04-m8-f4-name-icon still has 1 open item: F5 audit candidate: EditorActivity (feature/editor manifest) has its own android:label=.... Keep going on them. If one is blocked or needs Brian, say so plainly in your reply and mark it in the checklist (e.g. \"- [ ] item (blocked: reason)\" or \"(needs Brian: question)\"); the guard then lets you stop."
+    ],
+    [
+     "C--Projects-bws-applications-motion-capture-studio",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-06-prove-motion still has 6 open items: Brian: tape floor marks, lock C920 controls, record the 34 takes; Quick pass two: hand landmarker wrists; faster pose model variant (heavy = 7.7 fps CPU,...; HQ pipeline: world-grounded temporal model (GVHMR/WHAM-class) -> SMPL -> canonical; fal...; Metrics harness (foot slide, drift, heading, wrist/limb error, swaps, co"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-05-pitu-uxd-01-figma-design-system still has 1 open item: T07 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.. Keep going on them. If one is blocked or needs Brian, say so plainly in your reply and mark it in the checklist (e.g. \"- [ ] item (blocked: reason)\" or \"(needs Brian: question)\"); the guard then lets you stop."
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-pitu-veh-17-wheels-suspension-and-tyre-visuals still has 1 open item: N1 (proposed-task) The gate failed in sessions 3 and 4 for the same reason, none of it .... Keep going on them. If one is blocked or needs Brian, say so plainly in your reply and mark it in the checklist (e.g. \"- [ ] item (blocked: reason)\" or \"(needs Brian: question)\"); the guard then le"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-pitu-veh-17-wheels-suspension-and-tyre-visuals still has 1 open item: N1 (proposed-task) The gate failed in sessions 3 and 4 for the same reason, none of it .... Keep going on them. If one is blocked or needs Brian, say so plainly in your reply and mark it in the checklist (e.g. \"- [ ] item (blocked: reason)\" or \"(needs Brian: question)\"); the guard then le"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-08-gh1-k1-gh1-restraint still has 8 open items: T01 [REFLECT] Declare every GH1 reflected type in one batch, then one python Tools/Harn...; T02 [RULES] Pure TmsRestraint rules (contact, drag step clip, release decision, immunit...; T03 [TARGETING] SPEC-ENEMY-GROUPS \u00a727: live hold records, tier 2 binding a live holder,...; T04 [ACTION] UTmsRestraintComponent li"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-08-gh1-k1-gh1-restraint still has 8 open items: T01 [REFLECT] Declare every GH1 reflected type in one batch, then one python Tools/Harn...; T02 [RULES] Pure TmsRestraint rules (contact, drag step clip, release decision, immunit...; T03 [TARGETING] SPEC-ENEMY-GROUPS \u00a727: live hold records, tier 2 binding a live holder,...; T04 [ACTION] UTmsRestraintComponent li"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-save-s4-save-checkpoint still has 3 open items: T06 [GATE] python Tools/check_headers.py passes and everything is committed, then pytho...; T07 [HANDOFF] Final HANDOFF.md and RUNLOG.md written in the run folder (runs/ is never ...; N1 (blocker) TMS.Full.Playtest.Start (in this unit's gateOnly list) fails in this workt.... Keep going on them. If one is block"
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-save-s4-save-checkpoint still has 3 open items: T06 [GATE] python Tools/check_headers.py passes and everything is committed, then pytho...; T07 [HANDOFF] Final HANDOFF.md and RUNLOG.md written in the run folder (runs/ is never ...; N1 (blocker) TMS.Full.Playtest.Start (in this unit's gateOnly list) fails in this workt.... Keep going on them. If one is block"
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-save-s4-save-checkpoint still has 4 open items: T06 [GATE] python Tools/check_headers.py passes and everything is committed, then pytho...; T07 [HANDOFF] Final HANDOFF.md and RUNLOG.md written in the run folder (runs/ is never ...; N2 (sign-off) BASELINE result (answer to N1): with a7add9f (S3b, before any S4 change; ...; N3 (proposed-task) BUILD DEFECT fro"
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-save-s4-save-checkpoint still has 4 open items: T06 [GATE] python Tools/check_headers.py passes and everything is committed, then pytho...; T07 [HANDOFF] Final HANDOFF.md and RUNLOG.md written in the run folder (runs/ is never ...; N2 (sign-off) BASELINE result (answer to N1): with a7add9f (S3b, before any S4 change; ...; N3 (proposed-task) BUILD DEFECT fro"
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-save-s4-save-checkpoint still has 4 open items: T06 [GATE] python Tools/check_headers.py passes and everything is committed, then pytho...; T07 [HANDOFF] Final HANDOFF.md and RUNLOG.md written in the run folder (runs/ is never ...; N2 (sign-off) BASELINE result (answer to N1): with a7add9f (S3b, before any S4 change; ...; N3 (proposed-task) BUILD DEFECT fro"
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "open items",
+     "bws-cockpit finish line: runs/2026-10-09-save-s6-save-flows still has 1 open item: N1 (proposed-task) Three confirm modals the flows name have no screen def: newgame (New.... Keep going on them. If one is blocked or needs Brian, say so plainly in your reply and mark it in the checklist (e.g. \"- [ ] item (blocked: reason)\" or \"(needs Brian: question)\"); the guard then lets you stop."
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-tms-save",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ],
+    [
+     "C--Projects-tms-ui",
+     "cli",
+     "evidence",
+     "bws-cockpit finish line: your reply says the work is done but cites no evidence. Name the receipts: test output with counts, file paths of logs or screenshots, the commit hash. If something is unverified, say so plainly instead of claiming done."
+    ]
+   ],
+   "followup_prompts": [
+    [
+     "C--Projects-bws-android-scribe",
+     "open items",
+     0,
+     "tablet ready, answer D10 N1 YES and resume the loop"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "open items",
+     0,
+     "go, 57251FDCQ001LB is connected with the Untitled notebook, check it and resume D10"
+    ],
+    [
+     "C--Projects-bws-android-scribe",
+     "open items",
+     1,
+     "Tablet is connected and unlocked. Continue with F5: install the build, walk every full-sheet screen in light and dark at font scale 1.5, write AUDIT.md with captures, then ask me which fixes to pick"
+    ],
+    [
+     "C--Projects-bws-applications-motion-capture-studio",
+     "open items",
+     30,
+     "Fallback only \u2014 skip SMPL and build the HQ pipeline as a whole-take optimizer over the MediaPipe output, then run metrics on the Pexels clip"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "open items",
+     71,
+     "let's see if we can make any updates to the project instructions based on what we've learned so far, this may help the agents"
+    ],
+    [
+     "C--Projects-bws-game-pit-maneuver",
+     "open items",
+     171,
+     "/compact"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "evidence",
+     3,
+     "let's work through the issues and any othere i identify, do not stop until we have solved all issues"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "evidence",
+     4,
+     "Go on SPEC-BASEKIT BK0: close the TMS editor, land the whole reflected schema in one build, import the 191 motions from the ledger, run the turn-clip root-yaw probe and write the receipts to a run fol"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "evidence",
+     0,
+     "Go on SPEC-BASEKIT BK2: dodge, guarded step, back-step, perfect dodge, the contextual attacks and the guard counter window. Keep it lean, one build, run only the BK2 tests, write receipts to a run fol"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "open items",
+     12,
+     "Let's talk about the kennelmaster's animations"
+    ],
+    [
+     "C--Projects-bws-game-tms",
+     "evidence",
+     1,
+     "Give me a list of all of the units of work for the fx"
+    ],
+    [
+     "C--Projects-tms-save",
+     "open items",
+     1,
+     "fix the test or move past it"
+    ],
+    [
+     "C--Projects-tms-save",
+     "open items",
+     0,
+     "allow it - run the harness.py answer commands for S4 N2, WIDE and N3, then start --resume"
+    ],
+    [
+     "C--Projects-tms-save",
+     "open items",
+     2,
+     "Merge feature/save-flows into main and push."
+    ],
+    [
+     "C--Projects-tms-save",
+     "evidence",
+     11,
+     "push the fucking code no gates"
+    ],
+    [
+     "C--Projects-tms-ui",
+     "evidence",
+     4,
+     "Add a console command that opens STmsUiSettingsScreen in the viewport, then capture screenshots at 1080p and 720p, 100% and 200% text, into runs/2026-10-09-ui-review/ so I can review it."
+    ]
+   ]
+  },
+  "project_locator": {
+   "find_project_calls": 0,
+   "by_project": [],
+   "examples": []
+  },
+  "context": [
+   [
+    "first-message run context",
+    471
+   ]
+  ],
+  "cockpit_slash": {
+   "cockpit": 0,
+   "repo-sessions": 0,
+   "handoff": 0,
+   "projects": 0,
+   "loop-watch": 0,
+   "resume-run": 0
+  }
+ }
+}

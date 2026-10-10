@@ -1,0 +1,164 @@
+<title>Mods Week Review</title>
+<link rel="stylesheet" href="precog.css">
+<style>
+  .mods-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 760px; }
+  .mods-table th { text-align: left; font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 500; padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--line); letter-spacing: .04em; text-transform: uppercase; }
+  .mods-table td { padding: var(--space-2); border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text); }
+  .mods-table td code, .pc-finding code, .pc-callout code, .pc-details code { font-family: var(--font-mono); font-size: 0.85em; color: var(--muted); }
+  .mods-table .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .tbl-wrap { overflow-x: auto; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--space-3); }
+</style>
+<main class="pc-page">
+
+  <header class="pc-hero">
+    <div class="pc-hero__eyebrow"><span class="pc-chip is-info">2026-10-03 → 10-10</span> <span class="pc-chip is-idle">571 transcripts · 1.5 GB</span></div>
+    <h1 class="pc-display-xl">Lint earns its keep. Finish-Line misfires.</h1>
+    <p class="pc-lead">Seven days of sessions against every mod. Fix three, drop one, build one new. Nothing changed yet: you pick.</p>
+    <div class="pc-hero__meta"><span class="pc-label">bws-cockpit 0.9.0</span><span class="pc-label">bws-shell-lint 0.1.0</span><span class="pc-label">bws-notify 0.1.0</span></div>
+  </header>
+
+  <section class="pc-section">
+    <div class="pc-stats">
+      <div class="pc-stat"><span class="pc-stat__value" data-count="408">408</span><span class="pc-label">Headless sessions</span><span class="pc-stat__delta is-info">harness workers; 37 interactive</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="197">197</span><span class="pc-label">Shell-lint refusals</span><span class="pc-stat__delta is-good">96% next call succeeded</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="30">30</span><span class="pc-label">Finish-Line blocks</span><span class="pc-stat__delta is-bad">1 led to real work</span></div>
+      <div class="pc-stat"><span class="pc-stat__value" data-count="0">0</span><span class="pc-label">Repo Sessions uses</span><span class="pc-stat__delta is-warn">auto-open off since 10-05</span></div>
+    </div>
+  </section>
+
+  <section class="pc-section">
+    <div class="pc-tldr">
+      <div>
+        <span class="pc-label">Answer</span>
+        <p class="pc-tldr__answer">5 in 6 sessions this week were harness loops. The mods that act on tool calls pay off. The ones that read your intent misfire or go unused.</p>
+      </div>
+      <ul>
+        <li><span class="pc-chip is-good">keep</span><span>Shell Lint, Guard, Loop Watch, /handoff, worker pin, bws-notify.</span></li>
+        <li><span class="pc-chip is-bad">fix</span><span>Finish-Line Guard: it blocks loop supervisors on the worker's checklist. Shell Lint misses 5 commands just under its limit. Guard re-blocks a launch that already has the fix.</span></li>
+        <li><span class="pc-chip is-warn">drop</span><span>Repo Sessions: not used once.</span></li>
+        <li><span class="pc-chip is-info">new</span><span>Editor lease: sessions and loops fight over the same UE and Unity editors.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="pc-section two">
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">What each mod did this week</h2><span class="pc-label">Fires, 7 days</span></div>
+      <div class="pc-frame__canvas" id="c-fires"></div>
+      <figcaption class="pc-frame__caption">Counted from transcripts. The band, panes and toasts leave no trace, so they can't be counted here.</figcaption>
+    </figure>
+    <figure class="pc-frame">
+      <div class="pc-frame__head"><h2 class="pc-title">Why Finish-Line blocked</h2><span class="pc-label">30 blocks, 10 sessions</span></div>
+      <div class="pc-frame__canvas" id="c-fl"></div>
+      <figcaption class="pc-frame__caption">Each block read by hand against the reply it stopped and what happened next.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Verdict per mod</h2>
+    <figure class="pc-frame">
+      <div class="tbl-wrap">
+      <table class="mods-table">
+        <thead><tr><th>Verdict</th><th>Mod</th><th>This week</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pc-chip is-bad">fix</span></td><td>Finish-Line Guard</td><td class="num">30 blocks · 1 clear win</td><td>Count a run folder only if this session wrote to it. Recognize more hand-back phrasing. Turn the evidence check off by default.</td></tr>
+          <tr><td><span class="pc-chip is-good">keep · tune</span></td><td>Shell Lint</td><td class="num">197 refusals · 187/194 retries ok</td><td>Add <code>"</code> and <code>\</code> to the length metric, with the limit at 7800. Replay it over the corpus first.</td></tr>
+          <tr><td><span class="pc-chip is-good">keep · tune</span></td><td>Editor &amp; Device Guard</td><td class="num">6 blocks</td><td>Let a launch through when the low-VRAM overrides are already in the command. Skip the overrides for render runs.</td></tr>
+          <tr><td><span class="pc-chip is-good">keep · tune</span></td><td>First-message context</td><td class="num">471 injections</td><td>Skip it in <code>claude -p</code>, where about 408 workers already get their run folder in the prompt.</td></tr>
+          <tr><td><span class="pc-chip is-good">keep · tune</span></td><td>Loop Watch</td><td class="num">10 × /loop-watch</td><td>Put the board URL in the loop chip. You asked "where is the dash" 3 times.</td></tr>
+          <tr><td><span class="pc-chip is-good">keep</span></td><td>/handoff</td><td class="num">2 runs · 2 written</td><td>None.</td></tr>
+          <tr><td><span class="pc-chip is-good">keep</span></td><td>Worker model pin</td><td class="num">34 spawns pinned</td><td>None.</td></tr>
+          <tr><td><span class="pc-chip is-good">keep</span></td><td>bws-notify</td><td class="num">no trace by design</td><td>None. You confirmed it worked on 10-05.</td></tr>
+          <tr><td><span class="pc-chip is-idle">keep · idle</span></td><td>Project Locator</td><td class="num">0 find_project · 1 refusal</td><td>Optional: answer Globs like <code>docs/*</code> by narrowing <code>path</code>. 24 timeouts this week, 23 of them in one session.</td></tr>
+          <tr><td><span class="pc-chip is-idle">keep</span></td><td>Run Cockpit band, /cockpit, /resume-run</td><td class="num">1 × /cockpit · 2 resumes</td><td>None. The band itself can't be measured from transcripts.</td></tr>
+          <tr><td><span class="pc-chip is-warn">drop</span></td><td>Repo Sessions pane</td><td class="num">0 uses</td><td>Remove it, or set <code>peersPane: false</code>. Your cross-session work went through teams and SendMessage instead.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <figcaption class="pc-frame__caption">Six guard hits come from probe2. The first scan's guard counts included this session reading the mod's source, so they were dropped.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Key findings</h2>
+    <ol class="pc-findings">
+      <li class="pc-finding"><span class="pc-chip is-bad">bug</span><div><h3 class="pc-finding__title">Finish-Line blocks the supervisor for the worker's tasks</h3><p>13 of 17 open-item blocks were in sessions that never touched the folder. A harness worker wrote it after the session started, so the mtime rule claimed it. 8 of the 17 blocks bought no tool call, only a restated reply.</p>
+        <details class="pc-details"><summary>Detail</summary><div class="pc-details__body">
+          <p><b>The one win:</b> the motion-capture session on 10-06. After the block came 30 tool calls of real work on items that didn't need you: hand tracking, a faster pose model and a metrics script. Then a commit and a marked checklist. Keep that behavior.</p>
+          <p><b>Missed hand-backs:</b> 3 replies were real hand-backs: "Tell me when it's plugged in" and "say go and I'll…" twice. They have no question mark and none of the listed phrases. Items that start with <code>Brian:</code> or <code>(proposed-task)</code> also held the stop open. Widen the list to imperative asks only. "Say if you want a different order" is the reply the guard rightly pushed past.</p>
+          <p><b>Evidence check:</b> it fired 13 times and was wrong each time. The replies were "holding for master", "nothing committed yet" and "waiting on the GDD agent". "done" matched status text. 10 fires were bws-game-tms agent-team sessions. Teammate messages count as prompts, so they keep resetting the 2-block cap.</p>
+          <p><b>Fix 1:</b> claim a run folder only when this session's Edit, Write or Bash input names it. <b>Fix 2:</b> recognize "tell me / say go / say if / when you next ask" as hand-backs, and treat items that start with the owner's name or <code>(proposed-task)</code> as parked. <b>Fix 3:</b> set <code>evidenceCheck</code> to false by default. Receipts: <code>receipts/finish_guard_detail.json</code>.</p>
+        </div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-warn">gap</span><div><h3 class="pc-finding__title">Shell Lint lets 5 too-long commands through</h3><p>5 heredocs sized 7725–7843 failed with "unexpected EOF". The limit is 7850. Passing commands reach 7802, so lowering the limit alone can't separate them.</p>
+        <details class="pc-details"><summary>Detail</summary><div class="pc-details__body"><p>Adding a count of <code>"</code> and <code>\</code> to the metric (length + 3×<code>'</code> + <code>"</code> + <code>\</code>) and setting the limit at 7800 catches all 5. It would refuse 1 passing command in the 7300–7850 sample. The sample is small, so replay over the full corpus before shipping. Receipt: <code>receipts/lint-threshold.txt</code>. It also caught a probe of mine this session, with the right fix.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-warn">bug</span><div><h3 class="pc-finding__title">Guard re-blocked a launch that had the fix</h3><p>On 10-06 the tms-heim promo render was blocked for low VRAM. The retry added the exact <code>-ini</code> overrides inside a PowerShell <code>$args</code> array and was blocked again. The model then found another route.</p>
+        <details class="pc-details"><summary>Detail</summary><div class="pc-details__body"><p><code>-ArgumentList $args</code> hides the arguments from the Start-Process check. Pass the launch when <code>t.MaxFPS=30</code> or the override string appears anywhere in the command. Also, a HighResShot promo render at 50% screen percentage is the wrong trade, and you asked twice for "full settings". Exempt <code>-unattended</code> render runs, or respect an explicit <code>r.ScreenPercentage</code>. The other 4 blocks (adb, Unity not running, unreal-mcp down, missing -automated) were correct.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-info">new</span><div><h3 class="pc-finding__title">Editor contention is the biggest unowned pain</h3><p>About 15 prompts deal with editors: "when the editor is free", "close every other UnrealEditor", "why is the loop running tests in the wrong editor", "stop restarting Unity". Sessions also traded "taking" and "free" messages by hand to take turns pushing.</p>
+        <details class="pc-details"><summary>Proposed mod: Editor lease</summary><div class="pc-details__body"><p>A session or loop claims the UE editor, a Unity project or <code>git push</code> through a lease in <code>$.store</code>. The guard then blocks editor kill, restart and launch, and MCP builder calls, while another session holds the lease, and names the holder. The band shows who holds it. It extends the existing guard. Drop the Repo Sessions pane and its tasklist poll, but keep the session-registry parsing in <code>peers.ts</code> for the lease. Scope it in an interview first: which resources, how long a lease lasts, and how harness.py claims one.</p></div></details></div></li>
+      <li class="pc-finding"><span class="pc-chip is-idle">route</span><div><h3 class="pc-finding__title">Headless waits fail in a chain, but it's not a mod job</h3><p>Workers hit the built-in <code>sleep</code> block 174 times. The Monitor calls that followed failed with "schema was not sent" 79 times. 77 shell calls ran into the 10-minute cap, 38 of them wait loops.</p>
+        <details class="pc-details"><summary>Detail</summary><div class="pc-details__body"><p>Monitor is a deferred tool, and workers call it without loading it. The cheap fix is one line in the harness-loop worker prompt: load Monitor with ToolSearch before using it, and use <code>run_in_background</code> for long waits. A mod that refuses an unloaded Monitor call with that hint first needs a probe showing <code>tool.call</code> runs before input validation. Separately, 13 writes went ungranted in one pit-maneuver worker, which is an allowlist problem.</p></div></details></div></li>
+    </ol>
+  </section>
+
+  <section class="pc-section">
+    <h2 class="pc-display-l">Ranked: what to do</h2>
+    <figure class="pc-frame">
+      <div class="tbl-wrap">
+      <table class="mods-table">
+        <thead><tr><th>#</th><th>Do</th><th>Size</th><th>Why first</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Finish-Line Guard: ownership fix, hand-back phrases, evidence check off</td><td>S</td><td>It misfires in every loop-supervisor session now</td></tr>
+          <tr><td class="num">2</td><td>Guard: pass launches whose overrides are already present; exempt renders</td><td>S</td><td>It blocked a correct retry and degrades renders</td></tr>
+          <tr><td class="num">3</td><td>Shell Lint: new metric, corpus replay</td><td>S</td><td>5 misses a week, all in heredocs</td></tr>
+          <tr><td class="num">4</td><td>Drop Repo Sessions</td><td>S</td><td>About 400 lines and a 45 s tasklist poll for 0 uses</td></tr>
+          <tr><td class="num">5</td><td>Context off in <code>-p</code>; board URL in the loop chip</td><td>S</td><td>It reaches about 408 sessions a week</td></tr>
+          <tr><td class="num">6</td><td>New: Editor lease (interview first)</td><td>M</td><td>Largest remaining pain, needs a scoping interview</td></tr>
+          <tr><td class="num">7</td><td>Harness template: the Monitor and wait line (not a mod)</td><td>XS</td><td>253 wasted worker calls</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <figcaption class="pc-frame__caption">Items 1–5 fit in one bws-cockpit and shell-lint release. Item 6 gets its own run folder.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pc-section">
+    <div class="pc-callout pc-brackets">
+      <span class="pc-label">Not mod problems</span>
+      <p>Slow gates and over-testing (6 prompts), the 120 s pre-push budget ("push the code, no gates"), scope expansion (3) and asks you didn't need (4). These belong in project CLAUDE.md files and the harness, not in a mod.</p>
+    </div>
+  </section>
+
+  <section class="pc-section">
+    <details class="pc-details"><summary>Method and receipts</summary><div class="pc-details__body">
+      <p><b>Window:</b> 2026-10-03 00:00 EDT to 2026-10-10. 571 jsonl files, including 119 subagent logs. 493 top-level sessions: 408 SDK/headless, 37 interactive with prompts, and the rest empty or resumed. 834 prompts, 35.8k tool calls, 1,262 tool errors (3.5%).</p>
+      <p><b>Scripts</b> in <code>runs/2026-10-10-mods-review/</code>: <code>analyze.py</code> (usage.json, prompts.jsonl), <code>probe1</code>–<code>probe7.py</code> (mod commands, Finish-Line attribution, the wait chain, Glob timeouts, lint threshold, Guard retries). Receipts are in <code>receipts/</code>.</p>
+      <p><b>Limits:</b> band clicks, pane hotkeys and toasts leave no transcript trace. Finish-Line verdicts come from reading the blocked reply and the next prompt, not from asking you.</p>
+    </div></details>
+  </section>
+</main>
+<script src="precog.js"></script>
+<script>
+  (function () {
+    function draw() {
+      if (!window.Precog) return;
+      Precog.bars(document.getElementById('c-fires'), [
+        {label: 'Shell Lint refusals', value: 197},
+        {label: 'Finish-Line blocks', value: 30},
+        {label: 'Worker pin spawns', value: 34},
+        {label: '/loop-watch', value: 10},
+        {label: 'Guard blocks', value: 6},
+        {label: '/handoff + /resume-run + /cockpit', value: 5},
+        {label: 'Locator (find_project + refusals)', value: 1},
+        {label: 'Repo Sessions', value: 0}
+      ], {unit: '', highlight: 0});
+      Precog.bars(document.getElementById('c-fl'), [
+        {label: 'Evidence check on a holding/status reply', value: 13},
+        {label: "Open items in the worker's folder", value: 13},
+        {label: 'Open items, missed hand-back', value: 3},
+        {label: 'Correct block (led to work)', value: 1}
+      ], {unit: '', highlight: 1});
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', draw); else draw();
+  })();
+</script>

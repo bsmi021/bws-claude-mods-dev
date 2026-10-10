@@ -1,0 +1,324 @@
+{
+ "blocks": [
+  {
+   "file": "-bws-android-scribe\\edd5f1a1-58da-495b-9f18-57fa1",
+   "entry": "cli",
+   "folder": "2026-10-03-m7-d10-device-pass",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "it while it's paused.\n\nWhen the tablet is connected, unlocked and has no heavy apps open, tell me \"tablet ready\" and I'll record the answer and resume the loop. D10 then runs the steps in `runs/2026-10-03-m7-d9-budget-integration/D10-DEVICE-SCRIPT.md`, with live Gemini calls going through `live.py`.",
+   "next_prompt": "tablet ready, answer D10 N1 YES and resume the loop"
+  },
+  {
+   "file": "-bws-android-scribe\\edd5f1a1-58da-495b-9f18-57fa1",
+   "entry": "cli",
+   "folder": "2026-10-03-m7-d10-device-pass",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "\nThat question is already listed under \"Needs Brian\" in D10's `TASKS.md`. I didn't add any \"blocked\" notes there because the harness rules don't let me edit a worker's files.\n\nThe loop is paused and its state is saved to disk. When you say \"tablet ready\", I'll record your answer and resume the loop.",
+   "next_prompt": "tablet ready, answer D10 N1 YES and resume the loop"
+  },
+  {
+   "file": "-bws-android-scribe\\edd5f1a1-58da-495b-9f18-57fa1",
+   "entry": "cli",
+   "folder": "2026-10-03-m7-d10-device-pass",
+   "session_touched_folder": true,
+   "kind": "open",
+   "reply_before": "(unlocked, USB debugging allowed). I'll check that the notebook is on it and pass that serial to the worker.\n2. Restore the notebook onto `47171HFH80BF5R`. I'll check the database again before recording YES.\n\nD10 is paused until then. Only T03 is left before the exit steps, the gate and the handoff.",
+   "next_prompt": "go, 57251FDCQ001LB is connected with the Untitled notebook, check it and resume D10"
+  },
+  {
+   "file": "-bws-android-scribe\\edd5f1a1-58da-495b-9f18-57fa1",
+   "entry": "cli",
+   "folder": "2026-10-03-m7-d10-device-pass",
+   "session_touched_folder": true,
+   "kind": "open",
+   "reply_before": "SKS.md`. The harness rules don't let me edit a worker's files, and N4 is already recorded there as a Needs Brian item. The loop is paused and its state is saved on disk.\n\nOnce the notebook is on a connected tablet, say \"go\" and I'll check it's there, record YES with that tablet's serial, and resume.",
+   "next_prompt": "go, 57251FDCQ001LB is connected with the Untitled notebook, check it and resume D10"
+  },
+  {
+   "file": "-bws-android-scribe\\edd5f1a1-58da-495b-9f18-57fa1",
+   "entry": "cli",
+   "folder": "2026-10-04-m8-f4-name-icon",
+   "session_touched_folder": true,
+   "kind": "open",
+   "reply_before": " Recents screen may still say \"Inkwell\". F4 covers only the launcher label, and other \"Inkwell\" text is left to the audit.\n\nNext is F5, the audit walk. It's one of the two tablet sessions, so it needs the tablet connected and unlocked; adb couldn't see it earlier today. Tell me when it's plugged in.",
+   "next_prompt": "Tablet is connected and unlocked. Continue with F5: install the build, walk every full-sheet screen in light and dark at font scale 1.5, write AUDIT.md with cap"
+  },
+  {
+   "file": "-bws-applications-motion-capture-studio\\29377279-",
+   "entry": "cli",
+   "folder": "2026-10-06-prove-motion",
+   "session_touched_folder": true,
+   "kind": "open",
+   "reply_before": "ature exported from UE.\n\n**Next, in order:**\n- hand tracking, for better wrist angles;\n- a faster pose model;\n- the measurement harness that scores takes against the worksheet;\n- the high-quality pipeline.\n\nThe measured comparison still waits on your 34 C920 takes. Say if you want a different order.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-pit-maneuver\\1fce326c-9aad-4196-b5a4-fd",
+   "entry": "cli",
+   "folder": "2026-10-05-pitu-uxd-01-figma-design-system",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "UXD-01 is progressing: session 2 is on Sonnet 5.5 and has done 5 of 7 tasks, now at T06, the gate step. Nothing is paused or needs Brian. I'll leave the loop running and check it again when you next ask, or when a unit pauses.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-pit-maneuver\\1fce326c-9aad-4196-b5a4-fd",
+   "entry": "cli",
+   "folder": "2026-10-09-pitu-veh-17-wheels-suspension-and-tyre-visuals",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": " how long the fast set takes.\n- **Next:** if the run passes, I'll commit all of it and answer VEH-17's pause by pointing it at the new gate. VEH-17 then reruns the gate, and FIX-02 follows.\n\nThe editor is up, the driver is stopped, and nothing else is running. I'll report when the fast run finishes.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-pit-maneuver\\1fce326c-9aad-4196-b5a4-fd",
+   "entry": "cli",
+   "folder": "2026-10-09-pitu-veh-17-wheels-suspension-and-tyre-visuals",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "started at 06:06, shows the new gate works.\n\nWhen that run finishes, I will:\n- commit the gate change;\n- record the answer to N1 with the harness's `answer` command, saying the tooling is fixed and the next worker should rerun the gate;\n- resume the loop.\n\nThe watcher will wake me when the run ends.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\262cbd22-4dc5-4984-aa3b-b87941f1f7a",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "unner:** it sets `tms.Camera.Autonomy` to 0 per scenario and restores it afterwards, and it looks the cvar up by name. That matches how I registered it.\n\nNothing has been compiled yet. The build waits for agent2's READY and the cross-reviews, and master will send me the compiler output when it runs.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\262cbd22-4dc5-4984-aa3b-b87941f1f7a",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "m.\n- **Not done:** the rest of Explore mode (the controller's look path, auto-rotate, slope pitch, recentre, sway, the real mode stack, and the placeholder collision sweep). I'll write it once master confirms the build.\n- **Not committed:** nothing has been committed; master commits after the build.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\262cbd22-4dc5-4984-aa3b-b87941f1f7a",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "Understood. I'm holding Source and will not edit it until master says the build is done.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\7b4582cc-5bc1-41c9-a0b6-f91811d9df1",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "Three of the four subagents are done: SPEC-CMB-ACTIONS, SPEC-INPUT with SPEC-CAMERA and the pipeline doc, and the tags (90 added to `TmsMoveset.ini`). I'm waiting on the SPEC-MOVESETS agent and will commit everything together as soon as it reports.",
+   "next_prompt": "let's work through the issues and any othere i identify, do not stop until we have solved all issues"
+  },
+  {
+   "file": "-bws-game-tms\\7b4582cc-5bc1-41c9-a0b6-f91811d9df1",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "MOVESETS is done too. Only the GDD agent is still running.",
+   "next_prompt": "Go on SPEC-BASEKIT BK0: close the TMS editor, land the whole reflected schema in one build, import the 191 motions from the ledger, run the turn-clip root-yaw p"
+  },
+  {
+   "file": "-bws-game-tms\\7b4582cc-5bc1-41c9-a0b6-f91811d9df1",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "Noted: the tms-heim session finished its import, and I'll keep its paths out of my commits. Nothing else is pending from that message. BK2 is ready when you say go.",
+   "next_prompt": "Go on SPEC-BASEKIT BK2: dodge, guarded step, back-step, perfect dodge, the contextual attacks and the guard counter window. Keep it lean, one build, run only th"
+  },
+  {
+   "file": "-bws-game-tms\\ae44893e-09e1-4449-b924-e7680a84c83",
+   "entry": "cli",
+   "folder": "2026-10-08-gh1-k1-gh1-restraint",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "md`.\n\nWhen a worker stops to ask you something, I'll pass on its exact words and wait for your reply. When the loop finishes, I'll show the evidence and ask before pushing anything. To cancel it, use `harness.py stop --reason \"...\"`, not by killing the process (the supervisor would just restart it).",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\ae44893e-09e1-4449-b924-e7680a84c83",
+   "entry": "cli",
+   "folder": "2026-10-08-gh1-k1-gh1-restraint",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "work or editing a worker's `TASKS.md`, so I'm leaving that file as it is.\n\nNothing is blocked and nothing needs you yet. The loop runs on its own, and I'll come back to you only when a worker asks you something or the loop finishes or stops.\n\nBoard: http://127.0.0.1:8774/Tools/Gh1Harness/status.html",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\db7c7e97-9de0-4b50-a314-65b9059f81f",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "8 note pointed one section off.\n  - The row's only other content was a note repeating the 0.6 s `ShortfallFlashSeconds` value, which is already in the HUD table earlier in the spec.\n  - Neither field name appears anywhere else in docs, Source, Tools or Config.\n- **Push:** the pre-push checks passed.",
+   "next_prompt": "Give me a list of all of the units of work for the fx"
+  },
+  {
+   "file": "-bws-game-tms\\dce4a011-d4c3-436d-a172-4c441193967",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "acceptance test can't read as green.\n\nThe `DefaultInput.ini` mouse edits and the Look edit in `build_m1_party_input.py` stay uncommitted until step 2, as master asked. The four `*ContentTests.cpp` files changed because they count telemetry events, and I explained each to master in the READY message.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\dce4a011-d4c3-436d-a172-4c441193967",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "Agent1 accepted all five notes and will apply them after master says the build is done. There's nothing for me to change or send in reply.\n\nI'm still holding all `Source/` edits and waiting for master's rebuild and builder results. The agreed changes don't touch my files.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-bws-game-tms\\dce4a011-d4c3-436d-a172-4c441193967",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "ed).\n\nThe look-intent and sway checks depend on the new Look input mapping that master is applying in the next build window. When the build is done and agent1 says Explore is live, I'll ask master for the editor and run `TMS.Full.Camera.Explore` once. I'll report the results with the actual numbers.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": "2026-10-09-save-s4-save-checkpoint",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "Answer recorded as BASELINE and the loop is running again (driver pid 260468). The next S4 session will rebuild `a7add9f`, run `Playtest.Start` once, then restore the branch and finish T06. The answer and the resume are logged in `HARNESS-LOG.md`.",
+   "next_prompt": "fix the test or move past it"
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": "2026-10-09-save-s4-save-checkpoint",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "rebuild `a7add9f`, run `Playtest.Start` once, restore the branch, then do the gate (T06) and the handoff (T07).\n\nI'll leave the checklist alone and come back when the loop stops. If it pauses again, I'll relay the question. If it finishes, I'll report with evidence and ask about merging and pushing.",
+   "next_prompt": "fix the test or move past it"
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": "2026-10-09-save-s4-save-checkpoint",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": " S4 N2 \"move past it: drop TMS.Full.Playtest.Start from S4 gateOnly\"`\n  - `! python Tools/SaveHarness/harness.py answer S4 WIDE \"approved: drop Playtest.Start from gateOnly\"`\n  - `! python Tools/SaveHarness/harness.py answer S4 N3 \"Approve\"`\n  - `! python Tools/SaveHarness/harness.py start --resume`",
+   "next_prompt": "allow it - run the harness.py answer commands for S4 N2, WIDE and N3, then start --resume"
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": "2026-10-09-save-s4-save-checkpoint",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": "y answer S4 WIDE \"approved: drop Playtest.Start from gateOnly\"`\n- `! python Tools/SaveHarness/harness.py answer S4 N3 \"Approve\"`\n- `! python Tools/SaveHarness/harness.py start --resume`\n\nOnce those run, the worker adds the N3 fix as a new task, drops the test from its gate, and finishes T06 and T07.",
+   "next_prompt": "allow it - run the harness.py answer commands for S4 N2, WIDE and N3, then start --resume"
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": "2026-10-09-save-s4-save-checkpoint",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": " helper-rename fix as a task before T06. It should also drop `TMS.Full.Playtest.Start` from S4's gate, then finish T06 (gate) and T07 (handoff). I haven't checked that it picked up the answers. The log entry is in `HARNESS-LOG.md`. The board is at http://127.0.0.1:8776/Tools/SaveHarness/status.html.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": "2026-10-09-save-s6-save-flows",
+   "session_touched_folder": false,
+   "kind": "open",
+   "reply_before": " ScreenDefs check, run `TMS.Fast.Ui.ScreenDefs` once, then rerun the gate.\n\nI haven't pushed or opened a PR. Once S6 is verified I'll report with evidence and ask about merging and pushing.\n\nThe board is at http://127.0.0.1:8776/Tools/SaveHarness/status.html. The event is logged in `HARNESS-LOG.md`.",
+   "next_prompt": "Merge feature/save-flows into main and push."
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "Acknowledged. I'll wait for the \"free\" message from `bws-game-tms-73`, then send \"taking\" and push. When the push is done I'll message both `bws-game-tms-73` and `bws-game-tms-a1` \"free\". Nothing to do until then.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-tms-save\\87a2aa65-2a17-4d23-b0ad-84c290bf6bd6.js",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": " finished its turn. Its `run.py visual --no-build` is still running in the main editor and is taking Snare screenshots, so I'm still holding the push.\n\nThe other session said it will send an explicit \"free\" in about 8 minutes. I'm waiting for that message, then I'll send \"taking\" and push `8201726`.",
+   "next_prompt": ""
+  },
+  {
+   "file": "-tms-ui\\2332c043-0a0b-488e-a08c-b7df73d3abb2.json",
+   "entry": "cli",
+   "folder": null,
+   "session_touched_folder": null,
+   "kind": "evidence",
+   "reply_before": "ns the Settings screen in the viewport, then capture screenshots at a few resolutions. That's new work outside the finished loop, so I haven't started it. Say go and I'll do it.\n\nThe loop finished with all units verified, so it's also ready for the merge and push question. I haven't pushed anything.",
+   "next_prompt": "Add a console command that opens STmsUiSettingsScreen in the viewport, then capture screenshots at 1080p and 720p, 100% and 200% text, into runs/2026-10-09-ui-r"
+  }
+ ],
+ "guard": [
+  [
+   "-bws-android-scribe",
+   [
+    "Bash",
+    "wc -l docs/DESIGN-SYSTEM.md; adb shell wm size; adb shell wm density; python -c \"\nimport json;d=json.load(open('design/claude-design/tokens.json'));print(list(d.keys())[:10])\" ; ls runs/2026-10-03-m7-d6-notes/*.json runs/2026-09-28-m6-design/m6-state.json 2>/dev/null"
+   ],
+   "<tool_use_error>bws-cockpit: no Android device is ready (adb devices: none attached). Ask the user to connect and unlock the device, then retry.</tool_use_error>"
+  ],
+  [
+   "-bws-game-pit-maneuver",
+   [
+    "Bash",
+    "sed -i 's/                Wall = Frames(100, 10f, 0, 0f), Sim = /                Game = Frames(100, 9f, 0, 0f), Wall = Frames(100, 10f, 0, 0f), Sim = /' Assets/_Game/Editor.Tests/PerfBudgetTests.cs && grep -c \"Game = Frames\" Assets/_Game/Editor.Tests/PerfBudgetTests.cs; R=runs/2026-10-09-pitu-plt-01-performance-budgets-and-profiling; U=\"unity command eval_file --project-path C:/Projects/bws.game.p"
+   ],
+   "<tool_use_error>bws-cockpit: no Unity editor is running, so the unity CLI pipeline has nothing to talk to. Launch it first (unity open <project> --args -automated) and wait for the pipeline to come up"
+  ],
+  [
+   "-bws-game-tms",
+   [
+    "mcp__unreal-mcp__call_tool",
+    ""
+   ],
+   "<tool_use_error>bws-cockpit: Unreal MCP at http://127.0.0.1:3092/mcp is not reachable: an editor is running but its MCP port does not answer (still loading, or MCP not started). Start or wait for the "
+  ],
+  [
+   "",
+   [
+    "PowerShell",
+    "Start-Process -FilePath \"C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.0f1\\Editor\\Unity.exe\" -ArgumentList '-projectpath','C:\\Projects\\tms-heim' -PassThru | Select Id"
+   ],
+   "<tool_use_error>bws-cockpit: Unity must start with -automated (modal dialogs otherwise block the pipeline). Add it to -ArgumentList (e.g. \"open\",\"<project>\",\"--args\",\"-automated\" for the unity CLI, or"
+  ],
+  [
+   "-tms-heim",
+   [
+    "PowerShell",
+    "$env:PROMO_NAME=\"promo_r1\"; $env:PROMO_RES=\"1920x1080\"; $env:PROMO_WARM=\"75\"\nRemove-Item C:\\Projects\\tms-heim\\runs\\2026-10-06-courtyard-promo\\render_promo.log -ErrorAction SilentlyContinue\n$args = @(\"C:\\Projects\\bws.game.tms\\TMS.uproject\", \"/Game/Test/Maps/L_MonkCourtyard\", \"-nosplash\", \"-unattended\", \"-nosound\", \"-ini:Engine:[/Script/PythonScriptPlugin.PythonScriptPluginSettings]:+StartupScripts="
+   ],
+   "<tool_use_error>bws-cockpit: other GPU apps are running (VRAM 4.0/8.0 GB), so UE must launch with the low-VRAM overrides. Add this element to -ArgumentList and run again: '-ini:Engine:[SystemSettings]"
+  ],
+  [
+   "-tms-heim",
+   [
+    "PowerShell",
+    "$env:PROMO_NAME=\"promo_r1\"; $env:PROMO_RES=\"1920x1080\"; $env:PROMO_WARM=\"75\"\nRemove-Item C:\\Projects\\tms-heim\\runs\\2026-10-06-courtyard-promo\\render_promo.log -ErrorAction SilentlyContinue\n$args = @(\"C:\\Projects\\bws.game.tms\\TMS.uproject\", \"/Game/Test/Maps/L_MonkCourtyard\", \"-nosplash\", \"-unattended\", \"-nosound\", \"-ini:Engine:[/Script/PythonScriptPlugin.PythonScriptPluginSettings]:+StartupScripts="
+   ],
+   "<tool_use_error>bws-cockpit: other GPU apps are running (VRAM 4.0/8.0 GB), so UE must launch with the low-VRAM overrides. Add this element to -ArgumentList and run again: '-ini:Engine:[SystemSettings]"
+  ]
+ ]
+}
