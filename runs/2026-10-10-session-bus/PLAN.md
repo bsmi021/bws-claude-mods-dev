@@ -59,3 +59,4 @@
 - A band chip / `/bus` command showing peers.
 - Live push via `$.session.send` instead of the next tool result/prompt.
 - pid liveness (peers.ts tasklist) on top of heartbeat staleness.
+- Heartbeat writes don't verify: one that lands on top of a peer's fresh claim can hide it for up to 20 s (until the peer's next write). A lock file or a per-session file would close it.

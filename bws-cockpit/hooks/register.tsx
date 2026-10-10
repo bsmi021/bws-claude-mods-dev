@@ -562,6 +562,9 @@ type BusCtx = { path: string; folder: string; selfId: string; cwd: string }
 let busDir: string | null | undefined
 const busFolders = new Map<string, string>()
 let busFailNoted = false
+// Sessions that left (session.end): a heartbeat or turn.complete write still in flight must not put
+// them back. Keyed by id, so the conversation a /clear starts in this process is not affected.
+const busLeft = new Set<string>()
 
 async function busCtx($: EngineInterface): Promise<BusCtx | undefined> {
   if (busDir === undefined) {
@@ -607,6 +610,7 @@ async function busSync(
   change: (own: BusOwn, file: BusFile, now: number) => BusOwn,
   verify = false,
 ): Promise<{ own: BusOwn; file: BusFile; now: number }> {
+  if (busLeft.has(ctx.selfId)) throw new Error('this session left the bus')
   const now = await $.clock.now()
   const file0 = await readBus($, ctx)
   const own = await update($, busOwn, v => {
@@ -616,11 +620,12 @@ async function busSync(
   })
   if (own === null) throw new Error('bus state was not written')
   let file = withEntry(file0, own.entry, now, STALE_MS)
+  if (busLeft.has(ctx.selfId)) throw new Error('this session left the bus')
   await $.fs.write(ctx.path, busText(file))
   if (verify) {
     const back = await readBus($, ctx)
     if (hasEntry(back, own.entry)) file = back
-    else {
+    else if (!busLeft.has(ctx.selfId)) {
       file = withEntry(back, own.entry, now, STALE_MS)
       await $.fs.write(ctx.path, busText(file))
     }
@@ -668,7 +673,7 @@ async function busBeat($: EngineInterface) {
       $.ui.toast(`bus · ${shortId(first.from)}: ${shorten(first.text, 90)}${more}`, { timeoutMs: 8000 })
     }
   } catch (err) {
-    noteBusFailure($, err)
+    if (!busLeft.has((await settle($.session.id())) ?? '')) noteBusFailure($, err)
   }
 }
 
@@ -715,6 +720,7 @@ async function busIntro($: EngineInterface, lim: BusLimits): Promise<string | un
 
 // Removes this session's entry at exit, /clear or resume, inside session.end's short bound.
 async function busLeave($: EngineInterface, sessionId: string) {
+  busLeft.add(sessionId)
   const ctx = await busCtx($)
   if (ctx === undefined) return
   const now = await $.clock.now()

@@ -264,6 +264,33 @@ describe('session bus', () => {
     expect(w.sessions()).toEqual([A])
   })
 
+  test('after exit, a heartbeat still running never puts the entry back', async ($, on) => {
+    const w = busWorld(on)
+    await $.session.start({ cwd: CWD } as never)
+    await w.clock.settle()
+    expect(w.sessions()).toEqual([A])
+    await $.session.end({ reason: 'prompt_input_exit', sessionId: A, resume: {} } as never)
+    expect(w.sessions()).toEqual([])
+    await w.clock.advance(60_000) // three heartbeats
+    expect(w.sessions()).toEqual([])
+    expect(w.toasts.filter(t => t.includes('session bus is unavailable'))).toEqual([])
+  })
+
+  test('bus_release frees a claim, and the other session can then edit the file', async ($, on) => {
+    const w = busWorld(on)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/a.ts', old_string: 'a', new_string: 'b' } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/b.ts', old_string: 'a', new_string: 'b' } as never)
+    w.who.id = B
+    expect((await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/a.ts', old_string: 'a', new_string: 'b' } as never)).deny).toBeDefined()
+    // A releases a.ts only.
+    w.who.id = A
+    const rel = await $.tool.call({ tool: 'mcp__bws-cockpit__bus_release', paths: ['a.ts'] } as never)
+    expect(String(rel.result)).toBe('Released a.ts. Still claimed: b.ts.')
+    w.who.id = B
+    expect((await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/a.ts', old_string: 'a', new_string: 'b' } as never)).deny).toBeUndefined()
+    expect((await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/b.ts', old_string: 'a', new_string: 'b' } as never)).deny).toBeDefined()
+  })
+
   test('a broken bus never blocks an edit', async ($, on) => {
     const w = busWorld(on, { writeFails: true })
     const r = await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/x.ts', old_string: 'a', new_string: 'b' } as never)

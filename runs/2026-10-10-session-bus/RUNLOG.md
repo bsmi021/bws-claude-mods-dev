@@ -63,6 +63,14 @@ Finish line in PLAN.md.
   - bus-3, after A exited: `"sessions": {}`.
 - Side note: Brian's other open sessions in this repo, tms and pit-maneuver hot-reloaded the plugin and registered on their buses during the run, so the bus is live for them now.
 
+- This session (193b884d) never showed on this repo's bus. It started before `bus.ts` existed and its hot reload hasn't applied (no `bus_*` tools in its tool list), so this is not a mod bug. After the next restart, this repo's bus should list the new session.
+- Follow-up from the final advisor review (second commit):
+  - **Exit fix:** a heartbeat or `turn.complete` write still in flight could put an entry back after `session.end` removed it. Departed ids are now held in a module set, and `busSync` refuses to write for them. A `/clear` gets a new id, so it is unaffected. Test: end the session, then 3 heartbeats; the entry stays gone and no failure toast appears.
+  - **`bus_release` test:** release one of two claims, and the peer can edit that file but not the other.
+  - **Docs:** the heartbeat-race limit is now in the README's "Not covered" and in the PLAN's parked list.
+  - **AGENTS.md:** two gotchas added: test runs regenerate the MCP types, and an `import()` type breaks the validator.
+  - Tests: 138/138.
+
 ## Outcome
 Every finish-line item in PLAN.md is met. Committed on main (not pushed: publish goes through the `publish` branch only).
 

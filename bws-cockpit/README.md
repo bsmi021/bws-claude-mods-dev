@@ -115,7 +115,9 @@ Keeps Claude Code sessions open in the same project folder from clipping each ot
   - On exit, `/clear`, resume or the end of a `-p` run, the session removes its entry at once.
   - A session that crashed stops beating. After 90 s its entry no longer counts, and the next write prunes it.
 - **Fails open:** if the bus file can't be read or written, edits pass and one toast says so.
-- **Not covered:** writes made through Bash or PowerShell (`sed -i`, redirects) are not claim-checked.
+- **Not covered:**
+  - Writes made through Bash or PowerShell (`sed -i`, redirects) are not claim-checked.
+  - A heartbeat whose write lands right on top of a peer's new claim can hide that claim for up to one heartbeat (20 s), until the peer writes again. Claim writes verify and repair themselves; heartbeat writes don't.
 
 ### Worker model pin
 - **`workerModel`** (e.g. `claude-sonnet-5-5`): subagents of the types in `workerAgentTypes` (default `general-purpose,claude`) run on it whenever the Agent call names no model.
