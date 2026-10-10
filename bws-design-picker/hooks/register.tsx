@@ -2,6 +2,8 @@ import type { Register } from 'claude-code'
 
 import { SECTION, galleries, galleryCells, gallerySvg, stripSpecs } from './lib'
 
+const GALLERIES = { plugin: 'bws-design-picker', key: 'galleries' } as const
+
 export const register: Register = on => {
   // Tell Claude how to ask, only where it can ask.
   on('prompt.compose', async ($, e, next) => {
@@ -10,15 +12,24 @@ export const register: Register = on => {
     return { sections: [...r.sections, { id: 'bws-design-picker:ask', text: SECTION, scope: 'session' }] }
   })
 
-  // Draw the mockups above the engine's own picker, which still takes the answer.
-  on('ui.render', { component: 'AskUserQuestion' }, async ($, e, next) => {
-    const found = galleries(e.props.questions)
-    if (found.length === 0) return next(e)
-    const native = await next({ ...e, props: { ...e.props, questions: stripSpecs(e.props.questions) } })
+  // Lift the specs out of the previews before the dialog opens: a render rewrite may not change
+  // previews, so this is the one place the native dialog can be spared the JSON.
+  on('tool.call', { tool: 'AskUserQuestion' }, async ($, e, next) => {
+    const first = galleries(e.questions)[0]
+    if (!first) return next(e)
+    await $.state.set({ ...GALLERIES, id: e.tool_use_id }, first)
+    return next({ ...e, questions: stripSpecs(e.questions) })
+  })
 
-    // One gallery fits the room the engine allows around its dialog: the first design question's.
-    const g = found[0]!
+  // Draw the mockups above the engine's own picker, which still takes the answer. One gallery fits the
+  // room the engine allows around its dialog: the first design question's.
+  on('ui.render', { component: 'AskUserQuestion' }, async ($, e, next) => {
+    const { value } = await $.state.get({ ...GALLERIES, id: e.requestId })
+    const g = value ?? galleries(e.props.questions)[0]
+    if (!g) return next(e)
+    const native = await next(e)
     const header = `${g.header}: design directions, pick by number below`
+
     if (e.surface === 'terminal') {
       const { Box, Text, Raster } = $.ui.resolve(e)
       const art = galleryCells(g.cards, e.viewport?.columns ?? 100)

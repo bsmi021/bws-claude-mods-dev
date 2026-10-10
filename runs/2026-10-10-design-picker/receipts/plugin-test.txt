@@ -1,19 +1,21 @@
 
 tests\picker.test.ts:
-(pass) hex normalizes and rejects [2.16ms]
-(pass) parseSpec reads a design preview and ignores everything else [1.47ms]
-(pass) galleries number cards as the picker numbers options [0.48ms]
-(pass) stripSpecs drops only parsed specs from previews [0.33ms]
-(pass) toBase64 matches btoa [0.60ms]
-(pass) rasterize fills every cell with a printable glyph and puts text and the palette in place [12.03ms]
-(pass) printable drops non-ASCII and wide characters [0.26ms]
-(pass) layout keeps the cards in one row within the room around the dialog [0.67ms]
-(pass) galleryCells puts numbered labels over mockups side by side [2.71ms]
-(pass) toSvg is one svg with the text escaped [0.71ms]
-(pass) a design question draws numbered mockups above the native picker, specs stripped from it [58.27ms]
-(pass) a question without design previews is left to the engine untouched [27.13ms]
-(pass) prompt.compose adds the section only when AskUserQuestion is offered [25.24ms]
+(pass) hex normalizes and rejects [1.72ms]
+(pass) parseSpec reads a design preview and ignores everything else [1.24ms]
+(pass) galleries number cards as the picker numbers options [0.42ms]
+(pass) stripSpecs drops only parsed specs from previews [0.28ms]
+(pass) toBase64 matches btoa [0.54ms]
+(pass) rasterize fills every cell with a printable glyph and puts text and the palette in place [10.49ms]
+(pass) printable drops non-ASCII and wide characters [0.23ms]
+(pass) layout keeps the cards in one row within the room around the dialog [0.51ms]
+(pass) galleryCells puts numbered labels over mockups side by side [2.45ms]
+(pass) toSvg is one svg with the text escaped [0.64ms]
+(pass) the call loses its specs before the dialog opens, and the dialog draws them from state [50.29ms]
+(pass) a dialog whose previews still hold specs draws the gallery from them [27.67ms]
+(pass) a non-design call passes through unchanged [20.83ms]
+(pass) a question without design previews is left to the engine untouched [22.22ms]
+(pass) prompt.compose adds the section only when AskUserQuestion is offered [19.52ms]
 
- 13 pass
+ 15 pass
  0 fail
-Ran 13 tests across 1 file. [0.38s]
+Ran 15 tests across 1 file. [0.41s]

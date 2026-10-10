@@ -151,16 +151,44 @@ function engine(on: On) {
   return seen
 }
 
-test('a design question draws numbered mockups above the native picker, specs stripped from it', async ($, on) => {
+test('the call loses its specs before the dialog opens, and the dialog draws them from state', async ($, on) => {
   const seen = engine(on)
+  let asked: { id: string; questions: unknown[] } | undefined
+  on('tool.call', { tool: 'AskUserQuestion' }, (_$, e) => {
+    asked = { id: e.tool_use_id, questions: e.questions as unknown[] }
+    return { result: { questions: e.questions, answers: {} } } as never
+  })
+  await $.tool.call({ tool: 'AskUserQuestion', questions: QUESTIONS } as never)
+  const opts = (asked!.questions[0] as { options: { preview?: string }[] }).options
+  expect(opts.some(o => o.preview !== undefined)).toBe(false)
   for (const surface of ['terminal', 'desktop'] as const) {
-    const ui = await $.ui.mount({ ...ASK(QUESTIONS), surface } as never)
+    const ui = await $.ui.mount({ ...ASK(asked!.questions), requestId: asked!.id, surface } as never)
     expect(await ui.find({ type: 'Text', text: /^Style: design directions, pick by number below$/ })).toBeDefined()
     expect(await ui.find({ type: surface === 'terminal' ? 'Raster' : 'Svg' } as never)).toBeDefined()
-    const drawn = seen.at(-1) as { options: { preview?: string }[] }[]
-    expect(drawn[0]!.options.some(o => o.preview !== undefined)).toBe(false)
     await ui.unmount()
   }
+  expect(seen.length).toBe(2)
+})
+
+test('a dialog whose previews still hold specs draws the gallery from them', async ($, on) => {
+  engine(on)
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...ASK(QUESTIONS), surface } as never)
+    expect(await ui.find({ type: 'Text', text: /^Style: design directions/ })).toBeDefined()
+    expect(await ui.find({ type: surface === 'terminal' ? 'Raster' : 'Svg' } as never)).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('a non-design call passes through unchanged', async ($, on) => {
+  let asked: unknown
+  on('tool.call', { tool: 'AskUserQuestion' }, (_$, e) => {
+    asked = e.questions
+    return { result: { questions: e.questions, answers: {} } } as never
+  })
+  const plain = [{ question: 'Which library?', header: 'Library', multiSelect: false, options: [{ label: 'a', description: 'x', preview: 'code' }, { label: 'b', description: 'y' }] }]
+  await $.tool.call({ tool: 'AskUserQuestion', questions: plain } as never)
+  expect(asked).toEqual(plain)
 })
 
 test('a question without design previews is left to the engine untouched', async ($, on) => {

@@ -1,15 +1,9 @@
 // Pure helpers: the mockup spec Claude writes into an option's preview, and the two ways it is drawn
 // (terminal cells, SVG for the remote surfaces). No `$` here.
 
+import type { Block, Card, Font, Gallery, Shape, Spec } from '../types'
+
 export const PREFIX = 'design:'
-
-export type Shape = 'rect' | 'pill' | 'circle'
-export type Block = { x: number; y: number; w: number; h: number; fill?: string; text?: string; ink?: string; shape: Shape }
-export type Font = 'sans' | 'serif' | 'mono'
-export type Spec = { bg: string; font: Font; palette: string[]; blocks: Block[] }
-
-export type Card = { number: number; label: string; spec: Spec }
-export type Gallery = { header: string; cards: Card[] }
 
 const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i
 const MAX_BLOCKS = 40
@@ -76,7 +70,10 @@ export function galleries(questions: readonly unknown[]): Gallery[] {
   return out
 }
 
-/** The questions with every parsed spec dropped from its option, so the native dialog draws words, not JSON. */
+/**
+ * The questions with every parsed spec dropped from its option, so the native dialog draws words, not JSON.
+ * Applied to the tool's input: a render rewrite may not change previews.
+ */
 export function stripSpecs<T>(questions: readonly T[]): T[] {
   return questions.map(q => {
     const qq = q as Question
