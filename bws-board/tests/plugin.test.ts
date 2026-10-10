@@ -19,7 +19,8 @@ const kindsOf = (files: Record<string, string>, id: string) => parseHistory(file
 // One plugin instance per test, so a second session is the same instance under another session id:
 // its own state starts fresh, and the board folder is shared. Roles come from BWS_AGENT_ROLE per id.
 // `git`: what the stubbed git answers (paths relative to the repo top); `notRepo`: rev-parse fails.
-type GitWorld = { staged?: string[]; modified?: string[]; untracked?: string[]; notRepo?: boolean }
+// `head`: changed vs HEAD (default: staged and modified); `clean`: what git clean -n would remove.
+type GitWorld = { staged?: string[]; modified?: string[]; untracked?: string[]; head?: string[]; clean?: string[]; notRepo?: boolean }
 function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: Record<string, string>; git?: GitWorld } = {}) {
   const files: Record<string, string> = {}
   const mtimes: Record<string, number> = {}
@@ -49,7 +50,16 @@ function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: 
     const a = e.argv.join(' ')
     const z = (l?: string[]) => (l ?? []).join(String.fromCharCode(0))
     if (a.includes('rev-parse')) return { value: (git.notRepo ? { exitCode: 128, stdout: '', stderr: 'not a git repository' } : { exitCode: 0, stdout: `${CWD}\n${CWD}/.git\n`, stderr: '' }) as never }
-    const out = a.includes('diff --cached') ? z(git.staged) : a.includes('diff --name-only') ? z(git.modified) : a.includes('ls-files') ? z(git.untracked) : ''
+    if (a.includes(' clean -n')) return { value: { exitCode: 0, stdout: (git.clean ?? []).map(n => `Would remove ${n}\n`).join(''), stderr: '' } as never }
+    const out = a.includes('diff HEAD')
+      ? z(git.head ?? [...(git.staged ?? []), ...(git.modified ?? [])])
+      : a.includes('diff --cached')
+        ? z(git.staged)
+        : a.includes('diff --name-only')
+          ? z(git.modified)
+          : a.includes('ls-files')
+            ? z(git.untracked)
+            : ''
     return { value: { exitCode: 0, stdout: out, stderr: '' } as never }
   })
   on('tool.register', ($, e) => ({ value: { tool: e.name } }))
@@ -473,7 +483,7 @@ describe('board: the git lease', () => {
     expect(all.deny ?? '').toContain('git commit refused. It would commit a file another live session claims: src/login.ts (held by api (aaaaaaaa))')
     expect(all.deny ?? '').toContain('git restore --staged -- src/login.ts')
     expect(all.deny ?? '').not.toContain('tests/auth.ts')
-    expect(w.toasts).toContain('board: refused a commit of files another session claimed')
+    expect(w.toasts).toContain('board: refused git: a commit of files another session claimed')
     // Already staged, or named in the add: the same.
     w.git.staged = ['src/login.ts', 'tests/auth.ts']
     expect((await $.tool.call(bash('git commit -m "tests"'))).deny ?? '').toContain('src/login.ts')
@@ -519,5 +529,84 @@ describe('board: the git lease', () => {
     expect((await $.tool.call(bash('git commit -m x'))).deny).toBeUndefined()
     expect(w.runs.filter(r => r[0] === 'git')).toEqual([])
     expect(cardOf(w.files, A)?.git).toBeUndefined()
+  })
+})
+
+describe("board: git can't overwrite a peer's changed files", () => {
+  // A (api) changed src/login.ts and created notes/new.md, and its turn ended: no lease anywhere.
+  const setup = async ($: Parameters<NonNullable<Parameters<typeof test>[2]>>[0], on: On, git: GitWorld) => {
+    const w = world(on, { roles: { [A]: 'api', [B]: 'tests' }, git })
+    await $.session.start({ cwd: CWD } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/src/login.ts', old_string: 'a', new_string: 'b' } as never)
+    await $.tool.call({ tool: 'Write', file_path: 'C:/proj/notes/new.md', content: 'x' } as never)
+    await $.turn.complete(turnEnd)
+    w.who.id = B
+    await $.session.start({ cwd: CWD } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/tests/auth.ts', old_string: 'a', new_string: 'b' } as never)
+    return w
+  }
+  const denied = async ($: Parameters<NonNullable<Parameters<typeof test>[2]>>[0], command: string) => (await $.tool.call(bash(command))).deny
+
+  test('stash, hard reset, checkout ., restore, clean -f, rm and switch -f are refused', { options: {} }, async ($, on) => {
+    const w = await setup($, on, { modified: ['src/login.ts', 'tests/auth.ts'], untracked: ['notes/new.md'], clean: ['notes/'] })
+    const stash = (await denied($, 'git stash')) ?? ''
+    expect(stash).toContain('git stash refused. It would overwrite or delete a file another live session claims and has changed: src/login.ts (held by api (aaaaaaaa))')
+    expect(stash).toContain('git stash push -- <your files>')
+    expect(w.toasts).toContain('board: refused git: it would overwrite files another session changed')
+    expect((await denied($, 'git stash -u')) ?? '').toContain('2 files another live session claims and has changed: src/login.ts, notes/new.md')
+    expect((await denied($, 'git reset --hard HEAD')) ?? '').toContain('git reset refused')
+    expect((await denied($, 'git checkout .')) ?? '').toContain('src/login.ts')
+    expect((await denied($, 'cd src && git checkout .')) ?? '').toContain('src/login.ts')
+    expect((await denied($, 'git restore src/login.ts')) ?? '').toContain('git restore refused')
+    expect((await denied($, 'git checkout -f main')) ?? '').toContain('git checkout refused')
+    expect((await denied($, 'git switch --discard-changes main')) ?? '').toContain('git switch refused')
+    expect((await denied($, 'git clean -fd')) ?? '').toContain('git clean refused. It would overwrite or delete a file another live session claims and has changed: notes/new.md')
+    expect(w.runs.some(r => r.join(' ') === 'git -c core.quotepath=off clean -n -d')).toBe(true)
+    expect((await denied($, 'git rm src/login.ts')) ?? '').toContain('git rm refused')
+    await w.clock.settle()
+    const denies = parseHistory(w.files[`${DIR}/history/${B}.json`], B)?.events.filter(e => e.kind === 'deny').map(e => e.file)
+    expect(denies).toContain('c:/proj/notes/new.md')
+  })
+
+  test('commands that leave the peer\'s files alone go on', { options: {} }, async ($, on) => {
+    const w = await setup($, on, { modified: ['src/login.ts', 'tests/auth.ts'], untracked: ['notes/new.md'], clean: ['tmp/'] })
+    expect(await denied($, 'git restore tests/auth.ts')).toBeUndefined()
+    expect(await denied($, 'git checkout -- tests/auth.ts')).toBeUndefined()
+    expect(await denied($, 'git stash push -m wip -- tests/auth.ts')).toBeUndefined()
+    expect(await denied($, 'cd tests && git checkout .')).toBeUndefined()
+    expect(await denied($, 'git restore --staged src/login.ts')).toBeUndefined()
+    expect(await denied($, 'git rm --cached src/login.ts')).toBeUndefined()
+    expect(await denied($, 'git switch main && git stash list && git stash pop')).toBeUndefined()
+    expect(await denied($, 'git clean -fd')).toBeUndefined()
+    expect(await denied($, 'git clean -n')).toBeUndefined()
+    // After a cd it cannot follow, the command may run in another worktree: not judged.
+    expect(await denied($, 'cd "$WT" && git checkout main -- src && git reset --hard')).toBeUndefined()
+    expect(w.reached.filter(r => r.startsWith('b:Bash')).length).toBe(10)
+  })
+
+  test("a claim on a file the holder already committed never blocks; a delete or a restore from a commit does", { options: {} }, async ($, on) => {
+    await setup($, on, { head: [], modified: [] })
+    expect(await denied($, 'git reset --hard')).toBeUndefined()
+    expect(await denied($, 'git checkout .')).toBeUndefined()
+    expect((await denied($, 'git rm src/login.ts')) ?? '').toContain('src/login.ts')
+    // A delete of a variable path counts only changed files.
+    expect(await denied($, 'git rm -q $R/old.txt')).toBeUndefined()
+    expect((await denied($, 'git checkout HEAD~1 -- src')) ?? '').toContain('src/login.ts')
+    expect((await denied($, 'git restore --source=main src/login.ts')) ?? '').toContain('src/login.ts')
+  })
+
+  test('git clean is checked but never takes the lease; alone, no git runs', { options: {} }, async ($, on) => {
+    const w = world(on, { git: { clean: ['notes/'] } })
+    await $.session.start({ cwd: CWD } as never)
+    expect(await denied($, 'git clean -fdx')).toBeUndefined()
+    expect(await denied($, 'git stash && git reset --hard')).toBeUndefined()
+    expect(w.runs.filter(r => r.includes('diff') || r.includes('clean'))).toEqual([])
+    // clean alone took no lease; the stash did.
+    w.runs.length = 0
+    await $.turn.complete(turnEnd)
+    expect(await denied($, 'git clean -fd')).toBeUndefined()
+    expect(cardOf(w.files, A)?.git).toBeUndefined()
+    await w.clock.settle()
+    expect(kindsOf(w.files, A)?.filter(k => k === 'gitHold').length).toBe(1)
   })
 })

@@ -1,0 +1,3 @@
+A claimed a.txt and new.txt at 20:44:06Z
+B finished at 20:44:29Z
+A finished at 20:44:35Z

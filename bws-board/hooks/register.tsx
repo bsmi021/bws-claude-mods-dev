@@ -19,6 +19,7 @@ import {
   cardPath,
   cardText,
   claimHolder,
+  clobberDenyText,
   denyText,
   dropClaims,
   gitDenyText,
@@ -61,7 +62,7 @@ import { buildDigest, digestHtml, durText } from './digest'
 import { HIST_DAYS, addEvent, expiredHistory, historyDir, historyPath, historyText, parseHistory } from './history'
 import type { HistEvent, History } from './history'
 import { gitOps, writeTargets } from './shell'
-import type { Dialect, GitOp } from './shell'
+import type { Clobber, Dialect, GitOp } from './shell'
 
 const roleAtom = atom({ plugin: 'bws-board', key: 'role' } as const, null)
 const ownAtom = atom({ plugin: 'bws-board', key: 'own' } as const, {})
@@ -402,14 +403,10 @@ async function treeOf($: EngineInterface, ctx: Ctx, dir: string): Promise<Tree |
 // an add -A/./-u counts every modified and untracked file, restore --staged or reset takes files out.
 // Runs git only when a peer claims a file in the tree.
 async function heldInCommit($: EngineInterface, o: Options, ctx: Ctx, b: Board, op: GitOp, tree: Tree, now: number) {
-  const peers = livePeers(b, ctx.selfId, now, o.lim.staleMs).filter(c => liveClaims(c.claims, now, o.lim.claimMs).some(cl => cl.path.startsWith(`${tree.key}/`)))
+  const peers = claimersIn(o, ctx, b, tree, now)
   if (peers.length === 0) return []
-  const list = async (args: string[]) => {
-    const r = await settle($.process.run(['git', ...args, '-z'], { cwd: tree.top, timeoutMs: 15_000 }))
-    return new Set(r?.exitCode === 0 ? r.stdout.split(String.fromCharCode(0)).filter(n => n !== '').map(n => normFile(`${tree.top}/${n}`, '')) : [])
-  }
+  const list = (args: string[]) => gitNames($, tree, args)
   const st = op.staged
-  const under = (f: string, dirs: readonly string[]) => dirs.some(a => f === a || f.startsWith(`${a}/`))
   const added = (st?.paths ?? []).map(p => normFile(p, ctx.cwd))
   const dropped = (st?.dropped ?? []).map(p => normFile(p, ctx.cwd))
   // The index as it is now, less what the command unstages before its commit.
@@ -417,6 +414,17 @@ async function heldInCommit($: EngineInterface, o: Options, ctx: Ctx, b: Board, 
   const modified = op.isAll || st?.isAll === true ? await list(['diff', '--name-only']) : new Set<string>()
   const untracked = st?.isAll === true ? await list(['ls-files', '--others', '--exclude-standard']) : new Set<string>()
   const isIn = (f: string) => (index.has(f) && !under(f, dropped)) || modified.has(f) || untracked.has(f) || under(f, added)
+  return heldBy(o, ctx, b, peers, now, isIn)
+}
+
+const under = (f: string, dirs: readonly string[]) => dirs.some(a => f === a || f.startsWith(`${a}/`))
+
+// Live peers with a claim in this tree: without one, the git checks run no git at all.
+const claimersIn = (o: Options, ctx: Ctx, b: Board, tree: Tree, now: number) =>
+  livePeers(b, ctx.selfId, now, o.lim.staleMs).filter(c => liveClaims(c.claims, now, o.lim.claimMs).some(cl => cl.path.startsWith(`${tree.key}/`)))
+
+// The peers' claimed files that `isIn` says a command reaches, with who holds each.
+function heldBy(o: Options, ctx: Ctx, b: Board, peers: readonly Card[], now: number, isIn: (file: string) => boolean) {
   const held: { file: string; holder: Card }[] = []
   for (const c of peers)
     for (const cl of liveClaims(c.claims, now, o.lim.claimMs)) {
@@ -425,6 +433,50 @@ async function heldInCommit($: EngineInterface, o: Options, ctx: Ctx, b: Board, 
       if (holder !== undefined && !held.some(h => h.file === cl.path)) held.push({ file: cl.path, holder })
     }
   return held
+}
+
+// File names a git listing prints (-z), as the board compares them; undefined when git failed.
+// `diff` prints them from the tree's top, `ls-files` from where it runs: run both at the top.
+async function gitNames($: EngineInterface, tree: Tree, args: string[]): Promise<Set<string>> {
+  return (await gitNamesOrFail($, tree, args)) ?? new Set()
+}
+
+async function gitNamesOrFail($: EngineInterface, tree: Tree, args: string[]): Promise<Set<string> | undefined> {
+  const r = await settle($.process.run(['git', ...args, '-z'], { cwd: tree.top, timeoutMs: 15_000 }))
+  if (r === undefined || r.exitCode !== 0) return undefined
+  return new Set(r.stdout.split(String.fromCharCode(0)).filter(n => n !== '').map(n => normFile(`${tree.top}/${n}`, '')))
+}
+
+// The peers' claimed files a stash, hard reset, forced checkout, restore, clean or rm would overwrite
+// or delete. Only files git says would change count (see Clobber's scopes), so a claim on a file the
+// holder already committed never blocks. A git failure counts nothing: the command goes on.
+async function heldInClobber($: EngineInterface, o: Options, ctx: Ctx, b: Board, op: GitOp, c: Clobber, tree: Tree, now: number) {
+  const peers = claimersIn(o, ctx, b, tree, now)
+  if (peers.length === 0) return []
+  const named = c.paths.map(p => normFile(p, ctx.cwd))
+  const reaches = (f: string) => (c.isAll ? f.startsWith(`${tree.key}/`) : under(f, named))
+  // A delete or restore-from-a-commit of named files counts every claim on them; of a glob or a
+  // variable (the whole tree, as far as the board can tell), only the files git says changed.
+  if (c.scope === 'any' && !c.isAll) return heldBy(o, ctx, b, peers, now, reaches)
+  if (c.scope === 'clean') {
+    // git clean -n with the command's own arguments (less -f and -q) prints exactly what it would remove.
+    const args = (c.args ?? []).flatMap(a => (a === '--force' || a === '--quiet' ? [] : /^-[A-Za-z]+$/.test(a) ? [a.replace(/[fq]/g, '')].filter(x => x !== '-') : [a]))
+    const at = op.dir ? normFile(op.dir, ctx.cwd) : normFile(ctx.cwd, '')
+    const r = await settle($.process.run(['git', '-c', 'core.quotepath=off', 'clean', '-n', ...args], { cwd: op.dir || ctx.cwd, timeoutMs: 15_000 }))
+    if (r === undefined || r.exitCode !== 0) return []
+    const gone = r.stdout
+      .split(/\r?\n/)
+      .flatMap(l => /^Would remove (.+)$/.exec(l)?.[1] ?? [])
+      .map(n => normFile(n.replace(/\/$/, ''), at))
+    return heldBy(o, ctx, b, peers, now, f => under(f, gone))
+  }
+  const changed =
+    c.scope === 'index'
+      ? await gitNames($, tree, ['diff', '--name-only'])
+      : ((await gitNamesOrFail($, tree, ['diff', 'HEAD', '--name-only'])) ??
+        new Set([...(await gitNames($, tree, ['diff', '--cached', '--name-only'])), ...(await gitNames($, tree, ['diff', '--name-only']))]))
+  const untracked = c.untracked ? await gitNames($, tree, ['ls-files', '--others', '--exclude-standard']) : new Set<string>()
+  return heldBy(o, ctx, b, peers, now, f => reaches(f) && (changed.has(f) || untracked.has(f)))
 }
 
 // The git check for a shell command: refused while a peer holds the lease in the same tree, or when
@@ -439,10 +491,18 @@ async function gitCheck($: EngineInterface, o: Options, ops: readonly GitOp[]): 
   for (const op of ops) {
     const tree = await treeOf($, ctx, op.dir ?? '')
     if (tree === null) continue
-    const holder = gitHolder(b, ctx.selfId, tree.key, now, o.lim, mine)
+    const holder = op.isLease ? gitHolder(b, ctx.selfId, tree.key, now, o.lim, mine) : undefined
     if (holder !== undefined) {
       void logEvent($, o, ctx, { kind: 'gitWait', at: now, verb: op.verb, holder: holder.sessionId, holderRole: holder.role })
       return gitDenyText(holder, op.verb, now, o.lim.leaseMs)
+    }
+    // After a `cd` the parser could not follow, the command may run in another tree: not judged.
+    if (op.clobber !== undefined && op.dir !== undefined) {
+      const held = await heldInClobber($, o, ctx, b, op, op.clobber, tree, now)
+      if (held.length > 0) {
+        for (const h of held) void logEvent($, o, ctx, { kind: 'deny', at: now, file: h.file, holder: h.holder.sessionId, holderRole: h.holder.role })
+        return clobberDenyText(op.verb, held, ctx.folder)
+      }
     }
     if (op.verb === 'commit') {
       const held = await heldInCommit($, o, ctx, b, op, tree, now)
@@ -451,7 +511,7 @@ async function gitCheck($: EngineInterface, o: Options, ops: readonly GitOp[]): 
         return stagedDenyText(held, ctx.folder)
       }
     }
-    taken = { verb: op.verb, tree: tree.key }
+    if (op.isLease) taken = { verb: op.verb, tree: tree.key }
   }
   if (taken === undefined) return undefined
   const t = taken
@@ -724,7 +784,12 @@ export const register: Register = (on, options) => {
         noteFailure($, err)
       }
       if (refusal !== undefined) {
-        $.ui.toast(refusal.includes('git lease') ? 'board: refused git: another session holds the git lease' : 'board: refused a commit of files another session claimed', { timeoutMs: 6000 })
+        const why = refusal.includes('holds the git lease')
+          ? 'another session holds the git lease'
+          : refusal.includes('would overwrite or delete')
+            ? 'it would overwrite files another session changed'
+            : 'a commit of files another session claimed'
+        $.ui.toast(`board: refused git: ${why}`, { timeoutMs: 6000 })
         return { deny: refusal }
       }
     }

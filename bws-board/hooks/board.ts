@@ -279,6 +279,25 @@ export function stagedDenyText(held: readonly { file: string; holder: Card }[], 
   )
 }
 
+// A git command that would overwrite or delete files peers claim and changed: which, and the way round.
+export function clobberDenyText(verb: string, held: readonly { file: string; holder: Card }[], folder: string): string {
+  const rel = held.map(h => relTo(h.file, folder))
+  const names = [...new Set(held.map(h => who(h.holder, h.holder.sessionId)))]
+  const fix =
+    verb === 'stash'
+      ? 'Stash only your own files by name: git stash push -- <your files>.'
+      : verb === 'clean'
+        ? 'Clean only your own paths: git clean -f -- <your paths>, or delete your own files by name.'
+        : verb === 'rm'
+          ? 'Leave those files alone, or ask the holder.'
+          : 'Name only your own files: git restore -- <your files> (or git checkout -- <your files>), never ., -f or --hard while others work here.'
+  return (
+    `bws-board: git ${verb} refused. It would overwrite or delete ${rel.length === 1 ? 'a file' : `${rel.length} files`} another live session claims and has changed: ` +
+    `${rel.slice(0, 10).join(', ')}${rel.length > 10 ? ` (+${rel.length - 10} more)` : ''} (held by ${names.join(', ')}). ` +
+    `That is their uncommitted work, and it would be lost. ${fix} Or ask the holder with ${TOOL_PREFIX}board_send.`
+  )
+}
+
 // Claims with this file claimed now (moved to the end), the oldest dropped past the cap.
 export const addClaim = (claims: readonly Claim[], file: string, now: number, claimMs: number): Claim[] => {
   const held = claims.find(c => c.path === file && now - c.at < claimMs)

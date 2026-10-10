@@ -499,7 +499,23 @@ const COMMIT_VALUED = /[mFCctS]/
 // same command leave staged (`staged`), since the check runs before any of the command does:
 // `paths` added, `dropped` taken out, `isAll` add -A and the like, `isReset` the index reset to HEAD.
 export type Staged = { isAll: boolean; paths: string[]; dropped: string[]; isReset: boolean }
-export type GitOp = { verb: string; dir: string | undefined; isAll: boolean; paths: string[]; unstage?: { isAll: boolean; paths: string[] }; staged?: Staged }
+// What a git command overwrites or deletes in the working tree. `scope`: which of the files it reaches
+// it changes: 'head' those changed vs HEAD (staged or not), 'index' those changed vs the index, 'any'
+// every one (a delete, or a restore from another commit), 'clean' what `git clean -n` with the same
+// arguments lists. `isAll`: the whole tree; `paths`: the named ones, joined to `dir`; `untracked`:
+// stash -u/-a takes untracked files too; `args`: clean's own arguments, for its dry run.
+export type Clobber = { scope: 'head' | 'index' | 'any' | 'clean'; isAll: boolean; paths: string[]; untracked?: boolean; args?: string[] }
+// `isLease`: the command takes the git lease (git clean only clobbers).
+export type GitOp = {
+  verb: string
+  dir: string | undefined
+  isAll: boolean
+  paths: string[]
+  isLease: boolean
+  unstage?: { isAll: boolean; paths: string[] }
+  staged?: Staged
+  clobber?: Clobber
+}
 
 // The path arguments of a git subcommand: words that are not options (nor an option's value).
 const pathArgs = (args: string[], valued: RegExp) => {
@@ -528,8 +544,89 @@ const gitOp = (words: string[], base: string | undefined): GitOp | undefined => 
     }
   }
   const verb = words[i]
-  if (verb === undefined || !GIT_LEASE_VERBS.has(verb)) return undefined
+  if (verb === undefined) return undefined
   const args = words.slice(i + 1)
+  const clobber = clobberOf(verb, args, dir)
+  if (!GIT_LEASE_VERBS.has(verb)) return clobber === undefined ? undefined : { verb, dir, isAll: false, paths: [], isLease: false, clobber }
+  const op = leaseOp(verb, args, dir)
+  return op === undefined ? undefined : { ...op, isLease: true, ...(clobber ? { clobber } : {}) }
+}
+
+// A flag given long or inside a short cluster (-fd has f).
+const hasFlag = (args: readonly string[], long: RegExp, short: string) =>
+  args.some(a => long.test(a) || new RegExp(`^-[A-Za-z]*[${short}][A-Za-z]*$`).test(a))
+const isRefLike = (a: string) => /^(?:HEAD|@|FETCH_HEAD|ORIG_HEAD|MERGE_HEAD)$/.test(a) || /[~^]/.test(a) || /^[0-9a-f]{7,40}$/.test(a)
+// Named paths joined to `dir`; a pathspec magic, a glob or an unknown folder means the whole tree.
+const pathsIn = (named: readonly string[], dir: string | undefined) => {
+  const isAll = dir === undefined || named.some(p => p.startsWith(':') || !isConcrete(p))
+  return { isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) }
+}
+
+// What a git command overwrites or deletes in the working tree, if anything. Dry runs, stash
+// list/show/pop/apply/drop, rm --cached, a branch switch without -f and reset --merge/--keep are not
+// here: git itself refuses those when local changes would be lost.
+const clobberOf = (verb: string, args: string[], dir: string | undefined): Clobber | undefined => {
+  const whole: Clobber = { scope: 'head', isAll: true, paths: [] }
+  if (verb === 'reset') return args.includes('--hard') ? whole : undefined
+  if (verb === 'switch') return hasFlag(args, /^--(?:force|discard-changes)$/, 'f') ? whole : undefined
+  if (verb === 'checkout') {
+    const dashes = args.indexOf('--')
+    const flags = dashes < 0 ? args : args.slice(0, dashes)
+    const isForce = hasFlag(flags, /^--force$/, 'f')
+    const named: string[] = []
+    let isNewBranch = false
+    for (let k = 0; k < flags.length; k++) {
+      const a = flags[k] ?? ''
+      if (/^-(?:b|B)$|^--orphan$/.test(a)) {
+        isNewBranch = true
+        k++
+      } else if (/^--(?:conflict|pathspec-from-file)$/.test(a)) k++
+      else if (!a.startsWith('-')) named.push(a)
+    }
+    if (isForce) return whole
+    if (isNewBranch) return undefined
+    if (dashes >= 0) {
+      const after = args.slice(dashes + 1)
+      return after.length === 0 ? undefined : { scope: named.length > 0 ? 'any' : 'index', ...pathsIn(after, dir) }
+    }
+    if (named.length === 0) return undefined
+    // `checkout <ref> <paths>` restores from that commit; otherwise every name may be a path (a
+    // branch name matches no claimed file, so reading it as a path costs nothing).
+    const first = named[0] ?? ''
+    if (named.length > 1 && isRefLike(first)) return { scope: 'any', ...pathsIn(named.slice(1), dir) }
+    return { scope: 'index', ...pathsIn(named, dir) }
+  }
+  if (verb === 'restore') {
+    const isStaged = hasFlag(args, /^--staged$/, 'S')
+    const isWorktree = hasFlag(args, /^--worktree$/, 'W')
+    if (isStaged && !isWorktree) return undefined
+    const named = pathArgs(args, /^(?:-s|--source)$/)
+    if (named.length === 0) return undefined
+    const hasSource = args.some(a => a === '-s' || /^--source(?:=|$)/.test(a) || /^-s./.test(a))
+    return { scope: hasSource ? 'any' : isStaged ? 'head' : 'index', ...pathsIn(named, dir) }
+  }
+  if (verb === 'stash') {
+    const sub = args[0]
+    if (sub !== undefined && !sub.startsWith('-') && sub !== 'push' && sub !== 'save') return undefined
+    const rest = sub === 'push' || sub === 'save' ? args.slice(1) : args
+    const untracked = hasFlag(rest, /^--(?:include-untracked|all)$/, 'ua')
+    const named = sub === 'save' ? [] : pathArgs(rest, /^(?:-m|--message|--pathspec-from-file)$/)
+    return { ...(named.length === 0 ? whole : { scope: 'head' as const, ...pathsIn(named, dir) }), ...(untracked ? { untracked: true } : {}) }
+  }
+  if (verb === 'clean') {
+    if (!hasFlag(args, /^--force$/, 'f') || hasFlag(args, /^--(?:dry-run|interactive)$/, 'ni')) return undefined
+    return { scope: 'clean', isAll: true, paths: [], args: [...args] }
+  }
+  if (verb === 'rm') {
+    if (args.includes('--cached') || hasFlag(args, /^--dry-run$/, 'n')) return undefined
+    const named = pathArgs(args, /^--pathspec-from-file$/)
+    return named.length === 0 ? undefined : { scope: 'any', ...pathsIn(named, dir) }
+  }
+  return undefined
+}
+
+// The lease part of a git command (no `isLease` yet).
+const leaseOp = (verb: string, args: string[], dir: string | undefined): Omit<GitOp, 'isLease'> | undefined => {
   if (verb === 'stash' && /^(?:list|show)$/.test(args[0] ?? '')) return undefined
   if (verb === 'commit') {
     const isAll = args.some(a => a === '--all' || (/^-[A-Za-z]+$/.test(a) && (a.slice(1).split(COMMIT_VALUED)[0] ?? '').includes('a')))

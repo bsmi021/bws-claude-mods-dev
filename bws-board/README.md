@@ -35,6 +35,20 @@ They work as peers: no lead session, no subagents.
   - Worktrees are separate: a session in another worktree of the repository never waits for this one.
   - It narrows the race, not removes it: two sessions that start git in the same instant can both go on, as with
     claims.
+- **No git overwrites of a peer's work.** A git command that would overwrite or delete a file a live peer claims and
+  has changed is refused, lease or no lease:
+  - `git stash` (push/save; untracked files too with `-u`/`-a`), `git reset --hard`, `git checkout -f`, `git checkout
+    [<ref>] [--] <paths>` (including `.`), `git switch -f`/`--discard-changes`, `git restore <paths>`, `git clean -f`
+    and `git rm`.
+  - Only files git says would change count: changes against HEAD for stash, hard reset and forced checkout; against
+    the index for `checkout -- <paths>` and `restore <paths>`; what `git clean -n` with the same flags lists for
+    clean. `git rm`, and a restore from another commit, count any named claimed file. A claim on a file its holder
+    already committed never blocks.
+  - The refusal names the files and their holder and gives the path-limited form (`git stash push -- <your files>`,
+    `git restore -- <your files>`).
+  - Not checked, because git itself refuses to overwrite local changes there: `stash pop/apply`, a branch switch
+    without `-f`, `reset --merge/--keep`. A command after a `cd` the parser cannot follow (`cd "$WT" && ...`) is not
+    judged, since it may run in another worktree. `git clean` is checked but does not take the lease.
 - **Asks.** A session posts what it needs with `board_ask { to, text, urgent? }`:
   - `to` is a role, a session id, or `anyone`.
   - A peer takes the ask (`board_take`), then finishes it (`board_done { note }`) or declines it (`board_decline`).
@@ -113,7 +127,8 @@ how the team worked:
 - `urgentWake` (default true): urgent asks may wake named idle sessions.
 - `wakeMinutes` (default 5): the minimum gap between wakes from this session to the same session.
 - `historyDays` (default 14): keep history files this many days. `0` writes no history.
-- `gitLease` (default true): take turns at git, and refuse a commit of a peer's claimed files.
+- `gitLease` (default true): take turns at git, refuse a commit of a peer's claimed files, and refuse git commands
+  that would overwrite or delete a peer's changed files.
 - `gitLeaseMinutes` (default 2): the git lease lapses this long after the holder's last git command.
 
 ## Capabilities and safety
@@ -122,7 +137,8 @@ how the team worked:
 - It reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` and `BWS_AGENT_ROLE`.
 - It sends `$.session.send` messages only for urgent asks.
 - For the git lease it runs `git rev-parse` (once per folder) and, only when a peer claims a file in the tree, `git diff
-  --name-only` / `git ls-files --others` before a commit. It never runs a git command that changes anything.
+  --name-only` / `git ls-files --others` before a commit, and `git diff` / `git clean -n` (a dry run) before a command
+  that would overwrite files. It never runs a git command that changes anything.
 - It never approves a tool call and never logs prompt text beyond the redacted first line.
 - Peer text is always marked as not coming from the user.
 
@@ -184,3 +200,14 @@ In the live run, cockpit's Session Bus was switched off, and its text was absent
     second run passed it.
 - **Not verified live:** the lease ending at turn end in an interactive session (in `claude -p` a turn end is the
   exit), PowerShell git commands, `-C` into a worktree, and a push (tests only).
+
+0.4.0, git overwrite guard (`runs/2026-10-10-board-git-clobber/receipts/`), Claude Code 2.1.296 on Windows 11:
+- Static validation passed, tsc clean, 82 automated tests (the detector's scopes and exclusions; each refused
+  command; path-limited commands, a committed claim, an unfollowable `cd` and a variable `git rm` going on; `git clean`
+  taking no lease; no git run alone).
+- **Corpus replay:** 570 of 79,355 real commands carry an overwriting git op. Two false-refusal patterns it found
+  (`cd "$WT" && git checkout main -- ...`, `git rm $VAR`) were fixed before shipping.
+- **Live, headless, two sessions, no lease anywhere:** A changed `a.txt` and created `new.txt`. B's `git stash`,
+  `git checkout .`, `git reset --hard` and `git clean -fd` were each refused, naming A's file; `git stash push -- b.txt`
+  went through. A's `a.txt` and `new.txt` were intact afterwards.
+- **Not verified live:** `restore`, `rm`, `switch -f` and PowerShell (tests only).

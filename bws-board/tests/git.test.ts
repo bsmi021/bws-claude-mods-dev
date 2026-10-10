@@ -63,6 +63,59 @@ describe('git commands that take the lease', () => {
   })
 })
 
+const clob = (cmd: string, dialect: Dialect = 'bash') =>
+  gitOps(cmd, dialect)
+    .filter(o => o.clobber)
+    .map(o => {
+      const c = o.clobber!
+      return `${o.verb}${o.isLease ? '' : ' (no lease)'} ${c.scope}${c.isAll ? ' all' : ` ${c.paths.join(',')}`}${c.untracked ? ' +untracked' : ''}${c.args ? ` [${c.args.join(' ')}]` : ''}`
+    })
+
+describe('git commands that overwrite or delete working-tree files', () => {
+  test('whole-tree overwrites', () => {
+    expect(clob('git stash')).toEqual(['stash head all'])
+    expect(clob('git stash push -m wip')).toEqual(['stash head all'])
+    expect(clob('git stash save "wip on x"')).toEqual(['stash head all'])
+    expect(clob('git stash -u; git stash --include-untracked; git stash push -a')).toEqual(['stash head all +untracked', 'stash head all +untracked', 'stash head all +untracked'])
+    expect(clob('git reset --hard')).toEqual(['reset head all'])
+    expect(clob('git reset --hard origin/main')).toEqual(['reset head all'])
+    expect(clob('git checkout -f main')).toEqual(['checkout head all'])
+    expect(clob('git checkout --force')).toEqual(['checkout head all'])
+    expect(clob('git switch -f main; git switch --discard-changes dev')).toEqual(['switch head all', 'switch head all'])
+  })
+
+  test('named paths, and which change counts', () => {
+    expect(clob('git checkout .')).toEqual(['checkout index .'])
+    expect(clob('cd src && git checkout .')).toEqual(['checkout index src/.'])
+    expect(clob('git checkout -- a.txt b/c.txt')).toEqual(['checkout index a.txt,b/c.txt'])
+    expect(clob('git checkout HEAD~1 -- a.txt')).toEqual(['checkout any a.txt'])
+    expect(clob('git checkout HEAD~1 a.txt')).toEqual(['checkout any a.txt'])
+    expect(clob('git checkout main')).toEqual(['checkout index main'])
+    expect(clob('git restore a.txt')).toEqual(['restore index a.txt'])
+    expect(clob('git restore --staged --worktree a.txt')).toEqual(['restore head a.txt'])
+    expect(clob('git restore -SW a.txt')).toEqual(['restore head a.txt'])
+    expect(clob('git restore --source=main a.txt; git restore -s HEAD~2 b.txt')).toEqual(['restore any a.txt', 'restore any b.txt'])
+    expect(clob('git restore "src/*.ts"')).toEqual(['restore index all'])
+    expect(clob('git stash push -- a.txt')).toEqual(['stash head a.txt'])
+    expect(clob('git rm -r src/old')).toEqual(['rm any src/old'])
+    expect(clob('git -C sub rm a.txt')).toEqual(['rm any sub/a.txt'])
+    expect(clob('git clean -fdx')).toEqual(['clean (no lease) clean all [-fdx]'])
+    expect(clob('git clean -f -- build', 'powershell')).toEqual(['clean (no lease) clean all [-f -- build]'])
+  })
+
+  test('not overwrites: git refuses these itself, or they touch only the index or nothing', () => {
+    expect(clob('git stash list; git stash show -p; git stash pop; git stash apply; git stash drop; git stash clear')).toEqual([])
+    expect(clob('git reset; git reset HEAD a.txt; git reset --soft HEAD~1; git reset --keep HEAD~1; git reset --merge')).toEqual([])
+    expect(clob('git checkout -b feat; git checkout -B feat origin/feat; git switch main; git switch -c new')).toEqual([])
+    expect(clob('git restore --staged a.txt; git restore')).toEqual([])
+    expect(clob('git clean -n; git clean -fn; git clean --dry-run -f; git clean -fi; git clean -d')).toEqual([])
+    expect(clob('git rm --cached a.txt; git rm -n a.txt')).toEqual([])
+    expect(clob('echo "git reset --hard" && grep -n "git stash" notes.md')).toEqual([])
+    // git clean is not a lease verb: alone it is no lease op either.
+    expect(gitOps('git clean -n', 'bash')).toEqual([])
+  })
+})
+
 const T = 'c:/proj'
 const lim = { staleMs: STALE_MS, claimMs: 30 * 60_000, leaseMs: 2 * 60_000 }
 const A = 'aaaaaaaa-0000-4000-8000-000000000001'
