@@ -120,3 +120,18 @@ Tools after the move: `mcp__bws-cockpit__record_assumption`, `…__shelve_idea`,
 
 ## Out of scope (parked)
 See `FOLLOWUPS.md`.
+
+## Progress (approved 2026-10-10; Brian: stop before step 10)
+- [x] 0 worktree `../bws.mods.wt-dashboard`, branch `bws-dashboard`, types copied
+- [x] 1 spike (results in RUNLOG)
+- [ ] 2 move assumptions + shelf code and tests into bws-cockpit
+- [ ] 3 merge hooks; dashboard pane render
+- [ ] 4 slim bar
+- [ ] 5 proactive T1–T6
+- [ ] 6 types + config, cockpit 0.15.0
+- [ ] 6b bws-board 0.5.0
+- [ ] 7 tests
+- [ ] 8 checks → receipts
+- [ ] 9 live (Claude's own tmux check; Brian's look is D4)
+- 10 retire old plugins (needs Brian: after his live check, on his go)
+- 11 RUNLOG final
