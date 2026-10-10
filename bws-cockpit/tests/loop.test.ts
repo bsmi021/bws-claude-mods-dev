@@ -118,8 +118,8 @@ function world(on: On, w: World) {
 const PANE = {
   plugin: 'bws-cockpit',
   component: 'Pane',
-  requestId: 'loop-watch',
-  props: { title: 'Loop', isFocused: false, bodyColumns: 110, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
+  requestId: 'dashboard',
+  props: { title: 'Dashboard', isFocused: false, bodyColumns: 110, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
 } as const
 
 // ---------- pure ----------
@@ -337,22 +337,17 @@ B, the overhead swing
     await ui.unmount()
   })
 
-  test('the loop chip and /cockpit carry the board URL', async ($, on) => {
+  test('/cockpit and the Loop tab carry the board URL', async ($, on) => {
     world(on, { state: PAUSED_STATE })
     const r = await $.command.run({ command: 'cockpit', args: '' } as never)
     expect(r.text).toContain('Loop: kit needs you · board http://localhost:8772/')
-    const band = await $.ui.mount({
-      plugin: 'bws-cockpit',
-      surface: 'terminal',
-      component: 'AbovePrompt',
-      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
-    })
-    const link = await band.find({ type: 'Link' })
-    expect(link?.text).toBe('board localhost:8772/')
-    await band.unmount()
+    await $.command.run({ command: 'loop-watch', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect((await ui.find({ type: 'Link' }))?.text).toBe('board http://localhost:8772/')
+    await ui.unmount()
   })
 
-  test('the band shows a loop chip and a 4: loop hotkey', async ($, on) => {
+  test('the bar shows a loop chip and a 4: loop hotkey; the Loop tab counts what needs you', async ($, on) => {
     world(on, { state: PAUSED_STATE })
     await $.command.run({ command: 'cockpit', args: '' } as never) // fills the band's view and the loops
     const band = await $.ui.mount({
@@ -361,25 +356,14 @@ B, the overhead swing
       component: 'AbovePrompt',
       props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
     })
-    // 120 columns: the loop gets its own tile, name and unit on one line, the state word on the next.
-    expect(await band.find({ key: 'tile-loop' })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /^loop$/ })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /^ kit W2c$/ })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /^needs you$/ })).toBeDefined()
-    expect(await band.find({ key: 'loop' })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /^loop needs you$/ })).toBeDefined()
+    expect((await band.find({ key: 'loop' }))?.props?.hotkey).toBe('4')
     await band.unmount()
-    // 80 columns: the grid's LOOP row carries the chip and the board on one line.
-    const grid = await $.ui.mount({
-      plugin: 'bws-cockpit',
-      surface: 'terminal',
-      component: 'AbovePrompt',
-      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 80, scroll: { offset: 0, bodyRows: 8 }, view: {} },
-    })
-    expect(await grid.find({ key: 'tile-loop' })).toBeUndefined()
-    expect(await grid.find({ type: 'Text', text: /^LOOP$/ })).toBeDefined()
-    expect(await grid.find({ type: 'Text', text: /^kit W2c needs you$/ })).toBeDefined()
-    expect((await grid.find({ type: 'Link' }))?.text).toBe('board localhost:8772/')
-    await grid.unmount()
+    await $.command.run({ command: 'loop-watch', args: '' } as never)
+    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect((await ui.find({ key: 'tab-loop' }))?.props?.label).toMatch(/^Loop \d+$/)
+    expect((await ui.find({ key: 'tab-loop' }))?.props?.variant).toBe('primary')
+    await ui.unmount()
   })
 
   test('two loops: a Select switches between them, newest first', async ($, on) => {

@@ -1295,7 +1295,9 @@ export const register: Register = (on, options) => {
     const bs = await read($, boardSummary)
     const lines = await read($, boardLines)
     const counts: Record<DashTab, number> = { assumptions: active(list).length, shelf: sv.count, board: bs?.askedOfMe ?? 0, loop: loopCount(lp) }
-    const tabs = TABS.filter(t => t !== 'loop' || isLoopLive(lp, now))
+    // Loop: while any loop is live, or the person picked the tab (/loop-watch) for a quiet one.
+    const hasLoop = lp !== null && (all.some(l => isLoopLive(l, now)) || d.tab === 'loop')
+    const tabs = TABS.filter(t => t !== 'loop' || hasLoop)
     const tab = pickTab(d.tab, tabs, counts)
     const strip = (
       <Box key="tabs" flexDirection="row" columnGap={1} flexWrap="wrap">
