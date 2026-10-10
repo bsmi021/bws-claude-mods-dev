@@ -143,7 +143,7 @@ Local Doc: ./docs/mods.md
 - Generated `.claude-plugin/types/claude-code-mcp` is rewritten only on an interactive save; for a new plugin, copy a sibling's types and add its own `mcp__<plugin>__*` tool inputs by hand so tsc accepts the matchers.
   - `claude plugin test` regenerates that folder too and drops hand edits. Declare a plugin's own tool inputs instead as an `interface McpToolInputs` augmentation in its `types/index.d.ts` (bws-cockpit does).
 - In the manifest's types contract (`types/index.d.ts`), an `import('…')` type makes the validator report every `PluginState` key as not declared. Write the shapes inline.
-- Never push `main`: its `runs/` holds private prompts and transcripts. Publish only the orphan `publish` branch:
+- Never push `main` to `mods`: its `runs/` holds private prompts and transcripts. `git push private main` is fine (bws-claude-mods-dev, a private repo). Publish to `mods` only the orphan `publish` branch:
   - Refresh it in a scratch worktree with `git checkout main -- bws-cockpit bws-shell-lint`.
   - That checkout never deletes files the source commit dropped. Use `git restore --source=<commit> --staged --worktree -- <dirs>` instead, then confirm with `git ls-files` vs `git ls-tree -r --name-only <commit>` and `git diff --cached --quiet <commit> -- <dirs>`.
   - A fresh worktree has no `.claude-plugin/types/` (gitignored), so tsc fails with TS5083. Copy each mod's generated types folder in from the working tree first.
