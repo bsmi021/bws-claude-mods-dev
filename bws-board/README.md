@@ -49,6 +49,8 @@ They work as peers: no lead session, no subagents.
   - Not checked, because git itself refuses to overwrite local changes there: `stash pop/apply`, a branch switch
     without `-f`, `reset --merge/--keep`. A command after a `cd` the parser cannot follow (`cd "$WT" && ...`) is not
     judged, since it may run in another worktree. `git clean` is checked but does not take the lease.
+  - Known gap: `git checkout <branch> <file>` without `--` is checked against the index, so a peer's claimed file
+    that is clean in the index could still be overwritten from that branch.
 - **Asks.** A session posts what it needs with `board_ask { to, text, urgent? }`:
   - `to` is a role, a session id, or `anyone`.
   - A peer takes the ask (`board_take`), then finishes it (`board_done { note }`) or declines it (`board_decline`).
@@ -210,4 +212,5 @@ In the live run, cockpit's Session Bus was switched off, and its text was absent
 - **Live, headless, two sessions, no lease anywhere:** A changed `a.txt` and created `new.txt`. B's `git stash`,
   `git checkout .`, `git reset --hard` and `git clean -fd` were each refused, naming A's file; `git stash push -- b.txt`
   went through. A's `a.txt` and `new.txt` were intact afterwards.
-- **Not verified live:** `restore`, `rm`, `switch -f` and PowerShell (tests only).
+- **Verified live:** `stash`, `checkout .`, `reset --hard` and `clean -fd` refused, `stash push -- <file>` passing.
+  Everything else (other verbs, the unfollowable-`cd` and variable-`rm` rules, PowerShell) is tests only.
