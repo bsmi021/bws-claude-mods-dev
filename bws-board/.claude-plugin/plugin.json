@@ -1,0 +1,35 @@
+{
+  "name": "bws-board",
+  "version": "0.1.0",
+  "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake.",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "board": {
+      "type": "boolean",
+      "title": "Board",
+      "description": "Join the board for this repository: post this session's card, read the others, claim edited files.",
+      "default": true
+    },
+    "claimMinutes": {
+      "type": "number",
+      "title": "Claim minutes",
+      "description": "A file claim lapses this many minutes after the session's last edit of it.",
+      "default": 30
+    },
+    "urgentWake": {
+      "type": "boolean",
+      "title": "Urgent asks wake idle sessions",
+      "description": "An ask marked urgent to a named role or session is also sent as a message that can start a turn in that session.",
+      "default": true
+    },
+    "wakeMinutes": {
+      "type": "number",
+      "title": "Wake minutes",
+      "description": "At most one urgent wake from this session to the same session within this many minutes.",
+      "default": 5
+    }
+  }
+}

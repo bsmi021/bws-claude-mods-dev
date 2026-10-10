@@ -25,5 +25,13 @@ The real question is where this lives, not whether it can be built.
 - Recorded assumptions A1-A4 (sweep, wake rate limit, duplicate roles, band chip).
 - PLAN.md written: finish line, design, feasibility table with line numbers from the 2.1.296 types, decisions, assumptions, tasks T1-T9.
 
+## 2026-10-10 (build, session 2)
+- Brian: go, after checking with 193b884d. Its shell-claim work is on main as ee31074 (cockpit 0.13.0, 143/143 tests), and the tree is clean. Sent 193b884d a bus message asking it to confirm nothing is pending and to stop changing the bus in cockpit. It was idle, so the message lands with its next prompt. T5 (removing the bus from cockpit) waits for its reply or Brian's OK; T1-T4 touch only bws-board/.
+- T1: `bws-board/hooks/shell.ts`, a port of cockpit's command splitter + `writeTargets` (the Unity/UE/adb guards stay in cockpit). Mods can't import across plugins, so the parser is duplicated.
+
+- T1 `hooks/board.ts` (pure): cards in one file per session; torn-read fallback to the last good copy; tombstones; the sweep picker; claims (ported); roles (normRole, duplicates); asks (target, merged views, settle-on-done, act rules, ids, cap); news and unread delivery; urgent wake rate limit; texts; summary. The redact fix for shelf #1: a long run is hidden only if it mixes upper case, lower case and digits and isn't path-like, or is a known key prefix, or is hex of 40+ characters.
+- T2 scaffold: manifest 0.1.0 with options (board, claimMinutes, urgentWake, wakeMinutes); types contract with state role/own/summary/lines and the McpToolInputs augmentation; types copied from cockpit; register.tsx stub.
+- Checks: validate passed, tsc exit 0, 30/30 tests (receipts/t1-*). bws-board is not yet in CLAUDE_CODE_PLUGIN_DIRS, so no session loads it.
+
 ## Next step
-Implementation needs Brian's go, and 193b884d's shell-claim work must land on main first. Then start at PLAN.md T1.
+T3: register.tsx wiring. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.
