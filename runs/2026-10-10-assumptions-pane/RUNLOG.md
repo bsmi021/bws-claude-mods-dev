@@ -36,3 +36,12 @@ assumption, so he can say right or wrong; on changes Claude makes them directly.
 - Brian OK'd it: appended `C:/Projects/bws.mods.claude-code/bws-assumptions` to `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` (env block).
 - Fresh `claude -p` (inherited var unset, so settings supply it): init lists all seven plugins incl. bws-assumptions 0.1.0 and the tool; reply OK.
   Receipt: receipts/plugin-dirs-load.jsonl.
+
+## Session 3: published
+- Scratch worktree on `publish` (was 9d875b0 = mods/main), `git checkout main -- bws-assumptions`.
+- Scan (names, Gmail, project/game names, `C:/`, `Users/`, AppData, `runs/`, serials, UUIDs): only hit is manifest
+  `"author": { "name": "Brian" }`, the same field every published mod carries; kept.
+- Root README: "Five" -> "Six", a bws-assumptions row, `--plugin-dir` added to the load line.
+- Published copy: validate pass, 12/12 tests.
+- Commit eafc731 on `publish`; `git push mods`: 9d875b0..eafc731 publish -> main; mods/main = eafc731. Worktree removed.
+- Seen, not touched: `publish` still has bws-cockpit 0.11.0 (main is 0.12.0) and no bws-shelf. Both are other sessions' work.
