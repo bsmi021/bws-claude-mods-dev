@@ -3,6 +3,7 @@ import type { On } from 'claude-code'
 
 import { STALE_MS, cardText, newCard, parseCard } from '../hooks/board'
 import type { Card } from '../hooks/board'
+import { parseHistory } from '../hooks/history'
 
 const CWD = 'C:/proj'
 const CFG = 'C:/cfg'
@@ -13,10 +14,11 @@ const B = 'bbbbbbbb-0000-4000-8000-000000000002'
 const C = 'cccccccc-0000-4000-8000-000000000003'
 
 const cardOf = (files: Record<string, string>, id: string) => parseCard(files[`${DIR}/${id}.json`], id)
+const kindsOf = (files: Record<string, string>, id: string) => parseHistory(files[`${DIR}/history/${id}.json`], id)?.events.map(e => e.kind)
 
 // One plugin instance per test, so a second session is the same instance under another session id:
 // its own state starts fresh, and the board folder is shared. Roles come from BWS_AGENT_ROLE per id.
-function world(on: On, opts: { writeFails?: boolean; roles?: Record<string, string> } = {}) {
+function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: Record<string, string> } = {}) {
   const files: Record<string, string> = {}
   const mtimes: Record<string, number> = {}
   const who = { id: A }
@@ -52,7 +54,7 @@ function world(on: On, opts: { writeFails?: boolean; roles?: Record<string, stri
     return { value: hit as never }
   })
   on('fs.write', ($, e) => {
-    if (opts.writeFails) throw new Error('EACCES')
+    if (opts.writeFails || opts.failPath?.test(norm(e.path))) throw new Error('EACCES')
     files[norm(e.path)] = e.text
     mtimes[norm(e.path)] = clock.now()
     return { value: undefined }
@@ -69,7 +71,7 @@ function world(on: On, opts: { writeFails?: boolean; roles?: Record<string, stri
   })
   on('prompt.context', ($, e) => ({ blocks: e.blocks }))
   on('prompt.submit', ($, e) => ({ text: e.text, context: e.context }))
-  on('turn.complete', () => ({}) as never)
+  on('turn.complete', () => ({ text: '' }) as never)
   on('session.end', ($, e) => ({ sessionId: e.sessionId }))
   // A card written as another process would: straight into the folder.
   const put = (c: Card) => {
@@ -78,7 +80,7 @@ function world(on: On, opts: { writeFails?: boolean; roles?: Record<string, stri
   }
   const live = () =>
     Object.keys(files)
-      .filter(p => p.startsWith(`${DIR}/`))
+      .filter(p => p.startsWith(`${DIR}/`) && !p.slice(DIR.length + 1).includes('/'))
       .map(p => parseCard(files[p], p.slice(DIR.length + 1, -5)))
       .filter((c): c is Card => c !== undefined && c.gone !== true)
       .map(c => c.sessionId)
@@ -302,5 +304,90 @@ describe('board: two sessions', () => {
     const r = await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/x.ts', old_string: 'a', new_string: 'b' } as never)
     expect(r.deny).toBeUndefined()
     expect(Object.keys(w.files)).toEqual([`${DIR}/${C}.json`])
+  })
+})
+
+describe('board: history and digest', () => {
+  test('a team run is logged per session, and /board digest draws it', async ($, on) => {
+    const w = world(on, { roles: { [A]: 'api', [B]: 'tests' } })
+    await $.session.start({ cwd: CWD } as never)
+    await $.prompt.submit({ text: 'Build the login endpoint', wait: false, origin: { kind: 'composer' } } as never)
+    await $.tool.call({ tool: 'Write', file_path: 'C:/proj/notes.txt', content: 'from A' } as never)
+    await w.clock.advance(1000)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/notes.txt', old_string: 'A', new_string: 'A2' } as never)
+
+    w.who.id = B
+    await $.session.start({ cwd: CWD } as never)
+    await $.prompt.submit({ text: 'Write the auth tests', wait: false, origin: { kind: 'composer' } } as never)
+    expect((await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/notes.txt', old_string: 'A', new_string: 'B' } as never)).deny).toBeDefined()
+
+    w.who.id = A
+    await $.tool.call({ tool: 'mcp__bws-board__board_ask', to: 'tests', text: 'Run the auth suite, token=abc123', urgent: true } as never)
+    await $.tool.call({ tool: 'mcp__bws-board__board_ask', to: 'tests', text: 'still red', urgent: true } as never)
+    await $.tool.call({ tool: 'mcp__bws-board__board_send', to: 'tests', text: 'a private message' } as never)
+    await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never)
+
+    w.who.id = B
+    await w.clock.advance(60_000)
+    await $.tool.call({ tool: 'mcp__bws-board__board_take', id: 'aaaaaaaa-1' } as never)
+    await $.tool.call({ tool: 'mcp__bws-board__board_done', id: 'aaaaaaaa-1', note: '12 passed' } as never)
+    await $.session.end({ reason: 'other', sessionId: B, resume: {} } as never)
+
+    w.who.id = A
+    const r = (await $.command.run({ command: 'board', args: 'digest' } as never)) as { text: string }
+    expect(r.text).toContain('Board digest for C:/proj, last 1 day(s): 2 agent(s)')
+    expect(r.text).toContain('1/2 ask(s) done, 1 refused edit(s), 1 wake(s).')
+    expect(r.text).toContain(`${DIR}/digest.html`)
+
+    expect(kindsOf(w.files, A)).toEqual(['start', 'busy', 'claim', 'edit', 'ask', 'wake', 'ask', 'wakeHeld', 'send', 'idle'])
+    expect(kindsOf(w.files, B)).toEqual(['start', 'busy', 'deny', 'take', 'done', 'end'])
+    const raw = `${w.files[`${DIR}/history/${A}.json`]}${w.files[`${DIR}/history/${B}.json`]}`
+    expect(raw).toContain('token=[redacted]')
+    expect(raw.includes('abc123')).toBe(false)
+    expect(raw.includes('a private message')).toBe(false)
+
+    const html = w.files[`${DIR}/digest.html`] ?? ''
+    expect(html).toContain('<code>notes.txt</code> <span class="tag">contested</span>')
+    expect(html).toContain('<span class="o-done">done</span>')
+    // The history folder is not a card: the board still reads two sessions, B gone.
+    expect(w.live()).toEqual([A])
+  })
+
+  test('a history write that fails never blocks or warns', async ($, on) => {
+    const w = world(on, { failPath: /\/history\// })
+    await $.session.start({ cwd: CWD } as never)
+    const r = await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/x.ts', old_string: 'a', new_string: 'b' } as never)
+    expect(r.deny).toBeUndefined()
+    expect(w.reached).toEqual(['a:Edit:C:/proj/x.ts'])
+    expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_ask', to: 'anyone', text: 'review' } as never))).toContain('Posted ask')
+    expect(((await $.command.run({ command: 'board', args: 'digest' } as never)) as { text: string }).text).toContain('No board history')
+    expect(w.toasts.filter(t => t.includes('board is unavailable'))).toEqual([])
+    expect(cardOf(w.files, A)?.claims.length).toBe(1)
+  })
+
+  test('historyDays 0: no history written; the digest says it is off', { options: { historyDays: 0 } }, async ($, on) => {
+    const w = world(on)
+    await $.session.start({ cwd: CWD } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/x.ts', old_string: 'a', new_string: 'b' } as never)
+    const r = (await $.command.run({ command: 'board', args: 'digest' } as never)) as { text: string }
+    expect(r.text).toContain('history is off')
+    expect(Object.keys(w.files).filter(p => p.includes('/history/'))).toEqual([])
+  })
+
+  test('/board digest refuses a bad day count', async ($, on) => {
+    world(on)
+    expect(((await $.command.run({ command: 'board', args: 'digest lots' } as never)) as { text: string }).text).toContain('is not a number of days')
+  })
+
+  test('history older than historyDays is swept; a day-old one is kept', async ($, on) => {
+    const w = world(on)
+    const day = 24 * 60 * 60 * 1000
+    w.files[`${DIR}/history/${C}.json`] = '{}'
+    w.mtimes[`${DIR}/history/${C}.json`] = w.clock.now() - 15 * day
+    w.files[`${DIR}/history/${B}.json`] = '{}'
+    w.mtimes[`${DIR}/history/${B}.json`] = w.clock.now() - day - 1
+    await $.session.start({ cwd: CWD } as never)
+    await w.clock.settle()
+    expect(w.runs).toEqual([['cmd', '/d', '/c', 'del', '/q', `C:\\cfg\\bws-board\\c-proj\\history\\${C}.json`]])
   })
 })

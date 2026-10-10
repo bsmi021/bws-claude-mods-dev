@@ -52,6 +52,9 @@ import {
   wakeText,
 } from './board'
 import type { ActKind, Board, Card, Inbox, Limits, Self } from './board'
+import { buildDigest, digestHtml, durText } from './digest'
+import { HIST_DAYS, addEvent, expiredHistory, historyDir, historyPath, historyText, parseHistory } from './history'
+import type { HistEvent, History } from './history'
 import { writeTargets } from './shell'
 import type { Dialect } from './shell'
 
@@ -64,7 +67,7 @@ const PANE = 'board'
 const PENDING_MAX = 20
 const OWN_MAX = 4 // sessions' own cards kept in state: this one and the few before it in this process
 
-type Options = { isOn: boolean; lim: Limits; isWake: boolean; wakeMs: number }
+type Options = { isOn: boolean; lim: Limits; isWake: boolean; wakeMs: number; historyDays: number }
 type Ctx = { dir: string; folder: string; selfId: string; cwd: string }
 type Pending = BoardOwn['pending']
 
@@ -282,7 +285,8 @@ const runOf = (file: string, folder: string) => /^runs\/(\d{4}-\d{2}-\d{2}-[^/]+
 
 // The write check: a file another live session claimed is refused; otherwise this session claims
 // the files it writes. Returns the refusal text, or undefined to let the call go on.
-async function claimWrites($: EngineInterface, lim: Limits, writes: readonly Write[]): Promise<string | undefined> {
+async function claimWrites($: EngineInterface, o: Options, writes: readonly Write[]): Promise<string | undefined> {
+  const lim = o.lim
   const ctx = await boardCtx($)
   if (ctx === undefined) return undefined
   const inFolder = `${normFile(ctx.folder, ctx.cwd)}/`
@@ -293,6 +297,7 @@ async function claimWrites($: EngineInterface, lim: Limits, writes: readonly Wri
   for (const [file, w] of files) {
     const holder = claimHolder(b, ctx.selfId, file, now, lim, claims.find(c => c.path === file))
     if (holder === undefined) continue
+    void logEvent($, o, ctx, { kind: 'deny', at: now, file, holder: holder.sessionId, holderRole: holder.role })
     const text = denyText(holder, file, ctx.folder, now, lim)
     return w.isShell ? `${text} (This command writes it: ${w.path}.)` : text
   }
@@ -304,6 +309,10 @@ async function claimWrites($: EngineInterface, lim: Limits, writes: readonly Wri
     ...own,
     card: { ...own.card, lastFile: last, run: run ?? own.card.run, claims: toClaim.reduce((cs, file) => addClaim(cs, file, t, lim.claimMs), own.card.claims) },
   }))
+  for (const file of toClaim) {
+    const isHeld = claims.some(c => c.path === file && now - c.at < lim.claimMs)
+    void logEvent($, o, ctx, { kind: isHeld ? 'edit' : 'claim', at: now, file })
+  }
   return undefined
 }
 
@@ -323,7 +332,7 @@ async function intro($: EngineInterface, lim: Limits): Promise<string | undefine
 }
 
 // Leaves a tombstone at exit, /clear, resume or branch, inside session.end's short bound.
-async function leave($: EngineInterface, sessionId: string) {
+async function leave($: EngineInterface, o: Options, sessionId: string, reason: string) {
   left.add(sessionId)
   const ctx = await boardCtx($)
   if (ctx === undefined) return
@@ -331,6 +340,7 @@ async function leave($: EngineInterface, sessionId: string) {
   const card = (await read($, ownAtom))[sessionId]?.card ?? newCard(sessionId, ctx.cwd, now, null)
   await update($, ownAtom, m => Object.fromEntries(Object.entries(m).filter(([k]) => k !== sessionId)))
   await $.fs.write(cardPath(ctx.dir, sessionId), cardText(tombstone(card, now)))
+  await logEvent($, o, ctx, { kind: 'end', at: now, reason }, sessionId)
 }
 
 // Deletes card files untouched for a day: the folder has no other way to shrink.
@@ -343,6 +353,82 @@ async function sweep($: EngineInterface, ctx: Ctx) {
     const argv = isWin ? ['cmd', '/d', '/c', 'del', '/q', path.split('/').join(String.fromCharCode(92))] : ['rm', '-f', path]
     await settle($.process.run(argv, { timeoutMs: 10_000 }))
   }
+}
+
+// The main loop's turn ended: this session is idle; a busy one logs the change.
+async function idle($: EngineInterface, o: Options) {
+  let was = ''
+  const r = await boardUpdate($, o.lim, own => {
+    was = own.card.status
+    return { ...own, card: { ...own.card, status: 'idle' } }
+  })
+  if (r && was === 'busy') await logEvent($, o, r.ctx, { kind: 'idle', at: r.now })
+}
+
+// ---------- history ----------
+// Each session adds its board actions to its own <board>/history/<id>.json, for /board digest.
+// $.fs has no append, so the file is rewritten whole from a cached copy; writes go one at a time.
+// A history write that fails is dropped: it never holds up or blocks the action it records.
+
+let histChain: Promise<unknown> = Promise.resolve()
+const histCache = new Map<string, History>()
+
+type HistInput = Omit<HistEvent, 'role' | 'at'> & { at?: number }
+
+async function writeEvent($: EngineInterface, ctx: Ctx, sessionId: string, ev: HistInput) {
+  const path = historyPath(ctx.dir, sessionId)
+  const h = histCache.get(path) ?? parseHistory(await settle($.fs.read(path)), sessionId) ?? { version: 1, sessionId, folder: ctx.folder, events: [] }
+  // A reload runs session.start again: one start per session.
+  if (ev.kind === 'start' && h.events.some(x => x.kind === 'start')) return
+  const grown = addEvent(h, { ...ev, at: ev.at ?? (await $.clock.now()), role: await currentRole($) })
+  histCache.set(path, grown)
+  await $.fs.write(path, historyText(grown))
+}
+
+// Queues one event for this session's history; resolves once it is written or dropped.
+function logEvent($: EngineInterface, o: Options, ctx: Ctx | undefined, ev: HistInput, sessionId?: string): Promise<unknown> {
+  if (o.historyDays <= 0 || ctx === undefined) return Promise.resolve()
+  histChain = histChain.then(() => writeEvent($, ctx, sessionId ?? ctx.selfId, ev)).catch(() => undefined)
+  return histChain
+}
+
+// Deletes history files older than historyDays.
+async function sweepHistory($: EngineInterface, o: Options, ctx: Ctx) {
+  if (o.historyDays <= 0) return
+  const now = await $.clock.now()
+  const dir = historyDir(ctx.dir)
+  const names = expiredHistory((await settle($.fs.list(dir))) ?? [], ctx.selfId, now, o.historyDays)
+  const isWin = /^[a-z]:\//i.test(dir)
+  for (const name of names) {
+    const path = `${dir}/${name}`
+    const argv = isWin ? ['cmd', '/d', '/c', 'del', '/q', path.split('/').join(String.fromCharCode(92))] : ['rm', '-f', path]
+    await settle($.process.run(argv, { timeoutMs: 10_000 }))
+  }
+}
+
+// /board digest: the team page for this repository over the last `days`, written next to the board.
+async function writeDigest($: EngineInterface, o: Options, days: number): Promise<string> {
+  const ctx = await boardCtx($)
+  if (ctx === undefined) return 'The board is off here: no Claude config folder found.'
+  await histChain
+  const now = await $.clock.now()
+  const dir = historyDir(ctx.dir)
+  const entries = ((await settle($.fs.list(dir))) ?? []).filter(e => e.kind === 'file' && /^[A-Za-z0-9-]{8,80}\.json$/.test(e.name))
+  const histories = (
+    await Promise.all(entries.map(async e => parseHistory(await settle($.fs.read(`${dir}/${e.name}`)), e.name.slice(0, -5))))
+  ).flatMap(h => h ?? [])
+  const b = await readFolder($, ctx)
+  const live = new Set(Object.values(b.cards).filter(c => isLive(c, now, o.lim.staleMs)).map(c => c.sessionId))
+  const d = buildDigest(histories, { folder: ctx.folder, from: now - days * 24 * 3600_000, to: now, now, claimMs: o.lim.claimMs, live })
+  const path = `${ctx.dir}/digest.html`
+  await $.fs.write(path, digestHtml(d))
+  const t = d.totals
+  const head =
+    t.agents === 0
+      ? `No board history for ${ctx.folder} in the last ${days} day(s)${o.historyDays <= 0 ? ' (history is off: historyDays is 0)' : ''}.`
+      : `Board digest for ${ctx.folder}, last ${days} day(s): ${t.agents} agent(s), ${durText(t.overlapMs)} with 2+ busy at once, ` +
+        `${t.done}/${t.asks} ask(s) done, ${t.denies} refused edit(s), ${t.wakes} wake(s).`
+  return `${head}\n${path}`
 }
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
@@ -362,6 +448,7 @@ async function act($: EngineInterface, o: Options, kind: ActKind, rawId: unknown
     const err = actError(v, id, self, kind, b)
     if (err !== undefined) return { result: err }
     await sync($, ctx, o.lim, (own, f, t) => ({ ...own, card: { ...own.card, acts: addAct(own.card.acts, { askId: id, kind, at: t, ...(note ? { note } : {}) }) } }))
+    void logEvent($, o, ctx, { kind, askId: id, ...(v ? { from: v.from } : {}), ...(note ? { note } : {}) })
     const asker = v ? toText(`session:${v.from}`, b) : 'the asker'
     const said = { take: `Took ask ${id}.`, done: `Marked ask ${id} done.`, decline: `Declined ask ${id}.` }[kind]
     return { result: `${said} ${asker} hears about it after their next tool call or prompt.` }
@@ -377,11 +464,12 @@ export const register: Register = (on, options) => {
     lim: { staleMs: STALE_MS, claimMs: Math.max(1, Number(options.claimMinutes ?? 30)) * 60_000 },
     isWake: options.urgentWake !== false,
     wakeMs: Math.max(1, Number(options.wakeMinutes ?? 5)) * 60_000,
+    historyDays: Math.max(0, Number(options.historyDays ?? HIST_DAYS)),
   }
   if (!o.isOn) return
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'board', description: 'Show the board of Claude Code sessions in this repo; /board role <name> sets this session\'s role; /board pane opens it live', argumentHint: '[role <name> | pane]' })
+    await $.command.register({ name: 'board', description: 'Show the board of Claude Code sessions in this repo; /board role <name> sets this session\'s role; /board pane opens it live; /board digest [days] writes the team page', argumentHint: '[role <name> | pane | digest [days]]' })
     await $.tool.register({
       name: 'board_status',
       description:
@@ -460,7 +548,9 @@ export const register: Register = (on, options) => {
       } catch (err) {
         noteFailure($, err)
       }
+      void logEvent($, o, ctx, { kind: 'start' })
       void settle(sweep($, ctx))
+      void settle(sweepHistory($, o, ctx))
     }
     $.clock.every(BEAT_MS, () => void beat($, o.lim))
     return next(e)
@@ -478,8 +568,17 @@ export const register: Register = (on, options) => {
     const isPerson = e.origin.kind === 'composer' || e.origin.kind === 'bridge' || e.origin.kind === 'sdk'
     const task = isPerson ? taskFrom(e.text) : undefined
     let b: Board | undefined
+    const was = { status: '', task: '' }
     try {
-      b = (await boardUpdate($, o.lim, own => ({ ...own, card: { ...own.card, status: 'busy', task: task ?? own.card.task } })))?.board
+      const r = await boardUpdate($, o.lim, own => {
+        was.status = own.card.status
+        was.task = own.card.task
+        return { ...own, card: { ...own.card, status: 'busy', task: task ?? own.card.task } }
+      })
+      b = r?.board
+      const cur = r?.own.card.task ?? ''
+      if (r && was.status !== 'busy') void logEvent($, o, r.ctx, { kind: 'busy', ...(cur ? { task: cur } : {}) })
+      else if (r && was.task !== cur) void logEvent($, o, r.ctx, { kind: 'task', task: cur })
     } catch (err) {
       noteFailure($, err)
     }
@@ -490,7 +589,7 @@ export const register: Register = (on, options) => {
 
   // The main loop's turn ended, so this session is idle (a subagent's turn is not).
   on('turn.complete', async ($, e, next) => {
-    if (!e.agentId) void settle(boardUpdate($, o.lim, own => ({ ...own, card: { ...own.card, status: 'idle' } })))
+    if (!e.agentId) void settle(idle($, o))
     return next(e)
   })
 
@@ -502,7 +601,7 @@ export const register: Register = (on, options) => {
     if (writes.length > 0) {
       let refusal: string | undefined
       try {
-        refusal = await claimWrites($, o.lim, writes)
+        refusal = await claimWrites($, o, writes)
       } catch (err) {
         noteFailure($, err)
       }
@@ -523,7 +622,7 @@ export const register: Register = (on, options) => {
   })
 
   on('session.end', async ($, e, next) => {
-    await settle(leave($, e.sessionId))
+    await settle(leave($, o, e.sessionId, e.reason))
     return next(e)
   })
 
@@ -534,12 +633,15 @@ export const register: Register = (on, options) => {
     try {
       const out: { fresh: Pending } = { fresh: { lines: [], messages: [] } }
       let p: Pending = { lines: [], messages: [] }
+      let oldTask = ''
       const r = await boardUpdate($, o.lim, (own, b, now) => {
+        oldTask = own.card.task
         const w = withNews({ ...own, card: { ...own.card, task: task || own.card.task } }, b, now, o.lim, out)
         p = w.pending
         return { ...w, pending: { lines: [], messages: [] } }
       })
       if (r === undefined) return { result: 'The board is off here: no Claude config folder found.' }
+      if (task && task !== oldTask) void logEvent($, o, r.ctx, { kind: 'task', task })
       const self = { id: r.own.sessionId, role: r.own.card.role }
       const status = statusText(r.board, self, r.now, o.lim, { task: r.own.card.task, claims: r.own.card.claims }, p.messages)
       return { result: p.lines.length > 0 ? `${status}\nNew since you last heard:\n${p.lines.join('\n')}` : status }
@@ -563,6 +665,7 @@ export const register: Register = (on, options) => {
         id = nextAskId(own.sessionId, own.card.asks)
         return { ...own, card: { ...own.card, asks: addAsk(own.card.asks, { id, to: target.to, text, urgent: isUrgent, at: now, state: 'open' }) } }
       })
+      void logEvent($, o, ctx, { kind: 'ask', at: r.now, askId: id, to: target.to, urgent: isUrgent, text: shorten(text, 300) })
       const parts = [`Posted ask ${id} to ${toText(target.to, r.board)}.`]
       if (target.note) parts.push(target.note)
       if (isUrgent && o.isWake) {
@@ -576,7 +679,9 @@ export const register: Register = (on, options) => {
           const sent = await settle($.session.send({ to: { sessionId: sid }, text: wakeText(ask, self) }))
           if (sent?.isDelivered) woke.push(sid)
           else failed.push(`${shortId(sid)} (${sent?.reason ?? 'send failed'})`)
+          void logEvent($, o, ctx, { kind: 'wake', askId: id, to: sid, delivered: sent?.isDelivered === true })
         }
+        for (const sid of w.held) void logEvent($, o, ctx, { kind: 'wakeHeld', askId: id, to: sid })
         if (woke.length > 0) await sync($, ctx, o.lim, (own, f, now) => ({ ...own, lastWake: { ...own.lastWake, ...Object.fromEntries(woke.map(s => [s, now])) } }))
         if (woke.length > 0) parts.push(`Woke ${woke.map(shortId).join(', ')}.`)
         if (w.held.length > 0) parts.push(`Not woken again (woken in the last ${Math.round(o.wakeMs / 60_000)} min): ${w.held.map(shortId).join(', ')}.`)
@@ -605,6 +710,7 @@ export const register: Register = (on, options) => {
       const err = actError(askViews(b, now, o.lim.staleMs).find(x => x.id === id), id, self, 'withdraw', b)
       if (err !== undefined) return { result: err }
       await sync($, ctx, o.lim, own => ({ ...own, card: { ...own.card, asks: own.card.asks.map(a => (a.id === id ? { ...a, state: 'withdrawn' as const } : a)) } }))
+      void logEvent($, o, ctx, { kind: 'withdraw', askId: id })
       return { result: `Withdrew ask ${id}.` }
     } catch (err) {
       return { result: `The board could not be written (${errText(err)}).` }
@@ -625,6 +731,7 @@ export const register: Register = (on, options) => {
         seq: own.seq + 1,
         card: { ...own.card, outbox: addMessage(own.card.outbox, { seq: own.seq + 1, to: target.id, text, at: now }, now) },
       }))
+      void logEvent($, o, ctx, { kind: 'send', to: target.id })
       const whom = target.id === 'all' ? 'every other live session on the board' : toText(`session:${target.id}`, r.board)
       return { result: `Sent to ${whom} (message ${r.own.seq}). It reaches them after their next tool call or prompt; their reply comes back the same way.` }
     } catch (err) {
@@ -639,6 +746,7 @@ export const register: Register = (on, options) => {
       if (ctx === undefined) return { result: 'The board is off here: no Claude config folder found.' }
       const files = raw.map(p => normFile(p, ctx.cwd))
       const r = await sync($, ctx, o.lim, own => ({ ...own, card: { ...own.card, claims: dropClaims(own.card.claims, files) } }))
+      void logEvent($, o, ctx, { kind: 'release', files })
       const held = r.own.card.claims.map(c => relTo(c.path, ctx.folder))
       return { result: `Released ${files.length === 0 ? 'every claim' : files.map(f => relTo(f, ctx.folder)).join(', ')}. Still claimed: ${held.length > 0 ? held.join(', ') : 'nothing'}.` }
     } catch (err) {
@@ -663,6 +771,15 @@ export const register: Register = (on, options) => {
       await update($, roleAtom, () => r.role)
       await settle(boardUpdate($, o.lim, own => own))
       return { text: `This session is now "${r.role}" on the board. Asks to ${r.role} reach it.` }
+    }
+    if (verb === 'digest') {
+      const days = rest[0] === undefined ? 1 : Number(rest[0])
+      if (!Number.isFinite(days) || days <= 0 || days > 60) return { text: `"${rest[0]}" is not a number of days: /board digest [1-60].` }
+      try {
+        return { text: await writeDigest($, o, days) }
+      } catch (err) {
+        return { text: `The digest could not be written: ${errText(err)}` }
+      }
     }
     if (verb === 'pane') {
       await settle(boardUpdate($, o.lim, own => own))

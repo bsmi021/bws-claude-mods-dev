@@ -38,8 +38,35 @@ They work as peers: no lead session, no subagents.
 - **`/board`** prints the board: sessions, roles, tasks, claims, and asks open, taken or settled in the last hour.
   - `/board role <name>` sets this session's role; `/board role clear` removes it.
   - `/board pane` opens a live Board pane, redrawn on every heartbeat.
+  - `/board digest [days]` writes the team digest page (below) and prints its path.
 - `board_status { task? }` gives Claude the same listing, and can set the task line.
 - `board_release { paths? }` gives up claims, all of them when no paths are given.
+
+## History and the team digest
+Each session also keeps a history of what it did on the board. The history outlives its card, so you can look back at
+how the team worked:
+- **What is logged:**
+  - start and end, busy and idle turns, task changes
+  - files claimed and edited, releases
+  - refused edits: which file, and who held it
+  - asks posted, taken, done, declined or withdrawn
+  - messages sent (recipient only, never the text)
+  - urgent wakes sent or held back
+
+  Text is only what the card already holds redacted (task, ask text, notes), plus file paths. No message text and no
+  commands are logged.
+- **`/board digest [days]`** (default 1, up to 60) writes one self-contained page, `<board folder>/digest.html`, and
+  prints its path. It covers every session that worked in the window. Sessions that only started and ended, like the
+  one running the digest, are left out. The page shows:
+  - Totals: agents, summed busy time, **parallel time** (how long two or more agents were busy at once), asks done,
+    median time to take and to done, refused edits, wakes.
+  - A timeline with one lane per session: busy turns, files held, and markers for asks, takes, dones, refused edits,
+    wakes, messages and releases.
+  - Tables: files held (a file two sessions held, or one with a refused edit, is flagged *contested*), asks with how
+    long they waited, refused edits (who blocked whom, on which file), and wakes per sender and receiver.
+
+  Peer text is HTML-escaped. One small inline script only shows times in your local zone; without it, they read UTC.
+  The page does not open by itself.
 
 ## Roles
 - Set a role at launch with `BWS_AGENT_ROLE=tests claude`, or at any time with `/board role tests`.
@@ -55,6 +82,9 @@ They work as peers: no lead session, no subagents.
   the last good copy.
 - On exit a session leaves a tombstone. At session start, card files untouched for a day are deleted (`del` /
   `rm` through `$.process.run`, card files only).
+- History goes in `history/<session id>.json` in the same folder. Only its own session writes it, rewriting the whole
+  file because `$.fs` has no append, and it holds at most 5000 events. The day-old card sweep never touches it. History
+  files untouched for `historyDays` are deleted the same way.
 - If the board can't be read or written, it never blocks an edit. You are told once.
 
 ## Options (`pluginConfigs["bws-board"].options`)
@@ -62,9 +92,11 @@ They work as peers: no lead session, no subagents.
 - `claimMinutes` (default 30): how long a claim lasts after the last edit of the file.
 - `urgentWake` (default true): urgent asks may wake named idle sessions.
 - `wakeMinutes` (default 5): the minimum gap between wakes from this session to the same session.
+- `historyDays` (default 14): keep history files this many days. `0` writes no history.
 
 ## Capabilities and safety
-- It reads and writes its own card folder under the Claude config folder, and deletes day-old card files in it.
+- It reads and writes its own card folder under the Claude config folder, and deletes day-old card files and
+  expired history files in it. It also writes `digest.html` there when asked.
 - It reads `CLAUDE_CONFIG_DIR`, `USERPROFILE`, `HOME` and `BWS_AGENT_ROLE`.
 - It sends `$.session.send` messages only for urgent asks.
 - It never approves a tool call and never logs prompt text beyond the redacted first line.
@@ -95,3 +127,20 @@ Interactive, two Windows Terminal sessions (`runs/2026-10-10-agent-blackboard/re
 Not yet verified live, only in tests: the day-old card sweep (`del` through `$.process.run`).
 
 In the live run, cockpit's Session Bus was switched off, and its text was absent from all three transcripts.
+
+0.2.0, history and digest (`runs/2026-10-10-board-digest/receipts/`), Claude Code 2.1.296 on Windows 11:
+- Static validation passed. 61 automated tests, including:
+  - the history kept during a two-session run
+  - redaction, and no message text logged
+  - a failing history write that neither blocks nor warns
+  - `historyDays: 0`
+  - the history sweep
+  - `<script>` in peer text escaped
+- **Live, headless:** two sessions in a scratch repository.
+  - A claimed `notes.txt` and asked `tests`.
+  - B was refused the file, took the ask and finished it, then sent A an urgent ask, which woke A.
+  - Both history files recorded it all.
+  - `/board digest` gave: 2 agents, 18 s parallel, 1/2 asks done, 1 refused edit, 1 wake.
+- **The page:** rendered by headless Edge in light and dark at 1280 px wide, and checked by eye.
+- **Not verified:** phone width (headless Edge will not size a window that narrow), and the history sweep live (tests
+  only).

@@ -1,7 +1,7 @@
 {
   "name": "bws-board",
-  "version": "0.1.0",
-  "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake.",
+  "version": "0.2.0",
+  "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake; keeps a history of who held, asked and woke what, and /board digest turns it into a team timeline page.",
   "author": {
     "name": "Brian"
   },
@@ -30,6 +30,12 @@
       "title": "Wake minutes",
       "description": "At most one urgent wake from this session to the same session within this many minutes.",
       "default": 5
+    },
+    "historyDays": {
+      "type": "number",
+      "title": "History days",
+      "description": "Keep each session's board history (files held, asks, refused edits, wakes) for /board digest this many days; 0 keeps none.",
+      "default": 14
     }
   }
 }
