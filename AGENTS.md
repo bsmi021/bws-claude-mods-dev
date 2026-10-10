@@ -124,6 +124,8 @@ Local Doc: ./docs/mods.md
 - Validator rules: one unmatched hook per event, so merge into the existing `turn.complete` or `prompt.context` hook. Never name a local `next`.
 - `$.prompt.submit` inside a `command.run` hook deadlocks: defer it with `$.clock.after`.
 - `$.model.fork` gives `nothing-to-fork` on a resumed session's first command: fall back to `$.session.messages()` + `$.model.complete`.
+- Wrapping the AskUserQuestion dialog in `ui.render`, the engine refuses `width` on any Box around it and more than 12 rows. It counts side-by-side siblings as stacked and the dialog itself as one row. Draw one Raster/Svg.
+- A render rewrite of AskUserQuestion may not change previews; strip them from the input in `tool.call` instead.
 - `Select` and `Input` are missing on mobile, but `'Input' in table` can still be true there at runtime: narrow with `e.surface !== 'mobile' && 'Input' in table`.
 - Test stubs:
   - `fs.*` paths arrive with backslashes: normalize them.

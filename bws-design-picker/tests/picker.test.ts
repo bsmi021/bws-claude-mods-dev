@@ -163,7 +163,7 @@ test('the call loses its specs before the dialog opens, and the dialog draws the
   expect(opts.some(o => o.preview !== undefined)).toBe(false)
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...ASK(asked!.questions), requestId: asked!.id, surface } as never)
-    expect(await ui.find({ type: 'Text', text: /^Style: design directions, pick by number below$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^Style · pick by number below$/ })).toBeDefined()
     expect(await ui.find({ type: surface === 'terminal' ? 'Raster' : 'Svg' } as never)).toBeDefined()
     await ui.unmount()
   }
@@ -174,7 +174,7 @@ test('a dialog whose previews still hold specs draws the gallery from them', asy
   engine(on)
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...ASK(QUESTIONS), surface } as never)
-    expect(await ui.find({ type: 'Text', text: /^Style: design directions/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^Style · pick by number/ })).toBeDefined()
     expect(await ui.find({ type: surface === 'terminal' ? 'Raster' : 'Svg' } as never)).toBeDefined()
     await ui.unmount()
   }

@@ -28,7 +28,7 @@ export const register: Register = on => {
     const g = value ?? galleries(e.props.questions)[0]
     if (!g) return next(e)
     const native = await next(e)
-    const header = `${g.header}: design directions, pick by number below`
+    const header = `${g.header} · pick by number below`
 
     if (e.surface === 'terminal') {
       const { Box, Text, Raster } = $.ui.resolve(e)
