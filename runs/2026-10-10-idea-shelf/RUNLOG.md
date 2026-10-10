@@ -75,3 +75,8 @@ available in later conversations.
 - Checks: `tests-0.1.2.txt` 26 pass (6 new), `validate-0.1.2.txt` passes, `tsc-0.1.2.txt` is empty (exit 0).
   `live-0.1.2-load.jsonl`: a fresh headless session loads 0.1.2 from settings and `/idea` saves.
 - Not checked by eye: how the status line looks in a terminal.
+
+## Installed for all projects
+- User settings `env.CLAUDE_CODE_PLUGIN_DIRS` (in `~/.claude/settings.json`) lists bws-shelf, so it loads in every session.
+- Checked from outside this repo: `claude -p "/shelf all"` in `C:/Projects/bws.annotations` and in the home folder both
+  answered `bws-shelf: The shelf is empty.` (`receipts/install-check-*.jsonl`). The real shelf is empty; tests used a scratch file.
