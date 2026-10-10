@@ -16,7 +16,7 @@
     "nudge": {
       "type": "boolean",
       "title": "Tell Claude to shelve tangents",
-      "description": "Add one line of context to each prompt with the open-idea count and the shelve_idea tool.",
+      "description": "Add one line to the conversation's opening context with the open-idea count and the shelve_idea tool.",
       "default": true
     }
   }

@@ -9,7 +9,7 @@ available in later conversations.
   - `/idea <text>`: immediate, shows a toast, no transcript reply. Headless prints a line.
   - `/shelf [all]`: a pane with the open ideas (▶ resume fills the box, ✓ done, ✗ drop, `a` scope, `c` close). Headless prints a list.
   - Tools: `mcp__bws-shelf__shelve_idea` (not deferred), `list_ideas`, `close_idea`.
-  - `prompt.context` adds one line in attended sessions with the open count, telling Claude to shelve tangents. Option `nudge`.
+  - `prompt.context` adds one line to an attended conversation's first-message context (the open count, a snapshot) telling Claude to shelve tangents. Option `nudge`.
 - Storage: `<CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json`, re-read before every write. `$.fs` instead of
   `$.store`, because the types don't say whether concurrent sessions see each other's store writes.
 - Per project means the session root, compared without case; `/shelf all` shows every project.

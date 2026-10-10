@@ -140,6 +140,7 @@ Local Doc: ./docs/mods.md
   - Pass plugin options with `--settings <file>` (`pluginConfigs`); it merges with user settings.
 - Test terminals: the tool shell sets `NO_COLOR=1`, so clear it to see band colors. Launch `wt.exe` through a `.ps1` file, since `wt` splits commands on `;`.
 - Guard and lint rules that block or rewrite match the command position only. Replay them over the real-command corpus before shipping.
+- Generated `.claude-plugin/types/claude-code-mcp` is rewritten only on an interactive save; for a new plugin, copy a sibling's types and add its own `mcp__<plugin>__*` tool inputs by hand so tsc accepts the matchers.
 - Never push `main`: its `runs/` holds private prompts and transcripts. Publish only the orphan `publish` branch:
   - Refresh it in a scratch worktree with `git checkout main -- bws-cockpit bws-shell-lint`.
   - Remote `mods` is the private repo github.com/bsmi021/bws-claude-mods. Its push rule maps only `publish` to `main`, so `git push mods` never sends this repo's `main`.

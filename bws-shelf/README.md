@@ -17,8 +17,8 @@ Park tangents instead of following them. You shelve an idea with `/idea`; Claude
   - `mcp__bws-shelf__shelve_idea {text, detail?}` is always loaded. Its result tells Claude to carry on with the
     current task, and you get a toast.
   - `mcp__bws-shelf__list_ideas {scope?}` and `mcp__bws-shelf__close_idea {id, status}` load through ToolSearch.
-- Each prompt in an attended session gets one line of context: the open-idea count and the instruction to shelve
-  tangents rather than follow them.
+- An attended conversation gets one line of context with its first message: the open-idea count at that moment, and
+  the instruction to shelve tangents rather than follow them.
 
 ## Storage
 One JSON file holds every project's ideas, so all sessions share the same shelf:

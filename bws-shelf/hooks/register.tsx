@@ -240,7 +240,7 @@ export const register: Register = (on, options) => {
     }
   })
 
-  // One line per prompt in attended sessions: the open count and the tool, so tangents get shelved, not followed.
+  // One line in an attended conversation's first-message context: the open count and the tool, so tangents get shelved, not followed.
   on('prompt.context', async ($, e, next) => {
     const result = await next(e)
     if (!isNudge) return result
