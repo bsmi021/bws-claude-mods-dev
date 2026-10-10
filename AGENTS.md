@@ -132,6 +132,8 @@ Local Doc: ./docs/mods.md
   - A bottom `prompt.submit` stub must return `{ text }`.
   - `classic.Stop` and `turn.complete` need bottom stubs.
   - Unmount a pane before mounting it again.
+  - `$.model.complete` stubs answer `{ value: { isAnswered, text, usage } }`. The stub's `next.signal` aborts with the caller's AbortController.
+  - The test `$` has no `state` noun, and test hooks can't call `$.state`. Assert plugin state through `$.ui.mount` + `find`.
 - Git Bash here halves backslash runs before bash sees them. Never put Windows backslash paths in heredoc or inline Python strings; use forward slashes, or the Edit/Write tools.
 - Live checks: `claude -p "..." --plugin-dir ./<plugin> --output-format stream-json --verbose`.
   - Prefix slash commands with `MSYS_NO_PATHCONV=1`.

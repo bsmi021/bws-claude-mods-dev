@@ -58,5 +58,5 @@ or add the folder to `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` (Bri
 Claude Code 2.1.296, Windows 11, Windows Terminal (terminal surface):
 - Claude-written specs: three directions drawn, option chosen in the picker, answer reached Claude.
 - Generated specs (0.2.0): "drawing" line shown, gallery drawn when Haiku answered (10.6 s). In a second
-  run, answering first aborted the call and the answer reached Claude. The desktop `Svg` path has unit tests only, with no
-live check.
+  run, answering first aborted the call and the answer reached Claude.
+- The desktop `Svg` path has unit tests only, with no live check.
