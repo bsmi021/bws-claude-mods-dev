@@ -18,7 +18,7 @@ import {
   shorten,
 } from './lib'
 import type { Probe } from './lib'
-import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand, lowVramArg, normPath, writeTargets } from './shell'
+import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPipelineCommand, lowVramArg, normPath } from './shell'
 import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
@@ -42,35 +42,6 @@ import {
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
-import {
-  BEAT_MS,
-  STALE_MS,
-  TEXT_MAX,
-  addClaim,
-  addMessage,
-  busPath,
-  busText,
-  claimHolder,
-  denyText,
-  dropClaims,
-  hasEntry,
-  introText,
-  livePeers,
-  messagesText,
-  normFile,
-  parseBus,
-  redact,
-  relTo,
-  resolveTarget,
-  shortId,
-  statusText,
-  taskFrom,
-  unread,
-  withEntry,
-  withoutEntry,
-} from './bus'
-import type { BusFile, BusLimits, Inbox } from './bus'
-import type { BusOwn } from '../types'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
@@ -81,7 +52,8 @@ const loopSelected = atom({ plugin: 'bws-cockpit', key: 'loopSelected' } as cons
 const loopAction = atom({ plugin: 'bws-cockpit', key: 'loopAction' } as const, null)
 const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const, null)
 const touched = atom({ plugin: 'bws-cockpit', key: 'touched' } as const, null)
-const busOwn = atom({ plugin: 'bws-cockpit', key: 'bus' } as const, null)
+// bws-board's own summary of the board (agents, open asks, asks for this session), when it is loaded.
+const boardSummary = atom({ plugin: 'bws-board', key: 'summary' } as const, null)
 
 const LOOP_PANE = 'loop-watch'
 const STOP_CONFIRM_MS = 10_000
@@ -122,7 +94,6 @@ type Options = {
   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
   pin: { model: string; types: string[] }
-  bus: { isOn: boolean; lim: BusLimits }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -550,207 +521,6 @@ async function resume($: EngineInterface): Promise<string | undefined> {
 const withNote = <R extends { deny?: string; context?: readonly string[] }>(r: R, note: string): R =>
   r.deny !== undefined ? r : { ...r, context: [...(r.context ?? []), `bws-cockpit: ${note}`] }
 
-// ---------- Session Bus ----------
-// One JSON file per project folder under <config dir>/bws-cockpit/bus/. Each session writes only
-// its own entry and keeps that entry in $.state (keyed by its session id), so a write another
-// session's race dropped is put back on the next sync. A bus that cannot be read or written never
-// blocks work: edits pass and the person is told once.
-
-type BusCtx = { path: string; folder: string; selfId: string; cwd: string }
-
-// The config dir and each cwd's folder never change for a process: looked up once.
-let busDir: string | null | undefined
-const busFolders = new Map<string, string>()
-let busFailNoted = false
-// Sessions that left (session.end): a heartbeat or turn.complete write still in flight must not put
-// them back. Keyed by id, so the conversation a /clear starts in this process is not affected.
-const busLeft = new Set<string>()
-
-async function busCtx($: EngineInterface): Promise<BusCtx | undefined> {
-  if (busDir === undefined) {
-    const own = await settle($.env.get('CLAUDE_CONFIG_DIR'))
-    const home = own ? undefined : (await settle($.env.get('USERPROFILE'))) || (await settle($.env.get('HOME')))
-    busDir = own ? toSlash(own) : home ? `${toSlash(home)}/.claude` : null
-  }
-  if (busDir === null) return undefined
-  const [selfId, cwd] = await Promise.all([$.session.id(), $.session.cwd()])
-  let folder = busFolders.get(cwd)
-  if (folder === undefined) {
-    // The repo's root (the main tree's, for a worktree), else where the session started.
-    const repo = await settle($.session.repo())
-    folder = toSlash(repo?.root ?? (await settle($.session.root())) ?? cwd)
-    busFolders.set(cwd, folder)
-  }
-  return { path: busPath(busDir, folder), folder, selfId, cwd }
-}
-
-const freshOwn = (ctx: BusCtx, now: number): BusOwn => ({
-  sessionId: ctx.selfId,
-  joinedAt: now,
-  seq: 0,
-  entry: { sessionId: ctx.selfId, cwd: ctx.cwd, startedAt: now, seenAt: now, status: 'idle', task: '', run: null, lastFile: null, claims: [], outbox: [] },
-  cursors: {},
-  pending: [],
-  known: null,
-})
-
-const readBus = async ($: EngineInterface, ctx: BusCtx) => parseBus(await settle($.fs.read(ctx.path)), ctx.folder)
-
-function noteBusFailure($: EngineInterface, err: unknown) {
-  if (busFailNoted) return
-  busFailNoted = true
-  $.ui.toast(`bws-cockpit: the session bus is unavailable (${err instanceof Error ? err.message : String(err)}); edits are not checked for other sessions' claims`)
-}
-
-// Reads the bus fresh, changes this session's own entry, and writes it back with stale entries
-// dropped. With `verify`, reads it again and writes once more if another session's write lost it.
-async function busSync(
-  $: EngineInterface,
-  ctx: BusCtx,
-  change: (own: BusOwn, file: BusFile, now: number) => BusOwn,
-  verify = false,
-): Promise<{ own: BusOwn; file: BusFile; now: number }> {
-  if (busLeft.has(ctx.selfId)) throw new Error('this session left the bus')
-  const now = await $.clock.now()
-  const file0 = await readBus($, ctx)
-  const own = await update($, busOwn, v => {
-    const base = v !== null && v.sessionId === ctx.selfId ? v : freshOwn(ctx, now)
-    const c = change(base, file0, now)
-    return { ...c, entry: { ...c.entry, seenAt: now, cwd: ctx.cwd } }
-  })
-  if (own === null) throw new Error('bus state was not written')
-  let file = withEntry(file0, own.entry, now, STALE_MS)
-  if (busLeft.has(ctx.selfId)) throw new Error('this session left the bus')
-  await $.fs.write(ctx.path, busText(file))
-  if (verify) {
-    const back = await readBus($, ctx)
-    if (hasEntry(back, own.entry)) file = back
-    else if (!busLeft.has(ctx.selfId)) {
-      file = withEntry(back, own.entry, now, STALE_MS)
-      await $.fs.write(ctx.path, busText(file))
-    }
-  }
-  return { own, file, now }
-}
-
-async function busUpdate($: EngineInterface, change: (own: BusOwn, file: BusFile, now: number) => BusOwn, verify = false) {
-  const ctx = await busCtx($)
-  if (ctx === undefined) return undefined
-  return { ctx, ...(await busSync($, ctx, change, verify)) }
-}
-
-// New messages to this session, and peers that joined since it last looked, queued for the model.
-const withInbox = (own: BusOwn, file: BusFile, now: number, out: { news: Inbox[] }): BusOwn => {
-  const u = unread(file, own.sessionId, own.joinedAt, own.cursors)
-  const peers = livePeers(file, own.sessionId, now, STALE_MS)
-  const known = own.known
-  const joined: Inbox[] =
-    known === null
-      ? []
-      : peers
-          .filter(p => !known.includes(p.sessionId))
-          .map(p => ({
-            from: p.sessionId,
-            seq: 0,
-            at: now,
-            text: `(notice, not a request) this session joined the folder${p.task ? `; its task line reads: "${p.task}"` : ''}. Files it edits are claimed by it; mcp__bws-cockpit__bus_status shows its claims.`,
-          }))
-  out.news = [...joined, ...u.messages]
-  return { ...own, cursors: u.cursors, known: peers.map(p => p.sessionId), pending: [...own.pending, ...out.news].slice(-20) }
-}
-
-// The heartbeat: keeps this session's entry live, records its run folder, and picks up messages.
-async function busBeat($: EngineInterface) {
-  try {
-    const t = await read($, touched)
-    const { startedAt } = await $.session.usage()
-    const run = t !== null && t.startedAt === startedAt ? (t.folders[t.folders.length - 1] ?? null) : null
-    const out: { news: Inbox[] } = { news: [] }
-    await busUpdate($, (own, file, now) => withInbox({ ...own, entry: { ...own.entry, run } }, file, now, out))
-    const first = out.news[0]
-    if (first !== undefined) {
-      const more = out.news.length > 1 ? ` (+${out.news.length - 1} more)` : ''
-      $.ui.toast(`bus · ${shortId(first.from)}: ${shorten(first.text, 90)}${more}`, { timeoutMs: 8000 })
-    }
-  } catch (err) {
-    if (!busLeft.has((await settle($.session.id())) ?? '')) noteBusFailure($, err)
-  }
-}
-
-// Takes the queued messages for the model, once.
-async function takePending($: EngineInterface): Promise<Inbox[]> {
-  const id = await $.session.id()
-  const cur = await read($, busOwn)
-  if (cur === null || cur.sessionId !== id || cur.pending.length === 0) return []
-  let taken: Inbox[] = []
-  await update($, busOwn, v => {
-    if (v === null || v.sessionId !== id) return v
-    taken = v.pending
-    return { ...v, pending: [] }
-  })
-  return taken
-}
-
-// The edit check: a file another live session claimed is refused; otherwise this session claims it.
-// Returns the refusal text, or undefined to let the edit go on.
-// Files a tool call is about to write. `claim`: whether the write also claims the file for this
-// session. Edit, Write and NotebookEdit claim their file; a shell write claims a file inside the bus
-// folder that it plainly names (not cp/mv's guess at dest/<name>), so logs in /tmp claim nothing.
-type BusWrite = { path: string; claim: boolean; isShell: boolean }
-
-function busWrites(e: Record<string, unknown>): BusWrite[] {
-  if (e.tool === 'Edit' || e.tool === 'Write') return typeof e.file_path === 'string' ? [{ path: e.file_path, claim: true, isShell: false }] : []
-  if (e.tool === 'NotebookEdit') return typeof e.notebook_path === 'string' ? [{ path: e.notebook_path, claim: true, isShell: false }] : []
-  if ((e.tool === 'Bash' || e.tool === 'PowerShell') && typeof e.command === 'string') {
-    return writeTargets(e.command, dialectOf(e.tool)).map(t => ({ path: t.path, claim: t.isGuess !== true, isShell: true }))
-  }
-  return []
-}
-
-// The write check: a file another live session claimed is refused; otherwise this session claims
-// the files it writes. Returns the refusal text, or undefined to let the call go on.
-async function busClaim($: EngineInterface, lim: BusLimits, writes: readonly BusWrite[]): Promise<string | undefined> {
-  const ctx = await busCtx($)
-  if (ctx === undefined) return undefined
-  const inFolder = `${normFile(ctx.folder, ctx.cwd)}/`
-  const files = [...new Map(writes.map(w => [normFile(w.path, ctx.cwd), w] as const))]
-  const now = await $.clock.now()
-  const cur = await read($, busOwn)
-  const claims = cur !== null && cur.sessionId === ctx.selfId ? cur.entry.claims : []
-  const bus = await readBus($, ctx)
-  for (const [file, w] of files) {
-    const holder = claimHolder(bus, ctx.selfId, file, now, lim, claims.find(c => c.path === file))
-    if (holder === undefined) continue
-    const text = denyText(holder, file, ctx.folder, now, lim)
-    return w.isShell ? `${text} (This command writes it: ${w.path}.)` : text
-  }
-  const toClaim = files.filter(([file, w]) => w.claim && (!w.isShell || file.startsWith(inFolder))).map(([file]) => file)
-  const last = toClaim[toClaim.length - 1]
-  if (last === undefined) return undefined
-  await busSync(
-    $,
-    ctx,
-    (own, f, t) => ({ ...own, entry: { ...own.entry, lastFile: last, claims: toClaim.reduce((cs, file) => addClaim(cs, file, t, lim.claimMs), own.entry.claims) } }),
-    true,
-  )
-  return undefined
-}
-
-async function busIntro($: EngineInterface, lim: BusLimits): Promise<string | undefined> {
-  const r = await busUpdate($, (own, file, now) => ({ ...own, known: livePeers(file, own.sessionId, now, STALE_MS).map(p => p.sessionId) }))
-  if (r === undefined || livePeers(r.file, r.own.sessionId, r.now, STALE_MS).length === 0) return undefined
-  return introText(r.file, r.own.sessionId, r.now, lim)
-}
-
-// Removes this session's entry at exit, /clear or resume, inside session.end's short bound.
-async function busLeave($: EngineInterface, sessionId: string) {
-  busLeft.add(sessionId)
-  const ctx = await busCtx($)
-  if (ctx === undefined) return
-  const now = await $.clock.now()
-  await $.fs.write(ctx.path, busText(withoutEntry(await readBus($, ctx), sessionId, now, STALE_MS)))
-}
-
 export const register: Register = (on, options) => {
   const cvarText = String(options.lowVramCvars ?? '').trim()
   const o: Options = {
@@ -783,10 +553,6 @@ export const register: Register = (on, options) => {
     pin: {
       model: String(options.workerModel ?? '').trim(),
       types: parseTypes(String(options.workerAgentTypes ?? 'general-purpose,claude')),
-    },
-    bus: {
-      isOn: options.sessionBus !== false,
-      lim: { staleMs: STALE_MS, claimMs: Math.max(1, Number(options.busClaimMinutes ?? 30)) * 60_000 },
     },
   }
 
@@ -884,117 +650,17 @@ export const register: Register = (on, options) => {
 
   // ---------- Finish-Line Guard ----------
 
-  // One prompt.submit hook: resets the Finish-Line Guard's count, and for the Session Bus records
-  // what the person asked for and hands the model any messages from other sessions.
   on('prompt.submit', async ($, e, next) => {
     continuesUsed = 0
-    if (!o.bus.isOn) return next(e)
-    const isPerson = e.origin.kind === 'composer' || e.origin.kind === 'bridge' || e.origin.kind === 'sdk'
-    const task = isPerson ? taskFrom(e.text) : undefined
-    try {
-      await busUpdate($, own => ({ ...own, entry: { ...own.entry, status: 'busy', task: task ?? own.entry.task } }))
-    } catch (err) {
-      noteBusFailure($, err)
-    }
-    const inbox = await settle(takePending($))
-    if (inbox === undefined || inbox.length === 0) return next(e)
-    return next({ ...e, context: [...(e.context ?? []), `bws-cockpit: ${messagesText(inbox)}`] })
+    return next(e)
   })
 
   // Ownership: a run folder counts for this session only once its own tool calls write to it.
   // Recorded even with finishLine off, since /handoff picks its folder the same way.
-  // Session Bus: an Edit, Write or NotebookEdit of a file another live session claimed is refused,
-  // and so is a Bash or PowerShell command that writes one (redirect, tee, sed -i, cp/mv, the
-  // PowerShell write cmdlets; command position only, as the guard reads commands).
   on('tool.call', { tool: ['Edit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'] }, async ($, e, next) => {
-    const input = e as unknown as Record<string, unknown>
-    const writes = o.bus.isOn ? busWrites(input) : []
-    if (writes.length > 0) {
-      let refusal: string | undefined
-      try {
-        refusal = await busClaim($, o.bus.lim, writes)
-      } catch (err) {
-        noteBusFailure($, err)
-      }
-      if (refusal !== undefined) {
-        $.ui.toast(`bus: refused ${e.tool === 'Bash' || e.tool === 'PowerShell' ? 'a command that writes' : 'an edit of'} a file another session here claimed`, { timeoutMs: 6000 })
-        return { deny: refusal }
-      }
-    }
-    const folders = writtenRunFolders(e.tool, input)
+    const folders = writtenRunFolders(e.tool, e as unknown as Record<string, unknown>)
     if (folders.length > 0) await noteTouched($, folders)
     return next(e)
-  })
-
-  // Session Bus: messages from other sessions reach the model after the next tool result.
-  on('tool.call', async ($, e, next) => {
-    const r = await next(e)
-    if (!o.bus.isOn || r.deny !== undefined || (e as { agentId?: string }).agentId !== undefined) return r
-    const inbox = await settle(takePending($))
-    return inbox === undefined || inbox.length === 0 ? r : withNote(r, messagesText(inbox))
-  })
-
-  on('session.end', async ($, e, next) => {
-    if (o.bus.isOn) await settle(busLeave($, e.sessionId))
-    return next(e)
-  })
-
-  // ---------- Session Bus tools ----------
-
-  on('tool.call', { tool: 'mcp__bws-cockpit__bus_status' }, async ($, e, next) => {
-    const input = e as unknown as { task?: unknown }
-    const task = typeof input.task === 'string' && input.task.trim() ? shorten(redact(input.task.trim().replace(/\s+/g, ' ')), 100) : undefined
-    try {
-      const out: { news: Inbox[] } = { news: [] }
-      let inbox: Inbox[] = []
-      const r = await busUpdate($, (own, file, now) => {
-        const w = withInbox({ ...own, entry: { ...own.entry, task: task ?? own.entry.task } }, file, now, out)
-        inbox = w.pending
-        return { ...w, pending: [] }
-      })
-      if (r === undefined) return { result: 'The session bus is off here: no Claude config folder found.' }
-      return { result: statusText(r.file, r.own.sessionId, r.now, o.bus.lim, { task: r.own.entry.task, claims: r.own.entry.claims }, inbox) }
-    } catch (err) {
-      return { result: `The session bus could not be read: ${err instanceof Error ? err.message : String(err)}` }
-    }
-  })
-
-  on('tool.call', { tool: 'mcp__bws-cockpit__bus_send' }, async ($, e, next) => {
-    const input = e as unknown as { to?: unknown; text?: unknown }
-    const to = typeof input.to === 'string' ? input.to : ''
-    const text = typeof input.text === 'string' ? redact(input.text.trim()).slice(0, TEXT_MAX) : ''
-    if (text.length === 0) return { result: 'Nothing sent: "text" is empty.' }
-    try {
-      const ctx = await busCtx($)
-      if (ctx === undefined) return { result: 'Nothing sent: the session bus is off here (no Claude config folder found).' }
-      const target = resolveTarget(await readBus($, ctx), ctx.selfId, to, await $.clock.now(), STALE_MS)
-      if ('error' in target) return { result: `Nothing sent. ${target.error}` }
-      const r = await busSync(
-        $,
-        ctx,
-        (own, file, now) => ({ ...own, seq: own.seq + 1, entry: { ...own.entry, outbox: addMessage(own.entry.outbox, { seq: own.seq + 1, to: target.id, text, at: now }, now) } }),
-        true,
-      )
-      const who = target.id === 'all' ? 'every other live session in this folder' : shortId(target.id)
-      return { result: `Sent to ${who} (message ${r.own.seq}). It reaches them after their next tool call or prompt; their reply comes back the same way.` }
-    } catch (err) {
-      return { result: `Nothing sent: the session bus could not be written (${err instanceof Error ? err.message : String(err)}).` }
-    }
-  })
-
-  on('tool.call', { tool: 'mcp__bws-cockpit__bus_release' }, async ($, e, next) => {
-    const input = e as unknown as { paths?: unknown }
-    const raw = Array.isArray(input.paths) ? input.paths.filter((p): p is string => typeof p === 'string' && p.trim().length > 0) : []
-    try {
-      const ctx = await busCtx($)
-      if (ctx === undefined) return { result: 'The session bus is off here: no Claude config folder found.' }
-      const files = raw.map(p => normFile(p, ctx.cwd))
-      const r = await busSync($, ctx, own => ({ ...own, entry: { ...own.entry, claims: dropClaims(own.entry.claims, files) } }), true)
-      const left = r.own.entry.claims.map(c => relTo(c.path, ctx.folder))
-      return { result: `Released ${files.length === 0 ? 'every claim' : files.map(f => relTo(f, ctx.folder)).join(', ')}. Still claimed: ${left.length > 0 ? left.join(', ') : 'nothing'}.` }
-    } catch (err) {
-      return { result: `Nothing released: the session bus could not be written (${err instanceof Error ? err.message : String(err)}).` }
-    }
   })
 
   on('classic.Stop', async ($, e, next) => {
@@ -1025,8 +691,6 @@ export const register: Register = (on, options) => {
   on('turn.complete', async ($, e, next) => {
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0 && o.isBackgroundProbe) void refresh($, o, 15000)
-    // Session Bus: the main loop's turn ended, so this session is idle (a subagent's turn is not).
-    if (o.bus.isOn && !e.agentId) void settle(busUpdate($, own => ({ ...own, entry: { ...own.entry, status: 'idle' } })))
     const result = await next(e)
     if (!o.finish.isOn || e.isAborted || e.agentId) return result
     const fl = await sessionFinishLine($, o.finish.owner)
@@ -1059,46 +723,6 @@ export const register: Register = (on, options) => {
         },
       })
     }
-    if (o.bus.isOn) {
-      await $.tool.register({
-        name: 'bus_status',
-        description:
-          'Session bus: list the other Claude Code sessions live in this project folder (what each works on, busy or idle, the files it claimed) ' +
-          'and your unread messages from them. Pass "task" to record what this session is working on, so the others see it. ' +
-          'Call it before a large edit when other sessions are here.',
-        inputSchema: {
-          type: 'object',
-          properties: { task: { type: 'string', description: 'Optional: one line on what this session is working on now.' } },
-        },
-      })
-      await $.tool.register({
-        name: 'bus_send',
-        description:
-          'Session bus: send a short message to another Claude Code session live in this project folder, or to all of them, ' +
-          'e.g. to ask it to release a file it claimed or to agree who edits what. It reaches them after their next tool call or prompt.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            to: { type: 'string', description: 'A session id, its first 8 characters (from bus_status), or "all".' },
-            text: { type: 'string', description: 'The message.' },
-          },
-          required: ['to', 'text'],
-        },
-      })
-      await $.tool.register({
-        name: 'bus_release',
-        description:
-          'Session bus: give up files this session claimed by editing them, so another session in this folder can edit them. ' +
-          'Without paths, releases every claim.',
-        inputSchema: {
-          type: 'object',
-          properties: { paths: { type: 'array', items: { type: 'string' }, description: 'Files to release; empty or absent releases all.' } },
-        },
-      })
-      // Headless too: claude -p sessions in one folder must see each other.
-      void busBeat($)
-      $.clock.every(BEAT_MS, () => void busBeat($))
-    }
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0) {
       if (o.isBackgroundProbe) {
@@ -1122,16 +746,6 @@ export const register: Register = (on, options) => {
         (run.next ? `; next step: ${shorten(run.next, 200)}` : '') +
         `; ${run.open} open items. It may belong to another task: confirm before resuming it.`
       blocks.push({ name: 'bwsCockpit', text })
-    }
-    // Session Bus: register this conversation (also after /clear and resume, which start no
-    // session.start) and, when other sessions are live here, say who they are and how to reach them.
-    if (o.bus.isOn) {
-      try {
-        const intro = await busIntro($, o.bus.lim)
-        if (intro !== undefined) blocks.push({ name: 'bwsBus', text: intro })
-      } catch (err) {
-        noteBusFailure($, err)
-      }
     }
     // Project Locator: a session started in the home folder or a projects root gets the project list.
     const cwd = await $.session.cwd()
@@ -1384,6 +998,17 @@ export const register: Register = (on, options) => {
       </Box>
     ) : null
     const belowBox = below ? <Box key="band-below" flexDirection="column">{below}</Box> : null
+    // bws-board: shown once another session is live or an ask is open; warning while one waits on us.
+    const bs = await read($, boardSummary)
+    const boardChip =
+      bs !== null && (bs.agents > 1 || bs.openAsks > 0) ? (
+        <Box key="chip-board" flexDirection="row">
+          <Text color={bs.askedOfMe > 0 ? 'warning' : 'success'}>{'● '}</Text>
+          <Text dimColor={bs.askedOfMe === 0}>
+            {`board ${bs.agents} · ${bs.openAsks} open${bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}`}
+          </Text>
+        </Box>
+      ) : null
 
     if (isTiles) {
       // Three round-bordered tiles side by side: run (the rest of the width), devices, loop.
@@ -1443,6 +1068,7 @@ export const register: Register = (on, options) => {
           </Box>
           <Box flexDirection="row" columnGap={2}>
             {otherButtons}
+            {boardChip}
           </Box>
           {guardRow}
           {belowBox}
@@ -1483,6 +1109,7 @@ export const register: Register = (on, options) => {
           <Box flexDirection="row" columnGap={2}>
             {resumeButton}
             {otherButtons}
+            {boardChip}
           </Box>
         </Box>
         {loopChip ? (

@@ -87,5 +87,18 @@ The real question is where this lives, not whether it can be built.
 - Driving incident: my first `/exit` attempt set MSYS_NO_PATHCONV for the whole command, which broke the script path, so only Enter was sent to each window. Screenshots showed nothing was submitted (the ghost suggestions stayed unsent). The retry used the script's Windows path. Both sessions exited, both cards are tombstones, and both windows closed.
 - Still not verified live: the day-old sweep.
 
+## 2026-10-10 (T5 cut-over, session 2)
+- Brian: go on T5. Cockpit was unchanged since ee31074, and 193b884d was idle with no claims; I told it over the bus before editing.
+- Every cockpit change since 0.11.0 (17640b3) was bus work: 8a2dbbf, 0482f75 and ee31074, which only added to register.tsx and the types and appended to shell.ts. So I restored register.tsx, shell.ts, types/index.d.ts, README.md and plugin.json from 17640b3 and deleted hooks/bus.ts and tests/bus.test.ts. The Unity/UE/adb guards keep 0.11.0's shell.ts, so their behavior is exactly as it was.
+- Board chip:
+  - It sits in the band's button row in both layouts, so the band gets no taller.
+  - It reads the `{ plugin: 'bws-board', key: 'summary' }` atom and is shown when agents > 1 or asks are open. Its dot is warning-colored while asks wait on this session.
+  - Cockpit declares that one state shape inline in its own contract, with **no `dependencies` entry**. validate passes and reports it as "state of other plugins, not checked". That retires PLAN's hard/soft-dependency risk: cockpit loads without bws-board.
+  - New band test with a `state.get` stub: hidden without bws-board and when alone, warning-colored in the tiles, and drawn in the grid.
+- Version 0.14.0. The README has the chip, a "Session Bus moved to bws-board" note, and a tested row.
+- Checks (receipts/t5): validate passed for both; tests 122/122 (cockpit) and 45/45 (board); tsc exit 0 for both.
+- `~/.claude/settings.json`: bws-board appended to CLAUDE_CODE_PLUGIN_DIRS. Fresh-session check (receipts/t5/fresh-board.jsonl): all 8 bws plugins loaded, 8 board tools, no bus tools, and `/board` printed the board for this repo.
+- Not checked yet: the chip in an interactive band. Old bus files remain under ~/.claude/bws-cockpit/bus/ (unused, untouched).
+
 ## Next step
-T5 cut-over (remove the bus from cockpit, add bws-board to CLAUDE_CODE_PLUGIN_DIRS in the same step, band chip). It waits for 193b884d's reply or Brian's OK, because 193b884d last changed the bus code in cockpit. Adding bws-board to the plugin dirs before then would run two coordination systems in every session. T5 (cockpit cut-over) still waits for 193b884d's confirmation or Brian's OK.
+Open sessions pick up bws-board on their next start (or after /reload-plugins). Optional follow-ups: check the chip by eye in an interactive band; publish to the `publish` branch when Brian asks.

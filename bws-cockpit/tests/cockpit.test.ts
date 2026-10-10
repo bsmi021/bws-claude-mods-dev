@@ -410,6 +410,35 @@ describe('band layout', () => {
     await ui.unmount()
   })
 
+  test('board chip: bws-board summary in the button row; hidden when alone, warning when asked', async ($, on) => {
+    world(on, { ...RUN_WORLD, procs: '', vram: '1000, 8188' })
+    const summary = { value: null as null | { agents: number; openAsks: number; askedOfMe: number } }
+    on('state.get', ($, e, next) => {
+      const ref = e as unknown as { plugin?: string; key?: string }
+      return ref.plugin === 'bws-board' && ref.key === 'summary' ? ({ value: { value: summary.value, version: 1 } } as never) : next(e)
+    })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const mount = async (cols: number) => $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: cols } })
+    let ui = await mount(120)
+    expect(await ui.find({ key: 'chip-board' })).toBeUndefined() // bws-board not loaded
+    await ui.unmount()
+    summary.value = { agents: 1, openAsks: 0, askedOfMe: 0 }
+    ui = await mount(120)
+    expect(await ui.find({ key: 'chip-board' })).toBeUndefined() // alone, nothing open
+    await ui.unmount()
+    summary.value = { agents: 3, openAsks: 2, askedOfMe: 1 }
+    ui = await mount(120)
+    expect(await ui.find({ type: 'Text', text: /^board 3 · 2 open · 1 for you$/ })).toBeDefined()
+    const chip = await ui.find({ key: 'chip-board' })
+    const dot = chip?.children[0] as { props?: { color?: string } } | undefined
+    expect(dot?.props?.color).toBe('warning')
+    await ui.unmount()
+    summary.value = { agents: 2, openAsks: 0, askedOfMe: 0 }
+    ui = await mount(89)
+    expect(await ui.find({ type: 'Text', text: /^board 2 · 0 open$/ })).toBeDefined()
+    await ui.unmount()
+  })
+
   test('under 90 columns: the borderless grid, a label column and one row per topic', async ($, on) => {
     world(on, { ...RUN_WORLD, procs: '', vram: '1000, 8188' })
     await $.command.run({ command: 'cockpit', args: '' } as never)

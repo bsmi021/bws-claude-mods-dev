@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.13.0",
-  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Finish-Line Guard, Project Locator, /handoff, a worker model pin for subagents, and a Session Bus that lets sessions in one folder see each other, message each other and not edit each other's files.",
+  "version": "0.14.0",
+  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Finish-Line Guard, Project Locator, /handoff, a worker model pin for subagents, and a board chip for bws-board.",
   "author": {
     "name": "Brian"
   },
@@ -125,18 +125,6 @@
       "title": "Worker subagent types",
       "description": "Subagent types the worker model applies to, comma-separated.",
       "default": "general-purpose,claude"
-    },
-    "sessionBus": {
-      "type": "boolean",
-      "title": "Session Bus",
-      "description": "Sessions in the same project folder register on a shared bus file: each is told about the others, can message them (bus_send), and cannot Edit/Write a file another live session claimed, or write it from Bash/PowerShell (redirect, tee, sed -i, cp/mv, Set-Content and the like).",
-      "default": true
-    },
-    "busClaimMinutes": {
-      "type": "number",
-      "title": "Session Bus: claim minutes",
-      "description": "A file claim lapses this many minutes after the session's last edit of it.",
-      "default": 30
     }
   }
 }
