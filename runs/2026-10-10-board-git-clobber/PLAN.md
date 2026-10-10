@@ -15,9 +15,10 @@ Shelf idea #9, a gap found while building the git lease (`runs/2026-10-10-board-
 
   The refusal names the files and their holder, and gives the path-limited form that leaves them alone. Each refused file is logged as a `deny`. Proof: unit and plugin tests.
 - [x] **Precise, not blanket.** A peer's claim only counts when git says the file would change:
-  - tracked changes vs HEAD for reset, stash, checkout and restore
-  - untracked files for `clean` and `stash -u`
-  - `git rm` counts on the claim alone, since it deletes the file
+  - changes vs HEAD for stash, `reset --hard`, `checkout -f`, `switch -f`
+  - changes vs the index for `checkout [--] <paths>` and `restore <paths>`
+  - what `git clean -n` lists for clean; untracked files for `stash -u`
+  - the claim alone for `git rm` and a restore from another commit (named paths; a variable path counts only changed files)
 
   A path-limited command (`restore -- mine.ts`, `stash push -- mine.ts`) passes when it leaves peers' files alone. A branch switch without `-f` is untouched, because git itself refuses to overwrite local changes there. Proof: tests.
 - [x] **Costs nothing alone, never blocks on failure.** Git runs only when a live peer claims a file in the tree. A git failure lets the command through. The `gitLease: false` option turns this off too. Proof: tests.
@@ -31,7 +32,7 @@ Shelf idea #9, a gap found while building the git lease (`runs/2026-10-10-board-
 
 ## Design
 
-- `shell.ts`: a git op gains `clobber?: { scope: 'tracked' | 'untracked' | 'both' | 'any'; isAll: boolean; paths: string[] }`, plus `isLease`.
+- `shell.ts`: a git op gains `clobber?: { scope: 'head' | 'index' | 'any' | 'clean'; isAll; paths; untracked?; args? }`, plus `isLease` (as built; the first draft had tracked/untracked/both/any).
   - `clean` is a clobber but not a lease verb, so the confirmed A17 verb list stays as it is.
   - Paths are joined to the `cd` / `-C` folder, as for add.
   - A `checkout` without `--` treats every named argument as a possible path. A branch name only matters if a peer-claimed file sits under that name, which is harmless.
