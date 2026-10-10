@@ -25,6 +25,7 @@ Brian wants to A/B Fable against Opus as the model that draws bws-design-picker'
 | Median / slowest wait | 27.5 s / 40.5 s | 44.9 s / 77.9 s |
 | Output tokens (12 calls) | 39,958 | 47,973 |
 
-## Next
-Brian votes on the page. Decision rule in PLAN.md: Fable becomes default only on a clear majority of blind
-votes; latency favours Opus. The default stays `opus` until then (a one-line change to the manifest + fallback).
+## Outcome (2026-10-10)
+Brian voted on the blind page, and Opus won most pairs. Votes live in his browser's localStorage, so the
+exact tally is not recorded here. Opus is also 1.6x faster with half the contrast misses. Decision: keep
+`opus` as the default. No plugin change: the manifest default and the register.tsx fallback were already `opus`.
