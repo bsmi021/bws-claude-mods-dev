@@ -103,3 +103,7 @@ Checks: validate passed; plugin test 24/24; tsc clean.
 - Test: a 2-pixel block starting on an odd pixel grows to two whole rows, with its label row free of half
   blocks; a block that already covers a row keeps its height and its half-covered bottom row. It fails with
   the fix stashed. 27/27, tsc clean, validate passed.
+
+## Published 0.2.3 (2026-10-10)
+- Same route as 0.2.2: scratch worktree on `publish`, `git checkout main -- bws-design-picker` only, main and
+  staged diff scanned clean. Commit 28a30d7 pushed: `git push mods` -> github.com/bsmi021/bws-claude-mods main.
