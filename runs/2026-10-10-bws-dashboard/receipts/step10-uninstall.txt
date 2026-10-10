@@ -1,0 +1,4 @@
+✔ Successfully uninstalled plugin: bws-assumptions (scope: user)
+exit 0
+✔ Successfully uninstalled plugin: bws-shelf (scope: user)
+exit 0

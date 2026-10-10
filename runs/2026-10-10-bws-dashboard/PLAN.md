@@ -133,5 +133,5 @@ See `FOLLOWUPS.md`.
 - [x] 7 tests
 - [x] 8 checks → receipts
 - [x] 9 live (Claude's own tmux check done; Brian's own look is D4, pending)
-- 10 retire old plugins (needs Brian: after his live check, on his go)
-- 11 RUNLOG final
+- [x] 10 retire old plugins (Brian's go after his live check)
+- [x] 11 RUNLOG final

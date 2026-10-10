@@ -75,8 +75,39 @@ Brian approves PLAN.md. Then step 0 (worktree) and step 1 (spike).
   - Slips: a stray `1` typed while focus was on the composer went in as a prompt; three Shift-Tabs hit ✗ instead of ▶
     (scratch idea #1 dropped). `ctrl+x tab` toggles focus band ↔ pane ↔ prompt, which made keyboard driving fiddly.
 
+## 2026-10-10 session 2, continued: D4 and step 10
+- D4: Brian checked the dashboard live in his own session: "looks good". Go for step 10.
+- Gap found while writing the README: T3 (a loop alert raises the Loop tab) was in the plan but not wired. Added to
+  `refreshLoops` (selects the alerting loop, then `raise`), with a test; cockpit 162/162.
+- Step 10, in this order:
+  1. `claude plugin uninstall bws-assumptions@bws-mods` and `bws-shelf@bws-mods` (`receipts/step10-uninstall.txt`;
+     their `enabledPlugins` entries went with them).
+  2. Removed both from `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` and from `.claude-plugin/marketplace.json`.
+  3. Deleted `bws-assumptions/` and `bws-shelf/` (git rm on the branch; the gitignored generated types left behind in
+     the main tree were removed after the merge).
+  4. READMEs: bws-cockpit (Dashboard, Action bar, Assumptions and Shelf tabs, Loop tab, handoff nudge, the three new
+     options, capabilities, 0.15.0 test row) and bws-board (`/board pane` → the Board tab, 0.5.0 notes).
+  5. Checks again on the branch: validate passed both, tsc 5.8.3 exit 0 both, cockpit 162/162, board 83/83.
+     Merged `bws-dashboard` into main (b0a1375), then removed the worktree and the local branch.
+- Fresh `claude -p "/dashboard"` from the real settings (`receipts/step10-fresh-load.jsonl`): bws-cockpit, board,
+  shell-lint, notify, design-picker, enhance loaded from source; no bws-assumptions or bws-shelf; tools
+  `mcp__bws-cockpit__{record_assumption,shelve_idea,list_ideas,close_idea,find_project}`; the real shelf read.
+
+## What changed (summary)
+- bws-cockpit 0.14.0 → 0.15.0: Dashboard pane with its own tabs (Assumptions, Shelf, Board, Loop), one-row action
+  bar replacing the tile band, triggers T1–T6, `/dashboard`, bws-assumptions and bws-shelf folded in (tools renamed
+  `mcp__bws-cockpit__*`; same shelf file), status lines removed, Refresh off the bar.
+- bws-board 0.4.0 → 0.5.0: own pane removed; `/board pane` opens the dashboard's Board tab.
+- bws-assumptions and bws-shelf: uninstalled, off the plugin path and marketplace, folders deleted.
+
+## Parked (FOLLOWUPS.md)
+- Activity tab; Run & devices tab; folding bws-enhance; Board actions from the tab; Send review and Refresh on the
+  bar; custom tab order; Hide has no way back (shelved #11); the bar undrawn until the first refresh in tmux sessions.
+- Added now: the `--settings` live-check recipe (env DIRS override + `enabledPlugins: false` for installed copies)
+  belongs in AGENTS.md's live-check notes, once it is checked whether a flag `enabledPlugins` map merges with or
+  replaces the user's.
+- Added now: the `publish` branch (and so the public `bws-mods` marketplace) still lists bws-assumptions and bws-shelf;
+  publishing was not part of this task. The pushed `bws-dashboard` branch on `private` can be deleted.
+
 ## Next step
-Brian's own live look (D4) with:
-`cd C:/Projects/bws.mods.wt-dashboard; claude --settings C:/Projects/bws.mods.claude-code/runs/2026-10-10-bws-dashboard/live/settings.json`
-(scratch shelf, handoff nudge at 1% so it shows on the first turn). On his go: step 10 (README for cockpit and board,
-merge `bws-dashboard`, uninstall the two old plugins, DIRS, marketplace, delete their folders), then step 11.
+None for this feature. Publishing cockpit 0.15.0 / board 0.5.0 to `mods` is Brian's call.

@@ -8,3 +8,6 @@
 - Custom tab order / hiding tabs per project.
 - bws-cockpit Hide (3) has no way back within a session (pre-existing; isHidden never cleared). Shelved #11.
 - The band (now the bar) stays undrawn after session start until the first turn or /cockpit in tmux test sessions; same with 0.14 (pre-existing). Check whether the session-start probe completes.
+- AGENTS.md live-check notes: add the `--settings` recipe (env CLAUDE_CODE_PLUGIN_DIRS override plus `enabledPlugins: false` for the installed copies); first check whether a flag `enabledPlugins` map merges with the user's or replaces it.
+- The `publish` branch still lists bws-assumptions and bws-shelf in its marketplace; refresh it when 0.15.0 is published.
+- Delete the pushed `bws-dashboard` branch on `private`.
