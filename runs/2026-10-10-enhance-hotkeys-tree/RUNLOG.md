@@ -37,3 +37,9 @@ tsc 5.6 strict clean. Synced to ~/.claude/dev-mods/408c3d09.../bws-enhance.
 Appended C:/Projects/bws.mods.claude-code/bws-enhance to CLAUDE_CODE_PLUGIN_DIRS in ~/.claude/settings.json
 (backup: ~/.claude/settings.json.bak-enhance). Verified: fresh `claude -p "/enhance ..."` from the home folder lists
 bws-enhance among loaded plugins and returns a rewrite.
+
+## Published
+publish branch 851f859 -> mods/main (github.com/bsmi021/bws-claude-mods). Added bws-enhance only (other plugins untouched);
+root README: four mods + load line. Publish-copy README: runs/ link replaced by the doc URLs, local path made generic.
+Scan (names, emails, C:/Projects|Users paths, project/game names, session ids, runs/) clean; author "Brian" matches bws-notify.
+validate pass, 16/16 tests in the publish copy. Scratch worktree removed.
