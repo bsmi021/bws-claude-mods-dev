@@ -182,4 +182,5 @@ In the live run, cockpit's Session Bus was switched off, and its text was absent
     committed `a.txt` itself; each commit held only its own file.
   - The first run found the restore-then-commit command refused (the check ran before the restore); fixed, and the
     second run passed it.
-- **Not verified live:** PowerShell git commands, `-C` into a worktree, and a push (tests only).
+- **Not verified live:** the lease ending at turn end in an interactive session (in `claude -p` a turn end is the
+  exit), PowerShell git commands, `-C` into a worktree, and a push (tests only).
