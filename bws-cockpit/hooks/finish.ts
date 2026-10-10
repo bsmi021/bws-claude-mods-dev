@@ -28,7 +28,7 @@ export const openItems = (markdown: string): string[] =>
 const PARKED =
   /\b(blocked|waiting (on|for)|needs? (the user|you|user)|on hold|parked|deferred?|follow-?ups?|later|out of scope|won'?t do|not now|optional)\b|\bneeds? [A-Z][\w-]*:/i
 
-// A harness proposal waits on the person too, and so does an item addressed to them ("Brian: ...").
+// A harness proposal waits on the person too, and so does an item addressed to them ("<ownerName>: ...").
 const PROPOSED = /\(proposed[- ]task\)/i
 
 export const isParked = (item: string, owner?: string) => {

@@ -87,21 +87,21 @@ describe('finish-line rules', () => {
   })
 
   test('hand-back: imperative asks from real replies; an offer is not one', () => {
-    expect(isHandBack('It needs the tablet connected and unlocked. Tell me when it\'s plugged in.')).toBe(true)
-    expect(isHandBack('When the apps are open, tell me "tablet ready" and I\'ll record the answer.')).toBe(true)
-    expect(isHandBack('When you say "tablet ready", I\'ll record your answer and resume the loop.')).toBe(true)
-    expect(isHandBack('Once the notebook is on a tablet, say "go" and I\'ll check it.')).toBe(true)
+    expect(isHandBack('It needs the device connected and unlocked. Tell me when it\'s plugged in.')).toBe(true)
+    expect(isHandBack('When the apps are open, tell me "device ready" and I\'ll record the answer.')).toBe(true)
+    expect(isHandBack('When you say "device ready", I\'ll record your answer and resume the loop.')).toBe(true)
+    expect(isHandBack('Once the test file is on the device, say "go" and I\'ll check it.')).toBe(true)
     expect(isHandBack('I\'ll leave the loop running and check it again when you next ask.')).toBe(true)
-    expect(isHandBack('Next: the faster pose model. Say if you want a different order.')).toBe(false)
+    expect(isHandBack('Next: the faster parser. Say if you want a different order.')).toBe(false)
     expect(isHandBack('I\'ll tell the worker to rerun the gate.')).toBe(false)
   })
 
   test('parked: harness proposals and items addressed to the owner', () => {
     expect(isParked('N1 (proposed-task) The gate failed in sessions 3 and 4')).toBe(true)
-    expect(isParked('Brian: tape floor marks, record the 34 takes', 'Brian')).toBe(true)
-    expect(isParked('Brian: tape floor marks', 'the user')).toBe(false)
-    expect(isParked('Quick pass two: hand landmarker wrists', 'Brian')).toBe(false)
-    expect(actionable(['Brian: record takes', 'faster pose model'], 'Brian')).toEqual(['faster pose model'])
+    expect(isParked('Dana: record the reference clips', 'Dana')).toBe(true)
+    expect(isParked('Dana: record the reference clips', 'the user')).toBe(false)
+    expect(isParked('Second pass: tidy the parser', 'Dana')).toBe(false)
+    expect(actionable(['Dana: record clips', 'faster parser'], 'Dana')).toEqual(['faster parser'])
   })
 
   test('ownership: which run folders a tool call writes', () => {
@@ -207,10 +207,10 @@ describe('finish-line guard', () => {
     expect((await $.classic.Stop(stop('The parser is in.'))).block).toBeUndefined()
   })
 
-  test('the 10-06 shapes: a supervisor reply and a "tell me when" hand-back pass; a "say if" offer still blocks', async ($, on) => {
+  test('real reply shapes: a supervisor reply and a "tell me when" hand-back pass; a "say if" offer still blocks', async ($, on) => {
     await world($, on, {})
-    expect((await $.classic.Stop(stop('Next is F5. It needs the tablet connected and unlocked. Tell me when it\'s plugged in.'))).block).toBeUndefined()
-    expect((await $.classic.Stop(stop('The measured comparison waits on your takes. Say if you want a different order.'))).block).toContain('2 open items')
+    expect((await $.classic.Stop(stop('Next is step 5. It needs the device connected and unlocked. Tell me when it\'s plugged in.'))).block).toBeUndefined()
+    expect((await $.classic.Stop(stop('The measured comparison waits on your clips. Say if you want a different order.'))).block).toContain('2 open items')
   })
 
   test('no runs folder: the guard stays out of the way', async ($, on) => {

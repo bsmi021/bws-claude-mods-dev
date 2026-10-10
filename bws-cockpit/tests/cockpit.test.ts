@@ -139,7 +139,7 @@ describe('command position only (false-positive shapes from the 30-day replay)',
   })
   test('real invocations behind wrappers are found', () => {
     expect(adbNeedsDevice('export MSYS_NO_PATHCONV=1; ADB=/c/Android/Sdk/platform-tools/adb.exe $ADB shell am force-stop x')).toBe(true)
-    expect(adbNeedsDevice('n=$(adb shell pidof com.bws.inkwell)')).toBe(true)
+    expect(adbNeedsDevice('n=$(adb shell pidof com.example.app)')).toBe(true)
     expect(isUnityPipelineCommand('cd C:/p && timeout 120 unity --format json command --project-path C:/p test_status 2>&1 | head')).toBe(true)
     expect(findUeGuiLaunch(`(nohup "${UE}" 'C:\\p\\x.uproject' > /dev/null 2>&1 &)`)?.uproject).toBe('C:\\p\\x.uproject')
     expect(findUeGuiLaunch(`$p = Start-Process -FilePath "${UE}" -ArgumentList '"C:\\p\\x.uproject"' -PassThru`, 'powershell')?.isStartProcess).toBe(true)

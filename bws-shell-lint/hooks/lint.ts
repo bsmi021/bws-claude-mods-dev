@@ -22,7 +22,7 @@ export const RULE_NAMES: readonly RuleName[] = ['long-command', 'dq-trailing-bac
 const BS = '\\'
 
 // The size counts each ' as 4 and each " and \ as 2 (what escaping them costs on the way to bash).
-// Replayed over 73,857 real Bash commands (runs/2026-10-10-mods-release): at 7800 it catches 152 of
+// Replayed over 73,857 real Bash commands: at 7800 it catches 152 of
 // 154 cut-off failures and refuses 10 of 73,470 commands that ran (the old len + 3' at 7850: 142, 4).
 export const LONG_LIMIT = 7800
 
