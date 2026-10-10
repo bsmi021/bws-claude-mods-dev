@@ -1,0 +1,25 @@
+
+tests\agreement.test.ts:
+(pass) TS port agrees with the Python reference on the corpus sample [5.76ms]
+(pass) the sample covers every rule and plenty of clean commands [0.59ms]
+
+tests\register.test.ts:
+(pass) denies trailing backslash before the closing quote [40.91ms]
+(pass) denies '\\' in a python heredoc [22.50ms]
+(pass) denies '\\\\' in python -c "..." [19.95ms]
+(pass) denies doubled-backslash Windows path in a python heredoc [21.00ms]
+(pass) denies a command past the length cut [19.27ms]
+(pass) long-command counts double quotes and backslashes, at 7800 [0.61ms]
+(pass) the trailing-backslash fix gives the forward-slash path [18.52ms]
+(pass) passes a raw string and a "\\" literal (quote-adjacent backslashes survive) [28.03ms]
+(pass) passes a forward-slash path [20.47ms]
+(pass) passes an escaped double quote [24.04ms]
+(pass) denies every corpus command the reference flags [30.95ms]
+(pass) real OK corpus commands pass through unchanged [45.18ms]
+(pass) other tools pass through, PowerShell included [19.62ms]
+(pass) enabled: false turns every rule off [18.31ms]
+(pass) disabledRules skips only the named rules [23.03ms]
+
+ 17 pass
+ 0 fail
+Ran 17 tests across 2 files. [0.64s]

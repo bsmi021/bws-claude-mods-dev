@@ -8,7 +8,7 @@ The rewrite is grounded in what this session actually has:
 - the project root, a file tree of it (2 levels, at most 150 entries; skips .git, node_modules, runs, build/output and engine cache folders), and the last few messages, so "it" / "that bug" resolve
 - Anthropic's prompting best practices, plus per-family notes for the model that will run the prompt
   (Opus: explicit minimal scope; Sonnet: keep going until the checks pass, no extra tests/docs; Haiku: run the check before reporting done).
-  Source summary: `runs/2026-10-10-prompt-enhancer/receipts/anthropic-prompting-guidance.md`.
+  Sources: the [prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices), the per-model prompting pages, and [Claude Code best practices](https://code.claude.com/docs/en/best-practices).
 
 ## Use
 
@@ -49,7 +49,7 @@ In `~/.claude/keybindings.json`:
 ```
 claude --plugin-dir ./bws-enhance
 ```
-or add `C:/Projects/bws.mods.claude-code/bws-enhance` to `CLAUDE_CODE_PLUGIN_DIRS`.
+or add the folder's absolute path to `CLAUDE_CODE_PLUGIN_DIRS`.
 
 ## Tested
 

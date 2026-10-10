@@ -1,0 +1,22 @@
+Validating marketplace manifest: C:\Projects\bws.mods.claude-code\.claude-plugin\marketplace.json
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Projects\bws.mods.claude-code\bws-assumptions\README.md: This README has no line that installs "bws-assumptions" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-assumptions --marketplace <owner>/<repo>
+  ❯ C:\Projects\bws.mods.claude-code\bws-board\README.md: This README has no line that installs "bws-board" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-board --marketplace <owner>/<repo>
+  ❯ C:\Projects\bws.mods.claude-code\bws-cockpit\README.md: This README has no line that installs "bws-cockpit" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-cockpit --marketplace <owner>/<repo>
+  ❯ C:\Projects\bws.mods.claude-code\bws-design-picker\README.md: This README has no line that installs "bws-design-picker" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-design-picker --marketplace <owner>/<repo>
+  ❯ C:\Projects\bws.mods.claude-code\bws-enhance\README.md: This README has no line that installs "bws-enhance" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-enhance --marketplace <owner>/<repo>
+  ❯ C:\Projects\bws.mods.claude-code\bws-notify\README.md: This README has no line that installs "bws-notify" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-notify --marketplace <owner>/<repo>
+  ❯ C:\Projects\bws.mods.claude-code\bws-shelf\README.md: This README has no line that installs "bws-shelf" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-shelf --marketplace <owner>/<repo>
+  ❯ C:\Projects\bws.mods.claude-code\bws-shell-lint\README.md: This README has no line that installs "bws-shell-lint" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install bws-shell-lint --marketplace <owner>/<repo>
+
+✔ Validation passed

@@ -1,0 +1,18 @@
+
+tests\assumptions.test.ts:
+(pass) lib > numbers in order, never reuses a number after a clear [2.14ms]
+(pass) lib > a verdict pressed again goes back to open; sent items are frozen [0.71ms]
+(pass) lib > verdict prompt: wrong first with the correction, missing correction asks, right kept [0.67ms]
+(pass) lib > a typed but unsaved correction is used over the saved one [0.24ms]
+(pass) lib > summary and status line [0.55ms]
+(pass) mod > the tool records, numbers, opens the pane and sets the status [61.03ms]
+(pass) mod > an empty assumption is refused [26.50ms]
+(pass) mod > collapsed to one line; expand, mark, correct and send hands the verdicts to Claude as the user [66.15ms]
+(pass) mod > send with nothing marked submits nothing [32.37ms]
+(pass) mod > the guide joins the system prompt only where the tool is offered [36.57ms]
+(pass) mod > headless /assumptions lists them as text [24.37ms]
+(pass) mod > /assumptions in a narrow terminal still answers with the list [24.27ms]
+
+ 12 pass
+ 0 fail
+Ran 12 tests across 1 file. [0.51s]

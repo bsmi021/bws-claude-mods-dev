@@ -1,0 +1,49 @@
+{
+  "name": "bws-mods",
+  "owner": {
+    "name": "Brian"
+  },
+  "description": "Claude Code mods for game and app development on Windows.",
+  "plugins": [
+    {
+      "name": "bws-assumptions",
+      "source": "./bws-assumptions",
+      "description": "Claude records each assumption it makes while building; a small side pane lists them with Right / Wrong, and one Send hands your verdicts and corrections back so Claude applies them."
+    },
+    {
+      "name": "bws-board",
+      "source": "./bws-board",
+      "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake; lets one session at a time run git add/commit/push in a working tree and refuses a commit that would sweep up a peer's claimed files; keeps a history of who held, asked and woke what, and /board digest turns it into a team timeline page."
+    },
+    {
+      "name": "bws-cockpit",
+      "source": "./bws-cockpit",
+      "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Finish-Line Guard, Project Locator, /handoff, a worker model pin for subagents, and a board chip for bws-board."
+    },
+    {
+      "name": "bws-design-picker",
+      "source": "./bws-design-picker",
+      "description": "When Claude asks you to pick a design direction, each option is drawn as a small rendered mockup above the picker."
+    },
+    {
+      "name": "bws-enhance",
+      "source": "./bws-enhance",
+      "description": "/enhance <rough prompt>, or a chord on the draft in the box: rewrites a vague prompt into a specific, actionable one using this project's instructions, installed skills and commands, MCP servers, the recent conversation and Anthropic's prompting guidance for the session's model, puts it in the prompt box, and offers Send / Revert in a small pane."
+    },
+    {
+      "name": "bws-notify",
+      "source": "./bws-notify",
+      "description": "Windows toasts that say which project and what happened: permission asks, finished turns, finished subagents and errors, with the reply's first line. Replaces the modal MessageBox hook."
+    },
+    {
+      "name": "bws-shelf",
+      "source": "./bws-shelf",
+      "description": "Idea shelf: /idea <text> parks a tangent without sending it to Claude, Claude parks its own through a tool, and /shelf lists this project's open ideas with Resume / Done / Drop. One file shared by every session."
+    },
+    {
+      "name": "bws-shell-lint",
+      "source": "./bws-shell-lint",
+      "description": "Refuses Bash commands that will fail on Windows Git Bash for quoting or length reasons (cut-off long commands, trailing-backslash paths, inline Python whose backslashes the shell halves), with the exact fix, so Claude retries correctly at once."
+    }
+  ]
+}

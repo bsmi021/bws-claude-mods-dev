@@ -1,0 +1,25 @@
+Validating plugin manifest: C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\chk\bws-shelf\.claude-plugin\plugin.json
+
+  ❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
+  ❯ types ./types/index.d.ts declares state: bws-shelf.view
+
+Validating hooks: C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\chk\bws-shelf\hooks\hooks.json
+
+  ❯ ./register.tsx hooks: session.start, turn.complete, command.run{command=idea}, command.run{command=shelf}, tool.call{tool=mcp__bws-shelf__shelve_idea}, tool.call{tool=mcp__bws-shelf__list_ideas}, tool.call{tool=mcp__bws-shelf__close_idea}, prompt.context, ui.render{component=Pane, requestId=bws-shelf}
+  ❯ ./register.tsx answers its own command: command.run{command=idea}
+  ❯ ./register.tsx answers its own command: command.run{command=shelf}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-shelf__shelve_idea}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-shelf__list_ideas}
+  ❯ ./register.tsx gating hook without .catch: tool.call{tool=mcp__bws-shelf__close_idea}
+  ❯ ./register.tsx calls: $.clock.after, $.clock.now, $.command.register, $.env.get (via filePath), $.fs.exists (via load), $.fs.read (via load), $.fs.write (via change), $.prompt.fill (via onResume), $.prompt.read (via onResume, openPane), $.session.root (via root), $.session.surfaces, $.state.get, $.state.set, $.tool.register, $.ui.close, $.ui.open (via openPane), $.ui.panes (via isOpen), $.ui.resolve, $.ui.status (via showCount), $.ui.toast
+  ❯ ./register.tsx env writes: nothing
+  ❯ ./register.tsx env reads: CLAUDE_CONFIG_DIR, HOME, USERPROFILE
+  ❯ ./register.tsx state writes: bws-shelf.view
+  ❯ ./register.tsx state reads: bws-shelf.view
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\193b884d-fed8-4496-b100-79070c7db795\scratchpad\chk\bws-shelf\README.md: This README has no line that installs "bws-shelf" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install bws-shelf --marketplace <owner>/<repo>
+
+✔ Validation passed
