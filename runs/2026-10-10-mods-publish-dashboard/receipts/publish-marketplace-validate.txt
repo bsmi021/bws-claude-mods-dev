@@ -1,0 +1,3 @@
+Validating marketplace manifest: C:\Projects\bws.mods.wt-publish\.claude-plugin\marketplace.json
+
+✔ Validation passed

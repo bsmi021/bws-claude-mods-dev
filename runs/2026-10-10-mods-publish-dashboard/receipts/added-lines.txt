@@ -1,0 +1,2683 @@
++Six [Claude Code mods](https://code.claude.com/docs/en/plugins/mods/overview) for game and app development on Windows. Each is a plugin of function hooks: JavaScript/TypeScript that runs inside Claude Code.
++| [`bws-cockpit`](bws-cockpit/README.md) | A dashboard pane beside the transcript with its own tabs: Assumptions (Claude records each assumption it makes through a tool and keeps working; mark each Right or Wrong with a correction and Send, and Claude fixes the work that relied on a wrong one), Shelf (an idea shelf for tangents: `/idea <text>` parks one, Claude parks its own through a tool, Resume / Done / Drop; one file shared by every session), Board (bws-board's live board) and Loop (harness loops: stall alerts, stop and resume, answering a paused loop's questions). New assumptions, an ask for this session and loop alerts bring their tab up; you can close it. A one-row action bar above the prompt: the newest run folder and its open items, live Unreal, Unity, Blender, adb and VRAM state, counts, and buttons for resume, the dashboard and its tabs, `/handoff`, shelving the draft and enhancing it. An Editor & Device Guard that blocks Unreal MCP, adb and Unity CLI calls that cannot work, and adds `-automated` and low-VRAM flags to editor launches. A Finish-Line Guard that keeps Claude working while the checklist of the run folder this session wrote to has open items. A Project Locator: a `find_project` tool and `/projects`, plus searches for `.uproject` and Unity project files answered from an index. `/handoff`, which writes a HANDOFF.md for a fresh agent and copies its start prompt (with a nudge when the context fills up), and a worker model pin for subagents. Since 0.15.0 it includes what were bws-assumptions and bws-shelf. |
++| [`bws-board`](bws-board/README.md) | A blackboard for several Claude Code sessions working in one repository, as peers. Each session has a card (role, task, busy or idle, claimed files). A file one session edits, or writes from Bash or PowerShell, is claimed, and another live session's write to it is refused before it runs. Sessions post asks to a role, a session or anyone (take, done, decline), send notes, and can wake an idle named peer for an urgent ask. `/board` prints the board; `/board pane` opens bws-cockpit's Board tab. One session at a time runs git that changes the tree, a commit that would sweep up a peer's claimed files is refused, and so are git commands that would overwrite a peer's changed files. Each session keeps a history of its board actions, and `/board digest` writes a self-contained timeline page of the team's work. |
++bws-assumptions and bws-shelf are retired: both live in bws-cockpit since 0.15.0 (same shelf file). If you installed them, remove them before updating bws-cockpit, or `/idea`, `/shelf` and `/assumptions` are registered twice:
++
++```bash
++claude plugin uninstall bws-assumptions@bws-mods
++claude plugin uninstall bws-shelf@bws-mods
++claude plugin marketplace update bws-mods
++claude plugin update bws-cockpit@bws-mods
++claude plugin update bws-board@bws-mods
++```
++
++claude --plugin-dir path/to/bws-cockpit --plugin-dir path/to/bws-shell-lint --plugin-dir path/to/bws-notify --plugin-dir path/to/bws-enhance --plugin-dir path/to/bws-design-picker --plugin-dir path/to/bws-board
++  "version": "0.5.0",
++  "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake; lets one session at a time run git add/commit/push in a working tree refuses a commit that would sweep up a peer's claimed files, and refuses git commands (stash, reset --hard, checkout ., restore, clean, rm) that would overwrite a peer's changed files; keeps a history of who held, asked and woke what, and /board digest turns it into a team timeline page.",
++    },
++    "gitLease": {
++      "type": "boolean",
++      "title": "Git lease",
++      "description": "One session at a time runs git add/commit/push and the like in a working tree; a commit that would include files another live session claims, or a git command that would overwrite or delete its changed files, is refused.",
++      "default": true
++    },
++    "gitLeaseMinutes": {
++      "type": "number",
++      "title": "Git lease minutes",
++      "description": "The git lease lapses this many minutes after the holder's last git command (it also ends at the holder's turn end).",
++      "default": 2
++- take turns at git, so no two commit at once or sweep up each other's files,
++- **Git lease.** One session at a time runs git that changes the index, the checkout or refs in a working tree:
++  `add`, `rm`, `mv`, `commit`, `push`, `pull`, `merge`, `rebase`, `reset`, `checkout`, `switch`, `restore`, `stash`
++  (not `list`/`show`), `cherry-pick`, `revert`, `am`. Read-only git (`status`, `diff`, `log`, `show`, `branch`, `fetch`,
++  ...) is never touched. Command position only, as for claims; `cd` and `git -C` are followed, and another repository is
++  ignored.
++  - The first such command takes the session's lease. While a peer live in the same working tree holds it, the command
++    is refused: the reason names the holder, what it last ran, and when the lease ends, and tells Claude to do other
++    work rather than retry in a loop.
++  - The lease ends when the holder's turn ends, 2 minutes after its last git command (`gitLeaseMinutes`), on
++    `board_release` with no paths, when it exits, or when its heartbeat stops for 90 s.
++  - **No sweeping a peer's files.** A `git commit` is refused when it would include a file a live peer claims: the
++    staged files, the modified tracked files for `-a`, and what an earlier `git add` in the same command would stage
++    (`add -A`, `add .` and `add -u` count every modified and untracked file). The refusal names the files and gives
++    the `git restore --staged` fix. This runs git only when a peer claims a file in the tree.
++  - Worktrees are separate: a session in another worktree of the repository never waits for this one.
++  - It narrows the race, not removes it: two sessions that start git in the same instant can both go on, as with
++    claims.
++- **No git overwrites of a peer's work.** A git command that would overwrite or delete a file a live peer claims and
++  has changed is refused, lease or no lease:
++  - `git stash` (push/save; untracked files too with `-u`/`-a`), `git reset --hard`, `git checkout -f`, `git checkout
++    [<ref>] [--] <paths>` (including `.`), `git switch -f`/`--discard-changes`, `git restore <paths>`, `git clean -f`
++    and `git rm`.
++  - Only files git says would change count: changes against HEAD for stash, hard reset and forced checkout; against
++    the index for `checkout -- <paths>` and `restore <paths>`; what `git clean -n` with the same flags lists for
++    clean. `git rm`, and a restore from another commit, count any named claimed file. A claim on a file its holder
++    already committed never blocks.
++  - The refusal names the files and their holder and gives the path-limited form (`git stash push -- <your files>`,
++    `git restore -- <your files>`).
++  - Not checked, because git itself refuses to overwrite local changes there: `stash pop/apply`, a branch switch
++    without `-f`, `reset --merge/--keep`. A command after a `cd` the parser cannot follow (`cd "$WT" && ...`) is not
++    judged, since it may run in another worktree. `git clean` is checked but does not take the lease.
++  - Known gap: `git checkout <branch> <file>` without `--` is checked against the index, so a peer's claimed file
++    that is clean in the index could still be overwritten from that branch.
++  - `/board pane` opens the Board tab of [bws-cockpit](../bws-cockpit/README.md)'s dashboard, redrawn on every heartbeat, from the `lines` and `summary` this mod keeps. Without bws-cockpit it prints the board as `/board` does. (Before 0.5.0 bws-board drew its own pane.)
++- `board_release { paths? }` gives up claims, all of them and the git lease when no paths are given.
++  - the git lease taken (the subcommand only, never the command line) and every git command refused for it
++    long they waited, refused edits and git waits (who blocked whom, on which file or git command), and wakes per
++    sender and receiver.
++- `gitLease` (default true): take turns at git, refuse a commit of a peer's claimed files, and refuse git commands
++  that would overwrite or delete a peer's changed files.
++- `gitLeaseMinutes` (default 2): the git lease lapses this long after the holder's last git command.
++- For the git lease it runs `git rev-parse` (once per folder) and, only when a peer claims a file in the tree, `git diff
++  --name-only` / `git ls-files --others` before a commit, and `git diff` / `git clean -n` (a dry run) before a command
++  that would overwrite files. It never runs a git command that changes anything.
++
++0.3.0, git lease (`runs/2026-10-10-board-git-lease/receipts/`), Claude Code 2.1.296 on Windows 11, git 2.54:
++- Static validation passed, tsc clean. 75 automated tests, including the detector, the lease and its turn-end, lapse
++  and release ends, the sweep check (`add -A`, already staged, `add <dir>`, `commit -a`, an unstage before the commit),
++  and no git run when no peer claims a file.
++- **Corpus replay:** 79,355 real Bash/PowerShell commands; 4,054 take the lease. No git command at command position was
++  missed; the leftovers are verbs inside quoted text.
++- **Live, headless, two sessions in a scratch repository** (lease set to 1 minute for the run):
++  - A staged its file and held its turn; B's `git add b.txt && git commit` was refused for the lease.
++  - After the lease lapsed, with A still live, B's `git add -A && git commit` was refused for A's `a.txt`. B followed
++    the fix (`git restore --staged -- a.txt && git add -- b.txt && git commit`) and committed only `b.txt`. A then
++    committed `a.txt` itself; each commit held only its own file.
++  - The first run found the restore-then-commit command refused (the check ran before the restore); fixed, and the
++    second run passed it.
++- **Not verified live:** the lease ending at turn end in an interactive session (in `claude -p` a turn end is the
++  exit), PowerShell git commands, `-C` into a worktree, and a push (tests only).
++
++0.4.0, git overwrite guard (`runs/2026-10-10-board-git-clobber/receipts/`), Claude Code 2.1.296 on Windows 11:
++- Static validation passed, tsc clean, 82 automated tests (the detector's scopes and exclusions; each refused
++  command; path-limited commands, a committed claim, an unfollowable `cd` and a variable `git rm` going on; `git clean`
++  taking no lease; no git run alone).
++- **Corpus replay:** 570 of 79,355 real commands carry an overwriting git op. Two false-refusal patterns it found
++  (`cd "$WT" && git checkout main -- ...`, `git rm $VAR`) were fixed before shipping.
++- **Live, headless, two sessions, no lease anywhere:** A changed `a.txt` and created `new.txt`. B's `git stash`,
++  `git checkout .`, `git reset --hard` and `git clean -fd` were each refused, naming A's file; `git stash push -- b.txt`
++  went through. A's `a.txt` and `new.txt` were intact afterwards.
++- **Verified live:** `stash`, `checkout .`, `reset --hard` and `clean -fd` refused, `stash push -- <file>` passing.
++  Everything else (other verbs, the unfollowable-`cd` and variable-`rm` rules, PowerShell) is tests only.
++
++0.5.0, the board moves into the dashboard (`runs/2026-10-10-bws-dashboard/receipts/`), Claude Code 2.1.296 on Windows 11:
++- bws-board's own pane is removed. `/board pane` runs bws-cockpit's `/dashboard board` just after the command returns (a
++  command cannot run another from inside its own hook), when `dashboard` is listed; otherwise it prints the board.
++- Static validation passed, tsc clean, 83 automated tests (+1: the redirect and the fallback).
++- **Live:** in an interactive session with the dashboard, `/board pane` opened its Board tab, and an ask from another
++  session raised that tab with `1 for you`.
++// The git lease: this session runs index- or ref-changing git in `tree` (a working tree's top,
++// as normFile has it). `since`: when it took the lease; `at`: its last git command; `verb`: that
++// command's subcommand (never the command line, which can carry a token in a push URL).
++export type GitLease = { since: number; at: number; verb: string; tree: string }
++  git?: GitLease
++// `leaseMs`: how long the git lease lasts after the holder's last git command (absent: not shown).
++export type Limits = { staleMs: number; claimMs: number; leaseMs?: number }
++  const g = isObj(v.git) ? v.git : undefined
++  const git = g && optStr(g.verb) && optStr(g.tree) ? { since: num(g.since, num(g.at)), at: num(g.at), verb: str(g.verb), tree: str(g.tree) } : undefined
++  const full = git ? { ...card, git } : card
++  return v.gone === true ? { ...full, gone: true } : full
++// ---------- git lease ----------
++
++export const liveLease = (c: Card, now: number, leaseMs: number) => (c.git !== undefined && now - c.git.at < leaseMs ? c.git : undefined)
++
++// The live session, other than this one, holding the git lease in this tree. As with claims, when
++// two took it at once the earlier (then the smaller id) holds it.
++export function gitHolder(b: Board, selfId: string, tree: string, now: number, lim: Limits & { leaseMs: number }, mine?: GitLease): Card | undefined {
++  const own = mine !== undefined && mine.tree === tree && now - mine.at < lim.leaseMs ? mine : undefined
++  return livePeers(b, selfId, now, lim.staleMs).find(c => {
++    const l = liveLease(c, now, lim.leaseMs)
++    return l !== undefined && l.tree === tree && (own === undefined || l.since < own.since || (l.since === own.since && c.sessionId < selfId))
++  })
++}
++
++// The lease after a git command in `tree`: held since its first command while it stays fresh.
++export const takeLease = (cur: GitLease | undefined, verb: string, tree: string, now: number, leaseMs: number): GitLease => ({
++  since: cur !== undefined && cur.tree === tree && now - cur.at < leaseMs ? cur.since : now,
++  at: now,
++  verb,
++  tree,
++})
++
++export function gitDenyText(holder: Card, verb: string, now: number, leaseMs: number): string {
++  const l = holder.git
++  const left = l ? Math.max(1, Math.ceil((leaseMs - (now - l.at)) / 60_000)) : 1
++  return (
++    `bws-board: git ${verb} refused. Another live session on this board holds the git lease for this working tree: ` +
++    `${who(holder, holder.sessionId)} (${holder.task || 'no task recorded'}), which ran git ${l?.verb ?? 'a command'} ${agoText(now - (l?.at ?? now))}. ` +
++    `Only one session at a time runs git add/commit/push and the like here, so the two do not race on the index or sweep up each other's files. ` +
++    `The lease ends when that session's turn ends, or about ${left} min after its last git command. Do not re-run this command in a loop: ` +
++    `do other work first, check ${TOOL_PREFIX}board_status to see when the lease is free, or ask it with ${TOOL_PREFIX}board_send (to "${holder.role ?? shortId(holder.sessionId)}").`
++  )
++}
++
++// A commit that would take in files peers claim: which, and the fix.
++export function stagedDenyText(held: readonly { file: string; holder: Card }[], folder: string): string {
++  const rel = held.map(h => relTo(h.file, folder))
++  const names = [...new Set(held.map(h => who(h.holder, h.holder.sessionId)))]
++  return (
++    `bws-board: git commit refused. It would commit ${rel.length === 1 ? 'a file' : `${rel.length} files`} another live session claims: ` +
++    `${rel.slice(0, 10).join(', ')}${rel.length > 10 ? ` (+${rel.length - 10} more)` : ''} (held by ${names.join(', ')}). ` +
++    `That is their work in progress. Unstage them with: git restore --staged -- ${rel.slice(0, 10).join(' ')} ` +
++    `then stage and commit only your own files by name (not git add -A, git add . or git commit -a). Or ask the holder to commit them.`
++  )
++}
++
++// A git command that would overwrite or delete files peers claim and changed: which, and the way round.
++export function clobberDenyText(verb: string, held: readonly { file: string; holder: Card }[], folder: string): string {
++  const rel = held.map(h => relTo(h.file, folder))
++  const names = [...new Set(held.map(h => who(h.holder, h.holder.sessionId)))]
++  const fix =
++    verb === 'stash'
++      ? 'Stash only your own files by name: git stash push -- <your files>.'
++      : verb === 'clean'
++        ? 'Clean only your own paths: git clean -f -- <your paths>, or delete your own files by name.'
++        : verb === 'rm'
++          ? 'Leave those files alone, or ask the holder.'
++          : 'Name only your own files: git restore -- <your files> (or git checkout -- <your files>), never ., -f or --hard while others work here.'
++  return (
++    `bws-board: git ${verb} refused. It would overwrite or delete ${rel.length === 1 ? 'a file' : `${rel.length} files`} another live session claims and has changed: ` +
++    `${rel.slice(0, 10).join(', ')}${rel.length > 10 ? ` (+${rel.length - 10} more)` : ''} (held by ${names.join(', ')}). ` +
++    `That is their uncommitted work, and it would be lost. ${fix} Or ask the holder with ${TOOL_PREFIX}board_send.`
++  )
++}
++
++    const lease = lim.leaseMs === undefined ? undefined : liveLease(c, now, lim.leaseMs)
++    if (lease !== undefined) lines.push(`  holds the git lease${lease.tree === normFile(b.folder, '') ? '' : ` in ${lease.tree}`} (git ${lease.verb} ${agoText(now - lease.at)})`)
++export function statusText(b: Board, self: Self, now: number, lim: Limits, own: { task: string; claims: readonly Claim[]; git?: GitLease }, inbox: readonly Inbox[]): string {
++  const lease = own.git !== undefined && lim.leaseMs !== undefined && now - own.git.at < lim.leaseMs ? own.git : undefined
++    `This session: ${self.role ? `${self.role} (${self.id})` : self.id} · ${own.task || 'no task recorded'} · claims ${mine.length > 0 ? mine.map(c => relTo(c.path, b.folder)).join(', ') : 'none'}${lease ? ` · holds the git lease (git ${lease.verb} ${agoText(now - lease.at)})` : ''}`,
++// `isGit`: a git command refused for the git lease (`file` reads `git <verb>`).
++export type BlockRow = { at: number; who: string; file: string; holder: string; isGit?: true }
++export type Totals = { agents: number; busyMs: number; activeMs: number; overlapMs: number; asks: number; done: number; medianTakeMs?: number; medianDoneMs?: number; denies: number; gitWaits: number; wakes: number }
++    if (e.kind === 'gitWait') marks.push({ at: e.at, kind: 'deny', label: `git ${e.verb ?? ''} refused: lease held by ${e.holder ? nameOf(e.holderRole, e.holder) : 'another session'}` })
++    .filter(e => ((e.kind === 'deny' && e.file) || e.kind === 'gitWait') && inWin(e.at))
++    .map(e => ({
++      at: e.at,
++      who: nm(e.sid),
++      file: e.kind === 'gitWait' ? `git ${e.verb ?? ''}`.trim() : relTo(e.file ?? '', o.folder),
++      holder: e.holder ? (names.has(e.holder) ? nm(e.holder) : nameOf(e.holderRole, e.holder)) : '?',
++      ...(e.kind === 'gitWait' ? { isGit: true as const } : {}),
++    }))
++  for (const b of blocks.filter(x => !x.isGit)) {
++    denies: blocks.filter(x => !x.isGit).length,
++    gitWaits: blocks.filter(x => x.isGit).length,
++    ['Refused edits', String(t.denies), `claims that stopped a clip${t.gitWaits > 0 ? ` · ${t.gitWaits} git wait(s)` : ''}`],
++        `<section><h2>Refused edits and git waits</h2>${blocks}</section><section><h2>Wakes</h2>${wakes}</section>` +
++  | 'gitHold'
++  | 'gitWait'
++// a refused file or the git lease. `verb`: a git subcommand (gitHold, gitWait). `to`: a session id (wake, send), 'all', or an ask's target. `from`: an ask's asker.
++  verb?: string
++const KINDS: readonly HistKind[] = ['start', 'end', 'busy', 'idle', 'task', 'claim', 'edit', 'release', 'deny', 'ask', 'take', 'done', 'decline', 'withdraw', 'send', 'wake', 'wakeHeld', 'gitHold', 'gitWait']
++  for (const k of ['file', 'task', 'holder', 'askId', 'to', 'from', 'text', 'note', 'reason', 'verb'] as const) {
++  clobberDenyText,
++  gitDenyText,
++  gitHolder,
++  liveClaims,
++  stagedDenyText,
++  takeLease,
++import type { ActKind, Board, Card, GitLease, Inbox, Limits, Self } from './board'
++import { gitOps, writeTargets } from './shell'
++import type { Clobber, Dialect, GitOp } from './shell'
++type Options = { isOn: boolean; lim: Limits & { leaseMs: number }; isWake: boolean; wakeMs: number; historyDays: number; isGit: boolean }
++// The main loop's turn ended: this session is idle (a busy one logs the change), and gives up the git lease.
++    return { ...own, card: { ...withoutGit(own.card), status: 'idle' } }
++const withoutGit = (c: Card): Card => {
++  const { git: _git, ...rest } = c
++  return rest
++}
++
++// ---------- the git lease ----------
++// One session at a time runs index- or ref-changing git in a working tree (shell.ts GIT_LEASE_VERBS).
++// The lease is the `git` field on the holder's card; it ends at the holder's turn end, leaseMs after
++// its last git command, on board_release with no paths, or when the session leaves or goes stale.
++
++// A folder's working tree for git: its top as git prints it and as the board compares it. Null when
++// it is not in this board's repository (another repo, or no repo). Cached per folder.
++type Tree = { top: string; key: string }
++const trees = new Map<string, Tree | null>()
++
++async function treeOf($: EngineInterface, ctx: Ctx, dir: string): Promise<Tree | null> {
++  const id = `${ctx.cwd}|${dir}`
++  const hit = trees.get(id)
++  if (hit !== undefined) return hit
++  const r = await settle($.process.run(['git', 'rev-parse', '--path-format=absolute', '--show-toplevel', '--git-common-dir'], { cwd: dir || ctx.cwd, timeoutMs: 10_000 }))
++  if (r === undefined || r.exitCode !== 0) return null
++  const [top = '', common = ''] = r.stdout.trim().split(/\r?\n/)
++  const tree = top !== '' && normFile(common, '') === `${normFile(ctx.folder, '')}/.git` ? { top: toSlash(top), key: normFile(top, '') } : null
++  trees.set(id, tree)
++  return tree
++}
++
++// The files a commit would take in that peers claim: the staged files, plus for -a the modified
++// tracked ones. An add or unstage earlier in the same command has not run yet, so its paths count:
++// an add -A/./-u counts every modified and untracked file, restore --staged or reset takes files out.
++// Runs git only when a peer claims a file in the tree.
++async function heldInCommit($: EngineInterface, o: Options, ctx: Ctx, b: Board, op: GitOp, tree: Tree, now: number) {
++  const peers = claimersIn(o, ctx, b, tree, now)
++  if (peers.length === 0) return []
++  const list = (args: string[]) => gitNames($, tree, args)
++  const st = op.staged
++  const added = (st?.paths ?? []).map(p => normFile(p, ctx.cwd))
++  const dropped = (st?.dropped ?? []).map(p => normFile(p, ctx.cwd))
++  // The index as it is now, less what the command unstages before its commit.
++  const index = st?.isReset === true ? new Set<string>() : await list(['diff', '--cached', '--name-only'])
++  const modified = op.isAll || st?.isAll === true ? await list(['diff', '--name-only']) : new Set<string>()
++  const untracked = st?.isAll === true ? await list(['ls-files', '--others', '--exclude-standard']) : new Set<string>()
++  const isIn = (f: string) => (index.has(f) && !under(f, dropped)) || modified.has(f) || untracked.has(f) || under(f, added)
++  return heldBy(o, ctx, b, peers, now, isIn)
++}
++
++const under = (f: string, dirs: readonly string[]) => dirs.some(a => f === a || f.startsWith(`${a}/`))
++
++// Live peers with a claim in this tree: without one, the git checks run no git at all.
++const claimersIn = (o: Options, ctx: Ctx, b: Board, tree: Tree, now: number) =>
++  livePeers(b, ctx.selfId, now, o.lim.staleMs).filter(c => liveClaims(c.claims, now, o.lim.claimMs).some(cl => cl.path.startsWith(`${tree.key}/`)))
++
++// The peers' claimed files that `isIn` says a command reaches, with who holds each.
++function heldBy(o: Options, ctx: Ctx, b: Board, peers: readonly Card[], now: number, isIn: (file: string) => boolean) {
++  const held: { file: string; holder: Card }[] = []
++  for (const c of peers)
++    for (const cl of liveClaims(c.claims, now, o.lim.claimMs)) {
++      if (!isIn(cl.path)) continue
++      const holder = claimHolder(b, ctx.selfId, cl.path, now, o.lim)
++      if (holder !== undefined && !held.some(h => h.file === cl.path)) held.push({ file: cl.path, holder })
++    }
++  return held
++}
++
++// File names a git listing prints (-z), as the board compares them; undefined when git failed.
++// `diff` prints them from the tree's top, `ls-files` from where it runs: run both at the top.
++async function gitNames($: EngineInterface, tree: Tree, args: string[]): Promise<Set<string>> {
++  return (await gitNamesOrFail($, tree, args)) ?? new Set()
++}
++
++async function gitNamesOrFail($: EngineInterface, tree: Tree, args: string[]): Promise<Set<string> | undefined> {
++  const r = await settle($.process.run(['git', ...args, '-z'], { cwd: tree.top, timeoutMs: 15_000 }))
++  if (r === undefined || r.exitCode !== 0) return undefined
++  return new Set(r.stdout.split(String.fromCharCode(0)).filter(n => n !== '').map(n => normFile(`${tree.top}/${n}`, '')))
++}
++
++// The peers' claimed files a stash, hard reset, forced checkout, restore, clean or rm would overwrite
++// or delete. Only files git says would change count (see Clobber's scopes), so a claim on a file the
++// holder already committed never blocks. A git failure counts nothing: the command goes on.
++async function heldInClobber($: EngineInterface, o: Options, ctx: Ctx, b: Board, op: GitOp, c: Clobber, tree: Tree, now: number) {
++  const peers = claimersIn(o, ctx, b, tree, now)
++  if (peers.length === 0) return []
++  const named = c.paths.map(p => normFile(p, ctx.cwd))
++  const reaches = (f: string) => (c.isAll ? f.startsWith(`${tree.key}/`) : under(f, named))
++  // A delete or restore-from-a-commit of named files counts every claim on them; of a glob or a
++  // variable (the whole tree, as far as the board can tell), only the files git says changed.
++  if (c.scope === 'any' && !c.isAll) return heldBy(o, ctx, b, peers, now, reaches)
++  if (c.scope === 'clean') {
++    // git clean -n with the command's own arguments (less -f and -q) prints exactly what it would remove.
++    const args = (c.args ?? []).flatMap(a => (a === '--force' || a === '--quiet' ? [] : /^-[A-Za-z]+$/.test(a) ? [a.replace(/[fq]/g, '')].filter(x => x !== '-') : [a]))
++    const at = op.dir ? normFile(op.dir, ctx.cwd) : normFile(ctx.cwd, '')
++    const r = await settle($.process.run(['git', '-c', 'core.quotepath=off', 'clean', '-n', ...args], { cwd: op.dir || ctx.cwd, timeoutMs: 15_000 }))
++    if (r === undefined || r.exitCode !== 0) return []
++    const gone = r.stdout
++      .split(/\r?\n/)
++      .flatMap(l => /^Would remove (.+)$/.exec(l)?.[1] ?? [])
++      .map(n => normFile(n.replace(/\/$/, ''), at))
++    return heldBy(o, ctx, b, peers, now, f => under(f, gone))
++  }
++  const changed =
++    c.scope === 'index'
++      ? await gitNames($, tree, ['diff', '--name-only'])
++      : ((await gitNamesOrFail($, tree, ['diff', 'HEAD', '--name-only'])) ??
++        new Set([...(await gitNames($, tree, ['diff', '--cached', '--name-only'])), ...(await gitNames($, tree, ['diff', '--name-only']))]))
++  const untracked = c.untracked ? await gitNames($, tree, ['ls-files', '--others', '--exclude-standard']) : new Set<string>()
++  return heldBy(o, ctx, b, peers, now, f => reaches(f) && (changed.has(f) || untracked.has(f)))
++}
++
++// The git check for a shell command: refused while a peer holds the lease in the same tree, or when
++// a commit would take in a peer's claimed files; otherwise this session takes the lease.
++async function gitCheck($: EngineInterface, o: Options, ops: readonly GitOp[]): Promise<string | undefined> {
++  const ctx = await boardCtx($)
++  if (ctx === undefined) return undefined
++  const now = await $.clock.now()
++  const b = await readFolder($, ctx)
++  const mine = (await read($, ownAtom))[ctx.selfId]?.card.git
++  let taken: { verb: string; tree: string } | undefined
++  for (const op of ops) {
++    const tree = await treeOf($, ctx, op.dir ?? '')
++    if (tree === null) continue
++    const holder = op.isLease ? gitHolder(b, ctx.selfId, tree.key, now, o.lim, mine) : undefined
++    if (holder !== undefined) {
++      void logEvent($, o, ctx, { kind: 'gitWait', at: now, verb: op.verb, holder: holder.sessionId, holderRole: holder.role })
++      return gitDenyText(holder, op.verb, now, o.lim.leaseMs)
++    }
++    // After a `cd` the parser could not follow, the command may run in another tree: not judged.
++    if (op.clobber !== undefined && op.dir !== undefined) {
++      const held = await heldInClobber($, o, ctx, b, op, op.clobber, tree, now)
++      if (held.length > 0) {
++        for (const h of held) void logEvent($, o, ctx, { kind: 'deny', at: now, file: h.file, holder: h.holder.sessionId, holderRole: h.holder.role })
++        return clobberDenyText(op.verb, held, ctx.folder)
++      }
++    }
++    if (op.verb === 'commit') {
++      const held = await heldInCommit($, o, ctx, b, op, tree, now)
++      if (held.length > 0) {
++        for (const h of held) void logEvent($, o, ctx, { kind: 'deny', at: now, file: h.file, holder: h.holder.sessionId, holderRole: h.holder.role })
++        return stagedDenyText(held, ctx.folder)
++      }
++    }
++    if (op.isLease) taken = { verb: op.verb, tree: tree.key }
++  }
++  if (taken === undefined) return undefined
++  const t = taken
++  const isFresh = mine !== undefined && mine.tree === t.tree && now - mine.at < o.lim.leaseMs
++  await sync($, ctx, o.lim, (own, f, at) => ({ ...own, card: { ...own.card, git: takeLease(own.card.git, t.verb, t.tree, at, o.lim.leaseMs) } }))
++  if (!isFresh) void logEvent($, o, ctx, { kind: 'gitHold', at: now, verb: t.verb })
++  return undefined
++}
++
++        `${t.done}/${t.asks} ask(s) done, ${t.denies} refused edit(s), ${t.gitWaits} git wait(s), ${t.wakes} wake(s).`
++const ownView = (c: Card): { task: string; claims: Card['claims']; git?: GitLease } => ({ task: c.task, claims: c.claims, ...(c.git ? { git: c.git } : {}) })
++
++    lim: {
++      staleMs: STALE_MS,
++      claimMs: Math.max(1, Number(options.claimMinutes ?? 30)) * 60_000,
++      leaseMs: Math.max(0.25, Number(options.gitLeaseMinutes ?? 2)) * 60_000,
++    },
++    isGit: options.gitLease !== false,
++    await $.command.register({ name: 'board', description: 'Show the board of Claude Code sessions in this repo; /board role <name> sets this session\'s role; /board pane opens the dashboard Board tab; /board digest [days] writes the team page', argumentHint: '[role <name> | pane | digest [days]]' })
++  // The main loop's turn ended, so this session is idle (a subagent's turn is not) and its git lease
++  // is free. Awaited, so the card reads idle before the next prompt marks it busy.
++    if (!e.agentId) await settle(idle($, o))
++  // cmdlets; command position only). Otherwise the written files are claimed. A shell command that
++  // runs git add/commit/push and the like then needs the git lease.
++    const ops = o.isGit && (e.tool === 'Bash' || e.tool === 'PowerShell') && typeof e.command === 'string' ? gitOps(e.command, dialectOf(e.tool)) : []
++    if (ops.length > 0) {
++      let refusal: string | undefined
++      try {
++        refusal = await gitCheck($, o, ops)
++      } catch (err) {
++        noteFailure($, err)
++      }
++      if (refusal !== undefined) {
++        const why = refusal.includes('holds the git lease')
++          ? 'another session holds the git lease'
++          : refusal.includes('would overwrite or delete')
++            ? 'it would overwrite files another session changed'
++            : 'a commit of files another session claimed'
++        $.ui.toast(`board: refused git: ${why}`, { timeoutMs: 6000 })
++        return { deny: refusal }
++      }
++    }
++      const status = statusText(r.board, self, r.now, o.lim, ownView(r.own.card), p.messages)
++      const r = await sync($, ctx, o.lim, own => {
++        const card = { ...own.card, claims: dropClaims(own.card.claims, files) }
++        return { ...own, card: files.length === 0 ? withoutGit(card) : card }
++      })
++      return { result: `Released ${files.length === 0 ? 'every claim and the git lease' : files.map(f => relTo(f, ctx.folder)).join(', ')}. Still claimed: ${held.length > 0 ? held.join(', ') : 'nothing'}.` }
++    // The board pane lives in bws-cockpit's dashboard now (its Board tab reads `lines`). A command can't run another
++    // from inside its own hook, so it runs just after; without the dashboard, the text listing below answers.
++    const isPane = verb === 'pane' && (await $.session.surfaces()).length > 0 && (await $.command.list()).some(c => c.name === 'dashboard')
++    if (isPane) {
++      $.clock.after(10, () => void $.command.run({ command: 'dashboard', args: 'board' }).catch(() => undefined))
++      return {}
++      return { text: `Board for ${r.board.folder} · ${live} live session(s)\n${statusText(r.board, self, r.now, o.lim, ownView(r.own.card), [])}` }
++
++// ---------- git ----------
++
++// The git subcommands that change the index, the working tree's checkout or refs: one session at
++// a time runs these in a tree (the board's git lease). Read-only git (status, diff, log, show,
++// branch, fetch, tag, ...) is not here.
++export const GIT_LEASE_VERBS: ReadonlySet<string> = new Set([
++  'add', 'rm', 'mv', 'commit', 'push', 'pull', 'merge', 'rebase', 'reset', 'checkout', 'switch', 'restore', 'stash', 'cherry-pick', 'revert', 'am',
++])
++// git's global options that take the next word as their value.
++const GIT_VALUED = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--config-env|--super-prefix)$/
++// commit's short options that take a value: in a cluster (-am), what follows one is that value.
++const COMMIT_VALUED = /[mFCctS]/
++
++// One git command that takes the lease. `dir`: where it runs, as written ('' = the session's own
++// folder; undefined = a `cd` the parser could not follow). `isAll`: commit -a, or add -A/-u/./a glob.
++// `paths`: add's plain paths, joined to `dir`. `unstage`: what restore --staged or a mixed reset takes
++// out of the index (`isAll`: all of it). A commit carries what the adds and unstages before it in the
++// same command leave staged (`staged`), since the check runs before any of the command does:
++// `paths` added, `dropped` taken out, `isAll` add -A and the like, `isReset` the index reset to HEAD.
++export type Staged = { isAll: boolean; paths: string[]; dropped: string[]; isReset: boolean }
++// What a git command overwrites or deletes in the working tree. `scope`: which of the files it reaches
++// it changes: 'head' those changed vs HEAD (staged or not), 'index' those changed vs the index, 'any'
++// every one (a delete, or a restore from another commit), 'clean' what `git clean -n` with the same
++// arguments lists. `isAll`: the whole tree; `paths`: the named ones, joined to `dir`; `untracked`:
++// stash -u/-a takes untracked files too; `args`: clean's own arguments, for its dry run.
++export type Clobber = { scope: 'head' | 'index' | 'any' | 'clean'; isAll: boolean; paths: string[]; untracked?: boolean; args?: string[] }
++// `isLease`: the command takes the git lease (git clean only clobbers).
++export type GitOp = {
++  verb: string
++  dir: string | undefined
++  isAll: boolean
++  paths: string[]
++  isLease: boolean
++  unstage?: { isAll: boolean; paths: string[] }
++  staged?: Staged
++  clobber?: Clobber
++}
++
++// The path arguments of a git subcommand: words that are not options (nor an option's value).
++const pathArgs = (args: string[], valued: RegExp) => {
++  const out: string[] = []
++  let isPaths = false
++  for (let i = 0; i < args.length; i++) {
++    const a = args[i] ?? ''
++    if (isPaths || !a.startsWith('-')) out.push(a)
++    else if (a === '--') isPaths = true
++    else if (valued.test(a)) i++
++  }
++  return out
++}
++
++const gitOp = (words: string[], base: string | undefined): GitOp | undefined => {
++  let dir = base
++  let i = 0
++  for (; i < words.length; i++) {
++    const w = words[i] ?? ''
++    if (!w.startsWith('-')) break
++    // Another git folder or work tree: not this board's to judge.
++    if (/^--(?:git-dir|work-tree)(?:=|$)/.test(w)) return undefined
++    if (GIT_VALUED.test(w)) {
++      const v = words[++i] ?? ''
++      if (w === '-C') dir = !isConcrete(v) ? undefined : dir === undefined ? (isAbsPath(v) ? v : undefined) : joinTo(dir, v)
++    }
++  }
++  const verb = words[i]
++  if (verb === undefined) return undefined
++  const args = words.slice(i + 1)
++  const clobber = clobberOf(verb, args, dir)
++  if (!GIT_LEASE_VERBS.has(verb)) return clobber === undefined ? undefined : { verb, dir, isAll: false, paths: [], isLease: false, clobber }
++  const op = leaseOp(verb, args, dir)
++  return op === undefined ? undefined : { ...op, isLease: true, ...(clobber ? { clobber } : {}) }
++}
++
++// A flag given long or inside a short cluster (-fd has f).
++const hasFlag = (args: readonly string[], long: RegExp, short: string) =>
++  args.some(a => long.test(a) || new RegExp(`^-[A-Za-z]*[${short}][A-Za-z]*$`).test(a))
++const isRefLike = (a: string) => /^(?:HEAD|@|FETCH_HEAD|ORIG_HEAD|MERGE_HEAD)$/.test(a) || /[~^]/.test(a) || /^[0-9a-f]{7,40}$/.test(a)
++// Named paths joined to `dir`; a pathspec magic, a glob or an unknown folder means the whole tree.
++const pathsIn = (named: readonly string[], dir: string | undefined) => {
++  const isAll = dir === undefined || named.some(p => p.startsWith(':') || !isConcrete(p))
++  return { isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) }
++}
++
++// What a git command overwrites or deletes in the working tree, if anything. Dry runs, stash
++// list/show/pop/apply/drop, rm --cached, a branch switch without -f and reset --merge/--keep are not
++// here: git itself refuses those when local changes would be lost.
++const clobberOf = (verb: string, args: string[], dir: string | undefined): Clobber | undefined => {
++  const whole: Clobber = { scope: 'head', isAll: true, paths: [] }
++  if (verb === 'reset') return args.includes('--hard') ? whole : undefined
++  if (verb === 'switch') return hasFlag(args, /^--(?:force|discard-changes)$/, 'f') ? whole : undefined
++  if (verb === 'checkout') {
++    const dashes = args.indexOf('--')
++    const flags = dashes < 0 ? args : args.slice(0, dashes)
++    const isForce = hasFlag(flags, /^--force$/, 'f')
++    const named: string[] = []
++    let isNewBranch = false
++    for (let k = 0; k < flags.length; k++) {
++      const a = flags[k] ?? ''
++      if (/^-(?:b|B)$|^--orphan$/.test(a)) {
++        isNewBranch = true
++        k++
++      } else if (/^--(?:conflict|pathspec-from-file)$/.test(a)) k++
++      else if (!a.startsWith('-')) named.push(a)
++    }
++    if (isForce) return whole
++    if (isNewBranch) return undefined
++    if (dashes >= 0) {
++      const after = args.slice(dashes + 1)
++      return after.length === 0 ? undefined : { scope: named.length > 0 ? 'any' : 'index', ...pathsIn(after, dir) }
++    }
++    if (named.length === 0) return undefined
++    // `checkout <ref> <paths>` restores from that commit; otherwise every name may be a path (a
++    // branch name matches no claimed file, so reading it as a path costs nothing).
++    const first = named[0] ?? ''
++    if (named.length > 1 && isRefLike(first)) return { scope: 'any', ...pathsIn(named.slice(1), dir) }
++    return { scope: 'index', ...pathsIn(named, dir) }
++  }
++  if (verb === 'restore') {
++    const isStaged = hasFlag(args, /^--staged$/, 'S')
++    const isWorktree = hasFlag(args, /^--worktree$/, 'W')
++    if (isStaged && !isWorktree) return undefined
++    const named = pathArgs(args, /^(?:-s|--source)$/)
++    if (named.length === 0) return undefined
++    const hasSource = args.some(a => a === '-s' || /^--source(?:=|$)/.test(a) || /^-s./.test(a))
++    return { scope: hasSource ? 'any' : isStaged ? 'head' : 'index', ...pathsIn(named, dir) }
++  }
++  if (verb === 'stash') {
++    const sub = args[0]
++    if (sub !== undefined && !sub.startsWith('-') && sub !== 'push' && sub !== 'save') return undefined
++    const rest = sub === 'push' || sub === 'save' ? args.slice(1) : args
++    const untracked = hasFlag(rest, /^--(?:include-untracked|all)$/, 'ua')
++    const named = sub === 'save' ? [] : pathArgs(rest, /^(?:-m|--message|--pathspec-from-file)$/)
++    return { ...(named.length === 0 ? whole : { scope: 'head' as const, ...pathsIn(named, dir) }), ...(untracked ? { untracked: true } : {}) }
++  }
++  if (verb === 'clean') {
++    if (!hasFlag(args, /^--force$/, 'f') || hasFlag(args, /^--(?:dry-run|interactive)$/, 'ni')) return undefined
++    return { scope: 'clean', isAll: true, paths: [], args: [...args] }
++  }
++  if (verb === 'rm') {
++    if (args.includes('--cached') || hasFlag(args, /^--dry-run$/, 'n')) return undefined
++    const named = pathArgs(args, /^--pathspec-from-file$/)
++    return named.length === 0 ? undefined : { scope: 'any', ...pathsIn(named, dir) }
++  }
++  return undefined
++}
++
++// The lease part of a git command (no `isLease` yet).
++const leaseOp = (verb: string, args: string[], dir: string | undefined): Omit<GitOp, 'isLease'> | undefined => {
++  if (verb === 'stash' && /^(?:list|show)$/.test(args[0] ?? '')) return undefined
++  if (verb === 'commit') {
++    const isAll = args.some(a => a === '--all' || (/^-[A-Za-z]+$/.test(a) && (a.slice(1).split(COMMIT_VALUED)[0] ?? '').includes('a')))
++    return { verb, dir, isAll, paths: [] }
++  }
++  if (verb === 'add') {
++    const dashes = args.indexOf('--')
++    const flags = dashes < 0 ? args : args.slice(0, dashes)
++    const named = [...flags.filter(a => !a.startsWith('-')), ...(dashes < 0 ? [] : args.slice(dashes + 1))]
++    const isAll =
++      dir === undefined ||
++      flags.some(a => /^(?:-A|-u|--all|--update|--no-ignore-removal|--pathspec-from-file(?:=.*)?)$/.test(a) || /^-[A-Za-z]*[Au][A-Za-z]*$/.test(a)) ||
++      named.some(p => p === '.' || p.startsWith(':') || !isConcrete(p))
++    return { verb, dir, isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) }
++  }
++  if (verb === 'restore' && args.some(a => a === '--staged' || /^-[A-Za-z]*S[A-Za-z]*$/.test(a))) {
++    const named = pathArgs(args, /^(?:-s|--source)$/)
++    const isAll = dir === undefined || named.length === 0 || named.some(p => p === '.' || p.startsWith(':') || !isConcrete(p))
++    return { verb, dir, isAll: false, paths: [], unstage: { isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) } }
++  }
++  // A mixed reset (the default) unstages: `reset`, `reset HEAD`, `reset [HEAD] [--] <paths>`.
++  if (verb === 'reset' && !args.some(a => /^--(?:hard|soft|merge|keep)$/.test(a))) {
++    const dashes = args.indexOf('--')
++    const before = (dashes < 0 ? args : args.slice(0, dashes)).filter(a => !a.startsWith('-'))
++    const after = dashes < 0 ? [] : args.slice(dashes + 1)
++    const isRef = (a: string | undefined) => a !== undefined && /^(?:HEAD|@)(?:[~^]\d*)*$/.test(a)
++    const named = [...(isRef(before[0]) ? before.slice(1) : before), ...after]
++    // `reset <commit>` moves the branch: not an unstage this check can follow.
++    if (dashes < 0 && before.length === 1 && !isRef(before[0]) && !/[./]/.test(before[0] ?? '')) return { verb, dir, isAll: false, paths: [] }
++    const isAll = dir === undefined || named.length === 0 || named.some(p => p === '.' || p.startsWith(':') || !isConcrete(p))
++    return { verb, dir, isAll: false, paths: [], unstage: { isAll, paths: isAll || dir === undefined ? [] : named.map(p => joinTo(dir, p)) } }
++  }
++  return { verb, dir, isAll: false, paths: [] }
++}
++
++// What the adds and unstages, in order, leave in the index on top of what it held.
++const stagedBy = (ops: readonly GitOp[]): Staged => {
++  let st: Staged = { isAll: false, paths: [], dropped: [], isReset: false }
++  for (const o of ops) {
++    if (o.verb === 'add' && o.isAll) st = { ...st, isAll: true, dropped: [] }
++    else if (o.verb === 'add') st = { ...st, paths: [...st.paths, ...o.paths], dropped: st.dropped.filter(d => !o.paths.includes(d)) }
++    else if (o.unstage?.isAll) st = { isAll: false, paths: [], dropped: [], isReset: true }
++    else if (o.unstage) st = { ...st, paths: st.paths.filter(p => !o.unstage?.paths.includes(p)), dropped: [...st.dropped, ...o.unstage.paths] }
++  }
++  return st
++}
++
++// The lease-taking git commands in a shell command, command position only, in order. `cd` moves
++// where later ones run, as for writeTargets. A `git -C <dir>` names its own folder.
++export const gitOps = (cmd: string, dialect: Dialect): GitOp[] => {
++  const out: GitOp[] = []
++  let base: string | undefined = ''
++  for (const seg of splitSegments(cmd, dialect)) {
++    const inv = invocationOf(cmd, seg, dialect)
++    if (inv === undefined || inv.isStartProcess) continue
++    const args = lexSegment(inv.args, dialect).words.map(w => w.text)
++    if (CD.test(inv.base)) {
++      const dir = args.find(x => !x.startsWith('-'))
++      if (dir === undefined || !isConcrete(dir)) base = undefined
++      else if (base !== undefined) base = joinTo(base, dir)
++      else if (isAbsPath(dir)) base = dir
++      continue
++    }
++    if (!/^git(?:\.exe)?$/i.test(inv.base)) continue
++    const op = gitOp(args, base)
++    if (op === undefined) continue
++    if (op.verb === 'commit') {
++      const before = out.filter(o => o.dir === op.dir && (o.verb === 'add' || o.unstage !== undefined))
++      if (before.length > 0) op.staged = stagedBy(before)
++    }
++    out.push(op)
++  }
++  return out
++}
++import { describe, expect, test } from 'claude-code/testing'
++
++import { STALE_MS, cardText, gitDenyText, gitHolder, newCard, parseCard, peerLines, readBoard, stagedDenyText, takeLease } from '../hooks/board'
++import type { Card } from '../hooks/board'
++import { gitOps } from '../hooks/shell'
++import type { Dialect } from '../hooks/shell'
++
++const ops = (cmd: string, dialect: Dialect = 'bash') =>
++  gitOps(cmd, dialect).map(o => `${o.verb}${o.dir ? `@${o.dir}` : o.dir === undefined ? '@?' : ''}${o.isAll ? ' all' : ''}${o.paths.length ? ` ${o.paths.join(',')}` : ''}${o.unstage ? ` -${o.unstage.isAll ? 'all' : o.unstage.paths.join(',')}` : ''}` +
++      (o.staged ? ` [staged${o.staged.isReset ? ' reset' : ''}${o.staged.isAll ? ' all' : ''} ${o.staged.paths.join(',')}${o.staged.dropped.length ? ` -${o.staged.dropped.join(',')}` : ''}]` : ''))
++
++describe('git commands that take the lease', () => {
++  test('index- and ref-changing subcommands, at command position only', () => {
++    expect(ops('git commit -m "x"')).toEqual(['commit'])
++    expect(ops('git push origin main')).toEqual(['push'])
++    expect(ops('git status && git diff --cached && git log -3 && git fetch && git branch -a && git show HEAD')).toEqual([])
++    expect(ops('echo "git commit -m x" && grep -n "git push" notes.md')).toEqual([])
++    expect(ops('# git commit\necho hi')).toEqual([])
++    expect(ops('git stash list; git stash show -p; git stash')).toEqual(['stash'])
++    expect(ops('GIT_AUTHOR_NAME=x git commit -m y')).toEqual(['commit'])
++    expect(ops('git.exe rebase -i HEAD~2')).toEqual(['rebase'])
++    expect(ops('& git checkout main', 'powershell')).toEqual(['checkout'])
++    expect(ops('git add a.txt; git commit -m "a"; git push', 'powershell')).toEqual(['add a.txt', 'commit [staged a.txt]', 'push'])
++  })
++
++  test('global options are skipped; -C and cd move the folder; another git dir is left alone', () => {
++    expect(ops('git -c user.name=x -C sub --no-pager commit -m y')).toEqual(['commit@sub'])
++    expect(ops('cd C:/other && git commit -m y')).toEqual(['commit@C:/other'])
++    expect(ops('cd "$X" && git commit -m y')).toEqual(['commit@?'])
++    expect(ops('git --git-dir=/x/.git commit -m y')).toEqual([])
++    expect(ops('git --work-tree /x commit -m y')).toEqual([])
++  })
++
++  test('commit -a and what an earlier add in the same command stages', () => {
++    expect(ops('git commit -am "fix"')).toEqual(['commit all'])
++    expect(ops('git commit --all -m x')).toEqual(['commit all'])
++    expect(ops('git commit -m "a message"')).toEqual(['commit'])
++    expect(ops('git commit -ma')).toEqual(['commit'])
++    expect(ops('git add -A && git commit -m x')).toEqual(['add all', 'commit [staged all ]'])
++    expect(ops('git add . && git commit -m x')).toEqual(['add all', 'commit [staged all ]'])
++    expect(ops('git add -u && git commit -m x')).toEqual(['add all', 'commit [staged all ]'])
++    expect(ops('git add src/*.ts && git commit -m x')).toEqual(['add all', 'commit [staged all ]'])
++    expect(ops('git add -- a.txt b/c.txt && git commit -m x')).toEqual(['add a.txt,b/c.txt', 'commit [staged a.txt,b/c.txt]'])
++    expect(ops('cd sub && git add a.txt && git commit -m x')).toEqual(['add@sub sub/a.txt', 'commit@sub [staged sub/a.txt]'])
++    // An add in another folder stages nothing for this commit.
++    expect(ops('git -C other add a.txt && git commit -m x')).toEqual(['add@other other/a.txt', 'commit'])
++  })
++
++  test('restore --staged and a mixed reset earlier in the command take files out of the commit', () => {
++    // Seen live: the check ran before the restore, so a.txt still looked staged.
++    expect(ops('git restore --staged -- a.txt && git add -- b.txt && git commit -m x')).toEqual(['restore -a.txt', 'add b.txt', 'commit [staged b.txt -a.txt]'])
++    expect(ops('git restore -S a.txt; git commit -m x')).toEqual(['restore -a.txt', 'commit [staged  -a.txt]'])
++    expect(ops('git restore --staged --source=HEAD -- src && git commit -m x')).toEqual(['restore -src', 'commit [staged  -src]'])
++    expect(ops('git reset HEAD a.txt && git commit -m x')).toEqual(['reset -a.txt', 'commit [staged  -a.txt]'])
++    expect(ops('git reset -q -- a.txt && git commit -m x')).toEqual(['reset -a.txt', 'commit [staged  -a.txt]'])
++    expect(ops('git reset && git add b.txt && git commit -m x')).toEqual(['reset -all', 'add b.txt', 'commit [staged reset b.txt]'])
++    // Added again after the unstage: back in.
++    expect(ops('git restore --staged a.txt && git add a.txt && git commit -m x')).toEqual(['restore -a.txt', 'add a.txt', 'commit [staged a.txt]'])
++    // Not unstages: a worktree restore, a hard reset, a reset to a commit.
++    expect(ops('git restore a.txt && git commit -m x')).toEqual(['restore', 'commit'])
++    expect(ops('git reset --hard && git commit -m x')).toEqual(['reset', 'commit'])
++    expect(ops('git reset abc123 && git commit -m x')).toEqual(['reset', 'commit'])
++  })
++})
++
++const clob = (cmd: string, dialect: Dialect = 'bash') =>
++  gitOps(cmd, dialect)
++    .filter(o => o.clobber)
++    .map(o => {
++      const c = o.clobber!
++      return `${o.verb}${o.isLease ? '' : ' (no lease)'} ${c.scope}${c.isAll ? ' all' : ` ${c.paths.join(',')}`}${c.untracked ? ' +untracked' : ''}${c.args ? ` [${c.args.join(' ')}]` : ''}`
++    })
++
++describe('git commands that overwrite or delete working-tree files', () => {
++  test('whole-tree overwrites', () => {
++    expect(clob('git stash')).toEqual(['stash head all'])
++    expect(clob('git stash push -m wip')).toEqual(['stash head all'])
++    expect(clob('git stash save "wip on x"')).toEqual(['stash head all'])
++    expect(clob('git stash -u; git stash --include-untracked; git stash push -a')).toEqual(['stash head all +untracked', 'stash head all +untracked', 'stash head all +untracked'])
++    expect(clob('git reset --hard')).toEqual(['reset head all'])
++    expect(clob('git reset --hard origin/main')).toEqual(['reset head all'])
++    expect(clob('git checkout -f main')).toEqual(['checkout head all'])
++    expect(clob('git checkout --force')).toEqual(['checkout head all'])
++    expect(clob('git switch -f main; git switch --discard-changes dev')).toEqual(['switch head all', 'switch head all'])
++  })
++
++  test('named paths, and which change counts', () => {
++    expect(clob('git checkout .')).toEqual(['checkout index .'])
++    expect(clob('cd src && git checkout .')).toEqual(['checkout index src/.'])
++    expect(clob('git checkout -- a.txt b/c.txt')).toEqual(['checkout index a.txt,b/c.txt'])
++    expect(clob('git checkout HEAD~1 -- a.txt')).toEqual(['checkout any a.txt'])
++    expect(clob('git checkout HEAD~1 a.txt')).toEqual(['checkout any a.txt'])
++    expect(clob('git checkout main')).toEqual(['checkout index main'])
++    expect(clob('git restore a.txt')).toEqual(['restore index a.txt'])
++    expect(clob('git restore --staged --worktree a.txt')).toEqual(['restore head a.txt'])
++    expect(clob('git restore -SW a.txt')).toEqual(['restore head a.txt'])
++    expect(clob('git restore --source=main a.txt; git restore -s HEAD~2 b.txt')).toEqual(['restore any a.txt', 'restore any b.txt'])
++    expect(clob('git restore "src/*.ts"')).toEqual(['restore index all'])
++    expect(clob('git stash push -- a.txt')).toEqual(['stash head a.txt'])
++    expect(clob('git rm -r src/old')).toEqual(['rm any src/old'])
++    expect(clob('git -C sub rm a.txt')).toEqual(['rm any sub/a.txt'])
++    expect(clob('git clean -fdx')).toEqual(['clean (no lease) clean all [-fdx]'])
++    expect(clob('git clean -f -- build', 'powershell')).toEqual(['clean (no lease) clean all [-f -- build]'])
++  })
++
++  test('not overwrites: git refuses these itself, or they touch only the index or nothing', () => {
++    expect(clob('git stash list; git stash show -p; git stash pop; git stash apply; git stash drop; git stash clear')).toEqual([])
++    expect(clob('git reset; git reset HEAD a.txt; git reset --soft HEAD~1; git reset --keep HEAD~1; git reset --merge')).toEqual([])
++    expect(clob('git checkout -b feat; git checkout -B feat origin/feat; git switch main; git switch -c new')).toEqual([])
++    expect(clob('git restore --staged a.txt; git restore')).toEqual([])
++    expect(clob('git clean -n; git clean -fn; git clean --dry-run -f; git clean -fi; git clean -d')).toEqual([])
++    expect(clob('git rm --cached a.txt; git rm -n a.txt')).toEqual([])
++    expect(clob('echo "git reset --hard" && grep -n "git stash" notes.md')).toEqual([])
++    // git clean is not a lease verb: alone it is no lease op either.
++    expect(gitOps('git clean -n', 'bash')).toEqual([])
++  })
++})
++
++const T = 'c:/proj'
++const lim = { staleMs: STALE_MS, claimMs: 30 * 60_000, leaseMs: 2 * 60_000 }
++const A = 'aaaaaaaa-0000-4000-8000-000000000001'
++const B = 'bbbbbbbb-0000-4000-8000-000000000002'
++const card = (id: string, role: string, at: number, git?: Card['git']): Card => ({ ...newCard(id, 'C:/proj', at, role), ...(git ? { git } : {}) })
++
++describe('the git lease', () => {
++  test('a peer with a fresh lease in the same tree holds it; stale, lapsed or another tree does not', () => {
++    const now = 1_000_000
++    const held = card(A, 'api', now - 1000, { since: now - 5000, at: now - 1000, verb: 'add', tree: T })
++    const b = { folder: 'C:/proj', cards: { [A]: held } }
++    expect(gitHolder(b, B, T, now, lim)?.sessionId).toBe(A)
++    expect(gitHolder(b, A, T, now, lim)).toBeUndefined()
++    expect(gitHolder(b, B, 'c:/proj-wt', now, lim)).toBeUndefined()
++    expect(gitHolder(b, B, T, now + lim.leaseMs, lim)).toBeUndefined()
++    expect(gitHolder({ ...b, cards: { [A]: { ...held, seenAt: now - STALE_MS - 1 } } }, B, T, now, lim)).toBeUndefined()
++    expect(gitHolder({ ...b, cards: { [A]: { ...held, gone: true } } }, B, T, now, lim)).toBeUndefined()
++  })
++
++  test('two leases taken at once: the earlier holds, then the smaller id', () => {
++    const now = 1_000_000
++    const a = card(A, 'api', now, { since: now - 10, at: now, verb: 'add', tree: T })
++    const mine = { since: now - 10, at: now, verb: 'commit', tree: T }
++    expect(gitHolder({ folder: 'C:/proj', cards: { [A]: a } }, B, T, now, lim, mine)?.sessionId).toBe(A)
++    // From A's side, B's equal lease does not beat A.
++    const bCard = card(B, 'tests', now, { ...mine })
++    expect(gitHolder({ folder: 'C:/proj', cards: { [B]: bCard } }, A, T, now, lim, { since: now - 10, at: now, verb: 'add', tree: T })).toBeUndefined()
++    // A later lease of B's does not beat A's earlier one.
++    expect(gitHolder({ folder: 'C:/proj', cards: { [B]: card(B, 'tests', now, { ...mine, since: now - 5 }) } }, A, T, now, lim, { since: now - 10, at: now, verb: 'add', tree: T })).toBeUndefined()
++  })
++
++  test('takeLease keeps `since` while fresh, restarts after a lapse or in another tree', () => {
++    const l = takeLease(undefined, 'add', T, 100, 1000)
++    expect(l).toEqual({ since: 100, at: 100, verb: 'add', tree: T })
++    expect(takeLease(l, 'commit', T, 600, 1000)).toEqual({ since: 100, at: 600, verb: 'commit', tree: T })
++    expect(takeLease(l, 'commit', T, 1200, 1000).since).toBe(1200)
++    expect(takeLease(l, 'commit', 'c:/other', 600, 1000).since).toBe(600)
++  })
++
++  test('the card keeps the lease through a write and a read; a tombstone drops it', () => {
++    const c = card(A, 'api', 5, { since: 1, at: 5, verb: 'push', tree: T })
++    expect(parseCard(cardText(c), A)?.git).toEqual({ since: 1, at: 5, verb: 'push', tree: T })
++    expect(parseCard(cardText(newCard(A, 'C:/proj', 5, null)), A)?.git).toBeUndefined()
++    expect(readBoard('C:/proj', [{ id: A, text: '{"version":1,"git":{"verb":1}}' }], {}).cards[A]?.git).toBeUndefined()
++  })
++
++  test('peer lines and the refusals say who holds what, and how to get out of it', () => {
++    const now = 1_000_000
++    const a = { ...card(A, 'api', now, { since: now - 30_000, at: now - 20_000, verb: 'commit', tree: T }), task: 'Login endpoint' }
++    const b = { folder: 'C:/proj', cards: { [A]: a } }
++    expect(peerLines(b, B, now, lim)).toContain('  holds the git lease (git commit 20s ago)')
++    expect(peerLines(b, B, now, { staleMs: lim.staleMs, claimMs: lim.claimMs })).not.toContain('  holds the git lease (git commit 20s ago)')
++    const deny = gitDenyText(a, 'push', now, lim.leaseMs)
++    expect(deny).toContain('git push refused')
++    expect(deny).toContain('api (aaaaaaaa) (Login endpoint), which ran git commit 20s ago')
++    expect(deny).toContain("when that session's turn ends, or about 2 min after its last git command")
++    expect(deny).toContain('Do not re-run this command in a loop')
++    const staged = stagedDenyText([{ file: 'c:/proj/src/a.ts', holder: a }], 'C:/proj')
++    expect(staged).toContain('a file another live session claims: src/a.ts (held by api (aaaaaaaa))')
++    expect(staged).toContain('git restore --staged -- src/a.ts')
++  })
++})
++// `git`: what the stubbed git answers (paths relative to the repo top); `notRepo`: rev-parse fails.
++// `head`: changed vs HEAD (default: staged and modified); `clean`: what git clean -n would remove.
++type GitWorld = { staged?: string[]; modified?: string[]; untracked?: string[]; head?: string[]; clean?: string[]; notRepo?: boolean }
++function world(on: On, opts: { writeFails?: boolean; failPath?: RegExp; roles?: Record<string, string>; git?: GitWorld } = {}) {
++  const git: GitWorld = opts.git ?? {}
++    const a = e.argv.join(' ')
++    const z = (l?: string[]) => (l ?? []).join(String.fromCharCode(0))
++    if (a.includes('rev-parse')) return { value: (git.notRepo ? { exitCode: 128, stdout: '', stderr: 'not a git repository' } : { exitCode: 0, stdout: `${CWD}\n${CWD}/.git\n`, stderr: '' }) as never }
++    if (a.includes(' clean -n')) return { value: { exitCode: 0, stdout: (git.clean ?? []).map(n => `Would remove ${n}\n`).join(''), stderr: '' } as never }
++    const out = a.includes('diff HEAD')
++      ? z(git.head ?? [...(git.staged ?? []), ...(git.modified ?? [])])
++      : a.includes('diff --cached')
++        ? z(git.staged)
++        : a.includes('diff --name-only')
++          ? z(git.modified)
++          : a.includes('ls-files')
++            ? z(git.untracked)
++            : ''
++    return { value: { exitCode: 0, stdout: out, stderr: '' } as never }
++  return { files, mtimes, who, reached, toasts, sends, runs, clock, put, live, git }
++  test('/board pane opens the dashboard Board tab just after the command; without the dashboard it prints the board', async ($, on) => {
++    const w = world(on)
++    on('session.surfaces', () => ({ value: ['terminal'] as never }))
++    const listed = { names: ['board', 'dashboard'] }
++    on('command.list', () => ({ value: listed.names.map(name => ({ name })) as never }))
++    const ran: { command: string; args: string }[] = []
++    on('command.run', ($, e) => {
++      ran.push({ command: String(e.command), args: String(e.args) })
++      return { text: '' } as never
++    })
++    const r = (await $.command.run({ command: 'board', args: 'pane' } as never)) as { text?: string }
++    expect(r.text).toBeUndefined()
++    await w.clock.advance(50)
++    expect(ran).toEqual([{ command: 'dashboard', args: 'board' }])
++    listed.names = ['board']
++    const r2 = (await $.command.run({ command: 'board', args: 'pane' } as never)) as { text?: string }
++    expect(r2.text).toContain('Board for')
++    await w.clock.advance(50)
++    expect(ran.length).toBe(1)
++  })
++
++    expect(r.text).toContain('1/2 ask(s) done, 1 refused edit(s), 0 git wait(s), 1 wake(s).')
++
++const bash = (command: string) => ({ tool: 'Bash', command }) as never
++const turnEnd = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
++
++describe('board: the git lease', () => {
++  test('one session at a time runs git in the tree; the holder\'s turn end frees it', { options: {} }, async ($, on) => {
++    const w = world(on, { roles: { [A]: 'api', [B]: 'tests' } })
++    await $.session.start({ cwd: CWD } as never)
++    await $.prompt.submit({ text: 'Build the login endpoint', wait: false, origin: { kind: 'sdk' } } as never)
++    expect((await $.tool.call(bash('git add src/login.ts'))).deny).toBeUndefined()
++    expect(cardOf(w.files, A)?.git).toMatchObject({ verb: 'add', tree: 'c:/proj' })
++
++    w.who.id = B
++    await w.clock.advance(1000)
++    await $.session.start({ cwd: CWD } as never)
++    await $.prompt.submit({ text: 'Write the auth tests', wait: false, origin: { kind: 'sdk' } } as never)
++    const refused = await $.tool.call(bash('git add tests/auth.ts && git commit -m "tests"'))
++    expect(refused.deny ?? '').toContain('git add refused. Another live session on this board holds the git lease for this working tree: api (aaaaaaaa) (Build the login endpoint), which ran git add 1s ago.')
++    expect(w.reached.filter(r => r.startsWith('b:Bash'))).toEqual([])
++    expect(w.toasts).toContain('board: refused git: another session holds the git lease')
++    // Read-only git and other commands go on.
++    expect((await $.tool.call(bash('git status && git diff --cached && git log -3'))).deny).toBeUndefined()
++    expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_status' } as never))).toContain('  holds the git lease (git add 1s ago)')
++
++    // A's turn ends: the lease is free, and B takes it.
++    w.who.id = A
++    await $.turn.complete(turnEnd)
++    expect(cardOf(w.files, A)?.git).toBeUndefined()
++    w.who.id = B
++    expect((await $.tool.call(bash('git add tests/auth.ts && git commit -m "tests"'))).deny).toBeUndefined()
++    expect(cardOf(w.files, B)?.git).toMatchObject({ verb: 'commit' })
++    expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_status' } as never))).toContain('holds the git lease (git commit')
++
++    // Now A waits for B.
++    w.who.id = A
++    expect((await $.tool.call(bash('git push'))).deny ?? '').toContain('git push refused')
++    await w.clock.settle()
++    expect(kindsOf(w.files, A)).toEqual(['start', 'busy', 'gitHold', 'idle', 'gitWait'])
++    expect(kindsOf(w.files, B)).toEqual(['start', 'busy', 'gitWait', 'gitHold'])
++    const wait = parseHistory(w.files[`${DIR}/history/${B}.json`], B)?.events.find(e => e.kind === 'gitWait')
++    expect(wait).toMatchObject({ verb: 'add', holder: A, holderRole: 'api' })
++    // The history holds the verb, never the command line.
++    expect(w.files[`${DIR}/history/${B}.json`]).not.toContain('tests/auth.ts')
++  })
++
++  test('the lease lapses gitLeaseMinutes after the last git command; board_release frees it at once', { options: { gitLeaseMinutes: 1 } }, async ($, on) => {
++    const w = world(on)
++    await $.session.start({ cwd: CWD } as never)
++    await $.tool.call(bash('git add a.txt'))
++    w.who.id = B
++    await $.session.start({ cwd: CWD } as never)
++    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeDefined()
++    await w.clock.advance(61_000)
++    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeUndefined()
++    // B releases everything: A may go on at once.
++    expect(text(await $.tool.call({ tool: 'mcp__bws-board__board_release' } as never))).toContain('every claim and the git lease')
++    w.who.id = A
++    expect((await $.tool.call(bash('git push'))).deny).toBeUndefined()
++  })
++
++  test("a commit that would take in a peer's claimed file is refused, with the fix", { options: {} }, async ($, on) => {
++    const w = world(on, { roles: { [A]: 'api', [B]: 'tests' }, git: {} })
++    await $.session.start({ cwd: CWD } as never)
++    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/src/login.ts', old_string: 'a', new_string: 'b' } as never)
++    await $.turn.complete(turnEnd)
++
++    w.who.id = B
++    await $.session.start({ cwd: CWD } as never)
++    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/tests/auth.ts', old_string: 'a', new_string: 'b' } as never)
++    // git add -A runs after the check: every modified and untracked file counts.
++    w.git.modified = ['src/login.ts', 'tests/auth.ts']
++    const all = await $.tool.call(bash('git add -A && git commit -m "tests"'))
++    expect(all.deny ?? '').toContain('git commit refused. It would commit a file another live session claims: src/login.ts (held by api (aaaaaaaa))')
++    expect(all.deny ?? '').toContain('git restore --staged -- src/login.ts')
++    expect(all.deny ?? '').not.toContain('tests/auth.ts')
++    expect(w.toasts).toContain('board: refused git: a commit of files another session claimed')
++    // Already staged, or named in the add: the same.
++    w.git.staged = ['src/login.ts', 'tests/auth.ts']
++    expect((await $.tool.call(bash('git commit -m "tests"'))).deny ?? '').toContain('src/login.ts')
++    w.git.staged = []
++    expect((await $.tool.call(bash('git add src && git commit -m "tests"'))).deny ?? '').toContain('src/login.ts')
++    expect((await $.tool.call(bash('git commit -am "tests"'))).deny ?? '').toContain('src/login.ts')
++    // The fix in one command (seen live): the restore runs before the commit, so a.txt is out.
++    w.git.staged = ['src/login.ts']
++    expect((await $.tool.call(bash('git restore --staged -- src/login.ts && git add -- tests/auth.ts && git commit -m "tests"'))).deny).toBeUndefined()
++    // Only its own file: it goes on.
++    w.git.staged = ['tests/auth.ts']
++    expect((await $.tool.call(bash('git add tests/auth.ts && git commit -m "tests"'))).deny).toBeUndefined()
++    await w.clock.settle()
++    const denies = parseHistory(w.files[`${DIR}/history/${B}.json`], B)?.events.filter(e => e.kind === 'deny')
++    expect(denies?.[0]).toMatchObject({ file: 'c:/proj/src/login.ts', holder: A })
++  })
++
++  test('alone, another repo, or gitLease off: nothing refused and no staged check run', { options: {} }, async ($, on) => {
++    const w = world(on, { git: { staged: ['src/login.ts'] } })
++    await $.session.start({ cwd: CWD } as never)
++    expect((await $.tool.call(bash('git add -A && git commit -m x && git push'))).deny).toBeUndefined()
++    expect(w.runs.filter(r => r.includes('diff'))).toEqual([])
++    // A peer with no claims in the tree: still no diff.
++    w.who.id = B
++    await $.session.start({ cwd: CWD } as never)
++    w.who.id = A
++    await $.turn.complete(turnEnd)
++    w.who.id = B
++    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeUndefined()
++    expect(w.runs.filter(r => r.includes('diff'))).toEqual([])
++    // Not this board's repository: ignored.
++    w.git.notRepo = true
++    w.who.id = A
++    expect((await $.tool.call(bash('git -C C:/elsewhere commit -m x'))).deny).toBeUndefined()
++  })
++
++  test('gitLease off: git is never checked', { options: { gitLease: false } }, async ($, on) => {
++    const w = world(on)
++    await $.session.start({ cwd: CWD } as never)
++    await $.tool.call(bash('git add a.txt'))
++    w.who.id = B
++    await $.session.start({ cwd: CWD } as never)
++    expect((await $.tool.call(bash('git commit -m x'))).deny).toBeUndefined()
++    expect(w.runs.filter(r => r[0] === 'git')).toEqual([])
++    expect(cardOf(w.files, A)?.git).toBeUndefined()
++  })
++})
++
++describe("board: git can't overwrite a peer's changed files", () => {
++  // A (api) changed src/login.ts and created notes/new.md, and its turn ended: no lease anywhere.
++  const setup = async ($: Parameters<NonNullable<Parameters<typeof test>[2]>>[0], on: On, git: GitWorld) => {
++    const w = world(on, { roles: { [A]: 'api', [B]: 'tests' }, git })
++    await $.session.start({ cwd: CWD } as never)
++    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/src/login.ts', old_string: 'a', new_string: 'b' } as never)
++    await $.tool.call({ tool: 'Write', file_path: 'C:/proj/notes/new.md', content: 'x' } as never)
++    await $.turn.complete(turnEnd)
++    w.who.id = B
++    await $.session.start({ cwd: CWD } as never)
++    await $.tool.call({ tool: 'Edit', file_path: 'C:/proj/tests/auth.ts', old_string: 'a', new_string: 'b' } as never)
++    return w
++  }
++  const denied = async ($: Parameters<NonNullable<Parameters<typeof test>[2]>>[0], command: string) => (await $.tool.call(bash(command))).deny
++
++  test('stash, hard reset, checkout ., restore, clean -f, rm and switch -f are refused', { options: {} }, async ($, on) => {
++    const w = await setup($, on, { modified: ['src/login.ts', 'tests/auth.ts'], untracked: ['notes/new.md'], clean: ['notes/'] })
++    const stash = (await denied($, 'git stash')) ?? ''
++    expect(stash).toContain('git stash refused. It would overwrite or delete a file another live session claims and has changed: src/login.ts (held by api (aaaaaaaa))')
++    expect(stash).toContain('git stash push -- <your files>')
++    expect(w.toasts).toContain('board: refused git: it would overwrite files another session changed')
++    expect((await denied($, 'git stash -u')) ?? '').toContain('2 files another live session claims and has changed: src/login.ts, notes/new.md')
++    expect((await denied($, 'git reset --hard HEAD')) ?? '').toContain('git reset refused')
++    expect((await denied($, 'git checkout .')) ?? '').toContain('src/login.ts')
++    expect((await denied($, 'cd src && git checkout .')) ?? '').toContain('src/login.ts')
++    expect((await denied($, 'git restore src/login.ts')) ?? '').toContain('git restore refused')
++    expect((await denied($, 'git checkout -f main')) ?? '').toContain('git checkout refused')
++    expect((await denied($, 'git switch --discard-changes main')) ?? '').toContain('git switch refused')
++    expect((await denied($, 'git clean -fd')) ?? '').toContain('git clean refused. It would overwrite or delete a file another live session claims and has changed: notes/new.md')
++    expect(w.runs.some(r => r.join(' ') === 'git -c core.quotepath=off clean -n -d')).toBe(true)
++    expect((await denied($, 'git rm src/login.ts')) ?? '').toContain('git rm refused')
++    await w.clock.settle()
++    const denies = parseHistory(w.files[`${DIR}/history/${B}.json`], B)?.events.filter(e => e.kind === 'deny').map(e => e.file)
++    expect(denies).toContain('c:/proj/notes/new.md')
++  })
++
++  test('commands that leave the peer\'s files alone go on', { options: {} }, async ($, on) => {
++    const w = await setup($, on, { modified: ['src/login.ts', 'tests/auth.ts'], untracked: ['notes/new.md'], clean: ['tmp/'] })
++    expect(await denied($, 'git restore tests/auth.ts')).toBeUndefined()
++    expect(await denied($, 'git checkout -- tests/auth.ts')).toBeUndefined()
++    expect(await denied($, 'git stash push -m wip -- tests/auth.ts')).toBeUndefined()
++    expect(await denied($, 'cd tests && git checkout .')).toBeUndefined()
++    expect(await denied($, 'git restore --staged src/login.ts')).toBeUndefined()
++    expect(await denied($, 'git rm --cached src/login.ts')).toBeUndefined()
++    expect(await denied($, 'git switch main && git stash list && git stash pop')).toBeUndefined()
++    expect(await denied($, 'git clean -fd')).toBeUndefined()
++    expect(await denied($, 'git clean -n')).toBeUndefined()
++    // After a cd it cannot follow, the command may run in another worktree: not judged.
++    expect(await denied($, 'cd "$WT" && git checkout main -- src && git reset --hard')).toBeUndefined()
++    expect(w.reached.filter(r => r.startsWith('b:Bash')).length).toBe(10)
++  })
++
++  test("a claim on a file the holder already committed never blocks; a delete or a restore from a commit does", { options: {} }, async ($, on) => {
++    await setup($, on, { head: [], modified: [] })
++    expect(await denied($, 'git reset --hard')).toBeUndefined()
++    expect(await denied($, 'git checkout .')).toBeUndefined()
++    expect((await denied($, 'git rm src/login.ts')) ?? '').toContain('src/login.ts')
++    // A delete of a variable path counts only changed files.
++    expect(await denied($, 'git rm -q $R/old.txt')).toBeUndefined()
++    expect((await denied($, 'git checkout HEAD~1 -- src')) ?? '').toContain('src/login.ts')
++    expect((await denied($, 'git restore --source=main src/login.ts')) ?? '').toContain('src/login.ts')
++  })
++
++  test('git clean is checked but never takes the lease; alone, no git runs', { options: {} }, async ($, on) => {
++    const w = world(on, { git: { clean: ['notes/'] } })
++    await $.session.start({ cwd: CWD } as never)
++    expect(await denied($, 'git clean -fdx')).toBeUndefined()
++    expect(await denied($, 'git stash && git reset --hard')).toBeUndefined()
++    expect(w.runs.filter(r => r.includes('diff') || r.includes('clean'))).toEqual([])
++    // clean alone took no lease; the stash did.
++    w.runs.length = 0
++    await $.turn.complete(turnEnd)
++    expect(await denied($, 'git clean -fd')).toBeUndefined()
++    expect(cardOf(w.files, A)?.git).toBeUndefined()
++    await w.clock.settle()
++    expect(kindsOf(w.files, A)?.filter(k => k === 'gitHold').length).toBe(1)
++  })
++})
++  git?: { since: number; at: number; verb: string; tree: string }
++  "version": "0.15.0",
++  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. Claude records assumptions and shelves tangents through its tools.",
++    },
++    "shelfPath": {
++      "type": "string",
++      "title": "Shelf file",
++      "description": "Path of the idea shelf JSON file. Empty: <CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json.",
++      "default": ""
++    },
++    "shelfNudge": {
++      "type": "boolean",
++      "title": "Tell Claude to shelve tangents",
++      "description": "Add one line to the conversation's opening context with the open-idea count and the shelve_idea tool.",
++      "default": true
++    },
++    "handoffNudgePercent": {
++      "type": "number",
++      "title": "Handoff nudge (context %)",
++      "description": "Once per session, when the context passes this percentage, toast and highlight Handoff on the bar. 0 turns it off.",
++      "default": 70
++A Claude Code mod. It puts a dashboard pane beside the transcript (Assumptions, Shelf, Board and Loop tabs), a one-row action bar above the prompt with the active run and live editor/device state, and guards calls to Unreal, Unity and adb.
++
++0.15.0 folds in what were two separate mods, bws-assumptions and bws-shelf: their tools, commands and state now live here, and those plugins are retired.
++### Dashboard
++- **One pane, `Dashboard`**, docked right of the transcript in fullscreen from 110 columns, else inline above the prompt. Its own tab strip:
++  - `Assumptions` (count: unsent), `Shelf` (count: this project's open ideas), `Board` (count: asks waiting on this session), and `Loop` while a harness loop is live or you picked it with `/loop-watch`.
++  - The picked tab is drawn as the primary button. With the pane focused, `1`–`4` switch tabs; each tab keeps its own keys.
++  - With nothing picked, it shows the first tab with something waiting.
++- **Opening it:** `/dashboard [assumptions|shelf|board|loop]`, `/assumptions`, `/shelf [all]`, `/loop-watch`, `/board pane` (bws-board), or the bar. Opened over an empty prompt box it takes the keys; `Esc` hands them back, the pane stays.
++- **Proactive:** news for you brings its tab up:
++  - Claude records an assumption → Assumptions.
++  - An ask addressed to this session appears on bws-board → Board (cockpit watches bws-board's `summary` writes, so it comes at once).
++  - A loop alert (needs you, stalled, driver dead, all done) → Loop, on that loop.
++  - Session start with unsent assumptions or open ideas for the project → the dashboard opens on that tab. Not after `/clear`, `/resume` or `/branch` (no `session.start` there).
++  - The dashboard is opened if closed, or switched to the tab if open, but only while you are not using it (pane not focused); then only the tab count changes. Opened without being asked, a pane is placed only from 144 terminal columns (110 for one you opened before).
++  - Closed by you (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's chips still count. Any asked open clears that.
++- **Headless:** `claude -p "/dashboard"` prints every tab as text.
++
++### Action bar (above the prompt, terminal and Desktop)
++- One row that wraps when narrow:
++  - **Chips:** the run folder name with its open count (`- [ ]` in PLAN.md and TASKS.md), devices that are up or in trouble (UE and its unreal-mcp port, Unity, Blender, adb, VRAM used/total, warning on `pressure`), the loop state while a loop is live, the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), `⚑ N` unsent assumptions (warning while any are unreviewed), `💡 N` open ideas.
++  - **Buttons:** `1` resume run, `2` dashboard open/close, `a` Assumptions, `s` Shelf, `b` Board (with bws-board loaded), `4` Loop (with a loop), `h` handoff, `i` idea, `e` enhance, `3` hide.
++- Digits answer from an empty prompt box; letters need the bar focused (`ctrl+x tab`; it moves the keys bar → pane → prompt).
++- **`i` idea** shelves the prompt box's draft and clears the box. **`e` enhance** runs bws-enhance's `/enhance` on the draft (mid-turn it queues until the turn ends); without bws-enhance it says so. **`h` handoff** writes HANDOFF.md as `/handoff` does, and is highlighted after the handoff nudge.
++- The guard's last action shows on a row under the bar for ten minutes.
++- Refreshes every `refreshSeconds` and after each turn; `/cockpit` probes on demand.
++- Shares the slot: the band above the prompt holds one tree, so when another mod draws a band there too, bws-cockpit draws it under its own row instead of hiding it. Hidden (`3`), or while a survey shows, it hands the whole slot on. Both bands' digit hotkeys stay live, so two mods that bind the same digit will clash.
++- Known: Hide has no way back within the session, and the bar draws only once the first refresh has landed.
++- **`/cockpit`** gives the run, devices, loop and guard as text, for sessions where nothing draws.
++### Assumptions (tab)
++- Claude records each assumption it makes with `mcp__bws-cockpit__record_assumption` (`assumption`, optional `why`). A short system-prompt section, added only where the tool is offered, tells it to call it for choices you didn't specify and keep going. The tool answers `Recorded as A3. Keep working…`.
++- The tab lists `A<n> <assumption>`, its reason, and **Right** / **Wrong**. Wrong opens an `Instead:` field for the correction (Enter saves it; text typed but not saved is still sent). Pressing a verdict again clears it.
++- **Send N to Claude** (`s`) submits one prompt headed `Assumption review`, as your own message: each WRONG item with its correction (or "ask me what it should be"), then the confirmed ones, then "apply each correction now". If Claude is busy it runs when the turn ends. **Clear sent** (`c`) removes sent items.
++- The list is the session's (`$.state`): it survives a hot reload. Numbers never repeat in a session. Mobile has no text field: Wrong there sends "ask me what it should be".
++
++### Shelf (tab)
++- `/idea <text>` adds an idea to this project's shelf; it runs mid-turn and only toasts. Claude shelves its own tangents with `mcp__bws-cockpit__shelve_idea {text, detail?}` (always loaded); `list_ideas {scope?}` and `close_idea {id, status}` load through ToolSearch.
++- The tab lists this project's open ideas, newest first, eight at a time: `▶` puts the idea in the prompt box unsent (the box must be empty), `✓` marks it done, `✗` drops it. `a` toggles this project / all projects.
++- An attended conversation gets one line of context with its first message: the open-idea count and the instruction to shelve tangents rather than follow them (`shelfNudge`).
++- One JSON file holds every project's ideas, so all sessions share the shelf: `<CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json` (the same file bws-shelf used), or `shelfPath`. Every change re-reads the file before writing it; done and dropped ideas stay with `closedAt`. The count refreshes after each turn, which picks up other sessions' ideas.
++
++### Loop Watch (Loop tab)
++- **`/loop-watch`** opens the dashboard's Loop tab for this project's harness loop. It reads `Tools/<name>/loop.json`, then `<harnessDir>/state.json` and each unit's `TASKS.md`, and shows:
++  - open needs, each with an input box: type your answer and press Enter. That runs `python <harness.py> answer <unit> <N> <your text>` in the repo root and refreshes the tab. The text goes as a single argument with no shell, so quotes and `&` pass as typed. An empty answer is refused.
++  - needs already answered in the unit's `ANSWERS.md` show `answered: ...` instead of the box. Once every open need is answered, the tab says `all needs answered · r resumes the loop`. `harness.py answer` records the answer but does not resume the loop.
++- **Alerts:** each one toasts once, lights the bar's `loop` chip and raises the Loop tab:
++  - The result of each action shows in the tab.
++- **Bar:** a `loop` chip (running, needs you, stalled, stopped) and the hotkey `4: loop`, which opens the tab. `/cockpit` prints the loop and its board URL too.
++- **The bar's `h`** writes it the same way (no focus text) and toasts the result's first line.
++- **Nudge:** once per session, when the context passes `handoffNudgePercent` (default 70%), a toast says it's time for a handoff and `h` is highlighted on the bar until a handoff is written.
++| `refreshSeconds` | `30` | Bar re-probe interval |
++| `backgroundProbe` | `true` | Off stops the timed, per-turn and session-start probes (they start powershell, nvidia-smi and adb, which can flash a console window on Windows). `/cockpit` and the guard still probe on demand |
++| `shelfPath` | (empty) | The idea shelf file; empty: `<CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json` |
++| `shelfNudge` | `true` | The shelf line in a conversation's opening context |
++| `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
++| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `prompt.compose` (the assumptions guide), `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff, dashboard, assumptions, idea, shelf), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea`; Edit/Write/NotebookEdit/Bash/PowerShell, observe only, to see which run folders the session writes), `ui.render` (AbovePrompt, the dashboard Pane), `ui.close` (your close of the dashboard), `state.set` (observes bws-board's `summary` writes; never changes them), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
++| Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop tab: `python <harness.py> start --resume`, `stop` and `answer` |
++| Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; reads and writes the shelf file; writes `HANDOFF.md` (keeping the previous one) |
++| Prompts | `$.prompt.submit` for resume and the assumption review; `$.prompt.read`/`fill` for the bar's idea and enhance and the Shelf's ▶; `$.command.run` for bws-enhance's `/enhance` |
++| Tools | registers `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea` |
++| State | reads bws-board's `summary` and `lines` (no dependency: absent, the Board tab says so) |
++It writes only the shelf file and HANDOFF.md.
++| 0.15.0 (2.1.296) | Dashboard pane, one-row bar, bws-assumptions and bws-shelf folded in. validate passed; tsc 5.8.3 clean; 162/162 tests (tabs and counts, raise vs a focused pane, closed from the bar, session-start open, the handoff nudge, a loop alert raising the Loop tab, the bar's idea/enhance/tab/dash buttons, the moved assumption and shelf tests). Live in a 170-column tmux terminal with Sonnet (`runs/2026-10-10-bws-dashboard/receipts/ui-*.txt`): the dashboard opened at start on Shelf; Claude's `record_assumption` calls switched it to Assumptions; an ask from another session switched it to Board; the handoff toast and highlight; in-pane tab keys, Right/Wrong/Instead/Send/Clear sent, the shelf scope, ✗ and ▶; `/board pane`; the bar's 2, a, s, b, i, e, h and 3. Then checked by Brian in his own session. Not tried live: bar `1` resume, `4` and the Loop tab with a real loop (tests only), ✓ in the Shelf tab (tests), the Desktop app |
++// Pure helpers for the dashboard's Assumptions tab (moved from bws-assumptions): the list, the lines it draws, the verdict prompt.
++  'Record an assumption you are making while building, so the user can confirm or correct it later from the dashboard. ' +
++  `While you build, change or configure anything, call mcp__bws-cockpit__${TOOL_NAME} each time you make an assumption ` +
++  `The user reviews them in the dashboard pane. When a message arrives headed "Assumption review", treat each WRONG item as a ` +
++// The tab's heading line.
++  const lines = ['Assumption review (from the dashboard):']
++import type { Assumption, DashTab, DashView, ShelfView } from '../types'
++import {
++  GUIDE,
++  TOOL_DESCRIPTION,
++  TOOL_NAME,
++  TOOL_SCHEMA,
++  active,
++  add as addAssumption,
++  clip,
++  listText as assumptionsText,
++  markSent,
++  ready,
++  sent,
++  setCorrection,
++  setVerdict,
++  summary as assumptionsSummary,
++  unreviewed,
++  verdictPrompt,
++} from './assumptions'
++import {
++  addIdea,
++  contextLine,
++  ideaLine,
++  isAllScope,
++  listText as ideasText,
++  openIdeas,
++  parseShelf,
++  projectName,
++  resumePrompt as ideaPrompt,
++  serializeShelf,
++  setStatus,
++  shelfPath,
++  slash,
++} from './shelf'
++import type { By, Idea, Shelf, Status } from './shelf'
++// bws-board's lines for its board, drawn by the dashboard's Board tab.
++const boardLines = atom({ plugin: 'bws-board', key: 'lines' } as const, [])
++
++// ---------- Dashboard: one pane with its own tabs (Assumptions, Shelf, Board, Loop while one is live) ----------
++
++const DASH = 'dashboard'
++const DASH_TITLE = 'Dashboard'
++const TABS: DashTab[] = ['assumptions', 'shelf', 'board', 'loop']
++const TAB_LABEL: Record<DashTab, string> = { assumptions: 'Assumptions', shelf: 'Shelf', board: 'Board', loop: 'Loop' }
++const ASSUMPTION_TOOL = `mcp__bws-cockpit__${TOOL_NAME}`
++const TOOL_SHELVE = 'mcp__bws-cockpit__shelve_idea'
++const TOOL_LIST = 'mcp__bws-cockpit__list_ideas'
++const TOOL_CLOSE = 'mcp__bws-cockpit__close_idea'
++const SHELF_SHOWN = 8
++const SHELF_IDLE: ShelfView = { isAll: false, root: '', ideas: [], now: 0, note: '', count: 0 }
++
++const assumptions = atom({ plugin: 'bws-cockpit', key: 'assumptions' } as const, [] as Assumption[])
++const dash = atom({ plugin: 'bws-cockpit', key: 'dash' } as const, { tab: null, isClosedByPerson: false } as DashView)
++const shelf = atom({ plugin: 'bws-cockpit', key: 'shelf' } as const, SHELF_IDLE)
++const handoffNudge = atom({ plugin: 'bws-cockpit', key: 'handoffNudge' } as const, null)
++
++// Corrections typed but not yet saved with Enter, so Send still carries them. Lost on a reload, by design.
++const drafts = new Map<number, string>()
++// The shelf file option, read once in register.
++let shelfOption = ''
++// bws-board's last asks-for-this-session count, so a rise raises the Board tab (undefined until its first write).
++let lastAskedOfMe: number | undefined
++// Between a submitted prompt and its turn's end: a bar Enhance then waits for the turn.
++let isTurnActive = false
++  isShelfNudge: boolean
++  handoffNudgePercent: number
++      // News for the person: bring the Loop tab up, on this loop.
++      await update($, loopSelected, () => lp.name)
++      await settle(raise($, 'loop'))
++const str = (v: unknown) => (typeof v === 'string' ? v : '')
++
++// ---------- /handoff ----------
++
++// Writes HANDOFF.md into this session's run folder (as the Finish-Line Guard sees it), never one a worker freshened.
++async function writeHandoff($: EngineInterface, focus: string): Promise<string> {
++  const cwd = await $.session.cwd()
++  const now = await $.clock.now()
++  const run = await sessionRunFolder($)
++  const folder = run !== null ? run.folder : handoffFolder(now)
++  $.ui.toast(`handoff: writing ${folder}/HANDOFF.md`, { timeoutMs: 4000 })
++  let r = await $.model.fork({ prompt: handoffPrompt(folder, focus) })
++  // A resumed session has a transcript but nothing to fork until its first request: build from the rows instead.
++  if (!r.isAnswered && r.reason === 'nothing-to-fork') {
++    const rows = (await settle($.session.messages())) ?? []
++    const transcript = transcriptText(rows)
++    if (transcript.length === 0) return 'No handoff written: there is nothing to hand off yet: this conversation has no messages.'
++    r = await $.model.complete({ model: await $.session.model(), prompt: transcriptPrompt(transcript, folder, focus), maxTokens: 3000 })
++  }
++  if (!r.isAnswered) return `No handoff written: the model call failed (${r.reason}).`
++  const body = r.text.trim()
++  if (body.length === 0) return 'No handoff written: the model returned an empty reply.'
++  const path = joinPath(cwd, `${folder}/HANDOFF.md`)
++  const previous = await settle($.fs.read(path))
++  const kept = previous !== undefined ? keptName(now) : null
++  if (kept !== null) await $.fs.write(joinPath(cwd, `${folder}/${kept}`), previous ?? '')
++  await $.fs.write(path, `${body}\n`)
++  await update($, handoffNudge, h => (h === null ? h : { ...h, isDone: true }))
++  const start = startPrompt(folder)
++  const surfaces = await $.session.surfaces()
++  const copied = surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
++  return (
++    `Handoff written: ${folder}/HANDOFF.md (${words(body)} words)` +
++    (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
++    `.\nStart the next session with this prompt${copied ? ' (copied to the clipboard)' : ''}:\n${start}`
++  )
++}
++
++// Once per session, when the context passes the threshold: a toast, and Handoff highlighted on the bar until it runs.
++async function nudgeHandoff($: EngineInterface, atPercent: number) {
++  if (atPercent <= 0) return
++  const u = await $.session.usage()
++  const percent = u.context.percent
++  if (percent === undefined || percent < atPercent) return
++  const h = await read($, handoffNudge)
++  if (h !== null && h.startedAt === u.startedAt) return
++  await update($, handoffNudge, () => ({ startedAt: u.startedAt, isDone: false }))
++  $.ui.toast(`context at ${percent}%: time for a handoff (/handoff, or h on the bar)`, { timeoutMs: 10000 })
++}
++
++async function isNudged($: EngineInterface) {
++  const h = await read($, handoffNudge)
++  return h !== null && !h.isDone && h.startedAt === (await $.session.usage()).startedAt
++}
++
++// ---------- Shelf (moved from bws-shelf; the same shelf file) ----------
++
++async function shelfFile($: EngineInterface) {
++  const path = shelfPath(shelfOption, await $.env.get('CLAUDE_CONFIG_DIR'), (await $.env.get('USERPROFILE')) ?? (await $.env.get('HOME')))
++  if (path === '') throw new Error('no home folder: set the shelfPath option')
++  return path
++}
++
++// Always from disk: another session may have written since.
++async function loadShelf($: EngineInterface): Promise<Shelf> {
++  const path = await shelfFile($)
++  if (!(await $.fs.exists(path))) return parseShelf(undefined)
++  return parseShelf(String(await $.fs.read(path)))
++}
++
++// Read, change, write back at once, so concurrent sessions lose nothing but a same-instant race.
++async function changeShelf<T>($: EngineInterface, fn: (s: Shelf, now: number) => { shelf: Shelf; idea: T }) {
++  const now = await $.clock.now()
++  const r = fn(await loadShelf($), now)
++  await $.fs.write(await shelfFile($), serializeShelf(r.shelf))
++  return r.idea
++}
++
++async function sessionRoot($: EngineInterface) {
++  return slash(await $.session.root())
++}
++
++async function shelve($: EngineInterface, text: string, detail: string | undefined, by: By) {
++  const project = await sessionRoot($)
++  return changeShelf($, (s, now) => addIdea(s, { text, detail, by, project, now }))
++}
++
++async function closeIdea($: EngineInterface, id: number, status: Status) {
++  return changeShelf($, (s, now) => setStatus(s, id, status, now))
++}
++
++// Reloads the Shelf tab and this project's count (the bar's 💡), keeping the scope unless one is given.
++async function refreshShelf($: EngineInterface, isAll?: boolean, note = '') {
++  const old = await read($, shelf)
++  const all = isAll ?? old.isAll
++  const root = await sessionRoot($)
++  const s = await loadShelf($)
++  const ideas = openIdeas(s, all ? '' : root)
++  const count = all ? openIdeas(s, root).length : ideas.length
++  const now = await $.clock.now()
++  await update($, shelf, () => ({ isAll: all, root, ideas, now, note, count }))
++}
++
++async function onCloseIdea($: EngineInterface, idea: Idea, status: Status) {
++  await closeIdea($, idea.id, status)
++  await refreshShelf($, undefined, `#${idea.id} ${status === 'done' ? 'done' : 'dropped'}`)
++}
++
++async function onResumeIdea($: EngineInterface, idea: Idea) {
++  const box = (await $.prompt.read()).text.trim()
++  if (box !== '') {
++    await update($, shelf, old => ({ ...old, note: 'The prompt box has text: send or clear it first.' }))
++    return
++  }
++  const filled = await $.prompt.fill({ text: ideaPrompt(idea) })
++  if (!filled.isFilled) {
++    await update($, shelf, old => ({ ...old, note: 'Could not fill the prompt box.' }))
++    return
++  }
++  $.ui.toast(`#${idea.id} is in the prompt box. Mark it done from the Shelf tab when finished.`)
++}
++
++// ---------- Assumptions (moved from bws-assumptions) ----------
++
++async function recordAssumption($: EngineInterface, text: string, why: string) {
++  let added: Assumption | undefined
++  await update($, assumptions, list => {
++    const r = addAssumption(list, text, why)
++    added = r.item
++    return r.list
++  })
++  await settle(raise($, 'assumptions'))
++  return added
++}
++
++async function markAssumption($: EngineInterface, n: number, verdict: 'right' | 'wrong') {
++  await update($, assumptions, list => setVerdict(list, n, verdict))
++}
++
++async function saveCorrection($: EngineInterface, n: number, text: string) {
++  drafts.delete(n)
++  await update($, assumptions, list => setCorrection(list, n, text))
++}
++
++async function sendReview($: EngineInterface) {
++  const batch = ready(await read($, assumptions))
++  if (batch.length === 0) {
++    $.ui.toast('Assumptions: mark one Right or Wrong first')
++    return
++  }
++  const text = verdictPrompt(batch, drafts)
++  const ns = batch.map(a => a.n)
++  await update($, assumptions, list => {
++    let out = list
++    for (const a of batch) {
++      const d = drafts.get(a.n)
++      if (d !== undefined) out = setCorrection(out, a.n, d)
++    }
++    return markSent(out, ns)
++  })
++  for (const n of ns) drafts.delete(n)
++  // Never submit from inside the press: defer it. The engine runs it once the session is idle.
++  $.clock.after(10, () => void $.prompt.submit({ text, asUser: true }))
++  $.ui.toast(`Assumptions: ${ns.length} sent to Claude`)
++}
++
++async function clearSent($: EngineInterface) {
++  await update($, assumptions, list => list.filter(a => !a.isSent))
++}
++
++// ---------- Dashboard ----------
++
++const isLoopLive = (lp: LoopView | null, now: number) =>
++  lp !== null && (lp.driver.status === 'RUNNING' || lp.driver.status === 'PAUSED' || now - lp.stateMtime < RECENT_MS)
++
++// What the Loop tab counts: its warnings and the needs still unanswered.
++const loopCount = (lp: LoopView | null) =>
++  lp === null ? 0 : lp.alerts.filter(a => a.level !== 'info').length + lp.needs.filter(n => n.answered === null).length
++
++// The tab shown: the one picked while it is there, else the first with something waiting, else Assumptions.
++function pickTab(picked: DashTab | null, tabs: readonly DashTab[], counts: Record<DashTab, number>): DashTab {
++  if (picked !== null && tabs.includes(picked)) return picked
++  return tabs.find(t => counts[t] > 0) ?? 'assumptions'
++}
++
++// Opened by the person (a command, a bar button): placed at any width. Focus is granted only to a fresh open over an
++// empty box, so an open pane is closed first, as /shelf did.
++async function openDash($: EngineInterface, tab: DashTab | null) {
++  await update($, dash, d => ({ tab: tab ?? d.tab, isClosedByPerson: false }))
++  const isEmpty = (await $.prompt.read()).text.trim() === ''
++  const isOpen = (await $.ui.panes()).some(p => p.id === DASH)
++  if (isEmpty && isOpen) await $.ui.close({ id: DASH })
++  const r = await $.ui.open(isEmpty ? { id: DASH, title: DASH_TITLE, focus: true } : { id: DASH, title: DASH_TITLE })
++  if (!r.isPlaced) $.ui.toast(`Dashboard not shown (${r.reason}). /assumptions, /shelf and /board print as text headless.`)
++}
++
++// After the command has returned, when the composer is clear.
++function openDashSoon($: EngineInterface, tab: DashTab | null) {
++  $.clock.after(10, () => void openDash($, tab).catch(err => $.ui.toast(`Dashboard: could not open (${String(err)})`)))
++}
++
++// News for the person: bring its tab up unless they closed the dashboard, or are using it (the tab counts tell them).
++async function raise($: EngineInterface, tab: DashTab) {
++  if ((await $.session.surfaces()).length === 0) return
++  const d = await read($, dash)
++  if (d.isClosedByPerson) return
++  const pane = (await $.ui.panes()).find(p => p.id === DASH)
++  if (pane?.isFocused) return
++  if (d.tab !== tab) await update($, dash, old => ({ ...old, tab }))
++  if (!pane || !pane.isShown) await $.ui.open({ id: DASH, title: DASH_TITLE })
++}
++
++// The bar's dash button: open it, or close it as the person's close (news then only lights the bar).
++async function toggleDash($: EngineInterface) {
++  if ((await $.ui.panes()).some(p => p.id === DASH)) {
++    await update($, dash, d => ({ ...d, isClosedByPerson: true }))
++    await $.ui.close({ id: DASH })
++    return
++  }
++  await settle(refreshShelf($))
++  await openDash($, null)
++}
++
++async function showTab($: EngineInterface, tab: DashTab) {
++  if (tab === 'shelf') await settle(refreshShelf($))
++  await openDash($, tab)
++}
++
++// The bar's idea button: the prompt box's draft goes on the shelf, and the box is cleared.
++async function pressIdea($: EngineInterface) {
++  const draft = (await $.prompt.read()).text.trim()
++  if (draft === '') return void $.ui.toast('Idea: type the idea in the prompt box first')
++  if (draft.startsWith('/')) return void $.ui.toast('Idea: the box holds a slash command')
++  const idea = await shelve($, draft, undefined, 'user')
++  await $.prompt.fill({ text: '' })
++  await settle(refreshShelf($))
++  $.ui.toast(`Shelved #${idea.id}`)
++}
++
++// The bar's enhance button: bws-enhance's /enhance on the draft. Mid-turn the engine queues it until the turn ends.
++async function pressEnhance($: EngineInterface) {
++  const draft = (await $.prompt.read()).text.trim()
++  if (draft === '') return void $.ui.toast('Enhance: type a rough prompt first')
++  if (draft.startsWith('/')) return void $.ui.toast('Enhance: the box holds a slash command')
++  if (!(await $.command.list()).some(c => c.name === 'enhance')) return void $.ui.toast('Enhance: bws-enhance is not loaded')
++  if (isTurnActive) $.ui.toast('Enhance: runs when Claude finishes this turn')
++  await $.command.run({ command: 'enhance', args: draft })
++}
++
++async function pressHandoff($: EngineInterface) {
++  const text = await writeHandoff($, '')
++  $.ui.toast(text.split('\n')[0] ?? text, { timeoutMs: 8000 })
++}
++
++// Everything the dashboard shows, as text, where nothing draws a pane.
++async function dashText($: EngineInterface) {
++  const list = await read($, assumptions)
++  const ideas = openIdeas(await loadShelf($), await sessionRoot($))
++  const lines = await read($, boardLines)
++  return [
++    assumptionsText(list),
++    ideas.length === 0 ? 'The shelf is empty.' : ideasText(ideas, await $.clock.now(), false, false),
++    lines.length === 0 ? 'Board: bws-board is not loaded, or has not read the board yet.' : lines.join('\n'),
++  ].join('\n\n')
++}
++
++    isShelfNudge: options.shelfNudge !== false,
++    handoffNudgePercent: Number(options.handoffNudgePercent ?? 70),
++  shelfOption = String(options.shelfPath ?? '')
++  on('command.run', { command: 'handoff' }, async ($, e, next) => ({ text: await writeHandoff($, e.args.trim()) }))
++    isTurnActive = true
++  // One turn.complete hook: refresh the band and the shelf (another session may have added ideas), nudge a handoff
++  // when the context is full, then add the finish-line line under the answer.
++    if (!e.agentId) isTurnActive = false
++    if (surfaces.length > 0 && !e.agentId) {
++      void settle(refreshShelf($))
++      void settle(nudgeHandoff($, o.handoffNudgePercent))
++    }
++    // ---------- Dashboard: its commands and the tools of the Assumptions and Shelf tabs ----------
++    await $.command.register({ name: 'dashboard', description: 'Open the dashboard: Assumptions, Shelf, Board, Loop', argumentHint: '[assumptions|shelf|board|loop]', immediate: true })
++    await $.command.register({ name: 'assumptions', description: 'Show the assumptions Claude made in this session, to confirm or correct them', immediate: true })
++    await $.command.register({ name: 'idea', description: 'Shelve an idea for later without sending it to Claude', argumentHint: '<idea>', immediate: true })
++    await $.command.register({
++      name: 'shelf',
++      description: "Show this project's idea shelf (Resume / Done / Drop); /shelf all for every project",
++      argumentHint: '[all]',
++      immediate: true,
++    })
++    await $.tool.register({ name: TOOL_NAME, description: TOOL_DESCRIPTION, inputSchema: TOOL_SCHEMA, isDeferred: false })
++    await $.tool.register({
++      name: 'shelve_idea',
++      description:
++        "Park an idea on the user's idea shelf instead of acting on it now. Use it for tangents that would sidetrack the " +
++        'current task: an improvement you notice, a follow-up, an aside the user mentions. The shelf persists per project ' +
++        'across sessions; the user resumes ideas from /shelf. After shelving, continue the current task.',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          text: { type: 'string', description: 'The idea in one line (under 300 characters).' },
++          detail: { type: 'string', description: 'Optional context to resume it later: files, findings, why it matters.' },
++        },
++        required: ['text'],
++      },
++      isDeferred: false,
++    })
++    await $.tool.register({
++      name: 'list_ideas',
++      description: "List the open ideas on the user's idea shelf, for this project or all projects, with their ids and details.",
++      inputSchema: {
++        type: 'object',
++        properties: { scope: { type: 'string', enum: ['project', 'all'], description: 'project (default) or all.' } },
++      },
++    })
++    await $.tool.register({
++      name: 'close_idea',
++      description: 'Mark a shelved idea done (it was carried out) or dropped (no longer wanted), by its id.',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          id: { type: 'number', description: 'The idea id, as list_ideas shows it (#12 → 12).' },
++          status: { type: 'string', enum: ['done', 'dropped', 'open'], description: 'done, dropped, or open to reopen it.' },
++        },
++        required: ['id', 'status'],
++      },
++    })
++      // Something already waits on the person: open the dashboard on it (asks for this session arrive with
++      // bws-board's first summary write, below).
++      await settle(refreshShelf($))
++      const waiting = active(await read($, assumptions)).length > 0 ? 'assumptions' : (await read($, shelf)).count > 0 ? 'shelf' : null
++      if (waiting !== null) await settle(raise($, waiting))
++    // The shelf: the open count and the tool, so tangents get shelved, not followed.
++    if (isAttended && o.isShelfNudge) {
++      const ideas = await settle(loadShelf($).then(async s => openIdeas(s, await sessionRoot($))))
++      if (ideas !== undefined) blocks.push({ name: 'ideaShelf', text: contextLine(ideas.length, TOOL_SHELVE) })
++    }
++    await update($, dash, (d): DashView => ({ ...d, tab: 'loop' }))
++    openDashSoon($, 'loop')
++    return { text: `Loop Watch: ${lp.name} ${loopState(lp).word}` }
++  })
++
++  // ---------- Dashboard commands ----------
++
++  on('command.run', { command: 'dashboard' }, async ($, e) => {
++    const word = e.args.trim().toLowerCase()
++    const tab = word === '' ? null : (TABS.find(t => t.startsWith(word)) ?? null)
++    if (word !== '' && tab === null) return { text: 'Usage: /dashboard [assumptions|shelf|board|loop]' }
++    if ((await $.session.surfaces()).length === 0) return { text: await dashText($) }
++    await settle(refreshShelf($))
++    if (tab === 'loop') await refreshLoops($, o)
++    openDashSoon($, tab)
++    return {}
++  })
++
++  on('command.run', { command: 'assumptions' }, async $ => {
++    if ((await $.session.surfaces()).length === 0) return { text: assumptionsText(await read($, assumptions)) }
++    openDashSoon($, 'assumptions')
++    return {}
++  })
++
++  on('command.run', { command: 'idea' }, async ($, e) => {
++    const text = e.args.trim()
++    if (text === '') return { text: "Usage: /idea <idea>. It goes on this project's shelf; /shelf shows it." }
++    const isHeadless = (await $.session.surfaces()).length === 0
++    try {
++      const idea = await shelve($, text, undefined, 'user')
++      await settle(refreshShelf($))
++      if (isHeadless) return { text: `Shelved #${idea.id}: ${idea.text}` }
++      $.ui.toast(`Shelved #${idea.id}`)
++      return {}
++    } catch (err) {
++      return { text: `Shelf: could not save (${String(err)})`, exitCode: 1 }
++    }
++  })
++
++  on('command.run', { command: 'shelf' }, async ($, e) => {
++    const isAll = isAllScope(e.args)
++    try {
++      if ((await $.session.surfaces()).length === 0) {
++        const ideas = openIdeas(await loadShelf($), isAll ? '' : await sessionRoot($))
++        return { text: ideas.length === 0 ? 'The shelf is empty.' : ideasText(ideas, await $.clock.now(), isAll, true) }
++      }
++      await refreshShelf($, isAll)
++      openDashSoon($, 'shelf')
++      return {}
++    } catch (err) {
++      return { text: `Shelf: could not read (${String(err)})`, exitCode: 1 }
++    }
++  })
++
++  // ---------- Assumptions and Shelf tools ----------
++
++  // Tell the model when to record an assumption, only where the request offers the tool (not subagents without it).
++  on('prompt.compose', async ($, e, next) => {
++    const r = await next(e)
++    if (!e.tools.includes(ASSUMPTION_TOOL)) return r
++    return { sections: [...r.sections, { id: 'bws-cockpit:assumptions', text: GUIDE, scope: 'session' as const }] }
++  })
++
++  on('tool.call', { tool: 'mcp__bws-cockpit__record_assumption' }, async ($, e) => {
++    const input = e as unknown as { assumption?: unknown; why?: unknown }
++    const text = typeof input.assumption === 'string' ? input.assumption.trim() : ''
++    const why = typeof input.why === 'string' ? input.why.trim() : ''
++    if (text === '') return { deny: 'record_assumption needs `assumption`: the assumption as one plain claim.' }
++    const item = await recordAssumption($, text, why)
++    return { result: `Recorded as A${item?.n ?? '?'}. Keep working on this assumption; the user will confirm or correct it from the dashboard.` }
++  })
++
++  on('tool.call', { tool: 'mcp__bws-cockpit__shelve_idea' }, async ($, e) => {
++    const input = e as unknown as { text?: unknown; detail?: unknown }
++    const text = str(input.text).trim()
++    if (text === '') return { deny: 'shelve_idea needs text: the idea in one line.' }
++    try {
++      const idea = await shelve($, text, str(input.detail) || undefined, 'claude')
++      await settle(refreshShelf($))
++      $.ui.toast(`Claude shelved #${idea.id}: ${idea.text}`)
++      return { result: `Shelved as #${idea.id}. Don't pursue it now; continue the current task.` }
++    } catch (err) {
++      return { deny: `Could not save the idea: ${String(err)}` }
++    }
++  on('tool.call', { tool: 'mcp__bws-cockpit__list_ideas' }, async ($, e) => {
++    const isAll = str((e as unknown as { scope?: unknown }).scope) === 'all'
++    try {
++      const ideas = openIdeas(await loadShelf($), isAll ? '' : await sessionRoot($))
++      if (ideas.length === 0) return { result: isAll ? 'The shelf is empty.' : 'No open ideas for this project.' }
++      return { result: ideasText(ideas, await $.clock.now(), isAll, true) }
++    } catch (err) {
++      return { deny: `Could not read the shelf: ${String(err)}` }
++    }
++  })
++
++  on('tool.call', { tool: 'mcp__bws-cockpit__close_idea' }, async ($, e) => {
++    const input = e as unknown as { id?: unknown; status?: unknown }
++    const id = Number(String(input.id ?? '').replace(/^#/, ''))
++    const status = str(input.status)
++    if (!Number.isInteger(id) || id < 1) return { deny: 'close_idea needs the numeric id of an idea.' }
++    if (status !== 'done' && status !== 'dropped' && status !== 'open') return { deny: 'status must be done, dropped or open.' }
++    try {
++      const idea = await closeIdea($, id, status)
++      if (!idea) return { deny: `No idea #${id} on the shelf.` }
++      await settle(refreshShelf($))
++      return { result: `#${id} is ${status}: ${idea.text}` }
++    } catch (err) {
++      return { deny: `Could not update the shelf: ${String(err)}` }
++    }
++  })
++
++  // ---------- Dashboard: the person's close, and bws-board news ----------
++
++  // Closed by its mark or ctrl+x x: news stops reopening it; the bar keeps the counts. An asked open clears this.
++  on('ui.close', async ($, e, next) => {
++    if (e.id === DASH && e.origin.kind === 'person') await update($, dash, d => ({ ...d, isClosedByPerson: true }))
++    return next(e)
++  })
++
++  // bws-board writes its summary on every heartbeat: a rise in asks for this session raises the Board tab.
++  on('state.set', { plugin: 'bws-board', key: 'summary' }, async ($, e, next) => {
++    const asked = e.value?.askedOfMe ?? 0
++    const before = lastAskedOfMe
++    lastAskedOfMe = asked
++    if (asked > (before ?? 0)) void raise($, 'board').catch(() => undefined)
++    return next(e)
++  })
++
++  // The dashboard: a tab strip, then the shown tab's body.
++  on('ui.render', { component: 'Pane', requestId: DASH }, async ($, e, next) => {
++    const d = await read($, dash)
++    const list = await read($, assumptions)
++    const sv = await read($, shelf)
++    const bs = await read($, boardSummary)
++    const lines = await read($, boardLines)
++    const counts: Record<DashTab, number> = { assumptions: active(list).length, shelf: sv.count, board: bs?.askedOfMe ?? 0, loop: loopCount(lp) }
++    // Loop: while any loop is live, or the person picked the tab (/loop-watch) for a quiet one.
++    const hasLoop = lp !== null && (all.some(l => isLoopLive(l, now)) || d.tab === 'loop')
++    const tabs = TABS.filter(t => t !== 'loop' || hasLoop)
++    const tab = pickTab(d.tab, tabs, counts)
++    const strip = (
++      <Box key="tabs" flexDirection="row" columnGap={1} flexWrap="wrap">
++        {tabs.map((t, i) => (
++          <Button
++            key={`tab-${t}`}
++            label={counts[t] > 0 ? `${TAB_LABEL[t]} ${counts[t]}` : TAB_LABEL[t]}
++            hotkey={String(i + 1)}
++            {...(t === tab ? { variant: 'primary' as const } : { plain: true as const, dimColor: true })}
++            onPress={() => update($, dash, old => ({ ...old, tab: t }))}
++          />
++        ))}
++      </Box>
++    )
++
++    if (tab === 'assumptions') {
++      const open = active(list)
++      const done = sent(list)
++      const toSend = ready(list).length
++      return (
++        <Box flexDirection="column">
++          {strip}
++          <Text bold>{assumptionsSummary(list)}</Text>
++          {open.length === 0 && <Text dimColor>Nothing to review. Claude records assumptions here as it builds.</Text>}
++          {open.map(a => (
++            <Box key={`a-${a.n}`} flexDirection="column">
++              <Text wrap="wrap" color={a.verdict === 'wrong' ? 'error' : a.verdict === 'right' ? 'success' : undefined}>
++                {`A${a.n} ${a.text}`}
++              </Text>
++              {a.why !== '' && <Text dimColor wrap="wrap">{`   ${a.why}`}</Text>}
++              <Box flexDirection="row" gap={1}>
++                <Button key={`right-${a.n}`} label={a.verdict === 'right' ? '✓ Right' : 'Right'} onPress={() => markAssumption($, a.n, 'right')} />
++                <Button key={`wrong-${a.n}`} label={a.verdict === 'wrong' ? '✗ Wrong' : 'Wrong'} onPress={() => markAssumption($, a.n, 'wrong')} />
++              </Box>
++              {a.verdict === 'wrong' &&
++                (Input ? (
++                  <Input
++                    key={`fix-${a.n}`}
++                    label="Instead"
++                    placeholder="what it should be (empty: Claude asks you)"
++                    value={drafts.get(a.n) ?? a.correction}
++                    submitLabel="save"
++                    onInput={(text: string) => void drafts.set(a.n, text)}
++                    onSubmit={(text: string) => void saveCorrection($, a.n, text)}
++                  />
++                ) : (
++                  <Text dimColor wrap="wrap">{'   Claude will ask you what it should be.'}</Text>
++                ))}
++            </Box>
++          ))}
++          {done.length > 0 && (
++            <Text dimColor wrap="truncate-end">
++              {clip(`${done.length} sent: ${done.slice(-4).map(a => `A${a.n} ${a.verdict}`).join(', ')}`, width)}
++            </Text>
++          )}
++          <Box flexDirection="row" gap={1}>
++            {open.length > 0 && <Button key="send" variant="primary" label={`Send ${toSend} to Claude`} hotkey="s" onPress={() => sendReview($)} />}
++            {done.length > 0 && <Button key="clear" label="Clear sent" hotkey="c" onPress={() => clearSent($)} />}
++          </Box>
++        </Box>
++      )
++    }
++
++    if (tab === 'shelf') {
++      const shown = sv.ideas.slice(0, SHELF_SHOWN)
++      const more = sv.ideas.length - shown.length
++      const where = sv.isAll ? 'all projects' : projectName(sv.root)
++      return (
++        <Box flexDirection="column">
++          {strip}
++          <Text bold>
++            💡 {sv.ideas.length} open idea{sv.ideas.length === 1 ? '' : 's'} · {where}
++          </Text>
++          {sv.ideas.length === 0 && <Text dimColor>Nothing shelved. /idea &lt;text&gt; adds one; Claude adds its own tangents.</Text>}
++          {shown.map(i => (
++            <Box key={`idea-${i.id}`} flexDirection="row" gap={1}>
++              <Button key={`resume-${i.id}`} plain label="▶" onPress={() => onResumeIdea($, i)} />
++              <Button key={`done-${i.id}`} plain label="✓" onPress={() => onCloseIdea($, i, 'done')} />
++              <Button key={`drop-${i.id}`} plain label="✗" onPress={() => onCloseIdea($, i, 'dropped')} />
++              <Box flexGrow={1} flexShrink={1}>
++                <Text wrap="wrap">{ideaLine(i, sv.now, sv.isAll)}</Text>
++              </Box>
++            </Box>
++          ))}
++          {more > 0 && <Text dimColor>…{more} more: ask Claude to list ideas.</Text>}
++          {sv.note !== '' && <Text color="warning">{sv.note}</Text>}
++          <Box flexDirection="row" gap={1}>
++            <Button key="scope" label={sv.isAll ? 'This project' : 'All projects'} hotkey="a" onPress={() => refreshShelf($, !sv.isAll)} />
++          </Box>
++          {e.props.isFocused && <Text dimColor>▶ resume (fills the prompt box) · ✓ done · ✗ drop</Text>}
++        </Box>
++      )
++    }
++
++    if (tab === 'board') {
++      return (
++        <Box flexDirection="column">
++          {strip}
++          {bs === null && lines.length === 0 ? (
++            <Text dimColor wrap="wrap">bws-board is not loaded here, or has not read the board yet.</Text>
++          ) : (
++            <Text bold>
++              Board · {bs?.agents ?? 0} agent{bs?.agents === 1 ? '' : 's'} · {bs?.openAsks ?? 0} open ask{bs?.openAsks === 1 ? '' : 's'}
++              {bs && bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}
++            </Text>
++          )}
++          {lines.map((l, i) => (
++            <Text key={`board-${i}`} wrap="wrap" dimColor={l.startsWith('  claims')}>
++              {l}
++            </Text>
++          ))}
++        </Box>
++      )
++    }
++
++    if (lp === null) {
++      return (
++        <Box flexDirection="column">
++          {strip}
++          <Text dimColor>No harness loop in this folder (Tools/&lt;name&gt;/loop.json with a state.json).</Text>
++        </Box>
++      )
++    }
++        {strip}
++  // The action bar: one row of status chips, then the actions. It wraps when narrow; the guard note and another
++  // mod's band go under it.
++    const { Box, Text, Button } = $.ui.resolve(e)
++    const loopChip = lp && isLoopLive(lp, now) ? loopState(lp) : null
++    const list = await read($, assumptions)
++    const sv = await read($, shelf)
++    const bs = await read($, boardSummary)
++    const isHandoffDue = await isNudged($)
++    const runName = run ? run.folder.replace(/^runs\//, '').replace(/^\d{4}-\d{2}-\d{2}-/, '') : ''
++    const runChip = run ? (
++      <Box key="chip-run" flexDirection="row">
++        <Text bold>{fit(runName, Math.max(8, Math.min(28, width - 60)))}</Text>
++        <Text color={run.open > 0 ? 'warning' : 'success'}>{run.open > 0 ? ` ${run.open} open` : ' done'}</Text>
++    ) : (
++      <Text key="chip-run" dimColor>
++        no run
++    )
++    // Devices that are up or in trouble; the ones off say nothing.
++    const deviceChips = (v.devices?.chips ?? [])
++      .filter(c => c.state !== 'off')
++      .map(c => (
++        <Box key={`chip-${c.label}`} flexDirection="row">
++          <Text color={STATE_COLOR[c.state]}>{'● '}</Text>
++          <Text>{c.label}</Text>
++          {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
++        </Box>
++      ))
++    const loopBox = loopChip ? (
++      <Box key="chip-loop" flexDirection="row">
++        <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
++          {loopChip.state === 'off' ? '○ ' : '● '}
++        <Text dimColor={loopChip.state === 'off'}>{`loop ${loopChip.word}`}</Text>
++    const toReview = unreviewed(list).length
++    const asmChip =
++      active(list).length > 0 ? (
++        <Text key="chip-assumptions" color={toReview > 0 ? 'warning' : undefined} dimColor={toReview === 0}>
++          {`⚑ ${active(list).length}`}
++        </Text>
++      ) : null
++    const shelfChip =
++      sv.count > 0 ? (
++        <Text key="chip-shelf" dimColor>
++          {`💡 ${sv.count}`}
++        </Text>
++      ) : null
++    const buttons = [
++      run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null,
++      <Button key="dash" plain dimColor label="dash" hotkey="2" onPress={() => void toggleDash($)} />,
++      <Button key="tab-assumptions" plain dimColor label="asm" hotkey="a" onPress={() => void showTab($, 'assumptions')} />,
++      <Button key="tab-shelf" plain dimColor label="shelf" hotkey="s" onPress={() => void showTab($, 'shelf')} />,
++      bs !== null ? <Button key="tab-board" plain dimColor label="board" hotkey="b" onPress={() => void showTab($, 'board')} /> : null,
++      lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void showTab($, 'loop')} /> : null,
++      isHandoffDue ? (
++        <Button key="handoff" variant="primary" label="handoff" hotkey="h" onPress={() => void pressHandoff($)} />
++      ) : (
++        <Button key="handoff" plain dimColor label="handoff" hotkey="h" onPress={() => void pressHandoff($)} />
++      ),
++      <Button key="idea" plain dimColor label="idea" hotkey="i" onPress={() => void pressIdea($)} />,
++      <Button key="enhance" plain dimColor label="enhance" hotkey="e" onPress={() => void pressEnhance($)} />,
++      <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />,
++    ]
++    const guardRow = showGuard ? (
++      <Box flexDirection="row">
++        <Text color="warning">{'⚑ '}</Text>
++        <Text dimColor wrap="truncate-end">
++          {fit(`guard ${v.lastGuard}`, width - 2)}
++        </Text>
++    ) : null
++    const belowBox = below ? <Box key="band-below" flexDirection="column">{below}</Box> : null
++        <Box key="bar" flexDirection="row" columnGap={2} flexWrap="wrap">
++          {runChip}
++          {deviceChips}
++          {loopBox}
++          {boardChip}
++          {asmChip}
++          {shelfChip}
++          <Text dimColor>│</Text>
++          {buttons}
++// Pure helpers for the dashboard's Shelf tab (moved from bws-shelf): the shelf file, adding and closing ideas, the per-project filter and the text views.
++  test('the bar draws the run chip, live devices and the actions on terminal and desktop', async ($, on) => {
++    world(on, { ...RUN_WORLD, surfaces: ['terminal'], procs: 'blender.exe|9|blender', vram: '1000, 8188' })
++      expect(await ui.find({ type: 'Text', text: /^ 2 open$/ })).toBeDefined()
++      for (const label of ['Blender', 'VRAM']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeDefined()
++      // Off devices say nothing.
++      for (const label of ['UE', 'Unity', 'adb']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeUndefined()
++      const keys: [string, string][] = [['resume', '1'], ['dash', '2'], ['tab-assumptions', 'a'], ['tab-shelf', 's'], ['handoff', 'h'], ['idea', 'i'], ['enhance', 'e'], ['hide', '3']]
++      for (const [key, hotkey] of keys) expect((await ui.find({ key }))?.props?.hotkey).toBe(hotkey)
++      expect(await ui.find({ key: 'tab-board' })).toBeUndefined() // bws-board not loaded
++      expect(await ui.find({ key: 'loop' })).toBeUndefined() // no loop here
++      expect(await ui.find({ key: 'refresh' })).toBeUndefined()
++      expect(await ui.find({ key: 'tile-run' })).toBeUndefined()
++      expect(await ui.find({ type: 'Text', text: /next|guard|RUN/ })).toBeUndefined()
++describe('action bar', () => {
++  test('board chip and button: bws-board summary; hidden when alone, warning when asked', async ($, on) => {
++    expect((await ui.find({ key: 'tab-board' }))?.props?.hotkey).toBe('b') // loaded: the tab button shows
++  test('one row that wraps when narrow, on desktop too', async ($, on) => {
++    world(on, { ...RUN_WORLD, procs: '' })
++    const ui = await $.ui.mount({ ...BAND, surface: 'desktop', props: { ...BAND.props, bodyColumns: 60 } })
++    const bar = await ui.find({ key: 'bar' })
++    expect(bar?.props?.flexDirection).toBe('row')
++    expect(bar?.props?.flexWrap).toBe('wrap')
++  test('a long run name is cut with ASCII dots', async ($, on) => {
++    world(on, {
++      dirs: { [`${CWD}/runs`]: [{ name: '2026-10-02-a-very-long-run-folder-name-for-the-bar', kind: 'dir', mtimeMs: 0 }], [`${CWD}/runs/2026-10-02-a-very-long-run-folder-name-for-the-bar`]: [{ name: 'RUNLOG.md', kind: 'file', mtimeMs: 1 }] },
++      files: { [`${CWD}/runs/2026-10-02-a-very-long-run-folder-name-for-the-bar/RUNLOG.md`]: '- Next: x\n' },
++    })
++    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
++    const cut = await ui.find({ type: 'Text', text: /^a-very-long/ })
++    expect((cut?.text.length ?? 99) <= 28).toBe(true)
++  test('no run folder: "no run", no resume button; a down editor shows in error', async ($, on) => {
++    expect(await ui.find({ type: 'Text', text: /^no run$/ })).toBeDefined()
++    expect(await ui.find({ key: 'dash' })).toBeDefined()
++import { test, expect, mock, describe } from 'claude-code/testing'
++import type { On } from 'claude-code'
++import { add, listText, markSent, setCorrection, setVerdict, summary, verdictPrompt } from '../hooks/assumptions'
++import { addIdea, age, contextLine, EMPTY, isAllScope, listText as ideasText, openIdeas, parseShelf, serializeShelf, setStatus, shelfPath } from '../hooks/shelf'
++import type { Assumption } from '../types'
++
++const TOOL = 'mcp__bws-cockpit__record_assumption'
++const HOME = 'C:/Users/me'
++const FILE = `${HOME}/.claude/idea-shelf/shelf.json`
++const ROOT = 'C:/Projects/game'
++const OTHER = 'C:/Projects/site'
++const NOW = 1_000_000_000
++
++const norm = (p: unknown) => String(p).replace(/\\/g, '/')
++
++type Pane = { id: string; title: string; isShown: boolean; isFocused: boolean; isPlaced: boolean }
++type World = {
++  surfaces?: string[]
++  shelf?: string
++  box?: string
++  isPlaced?: boolean
++  percent?: number
++  board?: { summary: { agents: number; openAsks: number; askedOfMe: number } | null; lines: string[] }
++  commands?: string[]
++}
++
++// Stubs every outside call the dashboard makes; the shelf file lives in `files`, panes in `panes`.
++function world(on: On, w: World = {}) {
++  const clock = mock.clock(on, { now: NOW })
++  const files: Record<string, string> = {}
++  if (w.shelf !== undefined) files[FILE] = w.shelf
++  const panes: Pane[] = []
++  const seen = {
++    sent: [] as { text: string; asUser?: boolean }[],
++    opened: [] as { id: string; focus?: boolean }[],
++    closed: [] as string[],
++    toasts: [] as string[],
++    fills: [] as string[],
++    commands: [] as { command: string; args: string }[],
++  }
++  let box = w.box ?? ''
++  on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
++  on('session.root', () => ({ value: `${ROOT}\\` }))
++  on('session.cwd', () => ({ value: ROOT }))
++  on('session.usage', () => ({ value: { startedAt: 5, context: { window: 200_000, percent: w.percent }, rateLimits: [] } as never }))
++  on('env.get', ($, e) => {
++    const name = String((e as unknown as { name: string }).name)
++    return { value: (name === 'USERPROFILE' ? 'C:\\Users\\me' : undefined) as never }
++  })
++  on('fs.exists', ($, e) => ({ value: files[norm(e.path)] !== undefined }))
++  on('fs.read', ($, e) => {
++    const hit = files[norm(e.path)]
++    if (hit === undefined) throw new Error(`ENOENT ${norm(e.path)}`)
++    return { value: hit as never }
++  })
++  on('fs.write', ($, e) => {
++    files[norm(e.path)] = String(e.text)
++    return { value: undefined }
++  })
++  on('fs.list', ($, e) => {
++    throw new Error(`ENOENT ${norm(e.path)}`)
++  })
++  on('process.run', () => {
++    throw new Error('no processes here')
++  })
++  on('prompt.submit', ($, e) => {
++    seen.sent.push({ text: e.text, asUser: (e.origin as { asUser?: boolean } | undefined)?.asUser })
++    return { text: e.text } as never
++  })
++  on('turn.complete', () => ({ text: '' }) as never)
++  on('session.start', () => ({ cwd: ROOT }) as never)
++  on('tool.register', ($, e) => ({ value: { tool: e.name } }) as never)
++  on('command.register', ($, e) => ({ value: { command: e.name } }) as never)
++  on('command.list', () => ({ value: (w.commands ?? []).map(name => ({ name })) as never }))
++  on('command.run', ($, e) => {
++    seen.commands.push({ command: String(e.command), args: String(e.args) })
++    return { text: '' } as never
++  })
++  on('ui.panes', () => ({ value: panes.map(p => ({ ...p })) as never }))
++  on('ui.open', ($, e) => {
++    seen.opened.push({ id: e.id, focus: e.focus })
++    if (w.isPlaced === false) return { value: { isPlaced: false, reason: 'narrow' } }
++    const old = panes.find(p => p.id === e.id)
++    if (old) old.isShown = true
++    else panes.push({ id: e.id, title: e.title ?? e.id, isShown: true, isFocused: e.focus === true, isPlaced: true })
++    return { value: { isPlaced: true } }
++  })
++  on('ui.close', ($, e) => {
++    seen.closed.push(e.id)
++    const i = panes.findIndex(p => p.id === e.id)
++    if (i >= 0) panes.splice(i, 1)
++    return { value: undefined } as never
++  })
++  on('ui.toast', ($, e) => {
++    seen.toasts.push(String((e as unknown as { text: string }).text))
++    return { value: undefined } as never
++  })
++  on('ui.copy', () => ({ value: { isCopied: false } }) as never)
++  on('prompt.read', () => ({ value: { text: box, cursor: box.length } }))
++  on('prompt.fill', ($, e) => {
++    box = e.text
++    seen.fills.push(e.text)
++    return { isFilled: true }
++  })
++  if (w.board) {
++    const b = w.board
++    on('state.get', ($, e, next) => {
++      const ref = e as unknown as { plugin?: string; key?: string }
++      if (ref.plugin !== 'bws-board') return next(e)
++      return { value: { value: ref.key === 'summary' ? b.summary : b.lines, version: 1 } } as never
++    })
++  }
++  const shelf = () => parseShelf(files[FILE])
++  const setBox = (text: string) => {
++    box = text
++  }
++  return { seen, clock, files, shelf, panes, setBox }
++}
++
++const seeded = () => {
++  let s = addIdea(EMPTY, { text: 'game idea one', by: 'user', project: ROOT, now: NOW - 3_600_000 }).shelf
++  s = addIdea(s, { text: 'site idea', by: 'claude', project: OTHER, now: NOW - 60_000 }).shelf
++  s = addIdea(s, { text: 'game idea two', detail: 'see src/ai.ts', by: 'claude', project: ROOT, now: NOW - 120_000 }).shelf
++  return serializeShelf(s)
++}
++
++const PANE = {
++  plugin: 'bws-cockpit',
++  component: 'Pane',
++  requestId: 'dashboard',
++  surface: 'terminal',
++  props: { title: 'Dashboard', isFocused: false, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
++} as const
++
++const BAND = {
++  plugin: 'bws-cockpit',
++  component: 'AbovePrompt',
++  surface: 'terminal',
++  props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 160, scroll: { offset: 0, bodyRows: 8 }, view: {} },
++} as const
++
++function three(): Assumption[] {
++  let list: Assumption[] = []
++  for (const t of ['Use wttr.in', 'City from argv', 'Name the file weather.py']) list = add(list, t, '').list
++  return list
++}
++
++// The bar needs the cockpit view, which a /cockpit run fills.
++async function withBar($: { command: { run: (input: never) => Promise<unknown> } }) {
++  await $.command.run({ command: 'cockpit', args: '' } as never)
++}
++
++// ---------- pure helpers, moved with their modules ----------
++
++describe('assumptions lib', () => {
++  test('numbers in order, never reuses a number after a clear', () => {
++    const list = three()
++    expect(list.map(a => a.n)).toEqual([1, 2, 3])
++    expect(add(list.filter(a => a.n === 3), 'x', '').item.n).toBe(4)
++  })
++
++  test('a verdict pressed again goes back to open; sent items are frozen', () => {
++    let list = setVerdict(three(), 1, 'wrong')
++    expect(list[0]?.verdict).toBe('wrong')
++    expect(setVerdict(list, 1, 'wrong')[0]?.verdict).toBe('open')
++    list = markSent(list, [1])
++    expect(setVerdict(list, 1, 'right')[0]?.verdict).toBe('wrong')
++  })
++
++  test('verdict prompt: wrong first with the correction, missing correction asks, right kept', () => {
++    let list = setVerdict(setVerdict(setVerdict(three(), 1, 'right'), 2, 'wrong'), 3, 'wrong')
++    list = setCorrection(list, 2, 'read the city from an env var CITY')
++    const text = verdictPrompt(list.filter(a => a.verdict !== 'open'))
++    expect(text.startsWith('Assumption review (from the dashboard)')).toBe(true)
++    expect(text).toContain('A2 is WRONG: "City from argv". Instead: read the city from an env var CITY')
++    expect(text).toContain('A3 is WRONG: "Name the file weather.py". No correction given: ask me')
++    expect(text).toContain('A1 is right: "Use wttr.in". Keep it.')
++    expect(text.indexOf('A2')).toBeLessThan(text.indexOf('A1'))
++    expect(text).toContain('Apply each correction now')
++  })
++
++  test('a typed but unsaved correction is used over the saved one', () => {
++    const list = setVerdict(three(), 2, 'wrong')
++    expect(verdictPrompt([list[1]!], new Map([[2, 'env var']]))).toContain('Instead: env var')
++  })
++
++  test('summary and text list', () => {
++    const list = setVerdict(three(), 1, 'right')
++    expect(summary(list)).toBe('⚑ 3 assumptions · 2 to review · 1 ready to send')
++    expect(summary(markSent(list, [1, 2, 3]))).toBe('⚑ all reviewed · 3 sent')
++    expect(summary([])).toBe('⚑ no assumptions yet')
++    expect(listText([])).toBe('No assumptions recorded in this session.')
++  })
++})
++
++describe('shelf lib', () => {
++  test('shelf path: option, then CLAUDE_CONFIG_DIR, then home', () => {
++    expect(shelfPath('D:\\x\\s.json', 'C:/cfg', HOME)).toBe('D:/x/s.json')
++    expect(shelfPath('', 'C:\\cfg\\', HOME)).toBe('C:/cfg/idea-shelf/shelf.json')
++    expect(shelfPath('', undefined, 'C:\\Users\\me')).toBe(FILE)
++    expect(shelfPath('', '', '')).toBe('')
++  })
++
++  test('a missing or damaged file is an empty shelf; ids keep counting past the highest', () => {
++    expect(parseShelf(undefined).ideas).toEqual([])
++    expect(parseShelf('{not json').ideas).toEqual([])
++    const s = parseShelf(JSON.stringify({ nextId: 2, ideas: [{ id: 7, text: 'x', project: ROOT, by: 'bogus', status: 'weird' }, { nope: 1 }] }))
++    expect(s.ideas).toHaveLength(1)
++    expect(s.ideas[0]?.by).toBe('user')
++    expect(s.ideas[0]?.status).toBe('open')
++    expect(s.nextId).toBe(8)
++  })
++
++  test('add trims and clips; close and reopen', () => {
++    const { shelf, idea } = addIdea(EMPTY, { text: `  a\n  b ${'x'.repeat(400)}`, by: 'user', project: 'C:\\P\\', now: 1 })
++    expect(idea.id).toBe(1)
++    expect(idea.text.length).toBe(300)
++    expect(idea.text.startsWith('a b x')).toBe(true)
++    expect(idea.project).toBe('C:/P')
++    const done = setStatus(shelf, 1, 'done', 5)
++    expect(done.idea?.closedAt).toBe(5)
++    expect(openIdeas(done.shelf, '')).toEqual([])
++    expect(setStatus(done.shelf, 1, 'open', 6).idea?.closedAt).toBeUndefined()
++    expect(setStatus(shelf, 99, 'done', 1).idea).toBeUndefined()
++  })
++
++  test('per project, case-insensitive, newest first; all projects with empty project', () => {
++    const s = parseShelf(seeded())
++    expect(openIdeas(s, 'c:\\projects\\GAME\\').map(i => i.id)).toEqual([3, 1])
++    expect(openIdeas(s, '').map(i => i.id)).toEqual([3, 2, 1])
++    expect(ideasText(openIdeas(s, ROOT), NOW, false, true)).toBe('#3 game idea two  (Claude, 2m)\n    see src/ai.ts\n#1 game idea one  (you, 1h)')
++  })
++
++  test('age, scope words, context line', () => {
++    expect(age(0, 3 * 3_600_000)).toBe('3h')
++    expect(isAllScope(' all ')).toBe(true)
++    expect(isAllScope('')).toBe(false)
++    expect(contextLine(1, 'T')).toMatch(/^1 open idea on this project's idea shelf.*call T/)
++  })
++})
++
++// ---------- Assumptions tab ----------
++
++describe('assumptions', () => {
++  test('the tool records and numbers, and raises the dashboard on Assumptions', async ($, on) => {
++    const { seen } = world(on)
++    const r = await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in', why: 'no API key' } as never)
++    expect(String((r as { result?: unknown }).result)).toContain('Recorded as A1. Keep working')
++    expect(String((r as { result?: unknown }).result)).toContain('from the dashboard')
++    const r2 = await $.tool.call({ tool: TOOL, assumption: 'City from argv' } as never)
++    expect(String((r2 as { result?: unknown }).result)).toContain('Recorded as A2')
++    expect(seen.opened.map(o => o.id)).toEqual(['dashboard']) // opened once; already shown the second time
++    const ui = await $.ui.mount(PANE)
++    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.label).toBe('Assumptions 2')
++    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.variant).toBe('primary')
++    expect(await ui.find({ type: 'Text', text: 'A1 Use wttr.in' })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('an empty assumption is refused', async ($, on) => {
++    world(on)
++    const r = await $.tool.call({ tool: TOOL, assumption: '  ' } as never)
++    expect(String((r as { deny?: string }).deny)).toContain('needs `assumption`')
++  })
++
++  test('mark, correct and send hands the verdicts to Claude as the user', async ($, on) => {
++    const { seen, clock } = world(on)
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
++    await $.tool.call({ tool: TOOL, assumption: 'City from argv' } as never)
++    const desk = await $.ui.mount({ ...PANE, surface: 'desktop' })
++    expect(await desk.find({ type: 'Text', text: /2 assumptions · 2 to review/ })).toBeDefined()
++    expect(await desk.find({ key: 'fix-2' })).toBeUndefined()
++    await desk.press({ key: 'right-1' })
++    await desk.press({ key: 'wrong-2' })
++    await desk.unmount()
++    let ui = await $.ui.mount(PANE)
++    expect(await ui.find({ key: 'fix-2' })).toBeDefined()
++    await ui.input({ key: 'fix-2', text: 'read it from env var CITY' })
++    await ui.press({ key: 'send' })
++    await ui.unmount()
++    await clock.advance(50)
++    expect(seen.sent.length).toBe(1)
++    expect(seen.sent[0]?.asUser).toBe(true)
++    expect(seen.sent[0]?.text).toContain('A2 is WRONG: "City from argv". Instead: read it from env var CITY')
++    expect(seen.sent[0]?.text).toContain('A1 is right')
++    ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /2 sent: A1 right, A2 wrong/ })).toBeDefined()
++    expect(await ui.find({ key: 'right-1' })).toBeUndefined()
++    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.label).toBe('Assumptions')
++    await ui.press({ key: 'clear' })
++    await ui.unmount()
++    ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /sent:/ })).toBeUndefined()
++    await ui.unmount()
++  })
++
++  test('send with nothing marked submits nothing', async ($, on) => {
++    const { seen, clock } = world(on)
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
++    const ui = await $.ui.mount(PANE)
++    await ui.press({ key: 'send' })
++    await ui.unmount()
++    await clock.advance(50)
++    expect(seen.sent).toEqual([])
++    expect(seen.toasts.at(-1)).toContain('mark one Right or Wrong first')
++  })
++
++  test('the guide joins the system prompt only where the tool is offered', async ($, on) => {
++    on('prompt.compose', () => ({ sections: [{ id: 'core', text: 'core', scope: 'shared' as const }] }))
++    const withTool = await $.prompt.compose({ model: 'claude-opus-5-5', promptModel: 'claude-opus-5-5', surfaces: ['terminal'], outputStyle: null, traits: [], tools: ['Bash', TOOL] })
++    expect(withTool.sections.map(s => s.id)).toEqual(['core', 'bws-cockpit:assumptions'])
++    expect(withTool.sections.at(-1)?.text).toContain('mcp__bws-cockpit__record_assumption')
++    const without = await $.prompt.compose({ model: 'claude-opus-5-5', promptModel: 'claude-opus-5-5', surfaces: ['terminal'], outputStyle: null, traits: [], tools: ['Bash'] })
++    expect(without.sections.map(s => s.id)).toEqual(['core'])
++  })
++
++  test('headless /assumptions lists them as text', async ($, on) => {
++    world(on, { surfaces: [] })
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in', why: 'no key' } as never)
++    const r = await $.command.run({ command: 'assumptions', args: '' } as never)
++    expect(r.text).toContain('A1 [to review] Use wttr.in (no key)')
++  })
++
++  test('/assumptions opens the dashboard on Assumptions, with the keys over an empty box', async ($, on) => {
++    const { seen, clock } = world(on)
++    expect((await $.command.run({ command: 'assumptions', args: '' } as never)).text).toBeUndefined()
++    await clock.advance(50)
++    expect(seen.opened).toEqual([{ id: 'dashboard', focus: true }])
++  })
++})
++
++// ---------- Shelf tab ----------
++
++describe('shelf', () => {
++  test('/idea shelves for this project with a toast and no transcript reply', async ($, on) => {
++    const { seen, shelf } = world(on)
++    const r = await $.command.run({ command: 'idea', args: 'try a bloom pass on the lanterns' } as never)
++    expect(r.text).toBeUndefined()
++    expect(seen.toasts).toEqual(['Shelved #1'])
++    expect(shelf().ideas).toEqual([{ id: 1, text: 'try a bloom pass on the lanterns', by: 'user', project: ROOT, createdAt: NOW, status: 'open' }])
++  })
++
++  test('/idea headless prints the line; empty args print usage and save nothing', async ($, on) => {
++    const { files } = world(on, { surfaces: [] })
++    expect((await $.command.run({ command: 'idea', args: '  ' } as never)).text).toMatch(/^Usage: \/idea/)
++    expect(files[FILE]).toBeUndefined()
++    expect((await $.command.run({ command: 'idea', args: 'x' } as never)).text).toBe('Shelved #1: x')
++  })
++
++  test('a write keeps ideas another session added since', async ($, on) => {
++    const { files, shelf } = world(on, { shelf: seeded() })
++    await $.command.run({ command: 'idea', args: 'mine' } as never)
++    files[FILE] = serializeShelf(addIdea(shelf(), { text: 'from another session', by: 'user', project: OTHER, now: NOW }).shelf)
++    await $.command.run({ command: 'idea', args: 'mine again' } as never)
++    expect(shelf().ideas.map(i => i.text)).toEqual(['game idea one', 'site idea', 'game idea two', 'mine', 'from another session', 'mine again'])
++  })
++
++  test('shelve_idea from Claude: saved as Claude, result says to carry on, user is told', async ($, on) => {
++    const { seen, shelf } = world(on)
++    const r = await $.tool.call({ tool: 'mcp__bws-cockpit__shelve_idea', text: 'cache the nav mesh', detail: 'rebuild is 4 s' } as never)
++    expect(String(r.result)).toBe("Shelved as #1. Don't pursue it now; continue the current task.")
++    expect(shelf().ideas[0]).toMatchObject({ by: 'claude', detail: 'rebuild is 4 s', project: ROOT })
++    expect(seen.toasts).toEqual(['Claude shelved #1: cache the nav mesh'])
++    expect((await $.tool.call({ tool: 'mcp__bws-cockpit__shelve_idea', text: '  ' } as never)).deny).toMatch(/needs text/)
++  })
++
++  test('list_ideas: this project by default, all on request', async ($, on) => {
++    world(on, { shelf: seeded() })
++    const mine = String((await $.tool.call({ tool: 'mcp__bws-cockpit__list_ideas' } as never)).result)
++    expect(mine).toContain('#3 game idea two')
++    expect(mine).not.toContain('site idea')
++    const all = String((await $.tool.call({ tool: 'mcp__bws-cockpit__list_ideas', scope: 'all' } as never)).result)
++    expect(all).toContain('#2 site idea  (Claude, 1m, site)')
++  })
++
++  test('close_idea marks done; unknown ids and bad statuses are refused', async ($, on) => {
++    const { shelf } = world(on, { shelf: seeded() })
++    const r = await $.tool.call({ tool: 'mcp__bws-cockpit__close_idea', id: 3, status: 'done' } as never)
++    expect(String(r.result)).toBe('#3 is done: game idea two')
++    expect(shelf().ideas.find(i => i.id === 3)?.status).toBe('done')
++    expect((await $.tool.call({ tool: 'mcp__bws-cockpit__close_idea', id: 42, status: 'done' } as never)).deny).toMatch(/No idea #42/)
++    expect((await $.tool.call({ tool: 'mcp__bws-cockpit__close_idea', id: 1, status: 'later' } as never)).deny).toMatch(/status must be/)
++  })
++
++  test('prompt.context adds one shelf line in attended sessions only', async ($, on) => {
++    world(on, { shelf: seeded() })
++    on('prompt.context', ($, e) => ({ blocks: e.blocks }))
++    const r = await $.prompt.context({ blocks: [{ name: 'currentDate', text: 'today' }] } as never)
++    const block = r.blocks.find(b => b.name === 'ideaShelf')
++    expect(block?.text).toMatch(/^2 open ideas.*mcp__bws-cockpit__shelve_idea/)
++  })
++
++  test('prompt.context: no shelf line headless, or with shelfNudge off', { options: { shelfNudge: false } }, async ($, on) => {
++    world(on, { shelf: seeded() })
++    on('prompt.context', ($, e) => ({ blocks: e.blocks }))
++    expect((await $.prompt.context({ blocks: [] } as never)).blocks.find(b => b.name === 'ideaShelf')).toBeUndefined()
++  })
++
++  test('/shelf headless lists this project with details', async ($, on) => {
++    world(on, { surfaces: [], shelf: seeded() })
++    const r = await $.command.run({ command: 'shelf', args: '' } as never)
++    expect(r.text).toBe('#3 game idea two  (Claude, 2m)\n    see src/ai.ts\n#1 game idea one  (you, 1h)')
++  })
++
++  test('/shelf opens the Shelf tab: Done closes an idea, All shows other projects', async ($, on) => {
++    const { seen, shelf, clock } = world(on, { shelf: seeded() })
++    expect((await $.command.run({ command: 'shelf', args: '' } as never)).text).toBeUndefined()
++    await clock.advance(50)
++    expect(seen.opened).toEqual([{ id: 'dashboard', focus: true }])
++    let ui = await $.ui.mount(PANE)
++    expect((await ui.find({ key: 'tab-shelf' }))?.props?.variant).toBe('primary')
++    expect(await ui.find({ type: 'Text', text: /2 open ideas · game/ })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /site idea/ })).toBeUndefined()
++    await ui.press({ key: 'done-3' })
++    await ui.unmount()
++    expect(shelf().ideas.find(i => i.id === 3)?.status).toBe('done')
++    ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /1 open idea · game/ })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /#3 done/ })).toBeDefined()
++    await ui.press({ key: 'scope' })
++    await ui.unmount()
++    ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /2 open ideas · all projects/ })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /#2 site idea/ })).toBeDefined()
++    expect((await ui.find({ key: 'tab-shelf' }))?.props?.label).toBe('Shelf 1') // still this project's count
++    await ui.unmount()
++  })
++
++  test('Resume fills an empty box; a busy box gets a note instead', async ($, on) => {
++    const { seen, shelf, clock, setBox } = world(on, { shelf: seeded() })
++    await $.command.run({ command: 'shelf', args: '' } as never)
++    await clock.advance(50)
++    let ui = await $.ui.mount(PANE)
++    await ui.press({ key: 'resume-3' })
++    await ui.unmount()
++    expect(seen.fills).toEqual(['Pick up shelved idea #3: game idea two\n\nsee src/ai.ts'])
++    expect(shelf().ideas.find(i => i.id === 3)?.status).toBe('open')
++    setBox('half-typed')
++    ui = await $.ui.mount(PANE)
++    await ui.press({ key: 'resume-1' })
++    await ui.unmount()
++    ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /send or clear it first/ })).toBeDefined()
++    await ui.unmount()
++    expect(seen.fills.length).toBe(1)
++  })
++})
++
++// ---------- the dashboard: tabs, the person's choices, proactive triggers ----------
++
++describe('dashboard', () => {
++  test('tab strip: Assumptions, Shelf, Board with counts and 1-3 hotkeys; a press switches', async ($, on) => {
++    world(on, { shelf: seeded(), board: { summary: { agents: 2, openAsks: 1, askedOfMe: 1 }, lines: ['api (you) · busy · fixing the bow', '  claims src/bow.ts'] } })
++    await $.session.start({ cwd: ROOT } as never)
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
++    let ui = await $.ui.mount(PANE)
++    const labels = await Promise.all(['assumptions', 'shelf', 'board', 'loop'].map(async t => (await ui.find({ key: `tab-${t}` }))?.props))
++    expect(labels.map(p => p?.label)).toEqual(['Assumptions 1', 'Shelf 2', 'Board 1', undefined]) // no loop here
++    expect(labels.map(p => p?.hotkey)).toEqual(['1', '2', '3', undefined])
++    await ui.press({ key: 'tab-board' })
++    await ui.unmount()
++    ui = await $.ui.mount(PANE)
++    expect((await ui.find({ key: 'tab-board' }))?.props?.variant).toBe('primary')
++    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.plain).toBe(true)
++    expect(await ui.find({ type: 'Text', text: /^Board · 2 agents · 1 open ask · 1 for you$/ })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /fixing the bow/ })).toBeDefined()
++    expect((await ui.find({ type: 'Text', text: /claims src/ }))?.props?.dimColor).toBe(true)
++    await ui.unmount()
++  })
++
++  test('Board tab without bws-board says so', async ($, on) => {
++    const { clock } = world(on)
++    await $.command.run({ command: 'dashboard', args: 'board' } as never)
++    await clock.advance(50)
++    const ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /bws-board is not loaded here/ })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('/dashboard: a bad tab prints usage; headless prints every tab as text', async ($, on) => {
++    world(on, { surfaces: [], shelf: seeded() })
++    expect((await $.command.run({ command: 'dashboard', args: 'nope' } as never)).text).toMatch(/^Usage: \/dashboard/)
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
++    const r = await $.command.run({ command: 'dashboard', args: '' } as never)
++    expect(r.text).toContain('A1 [to review] Use wttr.in')
++    expect(r.text).toContain('#3 game idea two')
++    expect(r.text).toContain('bws-board is not loaded')
++  })
++
++  test('news while the person uses the pane: no tab switch, the count says it', async ($, on) => {
++    const { seen, clock, panes } = world(on, { shelf: seeded() })
++    await $.command.run({ command: 'shelf', args: '' } as never)
++    await clock.advance(50)
++    expect(panes[0]?.isFocused).toBe(true)
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
++    expect(seen.opened.length).toBe(1)
++    const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, isFocused: true } })
++    expect((await ui.find({ key: 'tab-shelf' }))?.props?.variant).toBe('primary')
++    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.label).toBe('Assumptions 1')
++    await ui.unmount()
++  })
++
++  test('news with the pane open but not in use switches its tab', async ($, on) => {
++    const { clock, panes } = world(on, { shelf: seeded(), box: 'draft' })
++    await $.command.run({ command: 'shelf', args: '' } as never) // text in the box: opened without the keys
++    await clock.advance(50)
++    expect(panes[0]?.isFocused).toBe(false)
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
++    const ui = await $.ui.mount(PANE)
++    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.variant).toBe('primary')
++    await ui.unmount()
++  })
++
++  test('closed from the bar: news only lights the bar; an asked open brings it back', async ($, on) => {
++    const { seen, clock } = world(on)
++    await withBar($)
++    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
++    expect(seen.opened.length).toBe(1)
++    let band = await $.ui.mount(BAND)
++    await band.press({ key: 'dash' }) // open: close it as the person
++    await clock.settle()
++    await band.unmount()
++    expect(seen.closed).toEqual(['dashboard'])
++    await $.tool.call({ tool: TOOL, assumption: 'City from argv' } as never)
++    expect(seen.opened.length).toBe(1) // not reopened
++    band = await $.ui.mount(BAND)
++    const chip = await band.find({ type: 'Text', text: '⚑ 2' })
++    expect(chip?.props?.color).toBe('warning')
++    await band.unmount()
++    await $.command.run({ command: 'assumptions', args: '' } as never)
++    await clock.advance(50)
++    expect(seen.opened.length).toBe(2)
++    await $.tool.call({ tool: TOOL, assumption: 'Name the file weather.py' } as never)
++    const ui = await $.ui.mount(PANE)
++    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.label).toBe('Assumptions 3')
++    await ui.unmount()
++  })
++
++  test('session start opens the dashboard on the shelf when ideas wait; not with nothing waiting', async ($, on) => {
++    const { seen } = world(on, { shelf: seeded() })
++    await $.session.start({ cwd: ROOT } as never)
++    expect(seen.opened).toEqual([{ id: 'dashboard', focus: undefined }])
++    const ui = await $.ui.mount(PANE)
++    expect((await ui.find({ key: 'tab-shelf' }))?.props?.variant).toBe('primary')
++    await ui.unmount()
++  })
++
++  test('session start with nothing waiting opens nothing', async ($, on) => {
++    const { seen } = world(on)
++    await $.session.start({ cwd: ROOT } as never)
++    expect(seen.opened).toEqual([])
++  })
++
++  test('handoff nudge: once per session past the threshold, Handoff highlighted', async ($, on) => {
++    const { seen, clock } = world(on, { percent: 72 })
++    await withBar($)
++    let band = await $.ui.mount(BAND)
++    expect((await band.find({ key: 'handoff' }))?.props?.plain).toBe(true)
++    await band.unmount()
++    await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never)
++    await clock.settle()
++    await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't2', reason: 'answered' } as never)
++    await clock.settle()
++    expect(seen.toasts.filter(t => /context at 72%/.test(t)).length).toBe(1)
++    band = await $.ui.mount(BAND)
++    expect((await band.find({ key: 'handoff' }))?.props?.variant).toBe('primary')
++    await band.unmount()
++  })
++
++  test('handoff nudge stays quiet under the threshold, and when switched off', { options: { handoffNudgePercent: 0 } }, async ($, on) => {
++    const { seen, clock } = world(on, { percent: 95 })
++    await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never)
++    await clock.settle()
++    expect(seen.toasts.filter(t => /context at/.test(t))).toEqual([])
++  })
++})
++
++// ---------- the action bar's buttons ----------
++
++describe('bar buttons', () => {
++  test('idea shelves the draft and clears the box; an empty box only toasts', async ($, on) => {
++    const { seen, shelf, clock, setBox } = world(on)
++    await withBar($)
++    let band = await $.ui.mount(BAND)
++    await band.press({ key: 'idea' })
++    await clock.settle()
++    await band.unmount()
++    expect(seen.toasts.at(-1)).toBe('Idea: type the idea in the prompt box first')
++    setBox('cache the nav mesh')
++    band = await $.ui.mount(BAND)
++    await band.press({ key: 'idea' })
++    await clock.settle()
++    await band.unmount()
++    expect(shelf().ideas.map(i => i.text)).toEqual(['cache the nav mesh'])
++    expect(seen.fills.at(-1)).toBe('')
++    expect(seen.toasts.at(-1)).toBe('Shelved #1')
++    band = await $.ui.mount(BAND)
++    expect(await band.find({ type: 'Text', text: '💡 1' })).toBeDefined()
++    await band.unmount()
++  })
++
++  test('enhance runs bws-enhance on the draft; without bws-enhance it says so', async ($, on) => {
++    const { seen, clock, setBox } = world(on, { commands: ['enhance'] })
++    await withBar($)
++    setBox('fix the bow')
++    const band = await $.ui.mount(BAND)
++    await band.press({ key: 'enhance' })
++    await clock.settle()
++    await band.unmount()
++    expect(seen.commands.filter(c => c.command === 'enhance')).toEqual([{ command: 'enhance', args: 'fix the bow' }])
++  })
++
++  test('enhance without bws-enhance loaded only toasts', async ($, on) => {
++    const { seen, clock, setBox } = world(on)
++    await withBar($)
++    setBox('fix the bow')
++    const band = await $.ui.mount(BAND)
++    await band.press({ key: 'enhance' })
++    await clock.settle()
++    await band.unmount()
++    expect(seen.commands.filter(c => c.command === 'enhance')).toEqual([])
++    expect(seen.toasts.at(-1)).toBe('Enhance: bws-enhance is not loaded')
++  })
++
++  test('tab buttons open the dashboard on their tab; dash opens, then closes', async ($, on) => {
++    const { seen, clock } = world(on, { shelf: seeded() })
++    await withBar($)
++    let band = await $.ui.mount(BAND)
++    await band.press({ key: 'tab-shelf' })
++    await clock.settle()
++    await band.unmount()
++    expect(seen.opened.map(o => o.id)).toEqual(['dashboard'])
++    const ui = await $.ui.mount(PANE)
++    expect((await ui.find({ key: 'tab-shelf' }))?.props?.variant).toBe('primary')
++    await ui.unmount()
++    band = await $.ui.mount(BAND)
++    await band.press({ key: 'dash' })
++    await clock.settle()
++    await band.unmount()
++    expect(seen.closed.at(-1)).toBe('dashboard')
++    band = await $.ui.mount(BAND)
++    await band.press({ key: 'dash' })
++    await clock.settle()
++    await band.unmount()
++    expect(seen.opened.length).toBe(2)
++  })
++})
++type World = { state?: string; second?: boolean; stateMtime?: number; answers?: string; surfaces?: string[] }
++  on('session.surfaces', () => ({ value: (w.surfaces ?? []) as never }))
++  requestId: 'dashboard',
++  props: { title: 'Dashboard', isFocused: false, bodyColumns: 110, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
++  test('an alert raises the dashboard on the Loop tab where a pane can draw', async ($, on) => {
++    world(on, { surfaces: ['terminal'] })
++    const opened: string[] = []
++    on('ui.panes', () => ({ value: [] as never }))
++    on('ui.open', ($, e) => {
++      opened.push(e.id)
++      return { value: { isPlaced: true } }
++    })
++    await $.command.run({ command: 'cockpit', args: '' } as never) // refresh: the idle and session alerts toast
++    expect(opened[0]).toBe('dashboard')
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    expect((await ui.find({ key: 'tab-loop' }))?.props?.variant).toBe('primary')
++    expect(await ui.find({ type: 'Text', text: /^kit$/ })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('/cockpit and the Loop tab carry the board URL', async ($, on) => {
++    await $.command.run({ command: 'loop-watch', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    expect((await ui.find({ type: 'Link' }))?.text).toBe('board http://localhost:8772/')
++    await ui.unmount()
++  test('the bar shows a loop chip and a 4: loop hotkey; the Loop tab counts what needs you', async ($, on) => {
++    expect(await band.find({ type: 'Text', text: /^loop needs you$/ })).toBeDefined()
++    expect((await band.find({ key: 'loop' }))?.props?.hotkey).toBe('4')
++    await $.command.run({ command: 'loop-watch', args: '' } as never)
++    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
++    expect((await ui.find({ key: 'tab-loop' }))?.props?.label).toMatch(/^Loop \d+$/)
++    expect((await ui.find({ key: 'tab-loop' }))?.props?.variant).toBe('primary')
++    await ui.unmount()
++// ---------- Dashboard (Assumptions and Shelf moved in from bws-assumptions and bws-shelf) ----------
++
++export type Verdict = 'open' | 'right' | 'wrong'
++
++// One assumption Claude recorded, numbered A1, A2… in the order it arrived.
++export type Assumption = {
++  n: number
++  text: string
++  why: string
++  verdict: Verdict
++  // What it should be instead; only read when verdict is 'wrong'. Empty: Claude is told to ask.
++  correction: string
++  // True once its verdict went to Claude.
++  isSent: boolean
++}
++
++// An idea on the shelf, as hooks/shelf.ts writes it to the shelf file.
++export type ShelfIdea = {
++  id: number
++  text: string
++  detail?: string
++  by: 'user' | 'claude'
++  project: string
++  createdAt: number
++  status: 'open' | 'done' | 'dropped'
++  closedAt?: number
++}
++
++// What the Shelf tab draws: the open ideas as last loaded from the shelf file, and this project's open count.
++export type ShelfView = {
++  isAll: boolean
++  root: string
++  ideas: ShelfIdea[]
++  now: number
++  note: string
++  count: number
++}
++
++export type DashTab = 'assumptions' | 'shelf' | 'board' | 'loop'
++
++export type DashView = {
++  // The tab shown; null until something picks one.
++  tab: DashTab | null
++  // The person closed the dashboard: news lights the bar instead of reopening it, until they open it again.
++  isClosedByPerson: boolean
++}
++
++// The handoff nudge, once per session (keyed by its start): Handoff stays highlighted until it runs.
++export type HandoffNudge = { startedAt: number; isDone: boolean }
++
++      // the board as last read, drawn by the dashboard's Board tab
++      lines: string[]
++      assumptions: Assumption[]
++      dash: DashView
++      shelf: ShelfView
++      handoffNudge: HandoffNudge | null
++
++// This mod's own tools, so `tool.call` can match them before the engine has laid them into claude-code-mcp
++// (they are registered at session.start, after the types are written on a first load).
++declare module 'claude-code' {
++  interface McpToolInputs {
++    'mcp__bws-cockpit__record_assumption': { assumption: string; why?: string }
++    'mcp__bws-cockpit__shelve_idea': { text: string; detail?: string }
++    'mcp__bws-cockpit__list_ideas': { scope?: 'project' | 'all' }
++    'mcp__bws-cockpit__close_idea': { id: number; status: 'done' | 'dropped' | 'open' }
++  }
++}

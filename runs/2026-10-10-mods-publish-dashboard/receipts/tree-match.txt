@@ -1,0 +1,8 @@
+bws-cockpit files: index=be0aef74 main=be0aef74 content=same
+bws-board files: index=09fdddb5 main=09fdddb5 content=same
+.claude-plugin files: index=deda231a main=deda231a content=same
+bws-design-picker files: index=6bcaeb27 main=6bcaeb27 content=same
+bws-enhance files: index=b6de32db main=b6de32db content=same
+bws-notify files: index=858f44bc main=858f44bc content=same
+bws-shell-lint files: index=d5239e55 main=d5239e55 content=same
+retired present: 0
