@@ -51,7 +51,8 @@ Claude Code 2.1.296.
   prompt section only where the tool is offered, headless and narrow-terminal `/assumptions`.
 - Live (`claude -p`, headless): Claude called the tool on its own for two unstated choices while writing a script, with
   no permission prompt, and finished the task.
-- Interactive (Windows Terminal-sized tmux session, 160x50, terminal surface): the pane docked on the right; collapse /
+- Interactive (tmux session, 160x50, terminal surface): the pane docked on the right; collapse /
   expand, Right, Wrong + correction and Send all worked; Claude received the review as a user message and rewrote the
-  script to the correction. Desktop, VS Code and mobile were not tried live.
+  script to the correction. The two cosmetic fixes after that run (Input label, all-reviewed line) are covered by tests, not
+  re-checked live. Desktop, VS Code and mobile were not tried live.
 - Not covered by tests: the person-close flag (the test kit can't raise a close with origin `person`).
