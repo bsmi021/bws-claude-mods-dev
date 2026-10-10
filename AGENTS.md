@@ -13,7 +13,7 @@ Source: [Mods overview](https://code.claude.com/docs/en/plugins/mods/overview).
 ## Establish the contract
 
 - State the visible behavior and the smallest acceptance check before editing.
-- Run `claude --version`. The documented baseline is **2.1.287**; verify requirements against the installed release.
+- Run `claude --version`. The documented baseline is **2.1.296**; verify requirements against the installed release.
 - Use `/plugin-authoring` when available.
 - Treat locally generated `.claude-plugin/types/` declarations as authoritative over online examples. Claude Code generates them when loading or reloading development mods.
 - Prefer TypeScript when it clarifies event inputs and results; JavaScript is also supported.
