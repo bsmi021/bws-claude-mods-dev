@@ -7,7 +7,7 @@ const SPEC = {
   font: 'serif',
   palette: ['#0f172a', '#38bdf8', '#f8fafc'],
   blocks: [
-    { x: 0, y: 0, w: 100, h: 14, fill: '#1e293b', text: 'Monastery' },
+    { x: 0, y: 0, w: 100, h: 14, fill: '#1e293b', text: 'Roastery' },
     { x: 8, y: 30, w: 40, h: 20, fill: '#38bdf8', text: 'Play now', shape: 'pill' },
     { x: 60, y: 30, w: 30, h: 40, fill: '#f8fafc', shape: 'circle' },
   ],
@@ -87,7 +87,7 @@ test('rasterize fills every cell with a printable glyph and puts text and the pa
     expect(cp === 0x20 || cp === 0x2580 || (cp > 0x20 && cp < 0x7f)).toBe(true)
   }
   const row = (r: number) => Array.from({ length: 40 }, (_, c) => String.fromCharCode(words[(r * 40 + c) * 3]!)).join('')
-  expect(row(0)).toContain('Monastery')
+  expect(row(0)).toContain('Roastery')
   // header fill behind its text
   expect(words[(0 * 40 + 1) * 3 + 2]).toBe(0x1e293b)
   // last row is the palette strip, three colors left to right

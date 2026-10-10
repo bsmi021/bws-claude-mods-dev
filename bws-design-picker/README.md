@@ -31,7 +31,7 @@ left alone (API, schema, architecture, code style). Other questions pass through
 claude --plugin-dir ./bws-design-picker
 ```
 
-or add the folder to `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` (Brian's machine does this).
+or, to load it in every session, add the folder's absolute path to `CLAUDE_CODE_PLUGIN_DIRS` in the `env` block of `~/.claude/settings.json` (`;`-separated on Windows).
 
 ## Configuration
 
