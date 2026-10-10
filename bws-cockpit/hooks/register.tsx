@@ -42,6 +42,41 @@ import {
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
+import type { Assumption, DashTab, DashView, ShelfView } from '../types'
+import {
+  GUIDE,
+  TOOL_DESCRIPTION,
+  TOOL_NAME,
+  TOOL_SCHEMA,
+  active,
+  add as addAssumption,
+  clip,
+  listText as assumptionsText,
+  markSent,
+  ready,
+  sent,
+  setCorrection,
+  setVerdict,
+  summary as assumptionsSummary,
+  unreviewed,
+  verdictPrompt,
+} from './assumptions'
+import {
+  addIdea,
+  contextLine,
+  ideaLine,
+  isAllScope,
+  listText as ideasText,
+  openIdeas,
+  parseShelf,
+  projectName,
+  resumePrompt as ideaPrompt,
+  serializeShelf,
+  setStatus,
+  shelfPath,
+  slash,
+} from './shelf'
+import type { By, Idea, Shelf, Status } from './shelf'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
@@ -54,8 +89,35 @@ const stopArmedAt = atom({ plugin: 'bws-cockpit', key: 'stopArmedAt' } as const,
 const touched = atom({ plugin: 'bws-cockpit', key: 'touched' } as const, null)
 // bws-board's own summary of the board (agents, open asks, asks for this session), when it is loaded.
 const boardSummary = atom({ plugin: 'bws-board', key: 'summary' } as const, null)
+// bws-board's lines for its board, drawn by the dashboard's Board tab.
+const boardLines = atom({ plugin: 'bws-board', key: 'lines' } as const, [])
 
-const LOOP_PANE = 'loop-watch'
+// ---------- Dashboard: one pane with its own tabs (Assumptions, Shelf, Board, Loop while one is live) ----------
+
+const DASH = 'dashboard'
+const DASH_TITLE = 'Dashboard'
+const TABS: DashTab[] = ['assumptions', 'shelf', 'board', 'loop']
+const TAB_LABEL: Record<DashTab, string> = { assumptions: 'Assumptions', shelf: 'Shelf', board: 'Board', loop: 'Loop' }
+const ASSUMPTION_TOOL = `mcp__bws-cockpit__${TOOL_NAME}`
+const TOOL_SHELVE = 'mcp__bws-cockpit__shelve_idea'
+const TOOL_LIST = 'mcp__bws-cockpit__list_ideas'
+const TOOL_CLOSE = 'mcp__bws-cockpit__close_idea'
+const SHELF_SHOWN = 8
+const SHELF_IDLE: ShelfView = { isAll: false, root: '', ideas: [], now: 0, note: '', count: 0 }
+
+const assumptions = atom({ plugin: 'bws-cockpit', key: 'assumptions' } as const, [] as Assumption[])
+const dash = atom({ plugin: 'bws-cockpit', key: 'dash' } as const, { tab: null, isClosedByPerson: false } as DashView)
+const shelf = atom({ plugin: 'bws-cockpit', key: 'shelf' } as const, SHELF_IDLE)
+const handoffNudge = atom({ plugin: 'bws-cockpit', key: 'handoffNudge' } as const, null)
+
+// Corrections typed but not yet saved with Enter, so Send still carries them. Lost on a reload, by design.
+const drafts = new Map<number, string>()
+// The shelf file option, read once in register.
+let shelfOption = ''
+// bws-board's last asks-for-this-session count, so a rise raises the Board tab (undefined until its first write).
+let lastAskedOfMe: number | undefined
+// Between a submitted prompt and its turn's end: a bar Enhance then waits for the turn.
+let isTurnActive = false
 const STOP_CONFIRM_MS = 10_000
 const RECENT_MS = 24 * 60 * 60 * 1000 // a loop whose state changed in the last day counts as recent
 const UNIT_COLOR: Record<string, string | undefined> = { DONE: 'success', RUNNING: 'success', PAUSED: 'warning', STOPPED: undefined, PENDING: undefined }
@@ -71,12 +133,6 @@ let continuesUsed = 0
 // Theme keys, so the band follows the person's theme; `off` draws dim instead.
 const STATE_COLOR: Record<CockpitState, string | undefined> = { good: 'success', warn: 'warning', bad: 'error', off: undefined }
 const GUARD_NOTE_MS = 10 * 60 * 1000
-// The band: three bordered tiles from this many body columns and band rows; under, the borderless grid.
-const TILES_MIN_COLUMNS = 90
-const TILES_MIN_ROWS = 6
-const TILE_WIDTH = 30 // the devices and loop tiles; the run tile takes the rest
-const TILE_GAP = 1
-const GRID_LABEL = 9 // the grid's label column: RUN, DEVICES, LOOP
 
 const PS_PROCS =
   "Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('UnrealEditor.exe','Unity.exe','blender.exe') } | " +
@@ -94,6 +150,8 @@ type Options = {
   finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
   pin: { model: string; types: string[] }
+  isShelfNudge: boolean
+  handoffNudgePercent: number
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -521,6 +579,272 @@ async function resume($: EngineInterface): Promise<string | undefined> {
 const withNote = <R extends { deny?: string; context?: readonly string[] }>(r: R, note: string): R =>
   r.deny !== undefined ? r : { ...r, context: [...(r.context ?? []), `bws-cockpit: ${note}`] }
 
+const str = (v: unknown) => (typeof v === 'string' ? v : '')
+
+// ---------- /handoff ----------
+
+// Writes HANDOFF.md into this session's run folder (as the Finish-Line Guard sees it), never one a worker freshened.
+async function writeHandoff($: EngineInterface, focus: string): Promise<string> {
+  const cwd = await $.session.cwd()
+  const now = await $.clock.now()
+  const run = await sessionRunFolder($)
+  const folder = run !== null ? run.folder : handoffFolder(now)
+  $.ui.toast(`handoff: writing ${folder}/HANDOFF.md`, { timeoutMs: 4000 })
+  let r = await $.model.fork({ prompt: handoffPrompt(folder, focus) })
+  // A resumed session has a transcript but nothing to fork until its first request: build from the rows instead.
+  if (!r.isAnswered && r.reason === 'nothing-to-fork') {
+    const rows = (await settle($.session.messages())) ?? []
+    const transcript = transcriptText(rows)
+    if (transcript.length === 0) return 'No handoff written: there is nothing to hand off yet: this conversation has no messages.'
+    r = await $.model.complete({ model: await $.session.model(), prompt: transcriptPrompt(transcript, folder, focus), maxTokens: 3000 })
+  }
+  if (!r.isAnswered) return `No handoff written: the model call failed (${r.reason}).`
+  const body = r.text.trim()
+  if (body.length === 0) return 'No handoff written: the model returned an empty reply.'
+  const path = joinPath(cwd, `${folder}/HANDOFF.md`)
+  const previous = await settle($.fs.read(path))
+  const kept = previous !== undefined ? keptName(now) : null
+  if (kept !== null) await $.fs.write(joinPath(cwd, `${folder}/${kept}`), previous ?? '')
+  await $.fs.write(path, `${body}\n`)
+  await update($, handoffNudge, h => (h === null ? h : { ...h, isDone: true }))
+  const start = startPrompt(folder)
+  const surfaces = await $.session.surfaces()
+  const copied = surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
+  return (
+    `Handoff written: ${folder}/HANDOFF.md (${words(body)} words)` +
+    (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
+    `.\nStart the next session with this prompt${copied ? ' (copied to the clipboard)' : ''}:\n${start}`
+  )
+}
+
+// Once per session, when the context passes the threshold: a toast, and Handoff highlighted on the bar until it runs.
+async function nudgeHandoff($: EngineInterface, atPercent: number) {
+  if (atPercent <= 0) return
+  const u = await $.session.usage()
+  const percent = u.context.percent
+  if (percent === undefined || percent < atPercent) return
+  const h = await read($, handoffNudge)
+  if (h !== null && h.startedAt === u.startedAt) return
+  await update($, handoffNudge, () => ({ startedAt: u.startedAt, isDone: false }))
+  $.ui.toast(`context at ${percent}%: time for a handoff (/handoff, or h on the bar)`, { timeoutMs: 10000 })
+}
+
+async function isNudged($: EngineInterface) {
+  const h = await read($, handoffNudge)
+  return h !== null && !h.isDone && h.startedAt === (await $.session.usage()).startedAt
+}
+
+// ---------- Shelf (moved from bws-shelf; the same shelf file) ----------
+
+async function shelfFile($: EngineInterface) {
+  const path = shelfPath(shelfOption, await $.env.get('CLAUDE_CONFIG_DIR'), (await $.env.get('USERPROFILE')) ?? (await $.env.get('HOME')))
+  if (path === '') throw new Error('no home folder: set the shelfPath option')
+  return path
+}
+
+// Always from disk: another session may have written since.
+async function loadShelf($: EngineInterface): Promise<Shelf> {
+  const path = await shelfFile($)
+  if (!(await $.fs.exists(path))) return parseShelf(undefined)
+  return parseShelf(String(await $.fs.read(path)))
+}
+
+// Read, change, write back at once, so concurrent sessions lose nothing but a same-instant race.
+async function changeShelf<T>($: EngineInterface, fn: (s: Shelf, now: number) => { shelf: Shelf; idea: T }) {
+  const now = await $.clock.now()
+  const r = fn(await loadShelf($), now)
+  await $.fs.write(await shelfFile($), serializeShelf(r.shelf))
+  return r.idea
+}
+
+async function sessionRoot($: EngineInterface) {
+  return slash(await $.session.root())
+}
+
+async function shelve($: EngineInterface, text: string, detail: string | undefined, by: By) {
+  const project = await sessionRoot($)
+  return changeShelf($, (s, now) => addIdea(s, { text, detail, by, project, now }))
+}
+
+async function closeIdea($: EngineInterface, id: number, status: Status) {
+  return changeShelf($, (s, now) => setStatus(s, id, status, now))
+}
+
+// Reloads the Shelf tab and this project's count (the bar's 💡), keeping the scope unless one is given.
+async function refreshShelf($: EngineInterface, isAll?: boolean, note = '') {
+  const old = await read($, shelf)
+  const all = isAll ?? old.isAll
+  const root = await sessionRoot($)
+  const s = await loadShelf($)
+  const ideas = openIdeas(s, all ? '' : root)
+  const count = all ? openIdeas(s, root).length : ideas.length
+  const now = await $.clock.now()
+  await update($, shelf, () => ({ isAll: all, root, ideas, now, note, count }))
+}
+
+async function onCloseIdea($: EngineInterface, idea: Idea, status: Status) {
+  await closeIdea($, idea.id, status)
+  await refreshShelf($, undefined, `#${idea.id} ${status === 'done' ? 'done' : 'dropped'}`)
+}
+
+async function onResumeIdea($: EngineInterface, idea: Idea) {
+  const box = (await $.prompt.read()).text.trim()
+  if (box !== '') {
+    await update($, shelf, old => ({ ...old, note: 'The prompt box has text: send or clear it first.' }))
+    return
+  }
+  const filled = await $.prompt.fill({ text: ideaPrompt(idea) })
+  if (!filled.isFilled) {
+    await update($, shelf, old => ({ ...old, note: 'Could not fill the prompt box.' }))
+    return
+  }
+  $.ui.toast(`#${idea.id} is in the prompt box. Mark it done from the Shelf tab when finished.`)
+}
+
+// ---------- Assumptions (moved from bws-assumptions) ----------
+
+async function recordAssumption($: EngineInterface, text: string, why: string) {
+  let added: Assumption | undefined
+  await update($, assumptions, list => {
+    const r = addAssumption(list, text, why)
+    added = r.item
+    return r.list
+  })
+  await settle(raise($, 'assumptions'))
+  return added
+}
+
+async function markAssumption($: EngineInterface, n: number, verdict: 'right' | 'wrong') {
+  await update($, assumptions, list => setVerdict(list, n, verdict))
+}
+
+async function saveCorrection($: EngineInterface, n: number, text: string) {
+  drafts.delete(n)
+  await update($, assumptions, list => setCorrection(list, n, text))
+}
+
+async function sendReview($: EngineInterface) {
+  const batch = ready(await read($, assumptions))
+  if (batch.length === 0) {
+    $.ui.toast('Assumptions: mark one Right or Wrong first')
+    return
+  }
+  const text = verdictPrompt(batch, drafts)
+  const ns = batch.map(a => a.n)
+  await update($, assumptions, list => {
+    let out = list
+    for (const a of batch) {
+      const d = drafts.get(a.n)
+      if (d !== undefined) out = setCorrection(out, a.n, d)
+    }
+    return markSent(out, ns)
+  })
+  for (const n of ns) drafts.delete(n)
+  // Never submit from inside the press: defer it. The engine runs it once the session is idle.
+  $.clock.after(10, () => void $.prompt.submit({ text, asUser: true }))
+  $.ui.toast(`Assumptions: ${ns.length} sent to Claude`)
+}
+
+async function clearSent($: EngineInterface) {
+  await update($, assumptions, list => list.filter(a => !a.isSent))
+}
+
+// ---------- Dashboard ----------
+
+const isLoopLive = (lp: LoopView | null, now: number) =>
+  lp !== null && (lp.driver.status === 'RUNNING' || lp.driver.status === 'PAUSED' || now - lp.stateMtime < RECENT_MS)
+
+// What the Loop tab counts: its warnings and the needs still unanswered.
+const loopCount = (lp: LoopView | null) =>
+  lp === null ? 0 : lp.alerts.filter(a => a.level !== 'info').length + lp.needs.filter(n => n.answered === null).length
+
+// The tab shown: the one picked while it is there, else the first with something waiting, else Assumptions.
+function pickTab(picked: DashTab | null, tabs: readonly DashTab[], counts: Record<DashTab, number>): DashTab {
+  if (picked !== null && tabs.includes(picked)) return picked
+  return tabs.find(t => counts[t] > 0) ?? 'assumptions'
+}
+
+// Opened by the person (a command, a bar button): placed at any width. Focus is granted only to a fresh open over an
+// empty box, so an open pane is closed first, as /shelf did.
+async function openDash($: EngineInterface, tab: DashTab | null) {
+  await update($, dash, d => ({ tab: tab ?? d.tab, isClosedByPerson: false }))
+  const isEmpty = (await $.prompt.read()).text.trim() === ''
+  const isOpen = (await $.ui.panes()).some(p => p.id === DASH)
+  if (isEmpty && isOpen) await $.ui.close({ id: DASH })
+  const r = await $.ui.open(isEmpty ? { id: DASH, title: DASH_TITLE, focus: true } : { id: DASH, title: DASH_TITLE })
+  if (!r.isPlaced) $.ui.toast(`Dashboard not shown (${r.reason}). /assumptions, /shelf and /board print as text headless.`)
+}
+
+// After the command has returned, when the composer is clear.
+function openDashSoon($: EngineInterface, tab: DashTab | null) {
+  $.clock.after(10, () => void openDash($, tab).catch(err => $.ui.toast(`Dashboard: could not open (${String(err)})`)))
+}
+
+// News for the person: bring its tab up unless they closed the dashboard, or are using it (the tab counts tell them).
+async function raise($: EngineInterface, tab: DashTab) {
+  if ((await $.session.surfaces()).length === 0) return
+  const d = await read($, dash)
+  if (d.isClosedByPerson) return
+  const pane = (await $.ui.panes()).find(p => p.id === DASH)
+  if (pane?.isFocused) return
+  if (d.tab !== tab) await update($, dash, old => ({ ...old, tab }))
+  if (!pane || !pane.isShown) await $.ui.open({ id: DASH, title: DASH_TITLE })
+}
+
+// The bar's dash button: open it, or close it as the person's close (news then only lights the bar).
+async function toggleDash($: EngineInterface) {
+  if ((await $.ui.panes()).some(p => p.id === DASH)) {
+    await update($, dash, d => ({ ...d, isClosedByPerson: true }))
+    await $.ui.close({ id: DASH })
+    return
+  }
+  await settle(refreshShelf($))
+  await openDash($, null)
+}
+
+async function showTab($: EngineInterface, tab: DashTab) {
+  if (tab === 'shelf') await settle(refreshShelf($))
+  await openDash($, tab)
+}
+
+// The bar's idea button: the prompt box's draft goes on the shelf, and the box is cleared.
+async function pressIdea($: EngineInterface) {
+  const draft = (await $.prompt.read()).text.trim()
+  if (draft === '') return void $.ui.toast('Idea: type the idea in the prompt box first')
+  if (draft.startsWith('/')) return void $.ui.toast('Idea: the box holds a slash command')
+  const idea = await shelve($, draft, undefined, 'user')
+  await $.prompt.fill({ text: '' })
+  await settle(refreshShelf($))
+  $.ui.toast(`Shelved #${idea.id}`)
+}
+
+// The bar's enhance button: bws-enhance's /enhance on the draft. Mid-turn the engine queues it until the turn ends.
+async function pressEnhance($: EngineInterface) {
+  const draft = (await $.prompt.read()).text.trim()
+  if (draft === '') return void $.ui.toast('Enhance: type a rough prompt first')
+  if (draft.startsWith('/')) return void $.ui.toast('Enhance: the box holds a slash command')
+  if (!(await $.command.list()).some(c => c.name === 'enhance')) return void $.ui.toast('Enhance: bws-enhance is not loaded')
+  if (isTurnActive) $.ui.toast('Enhance: runs when Claude finishes this turn')
+  await $.command.run({ command: 'enhance', args: draft })
+}
+
+async function pressHandoff($: EngineInterface) {
+  const text = await writeHandoff($, '')
+  $.ui.toast(text.split('\n')[0] ?? text, { timeoutMs: 8000 })
+}
+
+// Everything the dashboard shows, as text, where nothing draws a pane.
+async function dashText($: EngineInterface) {
+  const list = await read($, assumptions)
+  const ideas = openIdeas(await loadShelf($), await sessionRoot($))
+  const lines = await read($, boardLines)
+  return [
+    assumptionsText(list),
+    ideas.length === 0 ? 'The shelf is empty.' : ideasText(ideas, await $.clock.now(), false, false),
+    lines.length === 0 ? 'Board: bws-board is not loaded, or has not read the board yet.' : lines.join('\n'),
+  ].join('\n\n')
+}
+
 export const register: Register = (on, options) => {
   const cvarText = String(options.lowVramCvars ?? '').trim()
   const o: Options = {
@@ -554,44 +878,14 @@ export const register: Register = (on, options) => {
       model: String(options.workerModel ?? '').trim(),
       types: parseTypes(String(options.workerAgentTypes ?? 'general-purpose,claude')),
     },
+    isShelfNudge: options.shelfNudge !== false,
+    handoffNudgePercent: Number(options.handoffNudgePercent ?? 70),
   }
+  shelfOption = String(options.shelfPath ?? '')
 
   // ---------- /handoff ----------
 
-  on('command.run', { command: 'handoff' }, async ($, e, next) => {
-    const cwd = await $.session.cwd()
-    const now = await $.clock.now()
-    // The session's own run folder (as the Finish-Line Guard sees it), never one a worker freshened.
-    const run = await sessionRunFolder($)
-    const folder = run !== null ? run.folder : handoffFolder(now)
-    $.ui.toast(`handoff: writing ${folder}/HANDOFF.md`, { timeoutMs: 4000 })
-    const focus = e.args.trim()
-    let r = await $.model.fork({ prompt: handoffPrompt(folder, focus) })
-    // A resumed session has a transcript but nothing to fork until its first request: build from the rows instead.
-    if (!r.isAnswered && r.reason === 'nothing-to-fork') {
-      const rows = (await settle($.session.messages())) ?? []
-      const transcript = transcriptText(rows)
-      if (transcript.length === 0) return { text: 'No handoff written: there is nothing to hand off yet: this conversation has no messages.' }
-      r = await $.model.complete({ model: await $.session.model(), prompt: transcriptPrompt(transcript, folder, focus), maxTokens: 3000 })
-    }
-    if (!r.isAnswered) return { text: `No handoff written: the model call failed (${r.reason}).` }
-    const body = r.text.trim()
-    if (body.length === 0) return { text: 'No handoff written: the model returned an empty reply.' }
-    const path = joinPath(cwd, `${folder}/HANDOFF.md`)
-    const previous = await settle($.fs.read(path))
-    const kept = previous !== undefined ? keptName(now) : null
-    if (kept !== null) await $.fs.write(joinPath(cwd, `${folder}/${kept}`), previous ?? '')
-    await $.fs.write(path, `${body}\n`)
-    const start = startPrompt(folder)
-    const surfaces = await $.session.surfaces()
-    const copied = surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
-    return {
-      text:
-        `Handoff written: ${folder}/HANDOFF.md (${words(body)} words)` +
-        (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
-        `.\nStart the next session with this prompt${copied ? ' (copied to the clipboard)' : ''}:\n${start}`,
-    }
-  })
+  on('command.run', { command: 'handoff' }, async ($, e, next) => ({ text: await writeHandoff($, e.args.trim()) }))
 
   // ---------- worker model pin ----------
 
@@ -652,6 +946,7 @@ export const register: Register = (on, options) => {
 
   on('prompt.submit', async ($, e, next) => {
     continuesUsed = 0
+    isTurnActive = true
     return next(e)
   })
 
@@ -687,10 +982,16 @@ export const register: Register = (on, options) => {
     return { block: decision.block }
   })
 
-  // One turn.complete hook: refresh the band, then add the finish-line line under the answer.
+  // One turn.complete hook: refresh the band and the shelf (another session may have added ideas), nudge a handoff
+  // when the context is full, then add the finish-line line under the answer.
   on('turn.complete', async ($, e, next) => {
+    if (!e.agentId) isTurnActive = false
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0 && o.isBackgroundProbe) void refresh($, o, 15000)
+    if (surfaces.length > 0 && !e.agentId) {
+      void settle(refreshShelf($))
+      void settle(nudgeHandoff($, o.handoffNudgePercent))
+    }
     const result = await next(e)
     if (!o.finish.isOn || e.isAborted || e.agentId) return result
     const fl = await sessionFinishLine($, o.finish.owner)
@@ -723,12 +1024,64 @@ export const register: Register = (on, options) => {
         },
       })
     }
+    // ---------- Dashboard: its commands and the tools of the Assumptions and Shelf tabs ----------
+    await $.command.register({ name: 'dashboard', description: 'Open the dashboard: Assumptions, Shelf, Board, Loop', argumentHint: '[assumptions|shelf|board|loop]', immediate: true })
+    await $.command.register({ name: 'assumptions', description: 'Show the assumptions Claude made in this session, to confirm or correct them', immediate: true })
+    await $.command.register({ name: 'idea', description: 'Shelve an idea for later without sending it to Claude', argumentHint: '<idea>', immediate: true })
+    await $.command.register({
+      name: 'shelf',
+      description: "Show this project's idea shelf (Resume / Done / Drop); /shelf all for every project",
+      argumentHint: '[all]',
+      immediate: true,
+    })
+    await $.tool.register({ name: TOOL_NAME, description: TOOL_DESCRIPTION, inputSchema: TOOL_SCHEMA, isDeferred: false })
+    await $.tool.register({
+      name: 'shelve_idea',
+      description:
+        "Park an idea on the user's idea shelf instead of acting on it now. Use it for tangents that would sidetrack the " +
+        'current task: an improvement you notice, a follow-up, an aside the user mentions. The shelf persists per project ' +
+        'across sessions; the user resumes ideas from /shelf. After shelving, continue the current task.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: 'The idea in one line (under 300 characters).' },
+          detail: { type: 'string', description: 'Optional context to resume it later: files, findings, why it matters.' },
+        },
+        required: ['text'],
+      },
+      isDeferred: false,
+    })
+    await $.tool.register({
+      name: 'list_ideas',
+      description: "List the open ideas on the user's idea shelf, for this project or all projects, with their ids and details.",
+      inputSchema: {
+        type: 'object',
+        properties: { scope: { type: 'string', enum: ['project', 'all'], description: 'project (default) or all.' } },
+      },
+    })
+    await $.tool.register({
+      name: 'close_idea',
+      description: 'Mark a shelved idea done (it was carried out) or dropped (no longer wanted), by its id.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'number', description: 'The idea id, as list_ideas shows it (#12 → 12).' },
+          status: { type: 'string', enum: ['done', 'dropped', 'open'], description: 'done, dropped, or open to reopen it.' },
+        },
+        required: ['id', 'status'],
+      },
+    })
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0) {
       if (o.isBackgroundProbe) {
         void refresh($, o, 0)
         $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
       }
+      // Something already waits on the person: open the dashboard on it (asks for this session arrive with
+      // bws-board's first summary write, below).
+      await settle(refreshShelf($))
+      const waiting = active(await read($, assumptions)).length > 0 ? 'assumptions' : (await read($, shelf)).count > 0 ? 'shelf' : null
+      if (waiting !== null) await settle(raise($, waiting))
     }
     return next(e)
   })
@@ -746,6 +1099,11 @@ export const register: Register = (on, options) => {
         (run.next ? `; next step: ${shorten(run.next, 200)}` : '') +
         `; ${run.open} open items. It may belong to another task: confirm before resuming it.`
       blocks.push({ name: 'bwsCockpit', text })
+    }
+    // The shelf: the open count and the tool, so tangents get shelved, not followed.
+    if (isAttended && o.isShelfNudge) {
+      const ideas = await settle(loadShelf($).then(async s => openIdeas(s, await sessionRoot($))))
+      if (ideas !== undefined) blocks.push({ name: 'ideaShelf', text: contextLine(ideas.length, TOOL_SHELVE) })
     }
     // Project Locator: a session started in the home folder or a projects root gets the project list.
     const cwd = await $.session.cwd()
@@ -787,14 +1145,140 @@ export const register: Register = (on, options) => {
     const lp = await selectedLoop($)
     const now = await $.clock.now()
     if (lp === null) return { text: 'No harness loop here: no Tools/<name>/loop.json with a state.json under this folder.' }
+    await update($, dash, (d): DashView => ({ ...d, tab: 'loop' }))
     const surfaces = await $.session.surfaces()
     if (surfaces.length === 0) return { text: loopText(lp, now) }
-    const opened = await $.ui.open({ id: LOOP_PANE, title: `Loop · ${lp.name}` })
-    const st = loopState(lp)
-    return opened.isPlaced ? { text: `Loop Watch: ${lp.name} ${st.word}` } : { text: loopText(lp, now) }
+    openDashSoon($, 'loop')
+    return { text: `Loop Watch: ${lp.name} ${loopState(lp).word}` }
   })
 
-  on('ui.render', { component: 'Pane', requestId: LOOP_PANE }, async ($, e, next) => {
+  // ---------- Dashboard commands ----------
+
+  on('command.run', { command: 'dashboard' }, async ($, e) => {
+    const word = e.args.trim().toLowerCase()
+    const tab = word === '' ? null : (TABS.find(t => t.startsWith(word)) ?? null)
+    if (word !== '' && tab === null) return { text: 'Usage: /dashboard [assumptions|shelf|board|loop]' }
+    if ((await $.session.surfaces()).length === 0) return { text: await dashText($) }
+    await settle(refreshShelf($))
+    if (tab === 'loop') await refreshLoops($, o)
+    openDashSoon($, tab)
+    return {}
+  })
+
+  on('command.run', { command: 'assumptions' }, async $ => {
+    if ((await $.session.surfaces()).length === 0) return { text: assumptionsText(await read($, assumptions)) }
+    openDashSoon($, 'assumptions')
+    return {}
+  })
+
+  on('command.run', { command: 'idea' }, async ($, e) => {
+    const text = e.args.trim()
+    if (text === '') return { text: "Usage: /idea <idea>. It goes on this project's shelf; /shelf shows it." }
+    const isHeadless = (await $.session.surfaces()).length === 0
+    try {
+      const idea = await shelve($, text, undefined, 'user')
+      await settle(refreshShelf($))
+      if (isHeadless) return { text: `Shelved #${idea.id}: ${idea.text}` }
+      $.ui.toast(`Shelved #${idea.id}`)
+      return {}
+    } catch (err) {
+      return { text: `Shelf: could not save (${String(err)})`, exitCode: 1 }
+    }
+  })
+
+  on('command.run', { command: 'shelf' }, async ($, e) => {
+    const isAll = isAllScope(e.args)
+    try {
+      if ((await $.session.surfaces()).length === 0) {
+        const ideas = openIdeas(await loadShelf($), isAll ? '' : await sessionRoot($))
+        return { text: ideas.length === 0 ? 'The shelf is empty.' : ideasText(ideas, await $.clock.now(), isAll, true) }
+      }
+      await refreshShelf($, isAll)
+      openDashSoon($, 'shelf')
+      return {}
+    } catch (err) {
+      return { text: `Shelf: could not read (${String(err)})`, exitCode: 1 }
+    }
+  })
+
+  // ---------- Assumptions and Shelf tools ----------
+
+  // Tell the model when to record an assumption, only where the request offers the tool (not subagents without it).
+  on('prompt.compose', async ($, e, next) => {
+    const r = await next(e)
+    if (!e.tools.includes(ASSUMPTION_TOOL)) return r
+    return { sections: [...r.sections, { id: 'bws-cockpit:assumptions', text: GUIDE, scope: 'session' as const }] }
+  })
+
+  on('tool.call', { tool: 'mcp__bws-cockpit__record_assumption' }, async ($, e) => {
+    const input = e as unknown as { assumption?: unknown; why?: unknown }
+    const text = typeof input.assumption === 'string' ? input.assumption.trim() : ''
+    const why = typeof input.why === 'string' ? input.why.trim() : ''
+    if (text === '') return { deny: 'record_assumption needs `assumption`: the assumption as one plain claim.' }
+    const item = await recordAssumption($, text, why)
+    return { result: `Recorded as A${item?.n ?? '?'}. Keep working on this assumption; the user will confirm or correct it from the dashboard.` }
+  })
+
+  on('tool.call', { tool: 'mcp__bws-cockpit__shelve_idea' }, async ($, e) => {
+    const input = e as unknown as { text?: unknown; detail?: unknown }
+    const text = str(input.text).trim()
+    if (text === '') return { deny: 'shelve_idea needs text: the idea in one line.' }
+    try {
+      const idea = await shelve($, text, str(input.detail) || undefined, 'claude')
+      await settle(refreshShelf($))
+      $.ui.toast(`Claude shelved #${idea.id}: ${idea.text}`)
+      return { result: `Shelved as #${idea.id}. Don't pursue it now; continue the current task.` }
+    } catch (err) {
+      return { deny: `Could not save the idea: ${String(err)}` }
+    }
+  })
+
+  on('tool.call', { tool: 'mcp__bws-cockpit__list_ideas' }, async ($, e) => {
+    const isAll = str((e as unknown as { scope?: unknown }).scope) === 'all'
+    try {
+      const ideas = openIdeas(await loadShelf($), isAll ? '' : await sessionRoot($))
+      if (ideas.length === 0) return { result: isAll ? 'The shelf is empty.' : 'No open ideas for this project.' }
+      return { result: ideasText(ideas, await $.clock.now(), isAll, true) }
+    } catch (err) {
+      return { deny: `Could not read the shelf: ${String(err)}` }
+    }
+  })
+
+  on('tool.call', { tool: 'mcp__bws-cockpit__close_idea' }, async ($, e) => {
+    const input = e as unknown as { id?: unknown; status?: unknown }
+    const id = Number(String(input.id ?? '').replace(/^#/, ''))
+    const status = str(input.status)
+    if (!Number.isInteger(id) || id < 1) return { deny: 'close_idea needs the numeric id of an idea.' }
+    if (status !== 'done' && status !== 'dropped' && status !== 'open') return { deny: 'status must be done, dropped or open.' }
+    try {
+      const idea = await closeIdea($, id, status)
+      if (!idea) return { deny: `No idea #${id} on the shelf.` }
+      await settle(refreshShelf($))
+      return { result: `#${id} is ${status}: ${idea.text}` }
+    } catch (err) {
+      return { deny: `Could not update the shelf: ${String(err)}` }
+    }
+  })
+
+  // ---------- Dashboard: the person's close, and bws-board news ----------
+
+  // Closed by its mark or ctrl+x x: news stops reopening it; the bar keeps the counts. An asked open clears this.
+  on('ui.close', async ($, e, next) => {
+    if (e.id === DASH && e.origin.kind === 'person') await update($, dash, d => ({ ...d, isClosedByPerson: true }))
+    return next(e)
+  })
+
+  // bws-board writes its summary on every heartbeat: a rise in asks for this session raises the Board tab.
+  on('state.set', { plugin: 'bws-board', key: 'summary' }, async ($, e, next) => {
+    const asked = e.value?.askedOfMe ?? 0
+    const before = lastAskedOfMe
+    lastAskedOfMe = asked
+    if (asked > (before ?? 0)) void raise($, 'board').catch(() => undefined)
+    return next(e)
+  })
+
+  // The dashboard: a tab strip, then the shown tab's body.
+  on('ui.render', { component: 'Pane', requestId: DASH }, async ($, e, next) => {
     const table = $.ui.resolve(e)
     const { Box, Text, Button, Link } = table
     // Mobile has neither (its table may still carry the names at runtime): fall back to text there.
@@ -805,7 +1289,136 @@ export const register: Register = (on, options) => {
     const lp = await selectedLoop($)
     const now = await $.clock.now()
     const width = Math.max(24, (e.props.bodyColumns ?? 80) - 1)
-    if (lp === null) return <Text dimColor>No harness loop in this folder (Tools/&lt;name&gt;/loop.json with a state.json).</Text>
+    const d = await read($, dash)
+    const list = await read($, assumptions)
+    const sv = await read($, shelf)
+    const bs = await read($, boardSummary)
+    const lines = await read($, boardLines)
+    const counts: Record<DashTab, number> = { assumptions: active(list).length, shelf: sv.count, board: bs?.askedOfMe ?? 0, loop: loopCount(lp) }
+    const tabs = TABS.filter(t => t !== 'loop' || isLoopLive(lp, now))
+    const tab = pickTab(d.tab, tabs, counts)
+    const strip = (
+      <Box key="tabs" flexDirection="row" columnGap={1} flexWrap="wrap">
+        {tabs.map((t, i) => (
+          <Button
+            key={`tab-${t}`}
+            label={counts[t] > 0 ? `${TAB_LABEL[t]} ${counts[t]}` : TAB_LABEL[t]}
+            hotkey={String(i + 1)}
+            {...(t === tab ? { variant: 'primary' as const } : { plain: true as const, dimColor: true })}
+            onPress={() => update($, dash, old => ({ ...old, tab: t }))}
+          />
+        ))}
+      </Box>
+    )
+
+    if (tab === 'assumptions') {
+      const open = active(list)
+      const done = sent(list)
+      const toSend = ready(list).length
+      return (
+        <Box flexDirection="column">
+          {strip}
+          <Text bold>{assumptionsSummary(list)}</Text>
+          {open.length === 0 && <Text dimColor>Nothing to review. Claude records assumptions here as it builds.</Text>}
+          {open.map(a => (
+            <Box key={`a-${a.n}`} flexDirection="column">
+              <Text wrap="wrap" color={a.verdict === 'wrong' ? 'error' : a.verdict === 'right' ? 'success' : undefined}>
+                {`A${a.n} ${a.text}`}
+              </Text>
+              {a.why !== '' && <Text dimColor wrap="wrap">{`   ${a.why}`}</Text>}
+              <Box flexDirection="row" gap={1}>
+                <Button key={`right-${a.n}`} label={a.verdict === 'right' ? '✓ Right' : 'Right'} onPress={() => markAssumption($, a.n, 'right')} />
+                <Button key={`wrong-${a.n}`} label={a.verdict === 'wrong' ? '✗ Wrong' : 'Wrong'} onPress={() => markAssumption($, a.n, 'wrong')} />
+              </Box>
+              {a.verdict === 'wrong' &&
+                (Input ? (
+                  <Input
+                    key={`fix-${a.n}`}
+                    label="Instead"
+                    placeholder="what it should be (empty: Claude asks you)"
+                    value={drafts.get(a.n) ?? a.correction}
+                    submitLabel="save"
+                    onInput={(text: string) => void drafts.set(a.n, text)}
+                    onSubmit={(text: string) => void saveCorrection($, a.n, text)}
+                  />
+                ) : (
+                  <Text dimColor wrap="wrap">{'   Claude will ask you what it should be.'}</Text>
+                ))}
+            </Box>
+          ))}
+          {done.length > 0 && (
+            <Text dimColor wrap="truncate-end">
+              {clip(`${done.length} sent: ${done.slice(-4).map(a => `A${a.n} ${a.verdict}`).join(', ')}`, width)}
+            </Text>
+          )}
+          <Box flexDirection="row" gap={1}>
+            {open.length > 0 && <Button key="send" variant="primary" label={`Send ${toSend} to Claude`} hotkey="s" onPress={() => sendReview($)} />}
+            {done.length > 0 && <Button key="clear" label="Clear sent" hotkey="c" onPress={() => clearSent($)} />}
+          </Box>
+        </Box>
+      )
+    }
+
+    if (tab === 'shelf') {
+      const shown = sv.ideas.slice(0, SHELF_SHOWN)
+      const more = sv.ideas.length - shown.length
+      const where = sv.isAll ? 'all projects' : projectName(sv.root)
+      return (
+        <Box flexDirection="column">
+          {strip}
+          <Text bold>
+            💡 {sv.ideas.length} open idea{sv.ideas.length === 1 ? '' : 's'} · {where}
+          </Text>
+          {sv.ideas.length === 0 && <Text dimColor>Nothing shelved. /idea &lt;text&gt; adds one; Claude adds its own tangents.</Text>}
+          {shown.map(i => (
+            <Box key={`idea-${i.id}`} flexDirection="row" gap={1}>
+              <Button key={`resume-${i.id}`} plain label="▶" onPress={() => onResumeIdea($, i)} />
+              <Button key={`done-${i.id}`} plain label="✓" onPress={() => onCloseIdea($, i, 'done')} />
+              <Button key={`drop-${i.id}`} plain label="✗" onPress={() => onCloseIdea($, i, 'dropped')} />
+              <Box flexGrow={1} flexShrink={1}>
+                <Text wrap="wrap">{ideaLine(i, sv.now, sv.isAll)}</Text>
+              </Box>
+            </Box>
+          ))}
+          {more > 0 && <Text dimColor>…{more} more: ask Claude to list ideas.</Text>}
+          {sv.note !== '' && <Text color="warning">{sv.note}</Text>}
+          <Box flexDirection="row" gap={1}>
+            <Button key="scope" label={sv.isAll ? 'This project' : 'All projects'} hotkey="a" onPress={() => refreshShelf($, !sv.isAll)} />
+          </Box>
+          {e.props.isFocused && <Text dimColor>▶ resume (fills the prompt box) · ✓ done · ✗ drop</Text>}
+        </Box>
+      )
+    }
+
+    if (tab === 'board') {
+      return (
+        <Box flexDirection="column">
+          {strip}
+          {bs === null && lines.length === 0 ? (
+            <Text dimColor wrap="wrap">bws-board is not loaded here, or has not read the board yet.</Text>
+          ) : (
+            <Text bold>
+              Board · {bs?.agents ?? 0} agent{bs?.agents === 1 ? '' : 's'} · {bs?.openAsks ?? 0} open ask{bs?.openAsks === 1 ? '' : 's'}
+              {bs && bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}
+            </Text>
+          )}
+          {lines.map((l, i) => (
+            <Text key={`board-${i}`} wrap="wrap" dimColor={l.startsWith('  claims')}>
+              {l}
+            </Text>
+          ))}
+        </Box>
+      )
+    }
+
+    if (lp === null) {
+      return (
+        <Box flexDirection="column">
+          {strip}
+          <Text dimColor>No harness loop in this folder (Tools/&lt;name&gt;/loop.json with a state.json).</Text>
+        </Box>
+      )
+    }
     const note = await read($, loopAction)
     const armed = await read($, stopArmedAt)
     const isArmed = armed !== null && now - armed < STOP_CONFIRM_MS
@@ -824,6 +1437,7 @@ export const register: Register = (on, options) => {
     const rule = <Text dimColor>{'─'.repeat(Math.min(width, 120))}</Text>
     return (
       <Box flexDirection="column">
+        {strip}
         <Box flexDirection="row">
           <Text bold>{fit(lp.name, Math.max(6, width - 26))}</Text>
           <Text color={STATE_COLOR[st.state]} dimColor={st.state === 'off'}>{`  ${st.state === 'off' ? '○' : '●'} ${lp.driver.status.toLowerCase()}`}</Text>
@@ -931,6 +1545,8 @@ export const register: Register = (on, options) => {
     )
   })
 
+  // The action bar: one row of status chips, then the actions. It wraps when narrow; the guard note and another
+  // mod's band go under it.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const v = await read($, view)
     if (e.props.hasSurvey || v === null || (await read($, isHidden))) return next(e)
@@ -938,56 +1554,87 @@ export const register: Register = (on, options) => {
     // ours, by the prompt. Core's own node is its survey slot, empty here, so it adds nothing.
     const drawn = await settle(next(e))
     const below = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
-    const { Box, Text, Button, Link } = $.ui.resolve(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
     const cols = e.props.bodyColumns ?? 100
     const width = Math.max(40, cols - 1)
     const run = v.run
-    const d = v.devices
     const now = await $.clock.now()
     const showGuard = v.lastGuard !== null && v.lastGuardAt !== null && now - v.lastGuardAt < GUARD_NOTE_MS
     const lp = await selectedLoop($)
-    const isLoopLive = lp !== null && (lp.driver.status === 'RUNNING' || lp.driver.status === 'PAUSED' || now - lp.stateMtime < RECENT_MS)
-    const loopChip = lp && isLoopLive ? { ...loopState(lp), detail: [lp.name, lp.current].filter(Boolean).join(' ') } : null
-    // Tiles (option A) need the columns for three boxes and the rows for their borders; otherwise
-    // the borderless grid (option C), as tall as the old band.
-    const isTiles = cols >= TILES_MIN_COLUMNS && (e.props.maxRows ?? TILES_MIN_ROWS) >= TILES_MIN_ROWS
+    const loopChip = lp && isLoopLive(lp, now) ? loopState(lp) : null
+    const list = await read($, assumptions)
+    const sv = await read($, shelf)
+    const bs = await read($, boardSummary)
+    const isHandoffDue = await isNudged($)
 
-    // The run's parts: name (bold), date, open count, next step.
-    const parts = (() => {
-      if (!run) return null
-      const base = run.folder.replace(/^runs\//, '')
-      const m = base.match(/^(\d{4})-(\d{2})-(\d{2})-(.+)$/)
-      return {
-        name: m?.[4] ?? base,
-        date: m ? `${m[2]}-${m[3]}` : '',
-        openText: run.open > 0 ? `${run.open} open` : 'no open items',
-        openColor: run.open > 0 ? 'warning' : 'success',
-        next: run.next ?? 'no next step in RUNLOG',
-      }
-    })()
-
-    const chips = d?.chips ?? []
-    const chip = (c: CockpitChip) => (
-      <Box key={`chip-${c.label}`} flexDirection="row">
-        <Text color={STATE_COLOR[c.state]} dimColor={c.state === 'off'}>
-          {c.state === 'off' ? '○ ' : '● '}
-        </Text>
-        <Text dimColor={c.state === 'off'}>{c.label}</Text>
-        {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
+    const runName = run ? run.folder.replace(/^runs\//, '').replace(/^\d{4}-\d{2}-\d{2}-/, '') : ''
+    const runChip = run ? (
+      <Box key="chip-run" flexDirection="row">
+        <Text bold>{fit(runName, Math.max(8, Math.min(28, width - 60)))}</Text>
+        <Text color={run.open > 0 ? 'warning' : 'success'}>{run.open > 0 ? ` ${run.open} open` : ' done'}</Text>
       </Box>
-    )
-    const loopMark = loopChip ? (
-      <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
-        {loopChip.state === 'off' ? '○ ' : '● '}
+    ) : (
+      <Text key="chip-run" dimColor>
+        no run
       </Text>
+    )
+    // Devices that are up or in trouble; the ones off say nothing.
+    const deviceChips = (v.devices?.chips ?? [])
+      .filter(c => c.state !== 'off')
+      .map(c => (
+        <Box key={`chip-${c.label}`} flexDirection="row">
+          <Text color={STATE_COLOR[c.state]}>{'● '}</Text>
+          <Text>{c.label}</Text>
+          {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
+        </Box>
+      ))
+    const loopBox = loopChip ? (
+      <Box key="chip-loop" flexDirection="row">
+        <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
+          {loopChip.state === 'off' ? '○ ' : '● '}
+        </Text>
+        <Text dimColor={loopChip.state === 'off'}>{`loop ${loopChip.word}`}</Text>
+      </Box>
     ) : null
-    const boardLink = (max: number) =>
-      lp?.boardUrl ? <Link href={lp.boardUrl} label={fit(`board ${lp.boardUrl.replace(/^https?:\/\//, '')}`, Math.max(8, max))} /> : null
-    const resumeButton = run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null
-    const otherButtons = [
-      <Button key="refresh" plain dimColor label="refresh" hotkey="2" onPress={() => void refresh($, o, 0)} />,
+    // bws-board: shown once another session is live or an ask is open; warning while one waits on us.
+    const boardChip =
+      bs !== null && (bs.agents > 1 || bs.openAsks > 0) ? (
+        <Box key="chip-board" flexDirection="row">
+          <Text color={bs.askedOfMe > 0 ? 'warning' : 'success'}>{'● '}</Text>
+          <Text dimColor={bs.askedOfMe === 0}>
+            {`board ${bs.agents} · ${bs.openAsks} open${bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}`}
+          </Text>
+        </Box>
+      ) : null
+    const toReview = unreviewed(list).length
+    const asmChip =
+      active(list).length > 0 ? (
+        <Text key="chip-assumptions" color={toReview > 0 ? 'warning' : undefined} dimColor={toReview === 0}>
+          {`⚑ ${active(list).length}`}
+        </Text>
+      ) : null
+    const shelfChip =
+      sv.count > 0 ? (
+        <Text key="chip-shelf" dimColor>
+          {`💡 ${sv.count}`}
+        </Text>
+      ) : null
+
+    const buttons = [
+      run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null,
+      <Button key="dash" plain dimColor label="dash" hotkey="2" onPress={() => void toggleDash($)} />,
+      <Button key="tab-assumptions" plain dimColor label="asm" hotkey="a" onPress={() => void showTab($, 'assumptions')} />,
+      <Button key="tab-shelf" plain dimColor label="shelf" hotkey="s" onPress={() => void showTab($, 'shelf')} />,
+      bs !== null ? <Button key="tab-board" plain dimColor label="board" hotkey="b" onPress={() => void showTab($, 'board')} /> : null,
+      lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void showTab($, 'loop')} /> : null,
+      isHandoffDue ? (
+        <Button key="handoff" variant="primary" label="handoff" hotkey="h" onPress={() => void pressHandoff($)} />
+      ) : (
+        <Button key="handoff" plain dimColor label="handoff" hotkey="h" onPress={() => void pressHandoff($)} />
+      ),
+      <Button key="idea" plain dimColor label="idea" hotkey="i" onPress={() => void pressIdea($)} />,
+      <Button key="enhance" plain dimColor label="enhance" hotkey="e" onPress={() => void pressEnhance($)} />,
       <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />,
-      lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void $.ui.open({ id: LOOP_PANE, title: `Loop · ${lp.name}` })} /> : null,
     ]
     const guardRow = showGuard ? (
       <Box flexDirection="row">
@@ -998,131 +1645,18 @@ export const register: Register = (on, options) => {
       </Box>
     ) : null
     const belowBox = below ? <Box key="band-below" flexDirection="column">{below}</Box> : null
-    // bws-board: shown once another session is live or an ask is open; warning while one waits on us.
-    const bs = await read($, boardSummary)
-    const boardChip =
-      bs !== null && (bs.agents > 1 || bs.openAsks > 0) ? (
-        <Box key="chip-board" flexDirection="row">
-          <Text color={bs.askedOfMe > 0 ? 'warning' : 'success'}>{'● '}</Text>
-          <Text dimColor={bs.askedOfMe === 0}>
-            {`board ${bs.agents} · ${bs.openAsks} open${bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}`}
-          </Text>
-        </Box>
-      ) : null
-
-    if (isTiles) {
-      // Three round-bordered tiles side by side: run (the rest of the width), devices, loop.
-      const devW = TILE_WIDTH
-      const loopW = loopChip ? TILE_WIDTH : 0
-      const runW = width - devW - TILE_GAP - (loopChip ? loopW + TILE_GAP : 0)
-      const inner = (w: number) => Math.max(8, w - 4) // two border columns, one padding column each side
-      const deviceRows = [['UE', 'Unity'], ['Blender', 'adb'], ['VRAM']]
-        .map(labels => chips.filter(c => labels.includes(c.label)))
-        .filter(row => row.length > 0)
-      const runIn = inner(runW)
-      return (
-        <Box flexDirection="column">
-          <Box flexDirection="row" columnGap={TILE_GAP}>
-            <Box key="tile-run" width={runW} flexDirection="column" borderStyle="round" borderDimColor paddingX={1}>
-              {parts ? (
-                <Box flexDirection="row">
-                  <Text bold>{fit(parts.name, Math.max(8, runIn - parts.date.length - 2))}</Text>
-                  <Text dimColor>{parts.date ? `  ${parts.date}` : ''}</Text>
-                </Box>
-              ) : (
-                <Text dimColor>no run folder under runs/</Text>
-              )}
-              {parts ? (
-                <Box flexDirection="row">
-                  <Text color={parts.openColor}>{parts.openText}</Text>
-                  <Text dimColor>{' › '}</Text>
-                  <Text wrap="truncate-end">{fit(parts.next, runIn - parts.openText.length - 3)}</Text>
-                </Box>
-              ) : null}
-              {resumeButton}
-            </Box>
-            <Box key="tile-devices" width={devW} flexDirection="column" borderStyle="round" borderDimColor paddingX={1}>
-              {deviceRows.length > 0 ? (
-                deviceRows.map((row, i) => (
-                  <Box key={`devices-${i}`} flexDirection="row" columnGap={2}>
-                    {row.map(chip)}
-                  </Box>
-                ))
-              ) : (
-                <Text dimColor>devices: n/a</Text>
-              )}
-            </Box>
-            {loopChip ? (
-              <Box key="tile-loop" width={loopW} flexDirection="column" borderStyle="round" borderDimColor paddingX={1}>
-                <Box key="chip-loop" flexDirection="row">
-                  {loopMark}
-                  <Text>loop</Text>
-                  <Text dimColor wrap="truncate-end">{` ${fit(loopChip.detail, inner(loopW) - 7)}`}</Text>
-                </Box>
-                <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
-                  {loopChip.word}
-                </Text>
-                {boardLink(inner(loopW))}
-              </Box>
-            ) : null}
-          </Box>
-          <Box flexDirection="row" columnGap={2}>
-            {otherButtons}
-            {boardChip}
-          </Box>
-          {guardRow}
-          {belowBox}
-        </Box>
-      )
-    }
-
-    // The grid: a dim label column, one row per topic, no borders.
-    const label = (text: string) => (
-      <Box width={GRID_LABEL}>
-        <Text dimColor>{text}</Text>
-      </Box>
-    )
-    const head = parts ? `${parts.name}  ${parts.date}  ${parts.openText}  › ` : ''
     return (
       <Box flexDirection="column">
-        <Box key="grid-run" flexDirection="row">
-          {label('RUN')}
-          {parts ? (
-            <Box flexDirection="row">
-              <Text bold>{parts.name}</Text>
-              <Text dimColor>{parts.date ? `  ${parts.date}` : ''}</Text>
-              <Text color={parts.openColor}>{`  ${parts.openText}`}</Text>
-              <Text dimColor>{'  › '}</Text>
-              <Text wrap="truncate-end">{fit(parts.next, width - GRID_LABEL - head.length)}</Text>
-            </Box>
-          ) : (
-            <Text dimColor>no run folder under runs/</Text>
-          )}
+        <Box key="bar" flexDirection="row" columnGap={2} flexWrap="wrap">
+          {runChip}
+          {deviceChips}
+          {loopBox}
+          {boardChip}
+          {asmChip}
+          {shelfChip}
+          <Text dimColor>│</Text>
+          {buttons}
         </Box>
-        <Box key="grid-devices" flexDirection="row" justifyContent="space-between" flexWrap="wrap" columnGap={2}>
-          <Box flexDirection="row">
-            {label('DEVICES')}
-            <Box flexDirection="row" columnGap={2} flexWrap="wrap">
-              {chips.map(chip)}
-            </Box>
-          </Box>
-          <Box flexDirection="row" columnGap={2}>
-            {resumeButton}
-            {otherButtons}
-            {boardChip}
-          </Box>
-        </Box>
-        {loopChip ? (
-          <Box key="grid-loop" flexDirection="row">
-            {label('LOOP')}
-            <Box key="chip-loop" flexDirection="row">
-              {loopMark}
-              <Text dimColor>{`${loopChip.detail} ${loopChip.word}`}</Text>
-              {lp?.boardUrl ? <Text dimColor>{'  '}</Text> : null}
-              {boardLink(60)}
-            </Box>
-          </Box>
-        ) : null}
         {guardRow}
         {belowBox}
       </Box>

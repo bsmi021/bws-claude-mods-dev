@@ -69,7 +69,6 @@ const ownAtom = atom({ plugin: 'bws-board', key: 'own' } as const, {})
 const summaryAtom = atom({ plugin: 'bws-board', key: 'summary' } as const, null)
 const linesAtom = atom({ plugin: 'bws-board', key: 'lines' } as const, [])
 
-const PANE = 'board'
 const PENDING_MAX = 20
 const OWN_MAX = 4 // sessions' own cards kept in state: this one and the few before it in this process
 
@@ -632,7 +631,7 @@ export const register: Register = (on, options) => {
   if (!o.isOn) return
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'board', description: 'Show the board of Claude Code sessions in this repo; /board role <name> sets this session\'s role; /board pane opens it live; /board digest [days] writes the team page', argumentHint: '[role <name> | pane | digest [days]]' })
+    await $.command.register({ name: 'board', description: 'Show the board of Claude Code sessions in this repo; /board role <name> sets this session\'s role; /board pane opens the dashboard Board tab; /board digest [days] writes the team page', argumentHint: '[role <name> | pane | digest [days]]' })
     await $.tool.register({
       name: 'board_status',
       description:
@@ -967,10 +966,13 @@ export const register: Register = (on, options) => {
         return { text: `The digest could not be written: ${errText(err)}` }
       }
     }
-    if (verb === 'pane') {
+    // The board pane lives in bws-cockpit's dashboard now (its Board tab reads `lines`). A command can't run another
+    // from inside its own hook, so it runs just after; without the dashboard, the text listing below answers.
+    const isPane = verb === 'pane' && (await $.session.surfaces()).length > 0 && (await $.command.list()).some(c => c.name === 'dashboard')
+    if (isPane) {
       await settle(boardUpdate($, o.lim, own => own))
-      const opened = await $.ui.open({ id: PANE, title: 'Board' })
-      return opened.isPlaced ? {} : { text: 'The board pane is open but not shown here (too narrow, or no pane on this surface). /board prints it as text.' }
+      $.clock.after(10, () => void $.command.run({ command: 'dashboard', args: 'board' }).catch(() => undefined))
+      return {}
     }
     try {
       const r = await boardUpdate($, o.lim, own => own)
@@ -981,27 +983,5 @@ export const register: Register = (on, options) => {
     } catch (err) {
       return { text: `The board could not be read: ${errText(err)}` }
     }
-  })
-
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const lines = await read($, linesAtom)
-    const s = await read($, summaryAtom)
-    const { Box, Button, Text } = $.ui.resolve(e)
-    return (
-      <Box flexDirection="column">
-        <Text bold>
-          Board · {s?.agents ?? 0} agent{s?.agents === 1 ? '' : 's'} · {s?.openAsks ?? 0} open ask{s?.openAsks === 1 ? '' : 's'}
-          {s && s.askedOfMe > 0 ? ` · ${s.askedOfMe} for you` : ''}
-        </Text>
-        {lines.map((l, i) => (
-          <Text key={`l-${i}`} wrap="wrap" dimColor={l.startsWith('  claims')}>
-            {l}
-          </Text>
-        ))}
-        <Box flexDirection="row" gap={1}>
-          <Button key="close" label="Close" hotkey="c" onPress={() => $.ui.close({ id: PANE })} />
-        </Box>
-      </Box>
-    )
   })
 }

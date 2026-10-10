@@ -64,12 +64,64 @@ export type LoopView = {
 
 export type LoopActionNote = { text: string; at: number; isError: boolean }
 
+// ---------- Dashboard (Assumptions and Shelf moved in from bws-assumptions and bws-shelf) ----------
+
+export type Verdict = 'open' | 'right' | 'wrong'
+
+// One assumption Claude recorded, numbered A1, A2… in the order it arrived.
+export type Assumption = {
+  n: number
+  text: string
+  why: string
+  verdict: Verdict
+  // What it should be instead; only read when verdict is 'wrong'. Empty: Claude is told to ask.
+  correction: string
+  // True once its verdict went to Claude.
+  isSent: boolean
+}
+
+// An idea on the shelf, as hooks/shelf.ts writes it to the shelf file.
+export type ShelfIdea = {
+  id: number
+  text: string
+  detail?: string
+  by: 'user' | 'claude'
+  project: string
+  createdAt: number
+  status: 'open' | 'done' | 'dropped'
+  closedAt?: number
+}
+
+// What the Shelf tab draws: the open ideas as last loaded from the shelf file, and this project's open count.
+export type ShelfView = {
+  isAll: boolean
+  root: string
+  ideas: ShelfIdea[]
+  now: number
+  note: string
+  count: number
+}
+
+export type DashTab = 'assumptions' | 'shelf' | 'board' | 'loop'
+
+export type DashView = {
+  // The tab shown; null until something picks one.
+  tab: DashTab | null
+  // The person closed the dashboard: news lights the bar instead of reopening it, until they open it again.
+  isClosedByPerson: boolean
+}
+
+// The handoff nudge, once per session (keyed by its start): Handoff stays highlighted until it runs.
+export type HandoffNudge = { startedAt: number; isDone: boolean }
+
 declare module 'claude-code' {
   // bws-board's band summary, read for the board chip (bws-board's own contract declares it the
   // same way; written here inline so cockpit type-checks and loads without bws-board).
   interface PluginState {
     'bws-board': {
       summary: { agents: number; openAsks: number; askedOfMe: number } | null
+      // the board as last read, drawn by the dashboard's Board tab
+      lines: string[]
     }
   }
   interface PluginState {
@@ -82,6 +134,21 @@ declare module 'claude-code' {
       stopArmedAt: number | null
       // Finish-Line Guard: run folders this conversation's own tool calls wrote to, keyed by its start
       touched: { startedAt: number; folders: string[] } | null
+      assumptions: Assumption[]
+      dash: DashView
+      shelf: ShelfView
+      handoffNudge: HandoffNudge | null
     }
+  }
+}
+
+// This mod's own tools, so `tool.call` can match them before the engine has laid them into claude-code-mcp
+// (they are registered at session.start, after the types are written on a first load).
+declare module 'claude-code' {
+  interface McpToolInputs {
+    'mcp__bws-cockpit__record_assumption': { assumption: string; why?: string }
+    'mcp__bws-cockpit__shelve_idea': { text: string; detail?: string }
+    'mcp__bws-cockpit__list_ideas': { scope?: 'project' | 'all' }
+    'mcp__bws-cockpit__close_idea': { id: number; status: 'done' | 'dropped' | 'open' }
   }
 }

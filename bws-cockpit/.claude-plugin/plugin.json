@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.14.0",
-  "description": "Run Cockpit band, Editor & Device Guard for Unreal/Unity/Blender/adb, Loop Watch pane, Finish-Line Guard, Project Locator, /handoff, a worker model pin for subagents, and a board chip for bws-board.",
+  "version": "0.15.0",
+  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "Brian"
   },
@@ -125,6 +125,24 @@
       "title": "Worker subagent types",
       "description": "Subagent types the worker model applies to, comma-separated.",
       "default": "general-purpose,claude"
+    },
+    "shelfPath": {
+      "type": "string",
+      "title": "Shelf file",
+      "description": "Path of the idea shelf JSON file. Empty: <CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json.",
+      "default": ""
+    },
+    "shelfNudge": {
+      "type": "boolean",
+      "title": "Tell Claude to shelve tangents",
+      "description": "Add one line to the conversation's opening context with the open-idea count and the shelve_idea tool.",
+      "default": true
+    },
+    "handoffNudgePercent": {
+      "type": "number",
+      "title": "Handoff nudge (context %)",
+      "description": "Once per session, when the context passes this percentage, toast and highlight Handoff on the bar. 0 turns it off.",
+      "default": 70
     }
   }
 }
