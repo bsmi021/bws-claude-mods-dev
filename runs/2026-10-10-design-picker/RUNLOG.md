@@ -84,3 +84,12 @@ Checks: validate passed; plugin test 24/24; tsc clean.
   right by Opus; the widening itself is covered by the 0.2.2 unit tests.
 - Still visible: some labels sit on a row a block only half-covers ("Buy", "LOUD COFFEE"), the half-cell
   text-row placement, not clipping.
+
+## Published + installed (2026-10-10)
+- Pre-publish scan: README load line said "Brian's machine"; a test fixture used "Monastery". Both neutralised
+  on main (30e7949); checks re-run (26/26, tsc, validate).
+- `publish` refreshed in a scratch worktree with `git checkout main -- bws-design-picker` only. The other mods'
+  unpublished main changes were left out. Publish README updated to five mods. Staged diff scanned clean.
+  Commit a6b51c5, `git push mods` -> github.com/bsmi021/bws-claude-mods main (d15eb8f..a6b51c5).
+- Installed the repo's way: the folder is in `CLAUDE_CODE_PLUGIN_DIRS` (settings), so every new session loads it
+  (confirmed in live-gen5-022-debug.log: `bws-design-picker@inline`), and this session after `/reload-plugins`.
