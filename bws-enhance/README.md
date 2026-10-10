@@ -16,12 +16,12 @@ The rewrite is grounded in what this session actually has:
 | --- | --- |
 | Enhance a rough prompt | `/enhance <rough prompt>` (works while Claude is busy) |
 | Enhance the draft already in the box | `ctrl+x ctrl+p` (needs the keybinding below) |
-| Send the enhanced prompt | `Enter` in the box, or `s` / **Send** in the pane |
+| Send the enhanced prompt | `Enter` (pane focused, Send selected), `s`, or `Esc` then `Enter` in the box |
 | Revert to your rough prompt | `r` / **Revert** in the pane |
 | Dismiss / cancel | `d` / `c`, or `Esc` / `ctrl+x x` on the pane |
 
 The enhanced prompt replaces the prompt box. A small pane opens with **Send / Revert / Dismiss**; it takes keyboard focus
-when the result lands, so `s` sends immediately, and `Esc` hands the keys back to the box to edit first. **Send** sends the
+when the result lands with **Send** selected, so `Enter` or `s` sends immediately, and `Esc` hands the keys back to the box to edit first. **Send** sends the
 box as it is, edits included, as your own words. If you typed something else while it was working, the box is left alone and
 the pane offers **Put in box**.
 
@@ -52,6 +52,11 @@ or add `C:/Projects/bws.mods.claude-code/bws-enhance` to `CLAUDE_CODE_PLUGIN_DIR
 
 ## Tested
 
-Claude Code 2.1.296. `claude plugin validate`, `claude plugin test` (16 tests), tsc strict, live `claude -p` runs.
-Terminal surface: see the run folder RUNLOG for what was verified interactively. Desktop: pane covered by tests only.
-VS Code / mobile / cloud: no mod UI; use `/enhance` there and read the reply.
+Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes. Automated: `claude plugin test`, 16 tests (pane and footer
+trees on terminal and desktop, presses, fill/submit/revert, failure path, options). Type-check: tsc 5.6 strict. Live: headless
+`claude -p "/enhance ..."` runs return grounded rewrites.
+
+0.1.0: not yet verified in a real interactive terminal: the pane's placement and focus, the hotkeys, and the `ctrl+x ctrl+p` chord.
+If the chord does nothing, set `chordAction` to `app:toggleDiffNoiseFilter` or `app:toggleReplTab` (same kind of idle action) and
+rebind; `claude --debug` logs a refusal if the engine rejects the action.
+VS Code / mobile / cloud draw no mod UI; use `/enhance` and copy the rewrite.

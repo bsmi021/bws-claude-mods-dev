@@ -84,14 +84,19 @@ async function finish($: EngineInterface, rough: string, model: string) {
   const box = (await $.prompt.read()).text.trim()
   const isFilled = box === '' || box === rough ? (await $.prompt.fill({ text: r.text })).isFilled : false
   await update($, view, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled }))
-  // Focused, so s / r / d answer at once; Esc hands the keys back to the prompt for editing.
-  if (isFilled) await $.ui.open({ id: PANE, title: 'Enhanced prompt', focus: true })
+  // Focused with Send ringed, so Enter or s sends at once; Esc hands the keys back to the prompt for editing.
+  if (isFilled) await placed($, await $.ui.open({ id: PANE, title: 'Enhanced prompt', focus: true }))
+}
+
+// A pane that waits undrawn (a narrow terminal) would hide Send: say so; Enter in the box still sends.
+async function placed($: EngineInterface, r: { isPlaced: true } | { isPlaced: false; reason: string }) {
+  if (!r.isPlaced) $.ui.toast(`Enhance: pane not shown (${r.reason}). Enter in the box sends.`)
 }
 
 async function start($: EngineInterface, rough: string, model: string) {
   stop.abort()
   await update($, view, () => ({ ...IDLE, phase: 'working', original: rough }))
-  await $.ui.open({ id: PANE, title: 'Enhance' })
+  await placed($, await $.ui.open({ id: PANE, title: 'Enhance' }))
   $.clock.after(10, () => void finish($, rough, model).catch(err => update($, view, () => ({ ...IDLE, phase: 'error', original: rough, note: String(err) }))))
 }
 
@@ -236,7 +241,7 @@ export const register: Register = (on, options) => {
         </Text>
         {!v.isFilled && <Text dimColor>{v.enhanced}</Text>}
         <Box flexDirection="row" gap={1}>
-          <Button key="send" label="Send" hotkey="s" variant="primary" onPress={() => send($)} />
+          <Button key="send" label="Send" hotkey="s" variant="primary" autoFocus onPress={() => send($)} />
           {v.isFilled ? (
             <Button key="revert" label="Revert" hotkey="r" onPress={() => revert($)} />
           ) : (
