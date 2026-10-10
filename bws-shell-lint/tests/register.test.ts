@@ -60,7 +60,7 @@ for (const [name, command, rule] of [
 }
 
 // The 2026-10-10 metric: double quotes and backslashes count 2, limit 7800. A heredoc of 7725 chars
-// with 286 double quotes failed live under the old count (7725 < 7850); it is refused now.
+// with 572 double quotes is refused now (a 7725-char heredoc failed live under the old count, 7725 < 7850).
 test('long-command counts double quotes and backslashes, at 7800', () => {
   const quoted = "python - <<'PY'\n" + 'print("ab")\n'.repeat(286) + 'x = 1\n'.repeat(1)
   const pad = (s: string, n: number) => s + '#'.repeat(n - s.length) + '\nPY'

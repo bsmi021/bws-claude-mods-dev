@@ -51,12 +51,14 @@ Ship items 1–5 from `runs/2026-10-10-mods-review` as one release, with the fin
 - `live-fl-worker.jsonl`: the session ran a script that appended to the run folder's RUNLOG, as a worker does. With 2 open items and a fresh mtime it was not blocked. The old rule would have blocked it.
 - `live-fl-owned.jsonl`: the session appended to the RUNLOG with Edit and was blocked with both items named. Claude then made both files and ticked T1 and T2.
 - `live-guard-args.jsonl` (`vramThresholdMb` 1): a `Start-Process -ArgumentList $a` with the overrides in `$a` ran. Without them it was refused.
-- Not checked live:
-  - the band's board link on a real terminal (covered by a test only)
-  - the context gate (covered by a test only)
+- Context gate (T7): the scratch repo had a run folder in all 3 headless transcripts (`~/.claude/projects/...-scratchpad-live-repo/`), and the `# bwsCockpit` block appears 0 times in them. Before 0.10.0 every one of those sessions got it.
+- Not checked live: the band's board link on a real terminal (covered by a test only; it needs a real loop on a real terminal).
 
 ## Not done (parked)
-Editor lease, the harness-template Monitor line, the Locator Glob path rewrite, and the publish-branch refresh.
+- Editor lease, the harness-template Monitor line, the Locator Glob path rewrite, and the publish-branch refresh.
+- Follow-up, same bug class as T1: `/handoff` still picks its folder with `run.mtime >= startedAt`. In a loop-supervisor session it would write HANDOFF.md into the worker's folder. It should use `touched`.
+- Follow-up: `bws-notify/hooks/register.ts` imports `./text.ts`, which tsc rejects with TS5097, the error fixed here in shell-lint.
+- Brian: `~/.claude/settings.json` still has `peersAutoOpen: false` under `pluginConfigs["bws-cockpit"].options`. It does nothing now and is harmless (the live runs loaded fine with it), so delete it when convenient.
 
 ## Next step
 Brian decides whether to refresh the `publish` branch with 0.10.0 / 0.2.0 and push it to `mods`.
