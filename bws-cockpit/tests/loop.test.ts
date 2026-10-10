@@ -361,10 +361,25 @@ B, the overhead swing
       component: 'AbovePrompt',
       props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
     })
+    // 120 columns: the loop gets its own tile, name and unit on one line, the state word on the next.
+    expect(await band.find({ key: 'tile-loop' })).toBeDefined()
     expect(await band.find({ type: 'Text', text: /^loop$/ })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: / kit W2c needs you$/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /^ kit W2c$/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /^needs you$/ })).toBeDefined()
     expect(await band.find({ key: 'loop' })).toBeDefined()
     await band.unmount()
+    // 80 columns: the grid's LOOP row carries the chip and the board on one line.
+    const grid = await $.ui.mount({
+      plugin: 'bws-cockpit',
+      surface: 'terminal',
+      component: 'AbovePrompt',
+      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 80, scroll: { offset: 0, bodyRows: 8 }, view: {} },
+    })
+    expect(await grid.find({ key: 'tile-loop' })).toBeUndefined()
+    expect(await grid.find({ type: 'Text', text: /^LOOP$/ })).toBeDefined()
+    expect(await grid.find({ type: 'Text', text: /^kit W2c needs you$/ })).toBeDefined()
+    expect((await grid.find({ type: 'Link' }))?.text).toBe('board localhost:8772/')
+    await grid.unmount()
   })
 
   test('two loops: a Select switches between them, newest first', async ($, on) => {

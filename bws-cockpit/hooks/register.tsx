@@ -69,6 +69,12 @@ let continuesUsed = 0
 // Theme keys, so the band follows the person's theme; `off` draws dim instead.
 const STATE_COLOR: Record<CockpitState, string | undefined> = { good: 'success', warn: 'warning', bad: 'error', off: undefined }
 const GUARD_NOTE_MS = 10 * 60 * 1000
+// The band: three bordered tiles from this many body columns and band rows; under, the borderless grid.
+const TILES_MIN_COLUMNS = 90
+const TILES_MIN_ROWS = 6
+const TILE_WIDTH = 30 // the devices and loop tiles; the run tile takes the rest
+const TILE_GAP = 1
+const GRID_LABEL = 9 // the grid's label column: RUN, DEVICES, LOOP
 
 const PS_PROCS =
   "Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('UnrealEditor.exe','Unity.exe','blender.exe') } | " +
@@ -931,7 +937,8 @@ export const register: Register = (on, options) => {
     const drawn = await settle(next(e))
     const below = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
     const { Box, Text, Button, Link } = $.ui.resolve(e)
-    const width = Math.max(40, (e.props.bodyColumns ?? 100) - 1)
+    const cols = e.props.bodyColumns ?? 100
+    const width = Math.max(40, cols - 1)
     const run = v.run
     const d = v.devices
     const now = await $.clock.now()
@@ -939,70 +946,170 @@ export const register: Register = (on, options) => {
     const lp = await selectedLoop($)
     const isLoopLive = lp !== null && (lp.driver.status === 'RUNNING' || lp.driver.status === 'PAUSED' || now - lp.stateMtime < RECENT_MS)
     const loopChip = lp && isLoopLive ? { ...loopState(lp), detail: [lp.name, lp.current].filter(Boolean).join(' ') } : null
+    // Tiles (option A) need the columns for three boxes and the rows for their borders; otherwise
+    // the borderless grid (option C), as tall as the old band.
+    const isTiles = cols >= TILES_MIN_COLUMNS && (e.props.maxRows ?? TILES_MIN_ROWS) >= TILES_MIN_ROWS
 
-    // Run row: name (bold) · date · open count › next step, cut to the width with plain dots.
-    const runRow = (() => {
+    // The run's parts: name (bold), date, open count, next step.
+    const parts = (() => {
       if (!run) return null
       const base = run.folder.replace(/^runs\//, '')
       const m = base.match(/^(\d{4})-(\d{2})-(\d{2})-(.+)$/)
-      const name = m?.[4] ?? base
-      const date = m ? `${m[2]}-${m[3]}` : ''
-      const openText = run.open > 0 ? `${run.open} open` : 'no open items'
-      const head = `${name}  ${date}  ${openText}  › `
-      const nextStep = run.next ?? 'no next step in RUNLOG'
-      return (
-        <Box flexDirection="row">
-          <Text bold>{name}</Text>
-          <Text dimColor>{date ? `  ${date}` : ''}</Text>
-          <Text color={run.open > 0 ? 'warning' : 'success'}>{`  ${openText}`}</Text>
-          <Text dimColor>{'  › '}</Text>
-          <Text wrap="truncate-end">{fit(nextStep, width - head.length)}</Text>
-        </Box>
-      )
+      return {
+        name: m?.[4] ?? base,
+        date: m ? `${m[2]}-${m[3]}` : '',
+        openText: run.open > 0 ? `${run.open} open` : 'no open items',
+        openColor: run.open > 0 ? 'warning' : 'success',
+        next: run.next ?? 'no next step in RUNLOG',
+      }
     })()
 
-    return (
-      <Box flexDirection="column">
-        {runRow}
-        <Box flexDirection="row" justifyContent="space-between" flexWrap="wrap" columnGap={2}>
-          <Box flexDirection="row" columnGap={2} flexWrap="wrap">
-            {(d?.chips ?? []).map(c => (
-              <Box key={`chip-${c.label}`} flexDirection="row">
-                <Text color={STATE_COLOR[c.state]} dimColor={c.state === 'off'}>
-                  {c.state === 'off' ? '○ ' : '● '}
-                </Text>
-                <Text dimColor={c.state === 'off'}>{c.label}</Text>
-                {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
-              </Box>
-            ))}
+    const chips = d?.chips ?? []
+    const chip = (c: CockpitChip) => (
+      <Box key={`chip-${c.label}`} flexDirection="row">
+        <Text color={STATE_COLOR[c.state]} dimColor={c.state === 'off'}>
+          {c.state === 'off' ? '○ ' : '● '}
+        </Text>
+        <Text dimColor={c.state === 'off'}>{c.label}</Text>
+        {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
+      </Box>
+    )
+    const loopMark = loopChip ? (
+      <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
+        {loopChip.state === 'off' ? '○ ' : '● '}
+      </Text>
+    ) : null
+    const boardLink = (max: number) =>
+      lp?.boardUrl ? <Link href={lp.boardUrl} label={fit(`board ${lp.boardUrl.replace(/^https?:\/\//, '')}`, Math.max(8, max))} /> : null
+    const resumeButton = run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null
+    const otherButtons = [
+      <Button key="refresh" plain dimColor label="refresh" hotkey="2" onPress={() => void refresh($, o, 0)} />,
+      <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />,
+      lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void $.ui.open({ id: LOOP_PANE, title: `Loop · ${lp.name}` })} /> : null,
+    ]
+    const guardRow = showGuard ? (
+      <Box flexDirection="row">
+        <Text color="warning">{'⚑ '}</Text>
+        <Text dimColor wrap="truncate-end">
+          {fit(`guard ${v.lastGuard}`, width - 2)}
+        </Text>
+      </Box>
+    ) : null
+    const belowBox = below ? <Box key="band-below" flexDirection="column">{below}</Box> : null
+
+    if (isTiles) {
+      // Three round-bordered tiles side by side: run (the rest of the width), devices, loop.
+      const devW = TILE_WIDTH
+      const loopW = loopChip ? TILE_WIDTH : 0
+      const runW = width - devW - TILE_GAP - (loopChip ? loopW + TILE_GAP : 0)
+      const inner = (w: number) => Math.max(8, w - 4) // two border columns, one padding column each side
+      const deviceRows = [['UE', 'Unity'], ['Blender', 'adb'], ['VRAM']]
+        .map(labels => chips.filter(c => labels.includes(c.label)))
+        .filter(row => row.length > 0)
+      const runIn = inner(runW)
+      return (
+        <Box flexDirection="column">
+          <Box flexDirection="row" columnGap={TILE_GAP}>
+            <Box key="tile-run" width={runW} flexDirection="column" borderStyle="round" borderDimColor paddingX={1}>
+              {parts ? (
+                <Box flexDirection="row">
+                  <Text bold>{fit(parts.name, Math.max(8, runIn - parts.date.length - 2))}</Text>
+                  <Text dimColor>{parts.date ? `  ${parts.date}` : ''}</Text>
+                </Box>
+              ) : (
+                <Text dimColor>no run folder under runs/</Text>
+              )}
+              {parts ? (
+                <Box flexDirection="row">
+                  <Text color={parts.openColor}>{parts.openText}</Text>
+                  <Text dimColor>{' › '}</Text>
+                  <Text wrap="truncate-end">{fit(parts.next, runIn - parts.openText.length - 3)}</Text>
+                </Box>
+              ) : null}
+              {resumeButton}
+            </Box>
+            <Box key="tile-devices" width={devW} flexDirection="column" borderStyle="round" borderDimColor paddingX={1}>
+              {deviceRows.length > 0 ? (
+                deviceRows.map((row, i) => (
+                  <Box key={`devices-${i}`} flexDirection="row" columnGap={2}>
+                    {row.map(chip)}
+                  </Box>
+                ))
+              ) : (
+                <Text dimColor>devices: n/a</Text>
+              )}
+            </Box>
             {loopChip ? (
-              <Box key="chip-loop" flexDirection="row">
+              <Box key="tile-loop" width={loopW} flexDirection="column" borderStyle="round" borderDimColor paddingX={1}>
+                <Box key="chip-loop" flexDirection="row">
+                  {loopMark}
+                  <Text>loop</Text>
+                  <Text dimColor wrap="truncate-end">{` ${fit(loopChip.detail, inner(loopW) - 7)}`}</Text>
+                </Box>
                 <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
-                  {loopChip.state === 'off' ? '○ ' : '● '}
+                  {loopChip.word}
                 </Text>
-                <Text dimColor={loopChip.state === 'off'}>loop</Text>
-                <Text dimColor>{` ${loopChip.detail} ${loopChip.word}`}</Text>
-                {lp?.boardUrl ? <Text dimColor>{'  '}</Text> : null}
-                {lp?.boardUrl ? <Link href={lp.boardUrl} label={fit(`board ${lp.boardUrl.replace(/^https?:\/\//, '')}`, 60)} /> : null}
+                {boardLink(inner(loopW))}
               </Box>
             ) : null}
           </Box>
           <Box flexDirection="row" columnGap={2}>
-            {run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null}
-            <Button key="refresh" plain dimColor label="refresh" hotkey="2" onPress={() => void refresh($, o, 0)} />
-            <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />
-            {lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void $.ui.open({ id: LOOP_PANE, title: `Loop · ${lp.name}` })} /> : null}
+            {otherButtons}
+          </Box>
+          {guardRow}
+          {belowBox}
+        </Box>
+      )
+    }
+
+    // The grid: a dim label column, one row per topic, no borders.
+    const label = (text: string) => (
+      <Box width={GRID_LABEL}>
+        <Text dimColor>{text}</Text>
+      </Box>
+    )
+    const head = parts ? `${parts.name}  ${parts.date}  ${parts.openText}  › ` : ''
+    return (
+      <Box flexDirection="column">
+        <Box key="grid-run" flexDirection="row">
+          {label('RUN')}
+          {parts ? (
+            <Box flexDirection="row">
+              <Text bold>{parts.name}</Text>
+              <Text dimColor>{parts.date ? `  ${parts.date}` : ''}</Text>
+              <Text color={parts.openColor}>{`  ${parts.openText}`}</Text>
+              <Text dimColor>{'  › '}</Text>
+              <Text wrap="truncate-end">{fit(parts.next, width - GRID_LABEL - head.length)}</Text>
+            </Box>
+          ) : (
+            <Text dimColor>no run folder under runs/</Text>
+          )}
+        </Box>
+        <Box key="grid-devices" flexDirection="row" justifyContent="space-between" flexWrap="wrap" columnGap={2}>
+          <Box flexDirection="row">
+            {label('DEVICES')}
+            <Box flexDirection="row" columnGap={2} flexWrap="wrap">
+              {chips.map(chip)}
+            </Box>
+          </Box>
+          <Box flexDirection="row" columnGap={2}>
+            {resumeButton}
+            {otherButtons}
           </Box>
         </Box>
-        {showGuard ? (
-          <Box flexDirection="row">
-            <Text color="warning">{'⚑ '}</Text>
-            <Text dimColor wrap="truncate-end">
-              {fit(`guard ${v.lastGuard}`, width - 2)}
-            </Text>
+        {loopChip ? (
+          <Box key="grid-loop" flexDirection="row">
+            {label('LOOP')}
+            <Box key="chip-loop" flexDirection="row">
+              {loopMark}
+              <Text dimColor>{`${loopChip.detail} ${loopChip.word}`}</Text>
+              {lp?.boardUrl ? <Text dimColor>{'  '}</Text> : null}
+              {boardLink(60)}
+            </Box>
           </Box>
         ) : null}
-        {below ? <Box key="band-below" flexDirection="column">{below}</Box> : null}
+        {guardRow}
+        {belowBox}
       </Box>
     )
   })

@@ -389,6 +389,63 @@ const BAND = {
 } as const
 
 describe('band layout', () => {
+  test('at 120 columns: run and devices tiles with round borders, buttons under them, no loop tile without a loop', async ($, on) => {
+    world(on, { ...RUN_WORLD, procs: 'blender.exe|9|blender', vram: '1000, 8188' })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
+    const runTile = await ui.find({ key: 'tile-run' })
+    const devTile = await ui.find({ key: 'tile-devices' })
+    expect(runTile?.props?.borderStyle).toBe('round')
+    expect(devTile?.props?.borderStyle).toBe('round')
+    expect(devTile?.props?.width).toBe(30)
+    expect(runTile?.props?.width).toBe(119 - 30 - 1)
+    expect(await ui.find({ key: 'tile-loop' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^2 open$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^verify the draw anim in PIE$/ })).toBeDefined()
+    expect(await ui.find({ key: 'resume' })).toBeDefined()
+    for (const label of ['UE', 'Unity', 'Blender', 'adb', 'VRAM']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeDefined()
+    expect(await ui.find({ key: 'refresh' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^(RUN|DEVICES|LOOP)$/ })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('under 90 columns: the borderless grid, a label column and one row per topic', async ($, on) => {
+    world(on, { ...RUN_WORLD, procs: '', vram: '1000, 8188' })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 89 } })
+    expect(await ui.find({ key: 'tile-run' })).toBeUndefined()
+    expect(await ui.find({ key: 'grid-run' })).toBeDefined()
+    expect(await ui.find({ key: 'grid-devices' })).toBeDefined()
+    expect(await ui.find({ key: 'grid-loop' })).toBeUndefined() // no loop here
+    expect(await ui.find({ type: 'Text', text: /^RUN$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^DEVICES$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^verify the draw anim in PIE$/ })).toBeDefined()
+    expect(await ui.find({ key: 'resume' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^VRAM$/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('wide but short (under 6 band rows): the grid, since the borders would not fit', async ($, on) => {
+    world(on, RUN_WORLD)
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 140, maxRows: 4 } })
+    expect(await ui.find({ key: 'tile-run' })).toBeUndefined()
+    expect(await ui.find({ key: 'grid-run' })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('tiles on desktop too, and no run folder: the run tile says so, no resume button', async ($, on) => {
+    world(on, { procs: '' })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const ui = await $.ui.mount({ ...BAND, surface: 'desktop', props: { ...BAND.props, bodyColumns: 120 } })
+    expect(await ui.find({ key: 'tile-run' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^no run folder under runs\/$/ })).toBeDefined()
+    expect(await ui.find({ key: 'resume' })).toBeUndefined()
+    await ui.unmount()
+  })
+
   test('a long next step is cut to the width with ASCII dots', async ($, on) => {
     const long = 'W3 Game.Full.Kit (one live run), then the W3 visual check and the W2c visual check (one capture run each), then the W4 build'
     world(on, { ...RUN_WORLD, files: { ...RUN_WORLD.files, [`${CWD}/runs/2026-10-02-bow-fix/RUNLOG.md`]: `- Next: ${long}\n` } })
