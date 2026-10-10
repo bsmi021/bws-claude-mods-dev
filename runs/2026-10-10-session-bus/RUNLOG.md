@@ -71,8 +71,15 @@ Finish line in PLAN.md.
   - **AGENTS.md:** two gotchas added: test runs regenerate the MCP types, and an `import()` type breaks the validator.
   - Tests: 138/138.
 
+- Publish (Brian's request):
+  - Made a scratch worktree of `publish` (eafc731, equal to `mods/main`) and ran `git checkout main -- bws-cockpit`. The only changes were the six 0.12.0 files.
+  - Added the Session Bus to the bws-cockpit row of the top-level README.
+  - Scanned the 1,089 added lines for names, emails, user paths, project and game names, session ids and hardware. Nothing was found. The only hits were `timeoutMs`, the neutral test ids `aaaaaaaa-…`, and the dummy `C:/Users/u`.
+  - validate passed in the worktree (receipts/publish-validate.txt).
+  - Committed `dadac39` and ran `git push mods`: `eafc731..dadac39 publish -> main` (receipts/publish-push.txt). `mods/main` is now `dadac39`. The worktree was removed.
+
 ## Outcome
-Every finish-line item in PLAN.md is met. Committed on main (not pushed: publish goes through the `publish` branch only).
+Every finish-line item in PLAN.md is met. Committed on main (not pushed). Published as `publish` dadac39 = `mods/main`.
 
 ## Next step
-Parked follow-ups (PLAN.md): claim-check Bash/PowerShell writes, a band chip or `/bus` command, push delivery through `$.session.send`, and pid liveness. Refresh the publish branch when Brian asks.
+Parked follow-ups (PLAN.md): claim-check Bash/PowerShell writes, a band chip or `/bus` command, push delivery through `$.session.send`, and pid liveness.
