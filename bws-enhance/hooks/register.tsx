@@ -12,6 +12,10 @@ import {
   instructionsText,
   mcpServers,
   SYSTEM,
+  TREE_DEPTH,
+  TREE_ENTRIES,
+  treeEntries,
+  treeLine,
   userPrompt,
   type Doc,
 } from './lib'
@@ -23,9 +27,27 @@ const view = atom({ plugin: 'bws-enhance', key: 'view' } as const, IDLE)
 
 type Outcome = { ok: true; text: string } | { ok: false; note: string }
 
+// The project map, depth-first, through $.fs.list: TREE_DEPTH levels, at most TREE_ENTRIES lines.
+async function walkTree($: EngineInterface, root: string, rel: string, depth: number, lines: string[]) {
+  let entries: { name: string; kind: string }[] = []
+  try {
+    entries = await $.fs.list(`${root}${rel}`)
+  } catch {
+    return
+  }
+  for (const e of treeEntries(entries, rel)) {
+    if (lines.length >= TREE_ENTRIES) return
+    lines.push(treeLine(e, depth))
+    if (e.kind === 'dir' && depth + 1 < TREE_DEPTH) await walkTree($, root, `${rel}/${e.name}`, depth + 1, lines)
+  }
+}
+
 // Everything the rewrite is grounded in. Each source is optional: a failed read leaves that part empty.
 async function gather($: EngineInterface, rough: string) {
   const root = await $.session.root()
+  const lines: string[] = []
+  await walkTree($, root.replace(/[\\/]+$/, ''), '', 0, lines)
+  const tree = lines.length === 0 ? '(unavailable)' : lines.length >= TREE_ENTRIES ? `${lines.join('\n')}\n… (cut at ${TREE_ENTRIES} entries)` : lines.join('\n')
   let target = 'unknown'
   try {
     target = await $.session.model()
@@ -54,7 +76,7 @@ async function gather($: EngineInterface, rough: string) {
     const messages = await $.session.messages()
     if (Array.isArray(messages)) conversation = conversationText(messages.map(m => ({ role: m.role, text: m.text ?? '' })))
   } catch {}
-  return userPrompt({ rough, target, root, instructions: instructionsText(docs), commands, servers, conversation })
+  return userPrompt({ rough, target, root, tree, instructions: instructionsText(docs), commands, servers, conversation })
 }
 
 async function enhance($: EngineInterface, rough: string, model: string, signal?: AbortSignal): Promise<Outcome> {
@@ -82,9 +104,18 @@ async function finish($: EngineInterface, rough: string, model: string) {
   }
   // The box still holds nothing or the rough draft: replace it. Anything else was typed meanwhile: keep it.
   const box = (await $.prompt.read()).text.trim()
-  const isFilled = box === '' || box === rough ? (await $.prompt.fill({ text: r.text })).isFilled : false
-  // The pane stays unfocused (re-opening it with focus does not move the keys, seen live): Enter in the box sends.
-  await update($, view, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled }))
+  if (box !== '' && box !== rough) {
+    await update($, view, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: false }))
+    return
+  }
+  await update($, view, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: true }))
+  // The pane gets the keys only when opened fresh over an empty composer (re-opening an open id only retitles it),
+  // so: clear the box, close and reopen with focus (s / r / d, Enter on Send), then fill.
+  if (box !== '') await $.prompt.fill({ text: '' })
+  await $.ui.close({ id: PANE })
+  await placed($, await $.ui.open({ id: PANE, title: 'Enhanced prompt', focus: true }))
+  const isFilled = (await $.prompt.fill({ text: r.text })).isFilled
+  if (!isFilled) await update($, view, old => ({ ...old, isFilled: false }))
 }
 
 // A pane that waits undrawn (a narrow terminal) would hide Send: say so; Enter in the box still sends.
@@ -147,7 +178,7 @@ async function enhanceDraft($: EngineInterface, model: string) {
 }
 
 export const register: Register = (on, options) => {
-  const model = String(options.model ?? '').trim() || 'sonnet'
+  const model = String(options.model ?? '').trim() || 'haiku'
   const action = String(options.chordAction ?? '').trim()
 
   on('session.start', async ($, e, next) => {
@@ -236,8 +267,9 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         <Text>
-          {v.isFilled ? '✦ The enhanced prompt is in the box: edit it, then Enter to send.' : '✦ Enhanced prompt ready. The box had other text, so it was left alone.'}
+          {v.isFilled ? '✦ The enhanced prompt is in the box.' : '✦ Enhanced prompt ready. The box had other text, so it was left alone.'}
         </Text>
+        {e.props.isFocused && <Text dimColor>s send · r revert · d dismiss · Esc to edit in the box</Text>}
         {!v.isFilled && <Text dimColor>{v.enhanced}</Text>}
         <Box flexDirection="row" gap={1}>
           <Button key="send" label="Send" hotkey="s" variant="primary" autoFocus onPress={() => send($)} />

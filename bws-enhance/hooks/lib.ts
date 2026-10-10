@@ -9,6 +9,28 @@ export const ALL_FILES = 20000
 export const ALL_COMMANDS = 12000
 export const LAST_MESSAGES = 6
 export const PER_MESSAGE = 600
+export const TREE_DEPTH = 2
+export const TREE_ENTRIES = 150
+
+// Folders that are history, dependencies, build output or engine caches: noise in a project map.
+const SKIP_DIRS = new Set([
+  '.git', 'node_modules', 'runs', 'dist', 'build', 'out', 'bin', 'obj', 'target', 'coverage', '.next', '.venv', 'venv',
+  '__pycache__', '.cache', '.codegraph', '.vs', '.idea', 'Library', 'Temp', 'Logs', 'Intermediate', 'Saved',
+  'DerivedDataCache', 'Binaries',
+])
+
+export type TreeEntry = { name: string; kind: string }
+
+// One directory's entries for the tree: skipped folders out, folders first, then by name.
+export function treeEntries(entries: readonly TreeEntry[], rel: string): TreeEntry[] {
+  return entries
+    .filter(e => e.kind === 'file' || (e.kind === 'dir' && !SKIP_DIRS.has(e.name) && !rel.endsWith('.claude-plugin')))
+    .sort((a, b) => (a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind === 'dir' ? -1 : 1))
+}
+
+export function treeLine(e: TreeEntry, depth: number): string {
+  return `${'  '.repeat(depth)}${e.name}${e.kind === 'dir' ? '/' : ''}`
+}
 
 export function clip(s: string, n: number): string {
   const t = s.trim()
@@ -114,6 +136,7 @@ export type Parts = {
   rough: string
   target: string
   root: string
+  tree: string
   instructions: string
   commands: string
   servers: readonly string[]
@@ -123,6 +146,7 @@ export type Parts = {
 export function userPrompt(p: Parts): string {
   return [
     `<project_root>${p.root}</project_root>`,
+    `<project_tree depth="${TREE_DEPTH}">\n${p.tree}\n</project_tree>`,
     `<target_model name="${p.target}">${targetNotes(p.target)}</target_model>`,
     `<instruction_files>\n${p.instructions}\n</instruction_files>`,
     `<skills_and_commands>\n${p.commands}\n</skills_and_commands>`,

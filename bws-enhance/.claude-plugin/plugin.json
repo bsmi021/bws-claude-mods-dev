@@ -1,6 +1,6 @@
 {
   "name": "bws-enhance",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "/enhance <rough prompt>, or a chord on the draft in the box: rewrites a vague prompt into a specific, actionable one using this project's instructions, installed skills and commands, MCP servers, the recent conversation and Anthropic's prompting guidance for the session's model, puts it in the prompt box, and offers Send / Revert in a small pane.",
   "author": {
     "name": "Brian"
@@ -11,7 +11,7 @@
       "type": "string",
       "title": "Enhancer model",
       "description": "Model alias or id that rewrites the prompt (sonnet, opus, haiku, or a full id).",
-      "default": "sonnet"
+      "default": "haiku"
     },
     "chordAction": {
       "type": "string",

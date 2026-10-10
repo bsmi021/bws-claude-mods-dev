@@ -23,7 +23,7 @@ type World = {
 // Stubs every outside call the mod makes and records what reached the engine.
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: 1_000_000 })
-  const seen = { asks: [] as { model: string; system: string; prompt: string }[], fills: [] as string[], sent: [] as { text: string; asUser?: boolean }[], opened: [] as { id: string; focus?: boolean }[], closed: [] as string[], toasts: [] as string[] }
+  const seen = { asks: [] as { model: string; system: string; prompt: string }[], fills: [] as string[], sent: [] as { text: string; asUser?: boolean }[], opened: [] as { id: string; focus?: boolean; box: string }[], closed: [] as string[], toasts: [] as string[] }
   let box = w.box ?? ''
   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
   on('session.root', () => ({ value: ROOT }))
@@ -33,6 +33,15 @@ function world(on: On, w: World = {}) {
     const path = String(e.path).replace(/\\/g, '/')
     if (path === 'C:/Users/me/.claude/CLAUDE.md') return { value: 'Terse replies.' as never }
     if (path === `${ROOT}/AGENTS.md`) return { value: 'Run npm test before ending a turn.' as never }
+    throw new Error(`ENOENT ${path}`)
+  })
+  on('fs.list', ($, e) => {
+    const path = String(e.path).replace(/\\/g, '/')
+    const d =(name: string) => ({ name, kind: 'dir', size: 0, mtimeMs: 0, isLink: false })
+    const f = (name: string) => ({ name, kind: 'file', size: 1, mtimeMs: 1, isLink: false })
+    if (path === ROOT) return { value: [f('README.md'), d('src'), d('node_modules'), d('.git'), d('runs'), d('.claude-plugin')] as never }
+    if (path === `${ROOT}/src`) return { value: [f('auth.ts'), d('deep')] as never }
+    if (path === `${ROOT}/.claude-plugin`) return { value: [f('plugin.json'), d('types')] as never }
     throw new Error(`ENOENT ${path}`)
   })
   on('command.list', () => ({
@@ -60,7 +69,8 @@ function world(on: On, w: World = {}) {
     return { text: e.text } as never
   })
   on('ui.open', ($, e) => {
-    seen.opened.push({ id: e.id, focus: e.focus })
+    // The engine grants focus only over an empty composer: record what the box held at the open.
+    seen.opened.push({ id: e.id, focus: e.focus, box })
     return { value: { isPlaced: true } }
   })
   on('ui.close', ($, e) => {
@@ -125,7 +135,7 @@ describe('lib', () => {
     expect(targetNotes('claude-sonnet-5-5')).toMatch(/keep working until/)
     expect(targetNotes('claude-haiku-5-5')).toMatch(/run the named check/)
     expect(targetNotes('something-else')).toBe('No model-specific notes.')
-    const p = userPrompt({ rough: 'fix it', target: 'claude-opus-5-5', root: 'C:/proj', instructions: '', commands: '', servers: [], conversation: '' })
+    const p = userPrompt({ rough: 'fix it', target: 'claude-opus-5-5', root: 'C:/proj', tree: 'a/', instructions: '', commands: '', servers: [], conversation: '' })
     expect(p).toMatch(/<target_model name="claude-opus-5-5">Opus/)
     expect(p.indexOf('<rough_request>')).toBeGreaterThan(p.indexOf('<instruction_files>'))
   })
@@ -137,7 +147,7 @@ describe('mod', () => {
     const r = await $.command.run({ command: 'enhance', args: 'fix the login thing' } as never)
     expect(r.text).toBe(ENHANCED)
     const ask = seen.asks[0]
-    expect(ask?.model).toBe('sonnet')
+    expect(ask?.model).toBe('haiku')
     expect(ask?.system).toMatch(/Anthropic|check Claude can run/)
     expect(ask?.prompt).toContain('Run npm test before ending a turn.')
     expect(ask?.prompt).toContain('Terse replies.')
@@ -146,6 +156,7 @@ describe('mod', () => {
     expect(ask?.prompt).toContain('<mcp_servers>figma</mcp_servers>')
     expect(ask?.prompt).toContain('user: the login page loops forever')
     expect(ask?.prompt).toMatch(/<target_model name="claude-sonnet-5-5">Sonnet/)
+    expect(ask?.prompt).toContain('<project_tree depth="2">\n.claude-plugin/\n  plugin.json\nsrc/\n  deep/\n  auth.ts\nREADME.md\n</project_tree>')
     expect(ask?.prompt).toMatch(/<rough_request>\nfix the login thing\n<\/rough_request>/)
     expect(seen.fills).toEqual([])
   })
@@ -163,14 +174,14 @@ describe('mod', () => {
     expect(seen.asks).toEqual([])
   })
 
-  test('interactive: fills the box, opens the pane once, Send submits the box as the user', async ($, on) => {
+  test('interactive: asks for focus over an empty box, then fills it; Send submits the box as the user', async ($, on) => {
     const { seen, clock, setBox } = world(on)
     const r = await $.command.run({ command: 'enhance', args: 'fix the login thing' } as never)
     expect(r.text).toBeUndefined()
-    expect(seen.opened[0]).toEqual({ id: 'bws-enhance', focus: undefined })
+    expect(seen.opened[0]).toEqual({ id: 'bws-enhance', focus: undefined, box: '' })
     await clock.advance(50)
+    expect(seen.opened[1]).toEqual({ id: 'bws-enhance', focus: true, box: '' })
     expect(seen.fills).toEqual([ENHANCED])
-    expect(seen.opened.length).toBe(1)
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...PANE, surface })
       expect(await ui.find({ type: 'Text', text: /in the box/ })).toBeDefined()
@@ -230,7 +241,9 @@ describe('mod', () => {
     await ui.unmount()
     await clock.advance(50)
     expect(seen.asks[0]?.prompt).toMatch(/<rough_request>\nmake the band nicer\n/)
-    expect(seen.fills).toEqual([ENHANCED])
+    // The draft is cleared first so the focus request is granted, then the rewrite goes in.
+    expect(seen.fills).toEqual(['', ENHANCED])
+    expect(seen.opened.at(-1)).toEqual({ id: 'bws-enhance', focus: true, box: '' })
   })
 
   test('footer button with an empty box only toasts', async ($, on) => {
