@@ -246,6 +246,25 @@ describe('mod', () => {
     expect(seen.opened.at(-1)).toEqual({ id: 'bws-enhance', focus: true, box: '' })
   })
 
+  test('footer is shared: a footer drawn by another mod stays beside the enhance button, and the mode labels are not drawn twice', async ($, on) => {
+    world(on)
+    on('ui.render', () => ({ type: 'Text', props: {}, children: ['other mod footer'] }) as never)
+    const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus'] } })
+    expect(await ui.find({ type: 'Text', text: 'other mod footer' })).toBeDefined()
+    expect(await ui.find({ key: 'enhance' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^focus$/ })).toBeUndefined() // whoever drew last-below already carries the labels
+    await ui.unmount()
+  })
+
+  test('footer: when the engine draws its own below, the mode labels and the button are drawn here', async ($, on) => {
+    world(on)
+    on('ui.render', () => ({ type: 'engine', ref: 'footer' }) as never)
+    const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus', 'plan'] } })
+    expect(await ui.find({ type: 'Text', text: 'focus & plan' })).toBeDefined()
+    expect(await ui.find({ key: 'enhance' })).toBeDefined()
+    await ui.unmount()
+  })
+
   test('footer button with an empty box only toasts', async ($, on) => {
     const { seen } = world(on)
     const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })

@@ -80,3 +80,10 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - Scroll up: works, smooth: 80 -> 72 rows above (8-row step), "↓ 8 rows below" appears (26).
 - Footer `◨ side` button: BROKEN. Not drawn; footer shows only "✦ enhance" (20). Debug log: the SessionMode chain is `bws-enhance@inline, next-steps, bws-sidechat@bws-mods`; bws-enhance (inline, above) returns its own tree without calling `next`, so sidechat's hook never draws. The chord `ctrl+x ctrl+o` therefore does nothing (21): no mounted Button carries the action.
 - Not checked: `↓` button and Stop. The terminal window moved from x=27 to x=-176 between shots, so the `↓` click landed on text (selected it) (27); out of time before Stop.
+
+## Hotkey fix: share the footer (2026-10-12)
+- Cause (pass 3): the SessionMode chain is bws-enhance (inline, above) -> next-steps -> bws-sidechat; bws-enhance returned its own tree without `next`, so sidechat's `◨ side` never drew and the chord had no button.
+- bws-enhance 0.2.1: the SessionMode hook now calls `next(e)` (via a local `settle`), keeps another mod's tree beside `✦ enhance`, and draws the mode labels itself only when nothing else did (so they are drawn once). Same pattern as bws-cockpit's AbovePrompt and bws-sidechat's own hook. 2 new tests (18 total): shared footer, and the engine-below case.
+- bws-sidechat 0.1.3: no code change; 1 new test (57 total) that another mod's footer stays beside `◨ side`; README notes the pairing.
+- validate, tsc 5.8.3, plugin test pass for both (enhance 18/18, sidechat 57/57).
+- bws-enhance loads inline from source, so the fix is live in the next new session; sidechat 0.1.2 installed has the same hook. Not published (marketplace: enhance 0.2.0, sidechat 0.1.2). Not seen live: both buttons in the footer and the chord pressing `◨ side`.

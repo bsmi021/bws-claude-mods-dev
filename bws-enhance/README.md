@@ -33,6 +33,7 @@ Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output
 Mods can't define new keybinding actions. Instead, the footer shows a small `✦ enhance` button that borrows an engine
 action; whatever chord you bind to that action presses the button from the prompt. Default action:
 `app:toggleDiffPreSession` (only Claude Code's old diff panel handles it, which isn't used while the built-in `cc-plugin-diff` mod is on).
+The footer holds one tree, and the hook shares it: another mod's footer (bws-sidechat's `◨ side` button, say) is drawn beside `✦ enhance` whichever mod comes first (0.2.1; before that, bws-enhance drew its own and hid every footer below it).
 In `~/.claude/keybindings.json`:
 
 ```json
@@ -53,7 +54,7 @@ or add the folder's absolute path to `CLAUDE_CODE_PLUGIN_DIRS`.
 
 ## Tested
 
-Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes. Automated: `claude plugin test`, 16 tests (pane and footer
+Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes. Automated: `claude plugin test`, 18 tests (pane and footer
 trees on terminal and desktop, presses, fill/submit/revert, failure path, options). Type-check: tsc 5.6 strict. Live: headless
 `claude -p "/enhance ..."` runs return grounded rewrites.
 

@@ -377,6 +377,16 @@ describe('hotkey', () => {
     await ui.unmount()
   })
 
+  test('beside another mod footer (bws-enhance draws one): both stay, the mode labels are drawn once', async ($, on) => {
+    world(on)
+    on('ui.render', () => ({ type: 'Text', props: {}, children: ['enhance footer'] }) as never)
+    const ui = await $.ui.mount(footer())
+    expect(await ui.find({ type: 'Text', text: 'enhance footer' })).toBeDefined()
+    expect(await ui.find({ key: 'side' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'plan' })).toBeUndefined()
+    await ui.unmount()
+  })
+
   test('pressing it opens the pane with no command typed, and takes the keys', async ($, on) => {
     const { seen, clock } = world(on)
     const ui = await $.ui.mount(footer())

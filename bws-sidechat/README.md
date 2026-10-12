@@ -27,7 +27,7 @@ The terminal footer carries a small `◨ side` button. Press it, or a chord boun
 }
 ```
 
-(merge it into the file if you already have bindings). `ctrl+x ctrl+o` is free in Claude Code 2.1.296; any chord works. While the `/diff` pane is open the chord belongs to it. With text in the prompt box the pane opens but the keyboard stays with you (`ctrl+x tab` or a click moves it). `chordAction` empty hides the button.
+(merge it into the file if you already have bindings). `ctrl+x ctrl+o` is free in Claude Code 2.1.296; any chord works. While the `/diff` pane is open the chord belongs to it. The footer is shared with other mods: bws-enhance 0.2.1 or later draws its `✦ enhance` button beside `◨ side` (older bws-enhance drew its own footer and hid it). With text in the prompt box the pane opens but the keyboard stays with you (`ctrl+x tab` or a click moves it). `chordAction` empty hides the button.
 
 ## Install on another computer
 The repository is private, so the computer needs GitHub access first (`gh auth login`, or an SSH key). Then:
@@ -43,4 +43,4 @@ claude plugin install bws-sidechat@bws-mods
 ## Notes
 - The fork sees the main session as last written to disk, so a turn still in flight is seen up to its last saved message.
 - Each fork is a real session file (`claude --resume <id>` opens it). It may also appear on the session board.
-- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns. By hand (0.1.0): `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. Automated (0.1.2: 56 tests): commands, focus requests, the row-windowed transcript, scroll steps, Stop killing the child, and the hotkey button (its action, press, and absence when off, headless or on the desktop). The Stop kill command was also run against a real long `claude -p` child. Not checked by hand: the footer button and chord in a live terminal, keyboard focus on open, scroll on a long answer, narrow terminals, the desktop app.
+- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns. By hand (0.1.0): `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. Automated (0.1.3: 57 tests): commands, focus requests, the row-windowed transcript, scroll steps, Stop killing the child, and the hotkey button (its action, press, and absence when off, headless or on the desktop). The Stop kill command was also run against a real long `claude -p` child. Not checked by hand: the footer button and chord in a live terminal, keyboard focus on open, scroll on a long answer, narrow terminals, the desktop app.

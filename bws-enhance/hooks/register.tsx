@@ -177,6 +177,15 @@ async function enhanceDraft($: EngineInterface, model: string) {
   await start($, draft, model)
 }
 
+// A call that may be refused or have nothing beneath it: its answer, or undefined.
+async function settle<T>(p: Promise<T>): Promise<T | undefined> {
+  try {
+    return await p
+  } catch {
+    return undefined
+  }
+}
+
 export const register: Register = (on, options) => {
   const model = String(options.model ?? '').trim() || 'haiku'
   const action = String(options.chordAction ?? '').trim()
@@ -227,13 +236,17 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // A small footer button, so the chord bound to `chordAction` presses it from the prompt.
+  // A small footer button, so the chord bound to `chordAction` presses it from the prompt. The footer holds one tree:
+  // share it. Another mod's footer (whatever next(e) draws, as bws-sidechat's `side` button) stays beside ours; with
+  // none, the engine's mode labels are drawn here, as the engine would. Drawing without next hid every footer below us.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     if (action === '' || e.surface !== 'terminal') return next(e)
+    const drawn = await settle(next(e))
+    const other = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
     const { Box, Button, Text } = $.ui.resolve(e)
     return (
       <Box flexDirection="row" gap={1}>
-        {e.props.modes.length > 0 && <Text dimColor>{e.props.modes.join(' & ')}</Text>}
+        {other ?? (e.props.modes.length > 0 ? <Text dimColor>{e.props.modes.join(' & ')}</Text> : null)}
         <Button key="enhance" plain dimColor label="✦ enhance" action={action} onPress={() => enhanceDraft($, model)} />
       </Box>
     )
