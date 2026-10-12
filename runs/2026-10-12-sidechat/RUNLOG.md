@@ -73,3 +73,10 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - Publish tree: validate (plugin and marketplace), 56/56 tests, tsc 5.8.3 clean. Commit `1c3470d`; `git push mods`: `e788873..1c3470d publish -> main`; `mods/main` = `1c3470d`. Worktree removed.
 - `claude plugin marketplace update bws-mods` + `claude plugin update bws-sidechat@bws-mods`: exit 0, 0.1.1 -> 0.1.2. Fresh `claude -p` (no --plugin-dir) loaded `bws-sidechat@bws-mods` from cache/.../0.1.2, `/side` registered (`receipts/fresh-session-0.1.2.txt`); cached plugin.json has `chordAction`.
 - The footer button and chord are still unseen in a live terminal (headless draws no footer).
+
+## Interactive pass 3: installed 0.1.2 (2026-10-12, drive-screen; receipts 20-27 png)
+- Keyboard focus on open: FIXED. After `/side` the Ask box shows its focus hint and the main prompt cursor is gone; typed text went straight into the Ask box with no click (23, 24).
+- Long answer layout: FIXED. A ~600-word answer (80+ rows) kept `Stop`/`answering…` and the Ask box in view while streaming, and "↑ 80 rows above" + the Ask box after it finished (24, 25).
+- Scroll up: works, smooth: 80 -> 72 rows above (8-row step), "↓ 8 rows below" appears (26).
+- Footer `◨ side` button: BROKEN. Not drawn; footer shows only "✦ enhance" (20). Debug log: the SessionMode chain is `bws-enhance@inline, next-steps, bws-sidechat@bws-mods`; bws-enhance (inline, above) returns its own tree without calling `next`, so sidechat's hook never draws. The chord `ctrl+x ctrl+o` therefore does nothing (21): no mounted Button carries the action.
+- Not checked: `↓` button and Stop. The terminal window moved from x=27 to x=-176 between shots, so the `↓` click landed on text (selected it) (27); out of time before Stop.
