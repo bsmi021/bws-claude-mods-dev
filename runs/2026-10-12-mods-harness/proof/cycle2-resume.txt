@@ -1,0 +1,4 @@
+[harness 2026-10-12T19:22:57] D0: starting claude worker session 2 (tier=fast model=claude-haiku-5-5)
+[harness 2026-10-12T19:23:45] D0: session 2 exit=0 status=DONE done=3/3 cost=$0.02
+[harness 2026-10-12T19:23:45] D0: DONE (verified)
+[harness 2026-10-12T19:23:45] complete

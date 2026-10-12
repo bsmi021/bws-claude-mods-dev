@@ -1,0 +1,2 @@
+[harness 2026-10-12T19:20:20] state.json was unreadable (crash?); restored from state.bak (saved 2026-10-12T19:19:25)
+[harness 2026-10-12T19:20:20] complete

@@ -1,0 +1,3 @@
+[harness 2026-10-12T19:20:20] kept the old state as state.corrupt-20261012-192020.json
+[harness 2026-10-12T19:20:20] D0: DONE sessions=3 $0.06 (DONE on disk (recovered, not re-verified))
+[harness 2026-10-12T19:20:20] recovered; continue with `run` (or `run --resume` when a unit is PAUSED and answered)
