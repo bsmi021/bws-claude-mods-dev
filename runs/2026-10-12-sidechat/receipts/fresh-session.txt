@@ -1,0 +1,21 @@
+2026-10-12T16:15:55.861Z [DEBUG] Read hooks.json for plugin bws-sidechat (enabled=true): C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-sidechat\0.1.0\hooks\hooks.json
+2026-10-12T16:15:55.937Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:56.582Z [DEBUG] plugin bws-sidechat: no pluginConfigs["bws-sidechat@bws-mods"].options in user, --settings or managed settings (project settings are not read); every option is its default
+2026-10-12T16:15:56.590Z [DEBUG] Keeping C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-sidechat: it still holds a directory, a symlink, a versioned archive or an entry of unknown type
+2026-10-12T16:15:56.725Z [DEBUG] hooks module bws-sidechat@bws-mods loaded (worker, environment 8, tier user); events: session.start,command.run,ui.render
+2026-10-12T16:15:56.731Z [DEBUG] engine.create: no plugin-provided interfaces; $ built for bws-cockpit,bws-shell-lint,bws-notify,bws-design-picker,bws-enhance,bws-board,next-steps,bws-sidechat,cc-plugin-agents-md,cc-plugin-you-should-know
+2026-10-12T16:15:56.731Z [DEBUG] plugin.register: bws-sidechat (user, bws-sidechat@bws-mods), judged by core alone: admitted
+2026-10-12T16:15:57.030Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.032Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.034Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.036Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.037Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.199Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.201Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.202Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.203Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.365Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.368Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.532Z [DEBUG] $.command.register (bws-sidechat): /side listed
+2026-10-12T16:15:57.533Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:15:57.536Z [DEBUG] hooks module bws-cockpit@inline, bws-enhance@inline, bws-board@inline, bws-sidechat@bws-mods session.start settled in 515.3ms (worker hop, next() included)

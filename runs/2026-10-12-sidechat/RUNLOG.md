@@ -31,3 +31,7 @@ Brief: side chat in the right pane; /fork and /btw open it, forked from the curr
 - Scan of 811 added lines (`receipts/added-lines.txt`) against 70 folder names under C:/Projects, emails, handles, home/temp paths, session ids, serials, game/project words: no hits except `"author": "Brian"` (already in every published plugin.json).
 - Commit `de29b7d` on publish; `git push mods`: `bc96bc7..de29b7d publish -> main`; `mods/main` = `de29b7d`. Worktree removed.
 - Installed copy not updated: `claude plugin marketplace update bws-mods && claude plugin install bws-sidechat@bws-mods` when wanted.
+
+## Installed (2026-10-12)
+- `claude plugin marketplace update bws-mods` (re-cloned), `claude plugin install bws-sidechat@bws-mods`: both exit 0, user scope, 0.1.0 enabled (`receipts/install.txt`). Six userConfig options unset: defaults apply.
+- Fresh `claude -p` with no `--plugin-dir`: `bws-sidechat@bws-mods` loaded from `~/.claude/plugins/cache/bws-mods/bws-sidechat/0.1.0`, events session.start, command.run, ui.render; `/side` registered (`receipts/fresh-session.txt`). Headless draws no pane; the pane itself was checked earlier via `--plugin-dir`.
