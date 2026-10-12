@@ -129,3 +129,9 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - Test: replaced the 0.1.4 Stop-focus test. The test world's pane stub gained `alwaysFocused` (reports isFocused true while the keys are on the prompt, as the real engine does). Asserts 0 focus requests before Stop, 1 immediately on Stop with no clock time, 4 after advancing 1000 ms. Without the fix it fails (expected 1, received 0). 58 tests total.
 - Checks: `claude plugin validate ./bws-sidechat` pass; tsc 5.8.3 pass; `cd bws-sidechat && claude plugin test` 58/58. Version: `.claude-plugin/plugin.json` 0.1.4 -> 0.1.5 (only version field).
 - Not seen live. Not published: marketplace and installed copy are bws-sidechat 0.1.4. All mods now load from the marketplace cache, so the fix reaches a real session only after publish + `claude plugin update`, or via `claude --plugin-dir ./bws-sidechat`.
+
+## Published and installed 0.1.5 (2026-10-12)
+- Scratch worktree of `publish` (`129e1fc`), `git restore --source=9fb8009 --staged --worktree -- bws-sidechat`; tree and file list match main (`receipts/tree-match-0.1.5.txt`). Scan (`scan.py`) of 25 added lines, 67 folder names: 0 folder hits, 0 identifier hits (`receipts/scan-0.1.5.txt`).
+- Publish tree: validate (plugin and marketplace), 58/58 tests, tsc 5.8.3 clean. Commit `3abfb71`; `git push mods`: `129e1fc..3abfb71 publish -> main`; `mods/main` = `3abfb71`. Worktree removed.
+- `claude plugin marketplace update bws-mods` and `claude plugin update bws-sidechat@bws-mods`: exit 0, 0.1.4 -> 0.1.5 (user scope). Fresh `claude -p` (`env -u CLAUDE_CODE_PLUGIN_DIRS`): bws-sidechat@bws-mods loaded from cache/.../0.1.5, `/side` registered, 0 `@inline` mentions (`receipts/fresh-session-0.1.5.txt`).
+- The Stop focus fix is still unseen live; it reaches a real session only in a new terminal.

@@ -1,0 +1,25 @@
++  "version": "0.1.5",
++// After Stop: the Stop button held the ring and is gone, and the engine hands the keys back to the prompt (while it
++// still reports the pane as focused, so that flag cannot be trusted here). A ring move is denied for a site that does
++// not hold the keyboard, so the keys are asked for again, as when the pane opens, only over an empty box, and then the
++// ring goes to the Ask box.
++  if ((await $.ui.panes()).find(p => p.id === PANE) === undefined) return
++  if ((await $.prompt.read()).text.trim() !== '') return
++  await $.ui.open({ id: PANE, title: TITLE, focus: true })
++// The keys come back to the prompt a moment after the Stop button is redrawn away, so the request is repeated as the
++// pane settles, as focusSoon does when it opens.
++function refocusSoon($: EngineInterface) {
++  void settle(refocusAsk($))
++  for (const ms of [10, 250, 800]) $.clock.after(ms, () => void refocusAsk($).catch(() => undefined))
++}
++
++  refocusSoon($) // before the kill, which takes seconds: the Ask box has the keyboard at once
++  alwaysFocused?: boolean // the pane reports isFocused true even while the keys are on the prompt, as the real engine does
++  on('ui.panes', () => ({ value: (seen.opened.length === 0 ? [] : [{ id: 'sidechat', title: 'Side chat', isShown: true, isFocused: isFocused || w.alwaysFocused === true, isPlaced: true }]) as never }))
++  test('Stop takes the keyboard back for the Ask box even though the pane still reports focused, and asks again as it settles', async ($, on) => {
++    // the real engine keeps saying isFocused while the keys are on the prompt (the Stop button that held them is gone)
++    const { seen, clock } = world(on, { hold: true, grantsFocus: false, alwaysFocused: true })
++    expect(asked()).toBe(0) // the pane said it was focused, so the open path asked for nothing
++    expect(asked()).toBe(1) // Stop's own request, with no clock time passed
++    await clock.advance(1000)
++    expect(asked()).toBe(4) // and again at 10, 250 and 800 ms
