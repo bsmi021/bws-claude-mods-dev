@@ -1,0 +1,14 @@
+bws-board@bws-mods
+bws-cockpit@bws-mods
+bws-design-picker@bws-mods
+bws-enhance@bws-mods
+bws-notify@bws-mods
+bws-shell-lint@bws-mods
+bws-sidechat@bws-mods
+bws-board  C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-board\0.5.0\hooks\hooks.json
+bws-cockpit  C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-cockpit\0.15.0\hooks\hooks.json
+bws-design-picker  C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-design-picker\0.2.3\hooks\hooks.json
+bws-enhance  C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-enhance\0.2.1\hooks\hooks.json
+bws-notify  C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-notify\0.1.1\hooks\hooks.json
+bws-shell-lint  C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-shell-lint\0.2.0\hooks\hooks.json
+bws-sidechat  C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-sidechat\0.1.4\hooks\hooks.json

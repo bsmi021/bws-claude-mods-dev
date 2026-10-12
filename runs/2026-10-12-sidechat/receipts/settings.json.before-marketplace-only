@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "syncClaudeAiSkills": false,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ENABLE_EXPERIMENTAL_MCP_CLI": "true",
+    "CLAUDE_CODE_NEW_INIT": "1",
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1",
+    "ENABLE_TOOL_SEARCH": "true",
+    "NO_FLICKER_MODE": "1",
+    "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": "150000",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "250000",
+    "CLAUDE_CODE_FORK_SUBAGENT": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_OBSERVER_AGENTS": "1",
+    "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "true",
+    "CLAUDE_CODE_PLUGIN_DIRS": "C:/Projects/bws.mods.claude-code/bws-cockpit;C:/Projects/bws.mods.claude-code/bws-shell-lint;C:/Projects/bws.mods.claude-code/bws-notify;C:/Projects/bws.mods.claude-code/bws-design-picker;C:/Projects/bws.mods.claude-code/bws-enhance;C:/Projects/bws.mods.claude-code/bws-board"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Skill(general:tiger-team-coordinator)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx expo export:*)",
+      "mcp__codegraph__*",
+      "mcp__chronicler__chronicler_open_conversation",
+      "mcp__chronicler__chronicler_create_conversation",
+      "mcp__chronicler__chronicler_send_message",
+      "mcp__chronicler__chronicler_status",
+      "mcp__chronicler__chronicler_canon_status",
+      "mcp__chronicler__chronicler_list_conversations",
+      "mcp__chronicler__chronicler_history",
+      "mcp__chronicler__chronicler_get_job",
+      "mcp__chronicler__chronicler_export_conversation",
+      "mcp__chronicler__chronicler_artifact_registry",
+      "mcp__chronicler__chronicler_publication_history"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "auto"
+  },
+  "model": "sonnet",
+  "skillOverrides": {
+    "cs2-modding-patterns": "off",
+    "cs2-tdd-workflow": "off",
+    "cs2-validation-checklist": "off",
+    "wcag-22-accessibility": "off",
+    "orchestrate": "off",
+    "tiger-team-coordinator": "off",
+    "conversation-summary": "off",
+    "structured-discovery-interview": "off",
+    "tech-spec": "off"
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'i=$(cat); sid=$(echo \"$i\"|jq -r .session_id); tp=$(echo \"$i\"|jq -r .transcript_path); mkdir -p ~/.claude/compact-cache; tail -c 80000 \"$tp\" > ~/.claude/compact-cache/\"$sid\"-tail.jsonl'"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'i=$(cat); sid=$(echo \"$i\"|jq -r .session_id); f=~/.claude/compact-cache/\"$sid\"-tail.jsonl; [ -f \"$f\" ] && jq -n --arg path \"$f\" \"{hookSpecificOutput:{hookEventName:\\\"PostCompact\\\",additionalContext:(\\\"## Post-Compact Instruction\\\\n\\\\nPre-compact transcript tail was saved. You MUST immediately use the Read tool to read the file at: \\\" + $path + \\\"\\\\n\\\\nDo this before responding to restore pre-compact context.\\\")}}\" || exit 0'"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codegraph prompt-hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "i=$(cat); m=$(echo \"$i\"|jq -r '.model.display_name // \"Claude\"'); d=$(echo \"$i\"|jq -r '.workspace.current_dir // \"\"'|tr '\\\\' '/'|awk -F/ '{print $NF}'); v=$(echo \"$i\"|jq -r '.version // \"\"'); p=$(echo \"$i\"|jq -r '.context_window.used_percentage // 0 | floor'); b=$(git --no-optional-locks rev-parse --abbrev-ref HEAD 2>/dev/null); c=$(git --no-optional-locks status --porcelain 2>/dev/null|wc -l|tr -d ' '); f=$((p/10)); h='##########'; s='----------'; bar=\"${h:0:$f}${s:0:$((10-f))}\"; if [ $p -ge 90 ]; then cc='\\033[31m'; elif [ $p -ge 70 ]; then cc='\\033[33m'; else cc='\\033[32m'; fi; o=$(printf '\\033[36m[%s]\\033[0m' \"$m\"); [ -n \"$d\" ] && o=\"$o | $(printf '\\033[34m%s\\033[0m' \"$d\")\"; if [ -n \"$b\" ]; then g=\"$b\"; [ \"$c\" -gt 0 ] 2>/dev/null && g=\"$g ±$c\"; o=\"$o | $(printf '\\033[32m%s\\033[0m' \"$g\")\"; fi; o=\"$o | $(printf \"${cc}[%s] %d%%\\033[0m\" \"$bar\" \"$p\")\"; [ -n \"$v\" ] && o=\"$o | $(printf '\\033[90mv%s\\033[0m' \"$v\")\"; echo -e \"$o\""
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": false,
+    "code-review@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": false,
+    "csharp-lsp@claude-plugins-official": false,
+    "firebase@claude-plugins-official": false,
+    "chrome-devtools-mcp@claude-plugins-official": false,
+    "stripe@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": false,
+    "codex@openai-codex": false,
+    "hookify@claude-plugins-official": false,
+    "lua-lsp@claude-plugins-official": false,
+    "plugin-dev@claude-plugins-official": false,
+    "linear@claude-plugins-official": false,
+    "pil-agent-plugin@pil-agent-plugin": true,
+    "figma@claude-plugins-official": false,
+    "agent-planning@agent-planning": false,
+    "evidence-backed-completion@evidence-backed-completion": false,
+    "clangd-lsp@claude-plugins-official": false,
+    "google-notebook-plugin@google-notebook": true,
+    "vercel@claude-plugins-official": false,
+    "unreal-engine-skills-for-claude-code@claude-plugins-official": true,
+    "playground@claude-plugins-official": false,
+    "next-steps@claude-community": true,
+    "blender-inspect@pil-agent-plugin": true,
+    "cc-plugin-agents-md@builtin": true,
+    "cc-plugin-plugin-authoring@builtin": true,
+    "cc-plugin-telemetry@builtin": false,
+    "cc-plugin-you-should-know@builtin": true,
+    "bws-board@bws-mods": true,
+    "bws-cockpit@bws-mods": true,
+    "bws-design-picker@bws-mods": true,
+    "bws-enhance@bws-mods": true,
+    "bws-notify@bws-mods": true,
+    "bws-shell-lint@bws-mods": true,
+    "bws-sidechat@bws-mods": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "pil-agent-plugin": {
+      "source": {
+        "source": "directory",
+        "path": "C:\\Projects\\pil-agent-plugin\\pil-agent-plugin"
+      },
+      "autoUpdate": true
+    },
+    "agent-planning": {
+      "source": {
+        "source": "github",
+        "repo": "bsmi021/agent-planning"
+      }
+    },
+    "evidence-backed-completion": {
+      "source": {
+        "source": "github",
+        "repo": "bsmi021/evidence-backed-completion"
+      }
+    },
+    "google-notebook": {
+      "source": {
+        "source": "github",
+        "repo": "bsmi021/google-notebook-plugin"
+      }
+    },
+    "claude-community": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-community"
+      }
+    },
+    "bws-mods": {
+      "source": {
+        "source": "github",
+        "repo": "bsmi021/bws-claude-mods"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "medium"
+    },
+    "claude-opus-5": {
+      "effortLevel": "xhigh"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-sonnet-5-5": {
+      "effortLevel": "high"
+    }
+  },
+  "advisorModel": "fable",
+  "pluginConfigs": {
+    "next-steps@claude-community": {
+      "options": {
+        "suggestSkills": true
+      }
+    },
+    "bws-cockpit": {
+      "options": {
+        "ownerName": "Brian",
+        "workerModel": "claude-sonnet-5-5",
+        "peersAutoOpen": false,
+        "backgroundProbe": false
+      }
+    }
+  },
+  "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
+  "voice": {
+    "enabled": true,
+    "mode": "tap"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "remoteControlAtStartup": false,
+  "crossSessionInbound": "accept",
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: private (bsmi021/tms-heim, confirmed via gh)",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: None configured",
+      "**Default / protected branches**: Default branch main; no protected branches listed (rulesets not queryable here — protection status may not be fully visible)",
+      "**CI/CD deploy targets**: None configured",
+      "**Network posture**: None configured",
+      "**Source control**: The trusted repo (bsmi021/tms-heim) and its origin remote (github.com/bsmi021/tms-heim) only",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: .env (gitignored, per-repo) and any other file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (Unity game project — tms-heim)",
+      "**Trusted repo**: C:\\Projects\\tms-heim (working directory) and its origin remote github.com/bsmi021/tms-heim.git — private repo, so confidential material is fine there but content ported from outside this session's repo is not its own work",
+      "**Org-specific CLIs**: unity-bridge, unity, dotnet, uv, pwsh — project toolchain observed in this repo's transcripts; no org-wide CLI configured",
+      "routine under tms-heim/ prefix: Unity Editor validation, adb/device debugging per ~/.claude/CLAUDE.md, and PowerShell validation-gate scripts scoped to this repo's tools/ directory"
+    ]
+  },
+  "voiceEnabled": true,
+  "feedbackSurveyState": {
+    "lastShownTime": 1754083385204
+  }
+}
