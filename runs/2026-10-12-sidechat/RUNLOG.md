@@ -67,3 +67,9 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - 56 tests (7 new hotkey tests + 2 no-button). validate, tsc 5.8.3, plugin test pass.
 - Not checked live: the button's position next to bws-enhance's footer button (hook order decides whether another mod's tree is shared), the chord pressing it, while /diff is open the chord belongs to the diff pane.
 - Not published: marketplace and installed copy are still 0.1.1. Marketplace already lists bws-sidechat (mods/main e788873).
+
+## Published and installed 0.1.2 (2026-10-12)
+- Scratch worktree of `publish` (`e788873`), `git restore --source=96537ef --staged --worktree -- bws-sidechat`; tree and file list match main (`receipts/tree-match-0.1.2.txt`). Scan (`scan.py`) of 152 added lines, 67 folder names: 0 folder hits; 2 identifier hits, both expected (the install line's repo owner, already in the published top-level README; the plugin.json author "Brian", reformatted) (`receipts/scan-0.1.2.txt`).
+- Publish tree: validate (plugin and marketplace), 56/56 tests, tsc 5.8.3 clean. Commit `1c3470d`; `git push mods`: `e788873..1c3470d publish -> main`; `mods/main` = `1c3470d`. Worktree removed.
+- `claude plugin marketplace update bws-mods` + `claude plugin update bws-sidechat@bws-mods`: exit 0, 0.1.1 -> 0.1.2. Fresh `claude -p` (no --plugin-dir) loaded `bws-sidechat@bws-mods` from cache/.../0.1.2, `/side` registered (`receipts/fresh-session-0.1.2.txt`); cached plugin.json has `chordAction`.
+- The footer button and chord are still unseen in a live terminal (headless draws no footer).

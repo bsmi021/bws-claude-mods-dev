@@ -1,0 +1,5 @@
+2026-10-12T18:18:24.155Z [DEBUG] Read hooks.json for plugin bws-sidechat (enabled=true): C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-sidechat\0.1.2\hooks\hooks.json
+2026-10-12T18:18:25.357Z [DEBUG] hooks module bws-sidechat@bws-mods loaded (worker, environment 8, tier user); events: session.start,command.run,ui.render
+2026-10-12T18:18:25.364Z [DEBUG] plugin.register: bws-sidechat (user, bws-sidechat@bws-mods), judged by core alone: admitted
+2026-10-12T18:18:26.276Z [DEBUG] $.command.register (bws-sidechat): /side listed
+2026-10-12T18:18:26.282Z [DEBUG] hooks module bws-cockpit@inline, bws-enhance@inline, bws-board@inline, bws-sidechat@bws-mods session.start settled in 656.7ms (worker hop, next() included)

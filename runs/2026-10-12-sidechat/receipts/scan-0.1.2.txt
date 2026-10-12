@@ -1,0 +1,5 @@
+added lines 152 | project folder names checked 67
+folder-name hits: 0
+HIT handle/email | +claude plugin marketplace add bsmi021/bws-claude-mods
+HIT owner name | +    "name": "brian"
+identifier hits: 2

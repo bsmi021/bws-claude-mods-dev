@@ -1,0 +1,13 @@
+Updating marketplace: bws-mods...Refreshing marketplace cache (timeout: 120s)…
+Cloning repository (timeout: 120s): git@github.com:bsmi021/bws-claude-mods.git
+Replacing the existing marketplace clone…
+Clone complete, validating marketplace…
+✔ Successfully updated marketplace: bws-mods
+exit=0
+Checking for updates for plugin "bws-sidechat@bws-mods"…
+✔ Plugin "bws-sidechat" updated from 0.1.1 to 0.1.2 for scope user. Restart to apply changes.
+exit=0
+  ❯ bws-sidechat@bws-mods
+    Version: 0.1.2
+    Scope: user
+    Status: ✔ enabled
