@@ -28,6 +28,10 @@
     {
       "name": "bws-shell-lint",
       "source": "./bws-shell-lint"
+    },
+    {
+      "name": "bws-sidechat",
+      "source": "./bws-sidechat"
     }
   ]
 }

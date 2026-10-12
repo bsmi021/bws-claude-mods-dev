@@ -22,4 +22,4 @@ The pane has New fork, Close, Stop, an Ask box, and ↑/↓ buttons to scroll lo
 ## Notes
 - The fork sees the main session as last written to disk, so a turn still in flight is seen up to its last saved message.
 - Each fork is a real session file (`claude --resume <id>` opens it). It may also appear on the session board.
-- Tested on Claude Code 2.1.296. Static validation, 25 automated tests and a live fork turn pass; the interactive terminal pane is not yet checked by hand.
+- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns: validation, 25 automated tests, and by hand `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. Not checked by hand: typing in the Ask box, Stop, the scroll buttons, narrow terminals, the desktop app.
