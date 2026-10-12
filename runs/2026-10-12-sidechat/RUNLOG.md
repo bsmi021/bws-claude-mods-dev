@@ -23,3 +23,11 @@ Brief: side chat in the right pane; /fork and /btw open it, forked from the curr
 
 ## Next
 - (old) Brian: add `C:/Projects/bws.mods.claude-code/bws-sidechat` to CLAUDE_CODE_PLUGIN_DIRS (not changed), start a session, try /btw and /fork. If they don't open the pane, the built-in's name differs: check with `claude --debug`.
+
+## Published (2026-10-12)
+- main `a6d6545`: README note + bws-sidechat in `.claude-plugin/marketplace.json` (sorted, seven mods).
+- Scratch worktree of `publish` (`bc96bc7`): `git restore --source=a6d6545 --staged --worktree -- bws-sidechat .claude-plugin`; top-level README (publish-only) now says seven mods, adds the row, install and `--plugin-dir` entries. Types folder copied in for tsc.
+- On the publish tree: validate passed (plugin and marketplace), 25/25 tests, tsc 5.8.3 exit 0, tree and file list match main (`receipts/tree-match.txt`).
+- Scan of 811 added lines (`receipts/added-lines.txt`) against 70 folder names under C:/Projects, emails, handles, home/temp paths, session ids, serials, game/project words: no hits except `"author": "Brian"` (already in every published plugin.json).
+- Commit `de29b7d` on publish; `git push mods`: `bc96bc7..de29b7d publish -> main`; `mods/main` = `de29b7d`. Worktree removed.
+- Installed copy not updated: `claude plugin marketplace update bws-mods && claude plugin install bws-sidechat@bws-mods` when wanted.

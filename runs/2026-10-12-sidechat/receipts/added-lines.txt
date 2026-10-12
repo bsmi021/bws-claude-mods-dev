@@ -1,0 +1,811 @@
++    },
++    {
++      "name": "bws-sidechat",
++      "source": "./bws-sidechat"
++Seven [Claude Code mods](https://code.claude.com/docs/en/plugins/mods/overview) for game and app development on Windows. Each is a plugin of function hooks: JavaScript/TypeScript that runs inside Claude Code.
++| [`bws-sidechat`](bws-sidechat/README.md) | A side chat in the right-hand pane. `/fork`, `/branch` and `/btw` open a copy of the current conversation beside it, answered by a forked headless session (full context, read-only tools by default), so the main conversation is never touched. Stream the answer live, ask follow-ups in the pane, Stop, New fork. `/fork native` still runs the built-in; `/side` is its own entry point. |
++claude plugin install bws-sidechat@bws-mods
++claude --plugin-dir path/to/bws-cockpit --plugin-dir path/to/bws-shell-lint --plugin-dir path/to/bws-notify --plugin-dir path/to/bws-enhance --plugin-dir path/to/bws-design-picker --plugin-dir path/to/bws-board --plugin-dir path/to/bws-sidechat
++{
++  "name": "bws-sidechat",
++  "version": "0.1.0",
++  "description": "Side chat in the right-hand pane: /fork (or /branch) and /btw open a copy of this conversation beside it, answered by a forked headless session so the main conversation is never touched.",
++  "author": { "name": "Brian" },
++  "types": "./types/index.d.ts",
++  "userConfig": {
++    "takeOverFork": {
++      "type": "boolean",
++      "title": "/fork and /branch open the side chat",
++      "description": "Off: they stay Claude Code's own fork. /side always opens the side chat; /fork native always runs the built-in fork.",
++      "default": true
++    },
++    "takeOverBtw": {
++      "type": "boolean",
++      "title": "/btw answers in the side chat",
++      "description": "Off: /btw stays Claude Code's own side question.",
++      "default": true
++    },
++    "sideTools": {
++      "type": "string",
++      "title": "Tools the side chat may use",
++      "description": "Comma-separated tool names allowed without asking (the side chat cannot ask). Anything else is denied. Read-only by default.",
++      "default": "Read,Glob,Grep,WebFetch,WebSearch"
++    },
++    "sideModel": {
++      "type": "string",
++      "title": "Side chat model",
++      "description": "Model alias or id for the side chat. Empty: the session's model.",
++      "default": ""
++    },
++    "loadMcpServers": {
++      "type": "boolean",
++      "title": "Load MCP servers in the side chat",
++      "description": "Off (default): the side chat starts with no MCP servers, which is much faster. On: it loads every configured server.",
++      "default": false
++    },
++    "claudePath": {
++      "type": "string",
++      "title": "claude executable",
++      "description": "Path or name of the claude executable the side chat runs (not the npm .cmd shim).",
++      "default": "claude"
++    }
++  }
++}
++# bws-sidechat
++
++A side chat in the right-hand pane. `/fork`, `/branch` and `/btw` open a copy of the current conversation beside it; you ask in the pane, the main conversation is never touched.
++
++## How it works
++Each side message runs a headless `claude -p`. The first one forks the main session (`--resume <main> --fork-session --session-id <new>`); later ones resume the fork. So the side chat has the full context, history included, and its own tools. Streamed text shows live in the pane.
++
++The child runs with `CLAUDE_CODE_PLUGIN_DIRS` emptied (faster start, no side-of-side) and, by default, no MCP servers (`--strict-mcp-config`). Tools it may use without asking: `Read,Glob,Grep,WebFetch,WebSearch`. It cannot ask permission, so anything else is denied.
++
++## Commands
++| Command | Does |
++|---|---|
++| `/fork`, `/branch` | (replaces the built-in background-agent fork and branch) New side chat forked from the conversation as it stands. Text after it is sent as the first message. `/fork native` runs the built-in fork. |
++| `/btw <question>` | Answer in the side chat. Continues an open side chat; forks if none. |
++| `/side [new [msg] \| close \| msg]` | The plugin's own entry point. |
++
++The pane has New fork, Close, Stop, an Ask box, and ↑/↓ buttons to scroll long chats. In headless runs the built-in commands are left alone.
++
++## Options (`/plugin` config)
++`takeOverFork`, `takeOverBtw` (off = built-in command), `sideTools`, `sideModel`, `loadMcpServers`, `claudePath`.
++
++## Notes
++- The fork sees the main session as last written to disk, so a turn still in flight is seen up to its last saved message.
++- Each fork is a real session file (`claude --resume <id>` opens it). It may also appear on the session board.
++- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns: validation, 25 automated tests, and by hand `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. Not checked by hand: typing in the Ask box, Stop, the scroll buttons, narrow terminals, the desktop app.
++{ "modules": ["./register.tsx"] }
++import { atom, read, update } from 'claude-code'
++import type { EngineInterface, Register } from 'claude-code'
++
++import type { SideChat, SideMsg } from '../types'
++import { ROLE_PREFIX, exitNote, nativeArgs, parseSide, reduceLine, sideArgs, splitLines, windowOf } from './side'
++import type { Draft, SideConfig } from './side'
++
++const PANE = 'sidechat'
++const TITLE = 'Side chat'
++
++const EMPTY: SideChat = { mainId: null, sideId: null, msgs: [], live: '', isForked: false, isBusy: false, back: 0, isClosedByPerson: false }
++const chat = atom({ plugin: 'bws-sidechat', key: 'chat' } as const, EMPTY)
++
++// Module variables: the running child's identity and whether the person pressed Stop. A new fork or a close
++// bumps `runNo`, so the loop of a child that was left behind stops writing into the chat.
++let runNo = 0
++let isStopped = false
++let isInitSeen = false // the running child has printed its init line, so its session file exists
++
++// Opened inside the command's own dispatch, so the engine counts it as asked and places it at any width (a deferred
++// open counts as unasked and waits below 144 columns). Focus is granted only over an empty composer, so it is asked
++// for again once the command has returned and the box is clear.
++async function openPane($: EngineInterface) {
++  await update($, chat, c => ({ ...c, isClosedByPerson: false }))
++  const r = await $.ui.open({ id: PANE, title: TITLE })
++  if (!r.isPlaced) $.ui.toast(`Side chat not shown (${r.reason}).`)
++  $.clock.after(10, () => void focusPane($).catch(() => undefined))
++}
++
++async function focusPane($: EngineInterface) {
++  if ((await $.prompt.read()).text.trim() !== '') return
++  await $.ui.open({ id: PANE, title: TITLE, focus: true })
++}
++
++// Throws away the current side chat (its child is killed) and forks the conversation as it is now, on the first message.
++async function newFork($: EngineInterface) {
++  runNo++
++  const mainId = await $.session.id()
++  await update($, chat, () => ({ ...EMPTY, mainId, sideId: crypto.randomUUID() }))
++}
++
++async function closePane($: EngineInterface) {
++  runNo++
++  await update($, chat, c => ({ ...c, isBusy: false, live: '', isClosedByPerson: true }))
++  await $.ui.close({ id: PANE })
++}
++
++function configOf(options: Record<string, unknown>): SideConfig & { exe: string } {
++  return {
++    tools: String(options.sideTools ?? 'Read,Glob,Grep,WebFetch,WebSearch'),
++    isMcpOff: options.loadMcpServers !== true,
++    model: String(options.sideModel ?? ''),
++    exe: String(options.claudePath ?? 'claude').trim() || 'claude',
++  }
++}
++
++// One side turn: the message goes to a headless `claude -p` that forks (first turn) or resumes (later ones) the side
++// session. The main conversation is never written to.
++async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: string }) {
++  const message = text.trim()
++  if (message === '') return
++  let c = await read($, chat)
++  if (c.isBusy) return void $.ui.toast('Side chat: still answering. Stop it first, or wait.')
++  if (c.sideId === null || c.mainId === null) {
++    await newFork($)
++    c = await read($, chat)
++  }
++  const mainId = c.mainId as string
++  const sideId = c.sideId as string
++  const mine = ++runNo
++  isStopped = false
++  isInitSeen = false
++  const isFirst = !c.isForked
++  let draft: Draft = { msgs: [...c.msgs, { role: 'user', text: message }], live: '' }
++  await update($, chat, old => ({ ...old, ...draft, isBusy: true, back: 0 }))
++
++  let pending = ''
++  let stderr = ''
++  let code: number | null = 0
++  const stream = $.process.spawn({
++    argv: [cfg.exe, ...sideArgs({ message, mainId, sideId, isFirst }, cfg)],
++    // No mods in the child: it starts faster, and cannot open a side chat of its own.
++    env: { CLAUDE_CODE_PLUGIN_DIRS: '' },
++  })
++  try {
++    for (;;) {
++      const step = await stream.next()
++      if (mine !== runNo || isStopped) break
++      if (step.done) {
++        code = step.value.code
++        break
++      }
++      if (step.value.stream === 'stderr') {
++        stderr += step.value.text
++        continue
++      }
++      const split = splitLines(pending, step.value.text)
++      pending = split.rest
++      if (split.lines.length === 0) continue
++      for (const line of split.lines) {
++        if (line.includes('"subtype":"init"')) isInitSeen = true
++        draft = reduceLine(draft, line)
++      }
++      const snap = draft
++      await update($, chat, old => (mine === runNo ? { ...old, msgs: snap.msgs, live: snap.live } : old))
++    }
++  } catch (err) {
++    code = -1
++    stderr += String(err)
++  } finally {
++    await settle(stream.return(undefined as never))
++  }
++  if (mine !== runNo) return // a new fork or a close took over
++  const note = isStopped ? 'Stopped.' : exitNote(code, stderr)
++  const extra: SideMsg[] = note === null ? [] : [{ role: 'note', text: note }]
++  const shown = draft.live.trim() === '' || isStopped ? [] : [{ role: 'assistant', text: draft.live.trim() } as SideMsg]
++  await update($, chat, old => ({
++    ...old,
++    msgs: [...draft.msgs, ...shown, ...extra],
++    live: '',
++    isBusy: false,
++    isForked: old.isForked || isInitSeen || code === 0,
++  }))
++}
++
++async function stop($: EngineInterface) {
++  const c = await read($, chat)
++  if (!c.isBusy) return
++  isStopped = true
++  runNo++
++  await update($, chat, (old): SideChat => ({
++    ...old,
++    msgs: [...old.msgs, ...(old.live.trim() === '' ? [] : [{ role: 'assistant', text: old.live.trim() } as SideMsg]), { role: 'note', text: 'Stopped.' } as SideMsg],
++    live: '',
++    isBusy: false,
++    isForked: old.isForked || isInitSeen,
++  }))
++}
++
++async function settle<T>(p: Promise<T>): Promise<T | undefined> {
++  try {
++    return await p
++  } catch {
++    return undefined
++  }
++}
++
++// Headless runs draw nothing: leave the built-in commands to Claude Code (and keep a side-of-side from starting).
++async function isDrawn($: EngineInterface) {
++  return (await $.session.surfaces()).length > 0
++}
++
++export const register: Register = (on, options) => {
++  const cfg = configOf(options as Record<string, unknown>)
++  const takesFork = options.takeOverFork !== false
++  const takesBtw = options.takeOverBtw !== false
++
++  on('session.start', async ($, e, next) => {
++    await $.command.register({
++      name: 'side',
++      description: 'Side chat in the right-hand pane, forked from this conversation',
++      argumentHint: '[new [message] | close | message]',
++      immediate: true,
++    })
++    return next(e)
++  })
++
++  // /side: open the pane, continue the side chat, start a new fork, or close it.
++  on('command.run', { command: 'side' }, async ($, e) => {
++    if (!(await isDrawn($))) return { text: 'The side chat needs a terminal or Desktop window to draw in.' }
++    const cmd = parseSide(e.args)
++    if (cmd.kind === 'close') {
++      await closePane($)
++      return {}
++    }
++    if (cmd.kind === 'new') {
++      await newFork($)
++      await openPane($)
++      if (cmd.message !== '') $.clock.after(60, () => void send($, cmd.message, cfg))
++      return {}
++    }
++    await openPane($)
++    if (cmd.kind === 'send') $.clock.after(60, () => void send($, cmd.message, cfg))
++    return {}
++  })
++
++  // /fork and /branch: a fresh fork of the conversation as it stands, in the pane. `/fork native` runs the built-in.
++  for (const name of ['fork', 'branch'] as const) {
++    on('command.run', { command: name }, async ($, e, next) => {
++      if (!takesFork || !(await isDrawn($))) return next(e)
++      const rest = nativeArgs(e.args)
++      if (rest !== null) return next({ ...e, args: rest })
++      await newFork($)
++      await openPane($)
++      const message = e.args.trim()
++      if (message !== '') $.clock.after(60, () => void send($, message, cfg))
++      return {}
++    })
++  }
++
++  // /btw <question>: the answer comes in the side chat. An open side chat is continued; none open, a fork is taken.
++  on('command.run', { command: 'btw' }, async ($, e, next) => {
++    if (!takesBtw || !(await isDrawn($))) return next(e)
++    const question = e.args.trim()
++    const c = await read($, chat)
++    if (c.sideId === null) await newFork($)
++    await openPane($)
++    if (question !== '') $.clock.after(60, () => void send($, question, cfg))
++    return {}
++  })
++
++  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
++    const table = $.ui.resolve(e)
++    const { Box, Text, Button } = table
++    const Input = e.surface !== 'mobile' && 'Input' in table ? table.Input : null
++    const c = await read($, chat)
++    const width = Math.max(24, (e.props.bodyColumns ?? 80) - 1)
++    // the header, a blank row, the busy row and the input row are not messages
++    const rows = Math.max(4, (e.props.scroll?.bodyRows ?? 24) - 8)
++    const win = windowOf(c.msgs, rows, width, c.back)
++    const shown = c.msgs.slice(win.from, win.to)
++    const older = win.from
++    const newer = c.msgs.length - win.to
++    const from = c.mainId === null ? 'not forked yet' : `forked from ${c.mainId.slice(0, 8)}`
++
++    return (
++      <Box flexDirection="column">
++        <Box flexDirection="row" columnGap={1} flexWrap="wrap">
++          <Text bold>Side chat</Text>
++          <Text dimColor>{from}</Text>
++          <Button key="new" label="New fork" plain dimColor onPress={() => void newFork($)} />
++          <Button key="close" label="Close" plain dimColor onPress={() => void closePane($)} />
++        </Box>
++        {c.msgs.length === 0 && !c.isBusy && (
++          <Text dimColor wrap="wrap">
++            {'A copy of this conversation. Ask anything below; the main conversation is not touched. /fork starts a fresh copy.'}
++          </Text>
++        )}
++        {older > 0 && <Button key="older" label={`↑ ${older} earlier`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: Math.min(old.msgs.length - 1, old.back + 3) }))} />}
++        {shown.map((m, i) => (
++          <Box key={`m-${win.from + i}`} flexDirection="column">
++            {m.role === 'user' || m.role === 'assistant' ? (
++              <Box flexDirection="column">
++                <Text bold color={m.role === 'user' ? 'success' : undefined}>{ROLE_PREFIX[m.role]}</Text>
++                <Text wrap="wrap">{m.text}</Text>
++              </Box>
++            ) : (
++              <Text dimColor wrap="wrap" color={m.role === 'note' ? 'warning' : undefined}>{`${ROLE_PREFIX[m.role]} ${m.text}`}</Text>
++            )}
++          </Box>
++        ))}
++        {newer > 0 && <Button key="newer" label={`↓ ${newer} newer`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: Math.max(0, old.back - 3) }))} />}
++        {newer === 0 && c.live !== '' && (
++          <Box flexDirection="column">
++            <Text bold>Claude</Text>
++            <Text wrap="wrap">{c.live + '▌'}</Text>
++          </Box>
++        )}
++        {c.isBusy && (
++          <Box flexDirection="row" columnGap={1}>
++            <Text dimColor>{c.live === '' ? 'thinking…' : 'answering…'}</Text>
++            <Button key="stop" label="Stop" plain dimColor onPress={() => void stop($)} />
++          </Box>
++        )}
++        {Input ? (
++          <Input
++            key={`ask-${c.msgs.length}-${c.isBusy ? 'busy' : 'idle'}`}
++            label="Ask › "
++            placeholder={c.isBusy ? 'wait for the answer…' : 'ask in the side chat, Enter sends'}
++            submitLabel="send"
++            onSubmit={(text: string) => void send($, text, cfg)}
++          />
++        ) : (
++          <Text dimColor wrap="wrap">{'Type /side <message> in the prompt box to ask.'}</Text>
++        )}
++      </Box>
++    )
++  })
++}
++// Pure parts of the side chat: the child's command line, its stream-json lines, the transcript they build and the
++// window of it the pane shows. No `$` here; register.tsx does the effects.
++
++import type { SideMsg } from '../types'
++
++export type SideConfig = {
++  tools: string // allowed tool names, comma/space separated
++  isMcpOff: boolean // --strict-mcp-config with no servers: the side chat starts faster
++  model: string // '' = the session's
++}
++
++export type SideRun = {
++  message: string
++  mainId: string // the conversation forked from
++  sideId: string // the side session's own id, minted here so no init line has to be parsed
++  isFirst: boolean // first turn forks mainId; later turns resume sideId
++}
++
++// `claude -p` for one side turn. The first turn forks the main session into sideId; later ones continue it.
++export function sideArgs(run: SideRun, cfg: SideConfig): string[] {
++  const args = ['-p', run.message]
++  if (run.isFirst) args.push('--resume', run.mainId, '--fork-session', '--session-id', run.sideId)
++  else args.push('--resume', run.sideId)
++  args.push('--output-format', 'stream-json', '--verbose', '--include-partial-messages')
++  if (cfg.isMcpOff) args.push('--strict-mcp-config')
++  const tools = cfg.tools.split(/[\s,]+/).filter(t => t !== '')
++  if (tools.length > 0) args.push('--allowedTools', ...tools)
++  if (cfg.model.trim() !== '') args.push('--model', cfg.model.trim())
++  return args
++}
++
++// Text arrives in pieces that end wherever a write did: whole lines out, the unfinished tail kept.
++export function splitLines(pending: string, chunk: string): { lines: string[]; rest: string } {
++  const parts = (pending + chunk).split('\n')
++  const rest = parts.pop() ?? ''
++  return { lines: parts.map(l => l.replace(/\r$/, '')).filter(l => l.trim() !== ''), rest }
++}
++
++export type Draft = { msgs: SideMsg[]; live: string }
++
++const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
++
++// One short line for a tool the side chat ran: `Read C:/x/y.ts`.
++export function toolNote(name: string, input: unknown): string {
++  const o = isObj(input) ? input : {}
++  const arg = [o.file_path, o.path, o.pattern, o.command, o.url, o.query].find(v => typeof v === 'string')
++  const text = typeof arg === 'string' ? arg.replace(/\s+/g, ' ') : ''
++  return text === '' ? name : `${name} ${text.length > 70 ? text.slice(0, 69) + '…' : text}`
++}
++
++// Folds one stream-json line into the draft. Streamed text builds `live`; the finished assistant message replaces it.
++export function reduceLine(d: Draft, line: string): Draft {
++  let o: unknown
++  try {
++    o = JSON.parse(line)
++  } catch {
++    return d
++  }
++  if (!isObj(o)) return d
++  if (o.type === 'stream_event' && isObj(o.event)) {
++    const ev = o.event
++    const delta = isObj(ev.delta) ? ev.delta : null
++    if (ev.type === 'content_block_delta' && delta !== null && delta.type === 'text_delta' && typeof delta.text === 'string') {
++      return { msgs: d.msgs, live: d.live + delta.text }
++    }
++    return d
++  }
++  if (o.type === 'assistant' && isObj(o.message) && Array.isArray(o.message.content)) {
++    const added: SideMsg[] = []
++    const text = o.message.content
++      .filter((b): b is Record<string, unknown> => isObj(b) && b.type === 'text' && typeof b.text === 'string')
++      .map(b => String(b.text))
++      .join('')
++      .trim()
++    if (text !== '') added.push({ role: 'assistant', text })
++    for (const b of o.message.content) {
++      if (isObj(b) && b.type === 'tool_use' && typeof b.name === 'string') added.push({ role: 'tool', text: toolNote(b.name, b.input) })
++    }
++    return { msgs: [...d.msgs, ...added], live: '' }
++  }
++  if (o.type === 'result') {
++    const out: SideMsg[] = []
++    if (o.is_error === true) out.push({ role: 'note', text: `Error: ${typeof o.result === 'string' && o.result !== '' ? o.result : String(o.subtype ?? 'failed')}` })
++    else if (typeof o.result === 'string' && o.result.trim() !== '' && !d.msgs.some(m => m.role === 'assistant' && m.text === o.result)) {
++      // no assistant line carried it (a slash command's output, say)
++      if (d.live.trim() === '') out.push({ role: 'assistant', text: o.result.trim() })
++    }
++    return { msgs: [...d.msgs, ...out], live: '' }
++  }
++  return d
++}
++
++// What shows when the child exits without having printed a result (a missing exe, a bad flag).
++export function exitNote(code: number | null, stderr: string): string | null {
++  if (code === 0) return null
++  const tail = stderr.trim().split('\n').slice(-3).join(' ').slice(0, 300)
++  return `The side chat process ended (${code === null ? 'killed' : `exit ${code}`})${tail === '' ? '' : `: ${tail}`}`
++}
++
++// ---------- the window the pane shows ----------
++
++export const ROLE_PREFIX: Record<SideMsg['role'], string> = { user: 'You', assistant: 'Claude', tool: '·', note: '!' }
++
++// Rows a message takes at this width (one header row, then its wrapped lines).
++export function rowsOf(m: SideMsg, width: number): number {
++  const w = Math.max(10, width)
++  if (m.role === 'tool' || m.role === 'note') return Math.max(1, Math.ceil((m.text.length + 2) / w))
++  return 1 + m.text.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / w)), 0)
++}
++
++// The newest messages that fit `rows`, skipping `back` messages from the end (the person scrolled up).
++export function windowOf(msgs: readonly SideMsg[], rows: number, width: number, back: number): { from: number; to: number } {
++  const to = Math.max(0, msgs.length - Math.max(0, back))
++  let used = 0
++  let from = to
++  while (from > 0) {
++    const need = rowsOf(msgs[from - 1] as SideMsg, width)
++    if (used + need > rows && from < to) break
++    used += need
++    from--
++  }
++  return { from, to }
++}
++
++// `/fork native` and `/branch native` hand the command back to Claude Code's own fork.
++export function nativeArgs(args: string): string | null {
++  const m = /^\s*native(?:\s+([\s\S]*))?$/i.exec(args)
++  return m === null ? null : (m[1] ?? '').trim()
++}
++
++export type SideCommand = { kind: 'open' } | { kind: 'new'; message: string } | { kind: 'close' } | { kind: 'send'; message: string }
++
++// `/side [new [msg] | close | msg]`
++export function parseSide(args: string): SideCommand {
++  const t = args.trim()
++  if (t === '') return { kind: 'open' }
++  if (/^close$/i.test(t)) return { kind: 'close' }
++  const m = /^new(?:\s+([\s\S]*))?$/i.exec(t)
++  if (m !== null) return { kind: 'new', message: (m[1] ?? '').trim() }
++  return { kind: 'send', message: t }
++}
++import { describe, expect, test } from 'claude-code/testing'
++
++import { exitNote, nativeArgs, parseSide, reduceLine, rowsOf, sideArgs, splitLines, toolNote, windowOf } from '../hooks/side'
++import type { SideConfig } from '../hooks/side'
++import type { SideMsg } from '../types'
++
++const CFG: SideConfig = { tools: 'Read,Glob Grep', isMcpOff: true, model: '' }
++const RUN = { message: 'why?', mainId: 'main-1', sideId: 'side-1', isFirst: true }
++
++describe('sideArgs', () => {
++  test('the first turn forks the main session into the side id', () => {
++    const a = sideArgs(RUN, CFG)
++    expect(a.slice(0, 2)).toEqual(['-p', 'why?'])
++    expect(a).toContain('--fork-session')
++    expect(a.join(' ')).toContain('--resume main-1 --fork-session --session-id side-1')
++    expect(a.join(' ')).toContain('--output-format stream-json --verbose --include-partial-messages')
++  })
++
++  test('later turns resume the side session and never name the main one', () => {
++    const a = sideArgs({ ...RUN, isFirst: false }, CFG)
++    expect(a.join(' ')).toContain('--resume side-1')
++    expect(a).not.toContain('main-1')
++    expect(a).not.toContain('--fork-session')
++  })
++
++  test('tools split on commas and spaces; MCP and model are optional', () => {
++    const a = sideArgs(RUN, CFG)
++    expect(a.slice(a.indexOf('--allowedTools') + 1)).toEqual(['Read', 'Glob', 'Grep'])
++    expect(a).toContain('--strict-mcp-config')
++    const b = sideArgs(RUN, { tools: '', isMcpOff: false, model: ' opus ' })
++    expect(b).not.toContain('--strict-mcp-config')
++    expect(b).not.toContain('--allowedTools')
++    expect(b.slice(-2)).toEqual(['--model', 'opus'])
++  })
++})
++
++describe('splitLines', () => {
++  test('keeps the unfinished tail for the next piece', () => {
++    const a = splitLines('', '{"a":1}\n{"b"')
++    expect(a).toEqual({ lines: ['{"a":1}'], rest: '{"b"' })
++    expect(splitLines(a.rest, ':2}\r\n\n')).toEqual({ lines: ['{"b":2}'], rest: '' })
++  })
++})
++
++const ev = (o: unknown) => JSON.stringify(o)
++const delta = (text: string) => ev({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text } } })
++
++describe('reduceLine', () => {
++  test('streamed text builds the live answer; the finished message replaces it', () => {
++    let d = { msgs: [] as SideMsg[], live: '' }
++    d = reduceLine(d, delta('Hel'))
++    d = reduceLine(d, delta('lo'))
++    expect(d.live).toBe('Hello')
++    d = reduceLine(d, ev({ type: 'assistant', message: { content: [{ type: 'text', text: 'Hello there' }, { type: 'tool_use', name: 'Read', input: { file_path: 'a.ts' } }] } }))
++    expect(d).toEqual({ live: '', msgs: [{ role: 'assistant', text: 'Hello there' }, { role: 'tool', text: 'Read a.ts' }] })
++  })
++
++  test('a result that repeats the answer adds nothing; an error becomes a note', () => {
++    const base = { msgs: [{ role: 'assistant', text: 'Done' } as SideMsg], live: '' }
++    expect(reduceLine(base, ev({ type: 'result', is_error: false, result: 'Done' })).msgs).toHaveLength(1)
++    const bad = reduceLine(base, ev({ type: 'result', is_error: true, result: 'No conversation found' }))
++    expect(bad.msgs.at(-1)).toEqual({ role: 'note', text: 'Error: No conversation found' })
++  })
++
++  test('noise and bad JSON leave the draft alone', () => {
++    const d = { msgs: [], live: 'x' }
++    expect(reduceLine(d, 'not json')).toBe(d)
++    expect(reduceLine(d, ev({ type: 'system', subtype: 'init' }))).toBe(d)
++    expect(reduceLine(d, ev({ type: 'stream_event', event: { type: 'message_start' } }))).toBe(d)
++  })
++})
++
++describe('small helpers', () => {
++  test('toolNote shortens and names the argument', () => {
++    expect(toolNote('Grep', { pattern: 'foo' })).toBe('Grep foo')
++    expect(toolNote('Read', {})).toBe('Read')
++    expect(toolNote('Bash', { command: 'x'.repeat(100) }).length).toBeLessThan(80)
++  })
++
++  test('exitNote is silent on success and says why otherwise', () => {
++    expect(exitNote(0, '')).toBeNull()
++    expect(exitNote(1, 'a\nb\nboom')).toContain('exit 1')
++    expect(exitNote(null, '')).toContain('killed')
++  })
++
++  test('nativeArgs hands /fork native back', () => {
++    expect(nativeArgs('native')).toBe('')
++    expect(nativeArgs('  Native my name')).toBe('my name')
++    expect(nativeArgs('nativeish')).toBeNull()
++    expect(nativeArgs('')).toBeNull()
++  })
++
++  test('parseSide', () => {
++    expect(parseSide('')).toEqual({ kind: 'open' })
++    expect(parseSide(' close ')).toEqual({ kind: 'close' })
++    expect(parseSide('new')).toEqual({ kind: 'new', message: '' })
++    expect(parseSide('new why is it slow')).toEqual({ kind: 'new', message: 'why is it slow' })
++    expect(parseSide('newest idea')).toEqual({ kind: 'send', message: 'newest idea' })
++  })
++})
++
++describe('windowOf', () => {
++  const msgs: SideMsg[] = Array.from({ length: 10 }, (_, i) => ({ role: 'user', text: `message ${i}` }))
++
++  test('rowsOf counts the header and wrapped lines', () => {
++    expect(rowsOf({ role: 'user', text: 'a' }, 40)).toBe(2)
++    expect(rowsOf({ role: 'assistant', text: 'x'.repeat(100) }, 40)).toBe(1 + 3)
++    expect(rowsOf({ role: 'tool', text: 'Read a' }, 40)).toBe(1)
++  })
++
++  test('shows the newest messages that fit, and scrolls back', () => {
++    expect(windowOf(msgs, 6, 40, 0)).toEqual({ from: 7, to: 10 })
++    expect(windowOf(msgs, 6, 40, 3)).toEqual({ from: 4, to: 7 })
++    expect(windowOf([], 6, 40, 0)).toEqual({ from: 0, to: 0 })
++  })
++
++  test('a message taller than the room still shows', () => {
++    expect(windowOf([{ role: 'assistant', text: 'x'.repeat(2000) }], 5, 40, 0)).toEqual({ from: 0, to: 1 })
++  })
++})
++import { describe, expect, mock, test } from 'claude-code/testing'
++import type { On } from 'claude-code'
++
++const NOW = Date.parse('2026-10-12T10:00:00')
++
++const PANE = {
++  plugin: 'bws-sidechat',
++  component: 'Pane',
++  requestId: 'sidechat',
++  surface: 'terminal',
++  props: { title: 'Side chat', isFocused: false, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
++} as const
++
++type World = { surfaces?: string[]; box?: string; exit?: number; lines?: string[] }
++
++const line = (o: unknown) => JSON.stringify(o) + '\n'
++const ANSWER = [
++  line({ type: 'system', subtype: 'init', session_id: 'side' }),
++  line({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'It is ' } } }),
++  line({ type: 'assistant', message: { content: [{ type: 'text', text: 'It is the side chat mod.' }] } }),
++  line({ type: 'result', is_error: false, result: 'It is the side chat mod.' }),
++]
++
++function world(on: On, w: World = {}) {
++  const clock = mock.clock(on, { now: NOW })
++  const seen = { opened: [] as { id: string; focus?: boolean }[], closed: [] as string[], toasts: [] as string[], spawns: [] as { argv: readonly string[]; env?: Record<string, string> }[] }
++  on('session.id', () => ({ value: 'main-session-id' }))
++  on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
++  on('prompt.read', () => ({ value: { text: w.box ?? '', cursor: 0 } }))
++  on('ui.open', ($, e) => {
++    seen.opened.push({ id: e.id, focus: e.focus })
++    return { value: { isPlaced: true } }
++  })
++  on('ui.close', ($, e) => {
++    seen.closed.push(e.id)
++    return { value: undefined } as never
++  })
++  on('ui.toast', ($, e) => {
++    seen.toasts.push(String((e as unknown as { text: string }).text))
++    return { value: undefined } as never
++  })
++  on('process.spawn', async function* ($, e) {
++    seen.spawns.push({ argv: e.argv, env: e.env })
++    for (const l of w.lines ?? ANSWER) yield { stream: 'stdout' as const, text: l }
++    return { value: { code: w.exit ?? 0, signal: null } }
++  })
++  return { seen, clock }
++}
++
++const run = ($: { command: { run: (i: never) => Promise<{ text?: string }> } }, command: string, args = '') => $.command.run({ command, args } as never)
++
++describe('/btw', () => {
++  test('forks the conversation and asks the question in a child process, not the main session', async ($, on) => {
++    const { seen, clock } = world(on)
++    const r = await run($, 'btw', 'what mod is this?')
++    expect(r.text ?? '').toBe('')
++    await clock.advance(100)
++    // opened inside the command (counts as asked, so it is placed at any width), then focus asked for once the box is clear
++    expect(seen.opened).toEqual([{ id: 'sidechat', focus: undefined }, { id: 'sidechat', focus: true }])
++    expect(seen.spawns).toHaveLength(1)
++    const argv = (seen.spawns[0]?.argv ?? []).join(' ')
++    expect(argv).toContain('claude -p what mod is this? --resume main-session-id --fork-session --session-id ')
++    expect(seen.spawns[0]?.env).toEqual({ CLAUDE_CODE_PLUGIN_DIRS: '' })
++    const ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: 'what mod is this?' })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: 'It is the side chat mod.' })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('a second /btw continues the same side session', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'btw', 'first')
++    await clock.advance(100)
++    await run($, 'btw', 'second')
++    await clock.advance(100)
++    expect(seen.spawns).toHaveLength(2)
++    const first = (seen.spawns[0]?.argv ?? []).join(' ')
++    const second = (seen.spawns[1]?.argv ?? []).join(' ')
++    const sideId = /--session-id (\S+)/.exec(first)?.[1]
++    expect(sideId).toBeDefined()
++    expect(second).toContain(`--resume ${sideId}`)
++    expect(second).not.toContain('--fork-session')
++  })
++
++  test('with nothing typed it only opens the pane', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'btw', '')
++    await clock.advance(100)
++    expect(seen.opened).toHaveLength(2)
++    expect(seen.spawns).toHaveLength(0)
++  })
++
++  test('headless: left to the built-in command', async ($, on) => {
++    const { seen, clock } = world(on, { surfaces: [] })
++    on('command.run', () => ({ text: 'built-in btw' }))
++    const r = await run($, 'btw', 'q')
++    await clock.advance(100)
++    expect(r.text).toBe('built-in btw')
++    expect(seen.opened).toEqual([])
++    expect(seen.spawns).toEqual([])
++  })
++
++  test('takeOverBtw off: left to the built-in command', { options: { takeOverBtw: false } }, async ($, on) => {
++    const { seen, clock } = world(on)
++    on('command.run', () => ({ text: 'built-in btw' }))
++    const r = await run($, 'btw', 'q')
++    await clock.advance(100)
++    expect(r.text).toBe('built-in btw')
++    expect(seen.spawns).toEqual([])
++  })
++})
++
++describe('/fork and /side', () => {
++  test('/fork opens an empty side chat; the fork is taken on the first message', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'fork')
++    await clock.advance(100)
++    expect(seen.opened).toHaveLength(2)
++    expect(seen.spawns).toHaveLength(0)
++    const ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /forked from main-ses/ })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('/branch is the same as /fork', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'branch')
++    await clock.advance(100)
++    expect(seen.opened).toHaveLength(2)
++  })
++
++  test('/fork native hands the command back to the built-in with the rest of the arguments', async ($, on) => {
++    const { seen, clock } = world(on)
++    const got: string[] = []
++    on('command.run', (_$, e) => {
++      got.push(e.args)
++      return { text: 'built-in fork' }
++    })
++    const r = await run($, 'fork', 'native my branch')
++    await clock.advance(100)
++    expect(r.text).toBe('built-in fork')
++    expect(got).toEqual(['my branch'])
++    expect(seen.opened).toEqual([])
++  })
++
++  test('/side new <message> starts a fresh fork and asks', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'side', 'new why is it slow')
++    await clock.advance(200)
++    expect(seen.spawns).toHaveLength(1)
++    expect((seen.spawns[0]?.argv ?? []).join(' ')).toContain('why is it slow --resume main-session-id --fork-session')
++  })
++
++  test('/side close closes the pane', async ($, on) => {
++    const { seen } = world(on)
++    await run($, 'side', 'close')
++    expect(seen.closed).toEqual(['sidechat'])
++  })
++})
++
++describe('failures', () => {
++  test('a child that dies shows why in the pane and leaves the fork unmade', async ($, on) => {
++    const { clock } = world(on, { lines: [], exit: 1 })
++    await run($, 'btw', 'q')
++    await clock.advance(100)
++    const ui = await $.ui.mount(PANE)
++    expect(await ui.find({ type: 'Text', text: /side chat process ended \(exit 1\)/ })).toBeDefined()
++    await ui.unmount()
++  })
++})
++{
++  "extends": "./.claude-plugin/types/tsconfig.json"
++}
++// One line of the side chat as the pane draws it.
++export type SideMsg = { role: 'user' | 'assistant' | 'tool' | 'note'; text: string }
++
++export type SideChat = {
++  mainId: string | null // the conversation the fork was taken from
++  sideId: string | null // the fork's own session id; null until the first message
++  msgs: SideMsg[]
++  live: string // the answer streaming in
++  isForked: boolean // the first turn has run, so the fork exists on disk
++  isBusy: boolean
++  back: number // messages scrolled up from the newest
++  isClosedByPerson: boolean
++}
++
++declare module 'claude-code' {
++  interface PluginState {
++    'bws-sidechat': { chat: SideChat }
++  }
++}
