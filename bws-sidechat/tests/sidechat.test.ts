@@ -318,6 +318,19 @@ describe('Stop', () => {
     await ui.unmount()
   })
 
+  test('Stop takes the keyboard back for the Ask box: the Stop button held it and is gone', async ($, on) => {
+    // the engine keeps the keys with the prompt (grantsFocus false), as it does once the Stop button that held the ring is gone
+    const { seen, clock } = world(on, { hold: true, grantsFocus: false })
+    await run($, 'btw', 'think hard')
+    await clock.advance(200)
+    const asked = () => seen.opened.filter(o => o.focus === true).length
+    const before = asked()
+    const ui = await $.ui.mount(pane(20))
+    await ui.press({ key: 'stop' })
+    await ui.unmount()
+    expect(asked()).toBe(before + 1) // no clock time passed, so this is Stop's own request and not a later retry
+  })
+
   test('after Stop the next message resumes the same fork (it exists once the child said hello)', async ($, on) => {
     const { seen, clock } = world(on, { hold: true })
     await run($, 'btw', 'first')

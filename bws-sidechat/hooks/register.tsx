@@ -46,6 +46,17 @@ async function focusAsk($: EngineInterface) {
   await settle($.ui.focus({ requestId: PANE, key: askKey(c.asks) }))
 }
 
+// After Stop: the Stop button held the ring and is gone, and the engine has handed the keys back to the prompt, which
+// would refuse a ring move (a site that does not hold the keyboard is denied). So the keys are asked for again, as when
+// the pane opens (only over an empty box), and then the ring goes to the Ask box.
+async function refocusAsk($: EngineInterface) {
+  const pane = (await $.ui.panes()).find(p => p.id === PANE)
+  if (pane !== undefined && !pane.isFocused && (await $.prompt.read()).text.trim() === '') {
+    await $.ui.open({ id: PANE, title: TITLE, focus: true })
+  }
+  await focusAsk($)
+}
+
 // Ends the side chat's child at once. The stream ends it only when the next piece arrives, and a child that is
 // thinking sends none; the session id is in every argv of the child, so it is found by that.
 async function killChild($: EngineInterface, sideId: string | null) {
@@ -162,6 +173,7 @@ async function stop($: EngineInterface) {
     isBusy: false,
     isForked: old.isForked || isInitSeen,
   }))
+  void settle(refocusAsk($)) // before the kill, which takes seconds: the Ask box has the keyboard at once
   await killChild($, c.sideId)
 }
 
