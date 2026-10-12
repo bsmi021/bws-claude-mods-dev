@@ -14,7 +14,7 @@ The child runs with `CLAUDE_CODE_PLUGIN_DIRS` emptied (faster start, no side-of-
 | `/btw <question>` | Answer in the side chat. Continues an open side chat; forks if none. |
 | `/side [new [msg] \| close \| msg]` | The plugin's own entry point. |
 
-The pane has New fork, Close, Stop, an Ask box, and ↑/↓ buttons to scroll long chats. In headless runs the built-in commands are left alone.
+The pane has New fork, Close, Stop, an Ask box, and ↑/↓ buttons that scroll the transcript half a pane at a time. It takes the keyboard when it opens (so you can type at once), and a long answer never pushes the Ask box or Stop out of view: the transcript is drawn as rows sized to the pane. Stop (and New fork or Close mid-answer) ends the child process at once, even while it is still thinking. In headless runs the built-in commands are left alone.
 
 ## Options (`/plugin` config)
 `takeOverFork`, `takeOverBtw` (off = built-in command), `sideTools`, `sideModel`, `loadMcpServers`, `claudePath`.
@@ -22,4 +22,4 @@ The pane has New fork, Close, Stop, an Ask box, and ↑/↓ buttons to scroll lo
 ## Notes
 - The fork sees the main session as last written to disk, so a turn still in flight is seen up to its last saved message.
 - Each fork is a real session file (`claude --resume <id>` opens it). It may also appear on the session board.
-- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns: validation, 25 automated tests, and by hand `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. Not checked by hand: typing in the Ask box, Stop, the scroll buttons, narrow terminals, the desktop app.
+- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns. 0.1.0 by hand: `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. 0.1.1: 48 automated tests, plus the Stop kill command run against a real long `claude -p` child (found by session id, killed, output stopped). Not re-checked by hand in a terminal: keyboard focus on open, the scroll buttons on a long answer, narrow terminals, the desktop app.

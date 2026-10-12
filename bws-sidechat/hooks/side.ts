@@ -101,25 +101,95 @@ export function exitNote(code: number | null, stderr: string): string | null {
 
 export const ROLE_PREFIX: Record<SideMsg['role'], string> = { user: 'You', assistant: 'Claude', tool: '·', note: '!' }
 
-// Rows a message takes at this width (one header row, then its wrapped lines).
-export function rowsOf(m: SideMsg, width: number): number {
-  const w = Math.max(10, width)
-  if (m.role === 'tool' || m.role === 'note') return Math.max(1, Math.ceil((m.text.length + 2) / w))
-  return 1 + m.text.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / w)), 0)
+// Word-wraps `text` to `width` cells, one string per row. Blank lines stay; a word longer than a row is split.
+export function wrapLines(text: string, width: number): string[] {
+  const w = Math.max(8, Math.floor(width))
+  const out: string[] = []
+  for (const para of text.replace(/\r/g, '').split('\n')) {
+    if (para.trim() === '') {
+      out.push('')
+      continue
+    }
+    let row = ''
+    for (const word of para.split(/ +/)) {
+      if (word === '') continue
+      let rest = word
+      while (rest.length > w) {
+        if (row !== '') {
+          out.push(row)
+          row = ''
+        }
+        out.push(rest.slice(0, w))
+        rest = rest.slice(w)
+      }
+      if (row === '') row = rest
+      else if (row.length + 1 + rest.length <= w) row += ` ${rest}`
+      else {
+        out.push(row)
+        row = rest
+      }
+    }
+    if (row !== '') out.push(row)
+  }
+  return out
 }
 
-// The newest messages that fit `rows`, skipping `back` messages from the end (the person scrolled up).
-export function windowOf(msgs: readonly SideMsg[], rows: number, width: number, back: number): { from: number; to: number } {
-  const to = Math.max(0, msgs.length - Math.max(0, back))
-  let used = 0
-  let from = to
-  while (from > 0) {
-    const need = rowsOf(msgs[from - 1] as SideMsg, width)
-    if (used + need > rows && from < to) break
-    used += need
-    from--
+export type Row = { text: string; kind: 'you' | 'claude' | 'body' | 'tool' | 'note' }
+
+// The whole transcript as rows the pane can window, the streaming answer last. Every row is at most `width` cells,
+// so the pane never wraps one itself and the row count is exact.
+export function transcriptRows(msgs: readonly SideMsg[], live: string, width: number): Row[] {
+  const rows: Row[] = []
+  for (const m of msgs) {
+    if (m.role === 'user' || m.role === 'assistant') {
+      rows.push({ text: ROLE_PREFIX[m.role], kind: m.role === 'user' ? 'you' : 'claude' })
+      for (const t of wrapLines(m.text, width)) rows.push({ text: t, kind: 'body' })
+    } else {
+      for (const t of wrapLines(`${ROLE_PREFIX[m.role]} ${m.text}`, width)) rows.push({ text: t, kind: m.role })
+    }
   }
-  return { from, to }
+  if (live !== '') {
+    rows.push({ text: 'Claude', kind: 'claude' })
+    for (const t of wrapLines(`${live}▌`, width)) rows.push({ text: t, kind: 'body' })
+  }
+  return rows
+}
+
+// Rows the pane keeps for everything that is not transcript: the header, the two scroll buttons, the busy row and the
+// Ask box (which may wrap to a second row), with one to spare.
+export const CHROME_ROWS = 7
+
+export const roomOf = (bodyRows: number) => Math.max(3, Math.floor(bodyRows) - CHROME_ROWS)
+
+// A scroll step of half the room (at least 3 rows).
+export const scrollStep = (room: number) => Math.max(3, Math.floor(room / 2))
+
+// `back` rows up from the newest, kept inside what there is to scroll.
+export const clampBack = (back: number, total: number, room: number) => Math.min(Math.max(0, back), Math.max(0, total - room))
+
+// The rows [from, to) shown, and how many hide above and below.
+export function windowRows(total: number, room: number, back: number): { from: number; to: number; above: number; below: number } {
+  const to = total - clampBack(back, total, room)
+  const from = Math.max(0, to - room)
+  return { from, to, above: from, below: total - to }
+}
+
+// The Ask box's key: it changes with each send, which clears the box.
+export const askKey = (asks: number) => `ask-${asks}`
+
+// The command line that ends the side chat's child by its session id (it is in every argv of the child, first turn or
+// later), since the stream only ends it once the next piece arrives. Null for an id that is not a uuid.
+export function killArgv(sideId: string, isWindows: boolean): string[] | null {
+  if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(sideId)) return null
+  if (!isWindows) return ['pkill', '-f', sideId]
+  const filter = `$_.CommandLine -like '*${sideId}*' -and $_.ProcessId -ne $PID`
+  return [
+    'powershell',
+    '-NoProfile',
+    '-NonInteractive',
+    '-Command',
+    `Get-CimInstance Win32_Process | Where-Object { ${filter} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
+  ]
 }
 
 // `/fork native` and `/branch native` hand the command back to Claude Code's own fork.

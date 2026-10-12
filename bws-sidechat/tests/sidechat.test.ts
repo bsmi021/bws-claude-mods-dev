@@ -2,34 +2,69 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 const NOW = Date.parse('2026-10-12T10:00:00')
+const NL = String.fromCharCode(10)
 
-const PANE = {
-  plugin: 'bws-sidechat',
-  component: 'Pane',
-  requestId: 'sidechat',
-  surface: 'terminal',
-  props: { title: 'Side chat', isFocused: false, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
-} as const
+const pane = (bodyRows = 30) =>
+  ({
+    plugin: 'bws-sidechat',
+    component: 'Pane',
+    requestId: 'sidechat',
+    surface: 'terminal',
+    props: { title: 'Side chat', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows }, view: {} },
+  }) as const
+const PANE = pane()
 
-type World = { surfaces?: string[]; box?: string; exit?: number; lines?: string[] }
+type World = {
+  surfaces?: string[]
+  box?: string
+  exit?: number
+  lines?: string[]
+  hold?: boolean // the child says one thing, then is silent until something kills it
+  grantsFocus?: boolean // false: the engine keeps the keys with the prompt
+}
 
-const line = (o: unknown) => JSON.stringify(o) + '\n'
+const line = (o: unknown) => JSON.stringify(o) + NL
 const ANSWER = [
   line({ type: 'system', subtype: 'init', session_id: 'side' }),
   line({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'It is ' } } }),
   line({ type: 'assistant', message: { content: [{ type: 'text', text: 'It is the side chat mod.' }] } }),
   line({ type: 'result', is_error: false, result: 'It is the side chat mod.' }),
 ]
+const LONG_TEXT = Array.from({ length: 40 }, (_, i) => `Paragraph ${i + 1}: lighthouses guard the coast with a light that can be seen for many miles at sea.`).join(NL + NL)
+const LONG = [
+  line({ type: 'system', subtype: 'init', session_id: 'side' }),
+  line({ type: 'assistant', message: { content: [{ type: 'text', text: LONG_TEXT }] } }),
+  line({ type: 'result', is_error: false, result: LONG_TEXT }),
+]
 
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: NOW })
-  const seen = { opened: [] as { id: string; focus?: boolean }[], closed: [] as string[], toasts: [] as string[], spawns: [] as { argv: readonly string[]; env?: Record<string, string> }[] }
+  const seen = {
+    opened: [] as { id: string; focus?: boolean }[],
+    closed: [] as string[],
+    toasts: [] as string[],
+    spawns: [] as { argv: readonly string[]; env?: Record<string, string> }[],
+    focused: [] as string[],
+    kills: [] as (readonly string[])[],
+  }
+  let isFocused = false
+  let release: () => void = () => undefined
+  const gate = new Promise<void>(resolve => {
+    release = resolve
+  })
   on('session.id', () => ({ value: 'main-session-id' }))
   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
   on('prompt.read', () => ({ value: { text: w.box ?? '', cursor: 0 } }))
+  on('env.get', () => ({ value: 'Windows_NT' as never }))
   on('ui.open', ($, e) => {
     seen.opened.push({ id: e.id, focus: e.focus })
+    if (e.focus === true && w.grantsFocus !== false) isFocused = true
     return { value: { isPlaced: true } }
+  })
+  on('ui.panes', () => ({ value: (seen.opened.length === 0 ? [] : [{ id: 'sidechat', title: 'Side chat', isShown: true, isFocused, isPlaced: true }]) as never }))
+  on('ui.focus', ($, e) => {
+    seen.focused.push(String(e.element))
+    return {}
   })
   on('ui.close', ($, e) => {
     seen.closed.push(e.id)
@@ -39,8 +74,18 @@ function world(on: On, w: World = {}) {
     seen.toasts.push(String((e as unknown as { text: string }).text))
     return { value: undefined } as never
   })
+  on('process.run', ($, e) => {
+    seen.kills.push(e.argv)
+    release()
+    return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } as never }
+  })
   on('process.spawn', async function* ($, e) {
     seen.spawns.push({ argv: e.argv, env: e.env })
+    if (w.hold === true) {
+      yield { stream: 'stdout' as const, text: line({ type: 'system', subtype: 'init', session_id: 'side' }) }
+      await gate // only a kill ends it: no piece arrives meanwhile
+      return { value: { code: null, signal: 'SIGKILL' } }
+    }
     for (const l of w.lines ?? ANSWER) yield { stream: 'stdout' as const, text: l }
     return { value: { code: w.exit ?? 0, signal: null } }
   })
@@ -48,6 +93,7 @@ function world(on: On, w: World = {}) {
 }
 
 const run = ($: { command: { run: (i: never) => Promise<{ text?: string }> } }, command: string, args = '') => $.command.run({ command, args } as never)
+const sideIdOf = (argv: readonly string[]) => /--session-id (\S+)/.exec(argv.join(' '))?.[1]
 
 describe('/btw', () => {
   test('forks the conversation and asks the question in a child process, not the main session', async ($, on) => {
@@ -155,6 +201,164 @@ describe('/fork and /side', () => {
     const { seen } = world(on)
     await run($, 'side', 'close')
     expect(seen.closed).toEqual(['sidechat'])
+  })
+})
+
+describe('keyboard focus', () => {
+  test('/btw asks for the keys once, and not again when they are granted', async ($, on) => {
+    const { seen, clock } = world(on)
+    await run($, 'btw', 'q')
+    await clock.advance(1000)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1) // granted at once, so not asked again
+    // (the ring move itself, $.ui.focus, is answered by the engine before a test can see it: it needs a surface holding the keys)
+    expect(seen.spawns).toHaveLength(1)
+  })
+
+  test('/fork does the same', async ($, on) => {
+    const { seen, clock } = world(on)
+    await run($, 'fork')
+    await clock.advance(1000)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
+  })
+
+  test('when the engine keeps the keys with the prompt, the request is repeated a few times after the command returns', async ($, on) => {
+    const { seen, clock } = world(on, { grantsFocus: false })
+    await run($, 'fork')
+    await clock.advance(1000)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(3)
+    await clock.advance(5000)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(3) // and then stops
+  })
+
+  test('a person already typing in the prompt keeps the keys', async ($, on) => {
+    const { seen, clock } = world(on, { box: 'half a thought' })
+    await run($, 'fork')
+    await clock.advance(1000)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(0)
+  })
+})
+
+describe('a long answer', () => {
+  test('never pushes the Ask box out of the pane', async ($, on) => {
+    const { clock } = world(on, { lines: LONG })
+    await run($, 'btw', 'write an essay')
+    await clock.advance(200)
+    for (const rows of [12, 20, 30]) {
+      const ui = await $.ui.mount(pane(rows))
+      expect(await ui.find({ type: 'Input' })).toBeDefined()
+      expect(await ui.find({ key: 'older' })).toBeDefined()
+      expect(await ui.find({ key: 'newer' })).toBeUndefined()
+      // header (2) + the rows left for the transcript: nothing else draws as text
+      const texts = await ui.findAll({ type: 'Text' })
+      expect(texts.length).toBeLessThanOrEqual(rows - 3)
+      await ui.unmount()
+    }
+  })
+
+  test('the newest rows show first', async ($, on) => {
+    const { clock } = world(on, { lines: LONG })
+    await run($, 'btw', 'write an essay')
+    await clock.advance(200)
+    const ui = await $.ui.mount(pane(20))
+    expect(await ui.find({ type: 'Text', text: /Paragraph 40/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Paragraph 1:/ })).toBeUndefined()
+    await ui.unmount()
+  })
+})
+
+describe('scroll buttons', () => {
+  test('step by rows: up shows older rows and a way back, down returns to the newest', async ($, on) => {
+    const { clock } = world(on, { lines: LONG })
+    await run($, 'btw', 'write an essay')
+    await clock.advance(200)
+    const ui = await $.ui.mount(pane(20))
+    const above = async () => Number(/(\d+) rows above/.exec(String((await ui.find({ key: 'older' }))?.props?.label))?.[1])
+    const first = await above()
+    expect(first).toBeGreaterThan(0)
+    await ui.press({ key: 'older' })
+    const second = await above()
+    // roomOf(20) = 13 rows, half of it = 6 rows a press: a small, even step and not a whole message
+    expect(first - second).toBe(6)
+    expect(String((await ui.find({ key: 'newer' }))?.props?.label)).toContain('6 rows below')
+    await ui.press({ key: 'newer' })
+    expect(await ui.find({ key: 'newer' })).toBeUndefined()
+    expect(await above()).toBe(first)
+    await ui.unmount()
+  })
+
+  test('pressing up far past the top stops at the first row', async ($, on) => {
+    const { clock } = world(on, { lines: LONG })
+    await run($, 'btw', 'write an essay')
+    await clock.advance(200)
+    const ui = await $.ui.mount(pane(20))
+    for (let i = 0; i < 60 && (await ui.find({ key: 'older' })) !== undefined; i++) await ui.press({ key: 'older' })
+    expect(await ui.find({ key: 'older' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: 'You' })).toBeDefined()
+    await ui.unmount()
+  })
+})
+
+describe('Stop', () => {
+  test('kills the child at once, even when it is silent, and says so', async ($, on) => {
+    const { seen, clock } = world(on, { hold: true })
+    await run($, 'btw', 'think hard')
+    await clock.advance(200)
+    const sideId = sideIdOf(seen.spawns[0]?.argv ?? [])
+    expect(sideId).toBeDefined()
+    const ui = await $.ui.mount(pane(20))
+    expect(await ui.find({ key: 'stop' })).toBeDefined()
+    await ui.press({ key: 'stop' })
+    expect(seen.kills).toHaveLength(1)
+    const argv = seen.kills[0] ?? []
+    expect(argv[0]).toBe('powershell')
+    expect(argv.at(-1)).toContain(String(sideId))
+    await clock.advance(200)
+    expect(await ui.find({ key: 'stop' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /Stopped\./ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('after Stop the next message resumes the same fork (it exists once the child said hello)', async ($, on) => {
+    const { seen, clock } = world(on, { hold: true })
+    await run($, 'btw', 'first')
+    await clock.advance(200)
+    const ui = await $.ui.mount(pane(20))
+    await ui.press({ key: 'stop' })
+    await clock.advance(200)
+    await ui.unmount()
+    await run($, 'btw', 'second')
+    await clock.advance(200)
+    const sideId = sideIdOf(seen.spawns[0]?.argv ?? [])
+    expect((seen.spawns[1]?.argv ?? []).join(' ')).toContain(`--resume ${sideId}`)
+  })
+
+  test('a new fork while one is answering kills the old child', async ($, on) => {
+    const { seen, clock } = world(on, { hold: true })
+    await run($, 'btw', 'slow one')
+    await clock.advance(200)
+    await run($, 'fork')
+    await clock.advance(200)
+    expect(seen.kills).toHaveLength(1)
+    expect((seen.kills[0] ?? []).at(-1)).toContain(String(sideIdOf(seen.spawns[0]?.argv ?? [])))
+  })
+
+  test('Close while answering kills the child too', async ($, on) => {
+    const { seen, clock } = world(on, { hold: true })
+    await run($, 'btw', 'slow one')
+    await clock.advance(200)
+    await run($, 'side', 'close')
+    expect(seen.kills).toHaveLength(1)
+    expect(seen.closed).toEqual(['sidechat'])
+  })
+
+  test('Stop with nothing running does nothing', async ($, on) => {
+    const { seen, clock } = world(on)
+    await run($, 'btw', 'quick')
+    await clock.advance(200)
+    const ui = await $.ui.mount(pane(20))
+    expect(await ui.find({ key: 'stop' })).toBeUndefined()
+    await ui.unmount()
+    expect(seen.kills).toEqual([])
   })
 })
 

@@ -44,3 +44,12 @@ Found:
 3. Stop: could not confirm. The child ended `(0)` in 14.9 s with 231 chunks, i.e. it ran to completion; either the click missed or `stream.return()` did not kill it. The pane showed no "Stopped." note (clipped).
 4. Scroll: `↑ n earlier` / `↓ n newer` both work, but step 3 messages and jump the view (back to the first exchange / to the long essay).
 Stray text "rite a 400 word essay..." was left in the test window's main prompt by a failed first attempt (ctrl+a + delete removed one character).
+
+## 0.1.1: fixes for the pass-2 findings (2026-10-12)
+1. Focus: the engine hands the keys back to the prompt once the opening command returns, and the single 10 ms request lost to that. Now asked at 10, 250 and 800 ms (each only while the composer is empty and the pane is not already focused), then `$.ui.focus` puts the ring on the Ask box (key `ask-<n>`). The Ask box key no longer changes with busy state or message count (it remounted mid-answer and lost typing); it changes only on send, and the ring follows it.
+2. Overflow: the transcript is now rows (`wrapLines`, `transcriptRows`), each at most the pane width, windowed by `roomOf(bodyRows)` = bodyRows - 7 chrome rows. The header, scroll buttons, Stop and Ask box always keep their rows; no message can exceed the window.
+3. Stop: `stream.return()` only takes effect when the next piece arrives, which a thinking child never sends. Stop, New fork and Close now also run `killArgv(sideId)` (PowerShell: find the process whose command line holds the side session id, excluding itself, Stop-Process; `pkill -f` off Windows; non-uuid ids refused). Verified live against a real long `claude -p`: 1 process found, killed (exit 127), output stopped growing (receipts/kill-check.txt).
+4. Scroll: buttons step half the room (min 3 rows) and clamp at both ends; labels say rows.
+- 48 tests (was 25): wrapLines/transcriptRows/windowRows/clampBack/killArgv unit tests; long answer keeps Input, scroll buttons step 6 rows at bodyRows 20, Stop kills a silent child, New fork and Close kill, focus retry/yield. validate passes, tsc 5.8.3 clean.
+- Not provable in a test: `$.ui.focus` (the engine answers it before a test stub); keyboard focus and scroll on a long answer need a live look.
+- Not published: marketplace and installed copies are still 0.1.0.

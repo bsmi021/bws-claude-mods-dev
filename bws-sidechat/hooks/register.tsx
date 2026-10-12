@@ -2,13 +2,13 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { SideChat, SideMsg } from '../types'
-import { ROLE_PREFIX, exitNote, nativeArgs, parseSide, reduceLine, sideArgs, splitLines, windowOf } from './side'
+import { askKey, clampBack, exitNote, killArgv, nativeArgs, parseSide, reduceLine, roomOf, scrollStep, sideArgs, splitLines, transcriptRows, windowRows } from './side'
 import type { Draft, SideConfig } from './side'
 
 const PANE = 'sidechat'
 const TITLE = 'Side chat'
 
-const EMPTY: SideChat = { mainId: null, sideId: null, msgs: [], live: '', isForked: false, isBusy: false, back: 0, isClosedByPerson: false }
+const EMPTY: SideChat = { mainId: null, sideId: null, msgs: [], live: '', isForked: false, isBusy: false, back: 0, asks: 0, isClosedByPerson: false }
 const chat = atom({ plugin: 'bws-sidechat', key: 'chat' } as const, EMPTY)
 
 // Module variables: the running child's identity and whether the person pressed Stop. A new fork or a close
@@ -18,29 +18,55 @@ let isStopped = false
 let isInitSeen = false // the running child has printed its init line, so its session file exists
 
 // Opened inside the command's own dispatch, so the engine counts it as asked and places it at any width (a deferred
-// open counts as unasked and waits below 144 columns). Focus is granted only over an empty composer, so it is asked
-// for again once the command has returned and the box is clear.
+// open counts as unasked and waits below 144 columns).
 async function openPane($: EngineInterface) {
   await update($, chat, c => ({ ...c, isClosedByPerson: false }))
   const r = await $.ui.open({ id: PANE, title: TITLE })
   if (!r.isPlaced) $.ui.toast(`Side chat not shown (${r.reason}).`)
-  $.clock.after(10, () => void focusPane($).catch(() => undefined))
+  focusSoon($)
+}
+
+// Keyboard focus is a request: it is granted over an empty composer, and the engine hands the keys back to the prompt
+// once the command that opened the pane has returned. So it is asked again a few times after that, each time only
+// while the box is still empty (the person who has started typing keeps the keys), then the ring goes to the Ask box.
+function focusSoon($: EngineInterface) {
+  for (const ms of [10, 250, 800]) $.clock.after(ms, () => void focusPane($).catch(() => undefined))
 }
 
 async function focusPane($: EngineInterface) {
+  const pane = (await $.ui.panes()).find(p => p.id === PANE)
+  if (pane === undefined || pane.isFocused) return
   if ((await $.prompt.read()).text.trim() !== '') return
   await $.ui.open({ id: PANE, title: TITLE, focus: true })
+  await focusAsk($)
+}
+
+async function focusAsk($: EngineInterface) {
+  const c = await read($, chat)
+  await settle($.ui.focus({ requestId: PANE, key: askKey(c.asks) }))
+}
+
+// Ends the side chat's child at once. The stream ends it only when the next piece arrives, and a child that is
+// thinking sends none; the session id is in every argv of the child, so it is found by that.
+async function killChild($: EngineInterface, sideId: string | null) {
+  if (sideId === null) return
+  const argv = killArgv(sideId, (await $.env.get('OS')) === 'Windows_NT')
+  if (argv !== null) await settle($.process.run(argv, { timeoutMs: 15000 }))
 }
 
 // Throws away the current side chat (its child is killed) and forks the conversation as it is now, on the first message.
 async function newFork($: EngineInterface) {
   runNo++
+  const old = await read($, chat)
+  if (old.isBusy) await killChild($, old.sideId)
   const mainId = await $.session.id()
   await update($, chat, () => ({ ...EMPTY, mainId, sideId: crypto.randomUUID() }))
 }
 
 async function closePane($: EngineInterface) {
   runNo++
+  const old = await read($, chat)
+  if (old.isBusy) await killChild($, old.sideId)
   await update($, chat, c => ({ ...c, isBusy: false, live: '', isClosedByPerson: true }))
   await $.ui.close({ id: PANE })
 }
@@ -72,7 +98,8 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
   isInitSeen = false
   const isFirst = !c.isForked
   let draft: Draft = { msgs: [...c.msgs, { role: 'user', text: message }], live: '' }
-  await update($, chat, old => ({ ...old, ...draft, isBusy: true, back: 0 }))
+  await update($, chat, old => ({ ...old, ...draft, isBusy: true, back: 0, asks: old.asks + 1 }))
+  void settle(focusAsk($))
 
   let pending = ''
   let stderr = ''
@@ -135,6 +162,7 @@ async function stop($: EngineInterface) {
     isBusy: false,
     isForked: old.isForked || isInitSeen,
   }))
+  await killChild($, c.sideId)
 }
 
 async function settle<T>(p: Promise<T>): Promise<T | undefined> {
@@ -214,13 +242,14 @@ export const register: Register = (on, options) => {
     const { Box, Text, Button } = table
     const Input = e.surface !== 'mobile' && 'Input' in table ? table.Input : null
     const c = await read($, chat)
-    const width = Math.max(24, (e.props.bodyColumns ?? 80) - 1)
-    // the header, a blank row, the busy row and the input row are not messages
-    const rows = Math.max(4, (e.props.scroll?.bodyRows ?? 24) - 8)
-    const win = windowOf(c.msgs, rows, width, c.back)
-    const shown = c.msgs.slice(win.from, win.to)
-    const older = win.from
-    const newer = c.msgs.length - win.to
+    const width = Math.max(20, (e.props.bodyColumns ?? 80) - 2)
+    // The transcript is drawn as rows no wider than the pane, so the rows are counted exactly and the header, the
+    // scroll buttons, Stop and the Ask box always keep the rows roomOf leaves them, however long an answer is.
+    const room = roomOf(e.props.scroll?.bodyRows ?? 24)
+    const rows = transcriptRows(c.msgs, c.live, width)
+    const back = clampBack(c.back, rows.length, room)
+    const win = windowRows(rows.length, room, back)
+    const step = scrollStep(room)
     const from = c.mainId === null ? 'not forked yet' : `forked from ${c.mainId.slice(0, 8)}`
 
     return (
@@ -231,30 +260,27 @@ export const register: Register = (on, options) => {
           <Button key="new" label="New fork" plain dimColor onPress={() => void newFork($)} />
           <Button key="close" label="Close" plain dimColor onPress={() => void closePane($)} />
         </Box>
-        {c.msgs.length === 0 && !c.isBusy && (
+        {rows.length === 0 && !c.isBusy && (
           <Text dimColor wrap="wrap">
             {'A copy of this conversation. Ask anything below; the main conversation is not touched. /fork starts a fresh copy.'}
           </Text>
         )}
-        {older > 0 && <Button key="older" label={`↑ ${older} earlier`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: Math.min(old.msgs.length - 1, old.back + 3) }))} />}
-        {shown.map((m, i) => (
-          <Box key={`m-${win.from + i}`} flexDirection="column">
-            {m.role === 'user' || m.role === 'assistant' ? (
-              <Box flexDirection="column">
-                <Text bold color={m.role === 'user' ? 'success' : undefined}>{ROLE_PREFIX[m.role]}</Text>
-                <Text wrap="wrap">{m.text}</Text>
-              </Box>
-            ) : (
-              <Text dimColor wrap="wrap" color={m.role === 'note' ? 'warning' : undefined}>{`${ROLE_PREFIX[m.role]} ${m.text}`}</Text>
-            )}
-          </Box>
+        {win.above > 0 && (
+          <Button key="older" label={`↑ ${win.above} rows above`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: clampBack(back + step, rows.length, room) }))} />
+        )}
+        {rows.slice(win.from, win.to).map((r, i) => (
+          <Text
+            key={`r-${win.from + i}`}
+            wrap="truncate-end"
+            bold={r.kind === 'you' || r.kind === 'claude'}
+            dimColor={r.kind === 'tool' || r.kind === 'note'}
+            color={r.kind === 'you' ? 'success' : r.kind === 'note' ? 'warning' : undefined}
+          >
+            {r.text === '' ? ' ' : r.text}
+          </Text>
         ))}
-        {newer > 0 && <Button key="newer" label={`↓ ${newer} newer`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: Math.max(0, old.back - 3) }))} />}
-        {newer === 0 && c.live !== '' && (
-          <Box flexDirection="column">
-            <Text bold>Claude</Text>
-            <Text wrap="wrap">{c.live + '▌'}</Text>
-          </Box>
+        {win.below > 0 && (
+          <Button key="newer" label={`↓ ${win.below} rows below`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: clampBack(back - step, rows.length, room) }))} />
         )}
         {c.isBusy && (
           <Box flexDirection="row" columnGap={1}>
@@ -264,7 +290,7 @@ export const register: Register = (on, options) => {
         )}
         {Input ? (
           <Input
-            key={`ask-${c.msgs.length}-${c.isBusy ? 'busy' : 'idle'}`}
+            key={askKey(c.asks)}
             label="Ask › "
             placeholder={c.isBusy ? 'wait for the answer…' : 'ask in the side chat, Enter sends'}
             submitLabel="send"

@@ -1,11 +1,29 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { exitNote, nativeArgs, parseSide, reduceLine, rowsOf, sideArgs, splitLines, toolNote, windowOf } from '../hooks/side'
+import {
+  askKey,
+  clampBack,
+  exitNote,
+  killArgv,
+  nativeArgs,
+  parseSide,
+  reduceLine,
+  roomOf,
+  scrollStep,
+  sideArgs,
+  splitLines,
+  toolNote,
+  transcriptRows,
+  windowRows,
+  wrapLines,
+} from '../hooks/side'
 import type { SideConfig } from '../hooks/side'
 import type { SideMsg } from '../types'
 
 const CFG: SideConfig = { tools: 'Read,Glob Grep', isMcpOff: true, model: '' }
 const RUN = { message: 'why?', mainId: 'main-1', sideId: 'side-1', isFirst: true }
+const NL = String.fromCharCode(10)
+const SIDE_ID = '5371cd5b-f19c-4247-8462-52bea173f29c'
 
 describe('sideArgs', () => {
   test('the first turn forks the main session into the side id', () => {
@@ -36,9 +54,9 @@ describe('sideArgs', () => {
 
 describe('splitLines', () => {
   test('keeps the unfinished tail for the next piece', () => {
-    const a = splitLines('', '{"a":1}\n{"b"')
+    const a = splitLines('', '{"a":1}' + NL + '{"b"')
     expect(a).toEqual({ lines: ['{"a":1}'], rest: '{"b"' })
-    expect(splitLines(a.rest, ':2}\r\n\n')).toEqual({ lines: ['{"b":2}'], rest: '' })
+    expect(splitLines(a.rest, ':2}\r' + NL + NL)).toEqual({ lines: ['{"b":2}'], rest: '' })
   })
 })
 
@@ -79,7 +97,7 @@ describe('small helpers', () => {
 
   test('exitNote is silent on success and says why otherwise', () => {
     expect(exitNote(0, '')).toBeNull()
-    expect(exitNote(1, 'a\nb\nboom')).toContain('exit 1')
+    expect(exitNote(1, 'a' + NL + 'b' + NL + 'boom')).toContain('exit 1')
     expect(exitNote(null, '')).toContain('killed')
   })
 
@@ -99,22 +117,120 @@ describe('small helpers', () => {
   })
 })
 
-describe('windowOf', () => {
-  const msgs: SideMsg[] = Array.from({ length: 10 }, (_, i) => ({ role: 'user', text: `message ${i}` }))
-
-  test('rowsOf counts the header and wrapped lines', () => {
-    expect(rowsOf({ role: 'user', text: 'a' }, 40)).toBe(2)
-    expect(rowsOf({ role: 'assistant', text: 'x'.repeat(100) }, 40)).toBe(1 + 3)
-    expect(rowsOf({ role: 'tool', text: 'Read a' }, 40)).toBe(1)
+describe('wrapLines', () => {
+  test('wraps on words, keeps blank lines, and never exceeds the width', () => {
+    const rows = wrapLines('the quick brown fox' + NL + NL + 'jumps over', 10)
+    expect(rows).toEqual(['the quick', 'brown fox', '', 'jumps over'])
+    for (const text of ['x'.repeat(95), 'aa bb cc dd ee ff gg hh ii jj kk ll mm nn oo pp qq rr ss tt']) {
+      for (const r of wrapLines(text, 12)) expect(r.length).toBeLessThanOrEqual(12)
+    }
   })
 
-  test('shows the newest messages that fit, and scrolls back', () => {
-    expect(windowOf(msgs, 6, 40, 0)).toEqual({ from: 7, to: 10 })
-    expect(windowOf(msgs, 6, 40, 3)).toEqual({ from: 4, to: 7 })
-    expect(windowOf([], 6, 40, 0)).toEqual({ from: 0, to: 0 })
+  test('a word longer than a row is split across rows, and nothing is lost', () => {
+    const rows = wrapLines('x'.repeat(25), 10)
+    expect(rows).toEqual(['x'.repeat(10), 'x'.repeat(10), 'x'.repeat(5)])
+  })
+})
+
+describe('transcriptRows', () => {
+  const msgs: SideMsg[] = [
+    { role: 'user', text: 'hello' },
+    { role: 'tool', text: 'Read a.ts' },
+    { role: 'assistant', text: 'one two three four five six' },
+    { role: 'note', text: 'Stopped.' },
+  ]
+
+  test('headers, wrapped bodies, tool and note lines, the live answer last', () => {
+    const rows = transcriptRows(msgs, 'typing', 12)
+    expect(rows.map(r => `${r.kind}:${r.text}`)).toEqual([
+      'you:You',
+      'body:hello',
+      'tool:· Read a.ts',
+      'claude:Claude',
+      'body:one two',
+      'body:three four',
+      'body:five six',
+      'note:! Stopped.',
+      'claude:Claude',
+      'body:typing▌',
+    ])
   })
 
-  test('a message taller than the room still shows', () => {
-    expect(windowOf([{ role: 'assistant', text: 'x'.repeat(2000) }], 5, 40, 0)).toEqual({ from: 0, to: 1 })
+  test('every row fits the width, however long the text', () => {
+    const long: SideMsg[] = [{ role: 'assistant', text: ('lighthouse '.repeat(400) + NL).repeat(5) }]
+    for (const r of transcriptRows(long, 'y'.repeat(300), 40)) expect(r.text.length).toBeLessThanOrEqual(40)
+  })
+})
+
+describe('windowRows', () => {
+  test('shows the newest rows that fit; the rest is above', () => {
+    expect(windowRows(100, 10, 0)).toEqual({ from: 90, to: 100, above: 90, below: 0 })
+    expect(windowRows(5, 10, 0)).toEqual({ from: 0, to: 5, above: 0, below: 0 })
+    expect(windowRows(0, 10, 0)).toEqual({ from: 0, to: 0, above: 0, below: 0 })
+  })
+
+  test('scrolling back moves the window row by row and stops at both ends', () => {
+    expect(windowRows(100, 10, 7)).toEqual({ from: 83, to: 93, above: 83, below: 7 })
+    expect(windowRows(100, 10, 5000)).toEqual({ from: 0, to: 10, above: 0, below: 90 })
+    expect(clampBack(-4, 100, 10)).toBe(0)
+    expect(clampBack(95, 100, 10)).toBe(90)
+    expect(clampBack(3, 8, 10)).toBe(0)
+  })
+
+  test('stepping with the button reaches the top and returns to the bottom in whole steps, smoothly', () => {
+    const total = 100
+    const room = roomOf(24)
+    const step = scrollStep(room)
+    expect(room).toBe(17)
+    expect(step).toBe(8)
+    let back = 0
+    const seen: number[] = []
+    while (back < total - room) {
+      back = clampBack(back + step, total, room)
+      seen.push(windowRows(total, room, back).to)
+    }
+    // each press moves the view by `step` rows (the last one by what is left); no jump over a whole message
+    expect(seen.slice(0, 3)).toEqual([92, 84, 76])
+    expect(windowRows(total, room, back).from).toBe(0)
+    for (let i = 0; i < 20; i++) back = clampBack(back - step, total, room)
+    expect(back).toBe(0)
+  })
+
+  test('the room never goes below 3 rows and the step never below 3', () => {
+    expect(roomOf(2)).toBe(3)
+    expect(scrollStep(3)).toBe(3)
+  })
+
+  test('the transcript window plus the chrome never exceeds the pane', () => {
+    const msgs: SideMsg[] = [{ role: 'assistant', text: ('lighthouse '.repeat(200) + NL).repeat(4) }]
+    for (const bodyRows of [10, 18, 24, 40]) {
+      const rows = transcriptRows(msgs, 'streaming '.repeat(60), 50)
+      const w = windowRows(rows.length, roomOf(bodyRows), 0)
+      expect(w.to - w.from).toBeLessThanOrEqual(bodyRows - 4)
+    }
+  })
+})
+
+describe('killArgv', () => {
+  test('Windows: finds the child by its session id, never kills the powershell that looks', () => {
+    const a = killArgv(SIDE_ID, true) ?? []
+    expect(a.slice(0, 3)).toEqual(['powershell', '-NoProfile', '-NonInteractive'])
+    const script = a.at(-1) ?? ''
+    expect(script).toContain(`'*${SIDE_ID}*'`)
+    expect(script).toContain('$_.ProcessId -ne $PID')
+    expect(script).toContain('Stop-Process')
+  })
+
+  test('elsewhere: pkill -f the id', () => {
+    expect(killArgv(SIDE_ID, false)).toEqual(['pkill', '-f', SIDE_ID])
+  })
+
+  test('an id that is not a uuid is refused, so nothing odd reaches a shell', () => {
+    expect(killArgv("x' ; calc ; '", true)).toBeNull()
+    expect(killArgv('', false)).toBeNull()
+  })
+
+  test('the Ask box key changes with each send', () => {
+    expect(askKey(0)).not.toBe(askKey(1))
   })
 })

@@ -1,0 +1,4 @@
+Real child: claude -p "Write a 1500 word essay about lighthouses." --session-id fe28e3f0-... --strict-mcp-config --output-format stream-json --verbose --include-partial-messages
+deltas before kill: 22; procs matching the id before: 1
+kill (same PowerShell command as killArgv builds): exit 0
+procs after: 0; deltas right after=279, 3 s later=279 (output stopped); child exit=127 (killed)
