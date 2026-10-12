@@ -1,3 +1,9 @@
 node_modules/
 .claude-plugin/types/
 **/.claude-plugin/types/
+
+# harness-loop
+__pycache__/
+runs/**/VERIFY-FAIL.md
+runs/**/STUCK.md
+runs/**/RUN-LEDGER.json
