@@ -1,0 +1,10 @@
+2026-10-12T18:54:15.510Z [DEBUG] Read hooks.json for plugin bws-sidechat (enabled=true): C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-sidechat\0.1.4\hooks\hooks.json
+2026-10-12T18:54:15.510Z [DEBUG] Read hooks.json for plugin bws-enhance (enabled=true): C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-enhance\0.2.1\hooks\hooks.json
+2026-10-12T18:54:15.535Z [DEBUG] Read hooks.json for plugin bws-enhance (enabled=true): C:\Projects\bws.mods.claude-code\bws-enhance\hooks\hooks.json
+2026-10-12T18:54:16.559Z [DEBUG] hooks module bws-enhance@inline loaded (worker, environment 5, tier user); events: session.start,command.run,prompt.submit,ui.close,ui.render
+2026-10-12T18:54:16.579Z [DEBUG] hooks module bws-sidechat@bws-mods loaded (worker, environment 8, tier user); events: session.start,command.run,ui.render
+2026-10-12T18:54:17.250Z [DEBUG] $.command.register (bws-enhance): /enhance listed
+2026-10-12T18:54:17.480Z [DEBUG] $.command.register (bws-sidechat): /side listed
+2026-10-12T18:54:21.018Z [DEBUG] Read hooks.json for plugin bws-enhance (enabled=true): C:\Projects\bws.mods.claude-code\bws-enhance\hooks\hooks.json
+2026-10-12T18:54:21.020Z [DEBUG] Read hooks.json for plugin bws-sidechat (enabled=true): C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-sidechat\0.1.4\hooks\hooks.json
+2026-10-12T18:54:21.020Z [DEBUG] Read hooks.json for plugin bws-enhance (enabled=true): C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-enhance\0.2.1\hooks\hooks.json

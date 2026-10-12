@@ -103,3 +103,9 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - Checks: `claude plugin validate ./bws-sidechat` pass; tsc 5.8.3 (`node .../typescript@5.8.3/.../bin/tsc -p bws-sidechat`) pass; `cd bws-sidechat && claude plugin test` 58/58.
 - Follow-up (not fixed, out of scope): the drive-screen click helper `pclick.py` crashed on a cp1252 decode of `screenctl.py` output (a byte 0x90 in a window title glyph); pass `encoding='utf-8', errors='replace'` to its `subprocess.run`.
 - Not seen live. Not published: marketplace and installed copy are bws-sidechat 0.1.2; bws-enhance 0.2.1 also unpublished.
+
+## Published and installed bws-enhance 0.2.1 + bws-sidechat 0.1.4 (2026-10-12)
+- Scratch worktree of `publish` (`1c3470d`), `git restore --source=3be2ddc --staged --worktree -- bws-sidechat bws-enhance`; tree and file list match main (`receipts/tree-match-0.2.1-0.1.4.txt`). Scan (`scan.py`) of 75 added lines, 67 folder names: 0 folder hits, 0 identifier hits (`receipts/scan-enhance0.2.1-sidechat0.1.4.txt`).
+- Publish tree: validate for both mods and the marketplace; bws-enhance 18/18, bws-sidechat 58/58; tsc 5.8.3 clean for both. Commit `129e1fc`; `git push mods`: `1c3470d..129e1fc publish -> main`; `mods/main` = `129e1fc`. Worktree removed.
+- `claude plugin marketplace update bws-mods`, `claude plugin update bws-enhance@bws-mods` (0.2.0 -> 0.2.1), `claude plugin update bws-sidechat@bws-mods` (0.1.2 -> 0.1.4): all exit 0, user scope.
+- Fresh `claude -p`: bws-sidechat@bws-mods loads from cache/.../0.1.4 and registers `/side`. bws-enhance loads as `bws-enhance@inline` from the local source folder (CLAUDE_CODE_PLUGIN_DIRS shadows the installed 0.2.1, same version); the installed copy 0.2.1 is read but shadowed (`receipts/fresh-session-enhance0.2.1-sidechat0.1.4.txt`).

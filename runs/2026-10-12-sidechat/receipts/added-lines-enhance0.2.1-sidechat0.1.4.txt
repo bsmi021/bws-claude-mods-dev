@@ -1,0 +1,75 @@
++  "version": "0.2.1",
++The footer holds one tree, and the hook shares it: another mod's footer (bws-sidechat's `◨ side` button, say) is drawn beside `✦ enhance` whichever mod comes first (0.2.1; before that, bws-enhance drew its own and hid every footer below it).
++Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes. Automated: `claude plugin test`, 18 tests (pane and footer
++// A call that may be refused or have nothing beneath it: its answer, or undefined.
++async function settle<T>(p: Promise<T>): Promise<T | undefined> {
++  try {
++    return await p
++  } catch {
++    return undefined
++  }
++}
++
++  // A small footer button, so the chord bound to `chordAction` presses it from the prompt. The footer holds one tree:
++  // share it. Another mod's footer (whatever next(e) draws, as bws-sidechat's `side` button) stays beside ours; with
++  // none, the engine's mode labels are drawn here, as the engine would. Drawing without next hid every footer below us.
++    const drawn = await settle(next(e))
++    const other = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
++        {other ?? (e.props.modes.length > 0 ? <Text dimColor>{e.props.modes.join(' & ')}</Text> : null)}
++  test('footer is shared: a footer drawn by another mod stays beside the enhance button, and the mode labels are not drawn twice', async ($, on) => {
++    world(on)
++    on('ui.render', () => ({ type: 'Text', props: {}, children: ['other mod footer'] }) as never)
++    const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus'] } })
++    expect(await ui.find({ type: 'Text', text: 'other mod footer' })).toBeDefined()
++    expect(await ui.find({ key: 'enhance' })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /^focus$/ })).toBeUndefined() // whoever drew last-below already carries the labels
++    await ui.unmount()
++  })
++
++  test('footer: when the engine draws its own below, the mode labels and the button are drawn here', async ($, on) => {
++    world(on)
++    on('ui.render', () => ({ type: 'engine', ref: 'footer' }) as never)
++    const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus', 'plan'] } })
++    expect(await ui.find({ type: 'Text', text: 'focus & plan' })).toBeDefined()
++    expect(await ui.find({ key: 'enhance' })).toBeDefined()
++    await ui.unmount()
++  })
++
++  "version": "0.1.4",
++(merge it into the file if you already have bindings). `ctrl+x ctrl+o` is free in Claude Code 2.1.296; any chord works. While the `/diff` pane is open the chord belongs to it. The footer is shared with other mods: bws-enhance 0.2.1 or later draws its `✦ enhance` button beside `◨ side` (older bws-enhance drew its own footer and hid it). With text in the prompt box the pane opens but the keyboard stays with you (`ctrl+x tab` or a click moves it). `chordAction` empty hides the button.
++- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns. By hand (0.1.0): `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. Automated (0.1.3: 57 tests): commands, focus requests, the row-windowed transcript, scroll steps, Stop killing the child, and the hotkey button (its action, press, and absence when off, headless or on the desktop). The Stop kill command was also run against a real long `claude -p` child. Not checked by hand: the footer button and chord in a live terminal, keyboard focus on open, scroll on a long answer, narrow terminals, the desktop app.
++// After Stop: the Stop button held the ring and is gone, and the engine has handed the keys back to the prompt, which
++// would refuse a ring move (a site that does not hold the keyboard is denied). So the keys are asked for again, as when
++// the pane opens (only over an empty box), and then the ring goes to the Ask box.
++async function refocusAsk($: EngineInterface) {
++  const pane = (await $.ui.panes()).find(p => p.id === PANE)
++  if (pane !== undefined && !pane.isFocused && (await $.prompt.read()).text.trim() === '') {
++    await $.ui.open({ id: PANE, title: TITLE, focus: true })
++  }
++  await focusAsk($)
++}
++
++  void settle(refocusAsk($)) // before the kill, which takes seconds: the Ask box has the keyboard at once
++  test('Stop takes the keyboard back for the Ask box: the Stop button held it and is gone', async ($, on) => {
++    // the engine keeps the keys with the prompt (grantsFocus false), as it does once the Stop button that held the ring is gone
++    const { seen, clock } = world(on, { hold: true, grantsFocus: false })
++    await run($, 'btw', 'think hard')
++    await clock.advance(200)
++    const asked = () => seen.opened.filter(o => o.focus === true).length
++    const before = asked()
++    const ui = await $.ui.mount(pane(20))
++    await ui.press({ key: 'stop' })
++    await ui.unmount()
++    expect(asked()).toBe(before + 1) // no clock time passed, so this is Stop's own request and not a later retry
++  })
++
++  test('beside another mod footer (bws-enhance draws one): both stay, the mode labels are drawn once', async ($, on) => {
++    world(on)
++    on('ui.render', () => ({ type: 'Text', props: {}, children: ['enhance footer'] }) as never)
++    const ui = await $.ui.mount(footer())
++    expect(await ui.find({ type: 'Text', text: 'enhance footer' })).toBeDefined()
++    expect(await ui.find({ key: 'side' })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: 'plan' })).toBeUndefined()
++    await ui.unmount()
++  })
++
