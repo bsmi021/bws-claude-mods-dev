@@ -1,0 +1,117 @@
+{
+  "name": "mods",
+  "title": "Video-derived mods",
+  "user": "Brian",
+  "unitWord": "mod",
+  "harnessPath": "tools/mods-harness",
+  "harnessDir": "runs/2026-10-12-mods-harness",
+  "unitsRunDir": "runs",
+  "readFirst": ["AGENTS.md", "docs/SPEC-VIDEO-MODS.md"],
+
+  "git": {"enabled": true, "branch": "feat/video-mods", "baseBranch": "main", "allowPush": false},
+  "preconditions": [
+    {"name": "spec is committed", "cmd": ["git", "cat-file", "-e", "HEAD:docs/SPEC-VIDEO-MODS.md"]},
+    {"name": "gate and probe scripts are committed", "cmd": ["git", "cat-file", "-e", "HEAD:tools/probe.py"]},
+    {"name": "baseline gate is green", "cmd": ["python", "tools/mods-gate.py"]}
+  ],
+  "delegation": {"widePaths": ["AGENTS.md", "README.md", "docs/*", ".claude-plugin/marketplace.json"]},
+  "gates": [["python", "tools/mods-gate.py"]],
+  "done": {"requireFiles": ["HANDOFF.md", "RUNLOG.md", "MANUAL-CHECKS.md"], "requireCleanTree": true},
+
+  "taskSource": {
+    "type": "spec-ids",
+    "specs": ["docs/SPEC-VIDEO-MODS.md"],
+    "idPattern": "(?:FR|AC)-[A-Z]+-\\d+",
+    "templates": {
+      "AC-": "Verify, saving the receipt under the run folder's receipts/: {c0} (evidence: {c1})",
+      "*": "Implement, with tests: {c0}"
+    }
+  },
+  "standardTasks": {
+    "first": [],
+    "spike": "[SPIKE] Run the spike this mod's first requirement describes. Record the questions, the probes (via tools/probe.py), the answers and the decision in DECISIONS.md in the run folder. If an assumption fails, raise a blocker.",
+    "last": [
+      "[GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.",
+      "[MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.",
+      "[HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed."
+    ]
+  },
+
+  "worker": {
+    "backend": "claude",
+    "model": null,
+    "tier": "workhorse",
+    "escalate": true,
+    "tierLadder": ["fast", "workhorse", "frontier"],
+    "tiers": {
+      "fast":      {"claude": {"model": "claude-haiku-5-5", "effort": "xhigh", "subagentModel": "claude-haiku-5-5"}},
+      "workhorse": {"claude": {"model": "claude-sonnet-5-5", "effort": "high", "subagentModel": "claude-sonnet-5-5"}},
+      "frontier":  {"claude": {"model": "claude-opus-5-5", "effort": "high", "subagentModel": "claude-sonnet-5-5"}}
+    },
+    "subagentModel": null,
+    "effort": null,
+    "maxBudgetUsdPerSession": 20,
+    "totalBudgetUsd": 250,
+    "maxTokensPerSession": 2000000,
+    "totalTokens": 40000000,
+    "sessionTimeoutMinutes": 240,
+    "maxSessionsWithoutProgress": 2,
+    "runBudgetPerTask": 4,
+    "gateRunsPerSession": 3,
+    "gateReuseHours": 12,
+    "watchdog": {"silentMinutes": {"claude": 15, "codex": 90, "command": 15}, "taskMinutes": 90, "checkSeconds": 30},
+    "env": {"MODS_HARNESS_WORKER": "1", "CLAUDE_CODE_PLUGIN_DIRS": ""},
+    "backends": {
+      "claude": {
+        "exe": "C:/Users/bsmi0/.local/bin/claude.exe",
+        "permissionMode": "auto",
+        "disallowedTools": ["Bash(git push:*)", "Bash(gh pr:*)", "Bash(gh repo:*)", "Bash(claude plugin install:*)", "Bash(claude plugin uninstall:*)", "Bash(claude plugin marketplace:*)", "Bash(claude plugin enable:*)", "Bash(claude plugin disable:*)"]
+      }
+    }
+  },
+
+  "prompt": {
+    "rules": "`AGENTS.md`, then `docs/SPEC-VIDEO-MODS.md` (its FR-ALL-* conventions apply to every mod)",
+    "taskSourceNote": "Windows and Git Bash: never put Windows backslash paths in heredocs or inline Python strings (use forward slashes, or the Edit/Write tools). The real tsc is run by the gate (`tools/mods-gate.py`); the `tsc` on PATH is a bogus package. Run a live probe ONLY through `python tools/probe.py` (it isolates your installed mods, empties CLAUDE_CODE_PLUGIN_DIRS and charges the run budget); prefix it with MSYS_NO_PATHCONV=1 or use --prompt-file when the prompt starts with a slash. A new plugin needs its own `.claude-plugin/types/` copied from a sibling (it is gitignored; the gate regenerates it) and its own mcp tool inputs declared in `types/index.d.ts`. You may change existing plugins only as FR-ALL-08 allows. Never edit anything under ~/.claude, never install, enable or publish a plugin, and never touch CLAUDE_CODE_PLUGIN_DIRS.",
+    "taskDone": [
+      "It is implemented exactly as the spec row says, with no more and no less.",
+      "It has focused tests, and `python tools/mods-gate.py --plugin <name>` passes.",
+      "Every plugin still validates, tests and type-checks: no existing test was deleted or weakened."
+    ],
+    "handoffExtra": "3. Name the plugin version(s) you bumped and the test names that prove each requirement.\n4. Commit.",
+    "gitRules": "Commit after each task, once `python tools/mods-gate.py --plugin <name>` passes. Commit on the current branch only. Never commit `.claude-plugin/types/`. **Never push and never open a PR.**"
+  },
+
+  "board": {"port": 8781, "autoServe": true},
+
+  "units": [
+    {"id": "M0", "name": "Suite kit", "slug": "kit", "ids": ["FR-KIT-01..03", "AC-KIT-01"],
+     "worker": {"tier": "workhorse"}, "tierWhy": "extracts shared code from proven mods and touches cockpit's bar; spec'd, but cockpit is loaded in every session"},
+    {"id": "M1", "name": "Cache clock", "slug": "cacheclock", "ids": ["FR-CC-01..05", "AC-CC-01"],
+     "worker": {"tier": "fast"}, "tierWhy": "small, one pure module plus a chip and a timer; escalation covers a stall"},
+    {"id": "M2", "name": "Prompt bouncer", "slug": "bouncer", "ids": ["FR-PB-01..06", "AC-PB-01"],
+     "worker": {"tier": "fast"}, "tierWhy": "an added mode on bws-enhance, reusing its pipeline; escalation covers a stall"},
+    {"id": "M3", "name": "Skill gating", "slug": "skillgate", "spike": true, "ids": ["FR-SG-01..06", "AC-SG-01"],
+     "worker": {"tier": "frontier"}, "tierWhy": "spike plus rewriting what every session's model sees; cache and fail-open risks"},
+    {"id": "M4", "name": "Memory", "slug": "memory", "ids": ["FR-MEM-01..07", "AC-MEM-01"],
+     "worker": {"tier": "workhorse"}, "tierWhy": "spec'd classify-then-fork on the kit; new plugin with file writes"},
+    {"id": "M5", "name": "Diagram pane", "slug": "diagram", "spike": true, "ids": ["FR-DG-01..06", "AC-DG-01"],
+     "worker": {"tier": "frontier"}, "tierWhy": "spike on terminal rendering limits, layout algorithm and a mermaid subset parser"},
+    {"id": "M6", "name": "DreamPath", "slug": "dreampath", "ids": ["FR-DP-01..05", "AC-DP-01"],
+     "worker": {"tier": "workhorse"}, "tierWhy": "extends bws-memory with a validated plan, backups and undo; spec'd"},
+    {"id": "M7", "name": "Decision tree", "slug": "decisiontree", "ids": ["FR-DT-01..06", "AC-DT-01"],
+     "worker": {"tier": "frontier"}, "tierWhy": "fork tree on bws-sidechat's child process; concurrency and a pane with focus rules"},
+    {"id": "M8", "name": "Secret box", "slug": "secrets", "spike": true, "ids": ["FR-SB-01..06", "AC-SB-01"],
+     "worker": {"tier": "frontier"}, "tierWhy": "security: a leak into the transcript is the failure mode; spike decides whether it is buildable"}
+  ],
+
+  "dryRun": {
+    "id": "D0", "name": "Harness dry run (synthetic)", "slug": "dryrun",
+    "folder": "runs/2026-10-12-mods-harness/dryrun-d0",
+    "tasks": [
+      "T01 [DRY] Create `hello.txt` in the run folder containing `hello from the D0 worker`.",
+      "T02 [DRY] Add a Needs item `N1 (question) Which colour should hello.txt end with, red or blue?`, set Status to NEEDS_USER and end the session. After it is answered, append the colour to hello.txt.",
+      "T03 [DRY] Write HANDOFF.md and RUNLOG.md in the run folder, then set Status: DONE."
+    ]
+  }
+}
