@@ -21,6 +21,7 @@ type World = {
   lines?: string[]
   hold?: boolean // the child says one thing, then is silent until something kills it
   grantsFocus?: boolean // false: the engine keeps the keys with the prompt
+  alwaysFocused?: boolean // the pane reports isFocused true even while the keys are on the prompt, as the real engine does
 }
 
 const line = (o: unknown) => JSON.stringify(o) + NL
@@ -61,7 +62,7 @@ function world(on: On, w: World = {}) {
     if (e.focus === true && w.grantsFocus !== false) isFocused = true
     return { value: { isPlaced: true } }
   })
-  on('ui.panes', () => ({ value: (seen.opened.length === 0 ? [] : [{ id: 'sidechat', title: 'Side chat', isShown: true, isFocused, isPlaced: true }]) as never }))
+  on('ui.panes', () => ({ value: (seen.opened.length === 0 ? [] : [{ id: 'sidechat', title: 'Side chat', isShown: true, isFocused: isFocused || w.alwaysFocused === true, isPlaced: true }]) as never }))
   on('ui.focus', ($, e) => {
     seen.focused.push(String(e.element))
     return {}
@@ -318,17 +319,19 @@ describe('Stop', () => {
     await ui.unmount()
   })
 
-  test('Stop takes the keyboard back for the Ask box: the Stop button held it and is gone', async ($, on) => {
-    // the engine keeps the keys with the prompt (grantsFocus false), as it does once the Stop button that held the ring is gone
-    const { seen, clock } = world(on, { hold: true, grantsFocus: false })
+  test('Stop takes the keyboard back for the Ask box even though the pane still reports focused, and asks again as it settles', async ($, on) => {
+    // the real engine keeps saying isFocused while the keys are on the prompt (the Stop button that held them is gone)
+    const { seen, clock } = world(on, { hold: true, grantsFocus: false, alwaysFocused: true })
     await run($, 'btw', 'think hard')
     await clock.advance(200)
     const asked = () => seen.opened.filter(o => o.focus === true).length
-    const before = asked()
+    expect(asked()).toBe(0) // the pane said it was focused, so the open path asked for nothing
     const ui = await $.ui.mount(pane(20))
     await ui.press({ key: 'stop' })
     await ui.unmount()
-    expect(asked()).toBe(before + 1) // no clock time passed, so this is Stop's own request and not a later retry
+    expect(asked()).toBe(1) // Stop's own request, with no clock time passed
+    await clock.advance(1000)
+    expect(asked()).toBe(4) // and again at 10, 250 and 800 ms
   })
 
   test('after Stop the next message resumes the same fork (it exists once the child said hello)', async ($, on) => {
