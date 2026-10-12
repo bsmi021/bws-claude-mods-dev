@@ -55,7 +55,8 @@ describe('/btw', () => {
     const r = await run($, 'btw', 'what mod is this?')
     expect(r.text ?? '').toBe('')
     await clock.advance(100)
-    expect(seen.opened).toEqual([{ id: 'sidechat', focus: true }])
+    // opened inside the command (counts as asked, so it is placed at any width), then focus asked for once the box is clear
+    expect(seen.opened).toEqual([{ id: 'sidechat', focus: undefined }, { id: 'sidechat', focus: true }])
     expect(seen.spawns).toHaveLength(1)
     const argv = (seen.spawns[0]?.argv ?? []).join(' ')
     expect(argv).toContain('claude -p what mod is this? --resume main-session-id --fork-session --session-id ')
@@ -85,7 +86,7 @@ describe('/btw', () => {
     const { seen, clock } = world(on)
     await run($, 'btw', '')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(1)
+    expect(seen.opened).toHaveLength(2)
     expect(seen.spawns).toHaveLength(0)
   })
 
@@ -114,7 +115,7 @@ describe('/fork and /side', () => {
     const { seen, clock } = world(on)
     await run($, 'fork')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(1)
+    expect(seen.opened).toHaveLength(2)
     expect(seen.spawns).toHaveLength(0)
     const ui = await $.ui.mount(PANE)
     expect(await ui.find({ type: 'Text', text: /forked from main-ses/ })).toBeDefined()
@@ -125,7 +126,7 @@ describe('/fork and /side', () => {
     const { seen, clock } = world(on)
     await run($, 'branch')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(1)
+    expect(seen.opened).toHaveLength(2)
   })
 
   test('/fork native hands the command back to the built-in with the rest of the arguments', async ($, on) => {

@@ -17,16 +17,19 @@ let runNo = 0
 let isStopped = false
 let isInitSeen = false // the running child has printed its init line, so its session file exists
 
-// The pane opens after the command has returned, when the composer is clear (focus is granted only then).
+// Opened inside the command's own dispatch, so the engine counts it as asked and places it at any width (a deferred
+// open counts as unasked and waits below 144 columns). Focus is granted only over an empty composer, so it is asked
+// for again once the command has returned and the box is clear.
 async function openPane($: EngineInterface) {
   await update($, chat, c => ({ ...c, isClosedByPerson: false }))
-  const isEmpty = (await $.prompt.read()).text.trim() === ''
-  const r = await $.ui.open(isEmpty ? { id: PANE, title: TITLE, focus: true } : { id: PANE, title: TITLE })
-  if (!r.isPlaced) $.ui.toast(`Side chat not shown (${r.reason}). Widen the terminal, or use /side again.`)
+  const r = await $.ui.open({ id: PANE, title: TITLE })
+  if (!r.isPlaced) $.ui.toast(`Side chat not shown (${r.reason}).`)
+  $.clock.after(10, () => void focusPane($).catch(() => undefined))
 }
 
-function openSoon($: EngineInterface) {
-  $.clock.after(10, () => void openPane($).catch(err => $.ui.toast(`Side chat: could not open (${String(err)})`)))
+async function focusPane($: EngineInterface) {
+  if ((await $.prompt.read()).text.trim() !== '') return
+  await $.ui.open({ id: PANE, title: TITLE, focus: true })
 }
 
 // Throws away the current side chat (its child is killed) and forks the conversation as it is now, on the first message.
@@ -172,11 +175,11 @@ export const register: Register = (on, options) => {
     }
     if (cmd.kind === 'new') {
       await newFork($)
-      openSoon($)
+      await openPane($)
       if (cmd.message !== '') $.clock.after(60, () => void send($, cmd.message, cfg))
       return {}
     }
-    openSoon($)
+    await openPane($)
     if (cmd.kind === 'send') $.clock.after(60, () => void send($, cmd.message, cfg))
     return {}
   })
@@ -188,7 +191,7 @@ export const register: Register = (on, options) => {
       const rest = nativeArgs(e.args)
       if (rest !== null) return next({ ...e, args: rest })
       await newFork($)
-      openSoon($)
+      await openPane($)
       const message = e.args.trim()
       if (message !== '') $.clock.after(60, () => void send($, message, cfg))
       return {}
@@ -201,7 +204,7 @@ export const register: Register = (on, options) => {
     const question = e.args.trim()
     const c = await read($, chat)
     if (c.sideId === null) await newFork($)
-    openSoon($)
+    await openPane($)
     if (question !== '') $.clock.after(60, () => void send($, question, cfg))
     return {}
   })

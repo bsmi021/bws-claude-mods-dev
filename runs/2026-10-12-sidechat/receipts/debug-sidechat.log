@@ -1,0 +1,57 @@
+2026-10-12T16:09:33.210Z [DEBUG] --plugin-dir C:\Projects\bws.mods.claude-code\bws-sidechat is one plugin: .claude-plugin at its top marks it
+2026-10-12T16:09:33.292Z [DEBUG] Read hooks.json for plugin bws-sidechat (enabled=true): C:\Projects\bws.mods.claude-code\bws-sidechat\hooks\hooks.json
+2026-10-12T16:09:33.301Z [DEBUG] Loaded inline plugin from path: bws-sidechat
+2026-10-12T16:09:33.336Z [DEBUG] Checking plugin bws-sidechat: skillsPath=none, skillsPaths=0 paths
+2026-10-12T16:09:33.341Z [DEBUG] plugin bws-sidechat: no pluginConfigs["bws-sidechat" or "bws-sidechat@inline"].options in user, --settings or managed settings (project settings are not read); every option is its default
+2026-10-12T16:09:33.659Z [DEBUG] hooks module bws-sidechat@inline loaded (worker, environment 1, tier user); events: session.start,command.run,ui.render
+2026-10-12T16:09:33.705Z [DEBUG] engine.create: no plugin-provided interfaces; $ built for bws-sidechat,probe,bws-cockpit,bws-shell-lint,bws-notify,bws-design-picker,bws-enhance,bws-board,next-steps,cc-plugin-agents-md,cc-plugin-you-should-know
+2026-10-12T16:09:33.706Z [DEBUG] plugin.register: bws-sidechat (user, bws-sidechat@inline), judged by core alone: admitted
+2026-10-12T16:09:33.712Z [DEBUG] plugin-dir watch: watching bws-sidechat, probe, bws-cockpit, bws-shell-lint, bws-notify, bws-design-picker, bws-enhance, bws-board; folders of plugins none
+2026-10-12T16:09:33.852Z [DEBUG] type root of bws-sidechat at C:\Projects\bws.mods.claude-code\bws-sidechat\.claude-plugin\types: entries claude-code, claude-code-tools, claude-code-mcp; wrote nothing
+2026-10-12T16:09:34.593Z [DEBUG] plugin-dir watch: watching bws-sidechat, probe, bws-cockpit, bws-shell-lint, bws-notify, bws-design-picker, bws-enhance, bws-board; folders of plugins none
+2026-10-12T16:09:34.777Z [DEBUG] $.command.register (bws-sidechat): /side listed
+2026-10-12T16:09:36.647Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-enhance@inline, bws-board@inline session.start settled in 2007.5ms (worker hop, next() included)
+2026-10-12T16:10:09.039Z [DEBUG] bws-sidechat (user) answered command.run without next() in 16.2ms; nothing beneath it ran for this dispatch
+2026-10-12T16:10:09.039Z [DEBUG] hooks module bws-sidechat@inline, probe@inline, bws-cockpit@inline, bws-enhance@inline, bws-board@inline command.run settled in 17.3ms (worker hop, next() included)
+2026-10-12T16:10:09.061Z [DEBUG] ui.open bws-sidechat sidechat (unasked, 120 columns): waits unplaced (unasked below 144 columns (120 now): placed when the person opens it, or when the terminal is widened to 144 columns)
+2026-10-12T16:10:09.062Z [DEBUG] $.ui.toast (bws-sidechat): Side chat not shown (unasked below 144 columns (120 now): placed when the person opens it, or when the terminal is widened to 144 columns). Widen the terminal, or use /side again.
+2026-10-12T16:10:09.177Z [DEBUG] $.process.spawn (bws-sidechat): claude with 18 args in C:\Projects\bws.mods.claude-code (pid 109312)
+2026-10-12T16:10:14.239Z [DEBUG] $.process.spawn (bws-sidechat): claude ended (0) in 5138ms, 13 chunks
+2026-10-12T16:10:50.846Z [DEBUG] plugin bws-sidechat: no pluginConfigs["bws-sidechat" or "bws-sidechat@inline"].options in user, --settings or managed settings (project settings are not read); every option is its default
+2026-10-12T16:10:50.847Z [DEBUG] plugin.register: bws-sidechat (user, bws-sidechat@inline), judged by core alone: admitted
+2026-10-12T16:10:50.852Z [DEBUG] engine.create: no plugin-provided interfaces; $ built for bws-sidechat
+2026-10-12T16:10:50.856Z [DEBUG] session.start: raised for bws-sidechat (loaded later)
+2026-10-12T16:10:50.856Z [DEBUG] hooks module bws-sidechat@inline reloaded in 9.4ms; events: session.start,command.run,ui.render
+2026-10-12T16:10:50.880Z [DEBUG] $.command.register (bws-sidechat): /side listed
+2026-10-12T16:10:50.887Z [DEBUG] hooks module bws-sidechat@inline session.start settled in 29.1ms (worker hop, next() included)
+2026-10-12T16:10:50.907Z [DEBUG] type root of bws-sidechat at C:\Projects\bws.mods.claude-code\bws-sidechat\.claude-plugin\types: entries claude-code, claude-code-tools, claude-code-mcp; wrote .claude-plugin/types/claude-code-mcp/index.d.ts
+2026-10-12T16:10:50.907Z [DEBUG] [bws-sidechat] $.ui.log: reloaded (3 hooks: session.start, command.run, ui.render)
+2026-10-12T16:11:02.457Z [DEBUG] ui.open bws-sidechat sidechat (asked, 120 columns): placed
+2026-10-12T16:11:02.458Z [DEBUG] bws-sidechat (user) answered command.run without next() in 12.0ms; nothing beneath it ran for this dispatch
+2026-10-12T16:11:02.458Z [DEBUG] hooks module bws-sidechat@inline, probe@inline, bws-cockpit@inline, bws-enhance@inline, bws-board@inline command.run settled in 12.5ms (worker hop, next() included)
+2026-10-12T16:11:02.484Z [DEBUG] bws-sidechat (user) answered ui.render without next() in 5.8ms; nothing beneath it ran for this dispatch
+2026-10-12T16:11:02.485Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 16.9ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:02.486Z [DEBUG] ui.open bws-sidechat sidechat (unasked, 120 columns): placed
+2026-10-12T16:11:02.492Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 2.3ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:02.530Z [DEBUG] $.process.spawn (bws-sidechat): claude with 15 args in C:\Projects\bws.mods.claude-code (pid 107884)
+2026-10-12T16:11:02.531Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 9.4ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:04.292Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 0.9ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:04.495Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 0.9ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:05.285Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 0.8ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:05.319Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 1.1ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:07.049Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 1.0ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:07.083Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 1.1ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:07.119Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 1.3ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:07.672Z [DEBUG] $.process.spawn (bws-sidechat): claude ended (0) in 5151ms, 15 chunks
+2026-10-12T16:11:07.677Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 1.0ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:12.475Z [DEBUG] bws-sidechat (user) answered ui.render without next() 10 more times in the last 10s (the last in 0.6ms)
+2026-10-12T16:11:24.020Z [DEBUG] bws-sidechat (user) answered ui.render without next() in 6.8ms; nothing beneath it ran for this dispatch
+2026-10-12T16:11:24.020Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 7.2ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:24.930Z [DEBUG] ui.open bws-sidechat sidechat (asked, 120 columns): placed
+2026-10-12T16:11:24.930Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 0.8ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:24.930Z [DEBUG] bws-sidechat (user) answered command.run without next() in 17.3ms; nothing beneath it ran for this dispatch
+2026-10-12T16:11:24.930Z [DEBUG] hooks module bws-sidechat@inline, probe@inline, bws-cockpit@inline, bws-enhance@inline, bws-board@inline command.run settled in 17.8ms (worker hop, next() included)
+2026-10-12T16:11:24.950Z [DEBUG] ui.open bws-sidechat sidechat (unasked, 120 columns): placed
+2026-10-12T16:11:24.957Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 4.3ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:24.965Z [DEBUG] hooks module bws-sidechat@inline, bws-cockpit@inline, bws-design-picker@inline, bws-enhance@inline, next-steps@claude-community ui.render settled in 0.9ms (worker hop, next() included) key=sidechat
+2026-10-12T16:11:34.021Z [DEBUG] bws-sidechat (user) answered ui.render without next() 3 more times in the last 10s (the last in 0.5ms)
