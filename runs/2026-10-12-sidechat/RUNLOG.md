@@ -35,3 +35,12 @@ Brief: side chat in the right pane; /fork and /btw open it, forked from the curr
 ## Installed (2026-10-12)
 - `claude plugin marketplace update bws-mods` (re-cloned), `claude plugin install bws-sidechat@bws-mods`: both exit 0, user scope, 0.1.0 enabled (`receipts/install.txt`). Six userConfig options unset: defaults apply.
 - Fresh `claude -p` with no `--plugin-dir`: `bws-sidechat@bws-mods` loaded from `~/.claude/plugins/cache/bws-mods/bws-sidechat/0.1.0`, events session.start, command.run, ui.render; `/side` registered (`receipts/fresh-session.txt`). Headless draws no pane; the pane itself was checked earlier via `--plugin-dir`.
+
+## Interactive pass 2: installed copy, Ask box, Stop, scroll (2026-10-12, drive-screen)
+Receipts 10-16 png, debug3-sidechat.txt. Installed copy (no --plugin-dir) loads; `/btw` answered in the pane (5.2 s, exit 0).
+Found:
+1. Pane gets no keyboard focus after `/btw`/`/fork` (cursor stays in the main prompt). `ctrl+x` then `tab` did nothing. Clicking the Ask row focuses it; typing, Enter and streaming then work (live text shows).
+2. Tall messages overflow the pane: `windowOf` always keeps one message even when it is taller than the room, and live text is not in the row budget, so the busy row / Stop, the "Stopped." note and the Ask box are pushed below the pane's bottom edge. Ask box invisible after a long answer.
+3. Stop: could not confirm. The child ended `(0)` in 14.9 s with 231 chunks, i.e. it ran to completion; either the click missed or `stream.return()` did not kill it. The pane showed no "Stopped." note (clipped).
+4. Scroll: `↑ n earlier` / `↓ n newer` both work, but step 3 messages and jump the view (back to the first exchange / to the long essay).
+Stray text "rite a 400 word essay..." was left in the test window's main prompt by a failed first attempt (ctrl+a + delete removed one character).

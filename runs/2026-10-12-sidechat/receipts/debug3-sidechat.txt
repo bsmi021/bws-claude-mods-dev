@@ -1,0 +1,7 @@
+2026-10-12T16:17:38.581Z [DEBUG] ui.open bws-sidechat sidechat (asked, 120 columns): placed
+2026-10-12T16:17:38.583Z [DEBUG] bws-sidechat (user) answered command.run without next() in 19.7ms; nothing beneath it ran for this dispatch
+2026-10-12T16:17:38.610Z [DEBUG] ui.open bws-sidechat sidechat (unasked, 120 columns): placed
+2026-10-12T16:17:38.725Z [DEBUG] $.process.spawn (bws-sidechat): claude with 18 args in C:\Projects\bws.mods.claude-code (pid 72600)
+2026-10-12T16:17:43.887Z [DEBUG] $.process.spawn (bws-sidechat): claude ended (0) in 5240ms, 13 chunks
+2026-10-12T16:18:35.552Z [DEBUG] $.process.spawn (bws-sidechat): claude with 15 args in C:\Projects\bws.mods.claude-code (pid 112952)
+2026-10-12T16:18:50.469Z [DEBUG] $.process.spawn (bws-sidechat): claude ended (0) in 14926ms, 231 chunks
