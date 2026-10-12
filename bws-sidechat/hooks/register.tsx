@@ -173,6 +173,12 @@ async function settle<T>(p: Promise<T>): Promise<T | undefined> {
   }
 }
 
+// The hotkey and the footer button: open the side chat (continuing the one there is), or take the keys back to it.
+async function summon($: EngineInterface) {
+  if (!(await isDrawn($))) return
+  await openPane($)
+}
+
 // Headless runs draw nothing: leave the built-in commands to Claude Code (and keep a side-of-side from starting).
 async function isDrawn($: EngineInterface) {
   return (await $.session.surfaces()).length > 0
@@ -182,6 +188,7 @@ export const register: Register = (on, options) => {
   const cfg = configOf(options as Record<string, unknown>)
   const takesFork = options.takeOverFork !== false
   const takesBtw = options.takeOverBtw !== false
+  const action = String(options.chordAction ?? '').trim()
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -235,6 +242,24 @@ export const register: Register = (on, options) => {
     await openPane($)
     if (question !== '') $.clock.after(60, () => void send($, question, cfg))
     return {}
+  })
+
+  // The hotkey. A mod cannot bind a chord itself, but a Button can borrow one of the engine's keybinding actions: the
+  // footer carries a small "side" button, and the chord the person binds to `chordAction` in ~/.claude/keybindings.json
+  // (Global) presses it from the prompt. It opens the pane, or takes the keys back to it, with no command typed.
+  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    if (action === '' || e.surface !== 'terminal') return next(e)
+    // The footer holds one tree: share it. Another mod's footer (whatever next(e) draws) stays beside ours; with none,
+    // the engine's own mode labels are drawn here, as the engine would.
+    const drawn = await settle(next(e))
+    const { Box, Button, Text } = $.ui.resolve(e)
+    const other = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
+    return (
+      <Box flexDirection="row" gap={1}>
+        {other ?? (e.props.modes.length > 0 ? <Text dimColor>{e.props.modes.join(' & ')}</Text> : null)}
+        <Button key="side" plain dimColor label="◨ side" action={action} onPress={() => void summon($)} />
+      </Box>
+    )
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {

@@ -1,8 +1,10 @@
 {
   "name": "bws-sidechat",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Side chat in the right-hand pane: /fork (or /branch) and /btw open a copy of this conversation beside it, answered by a forked headless session so the main conversation is never touched.",
-  "author": { "name": "Brian" },
+  "author": {
+    "name": "Brian"
+  },
   "types": "./types/index.d.ts",
   "userConfig": {
     "takeOverFork": {
@@ -40,6 +42,12 @@
       "title": "claude executable",
       "description": "Path or name of the claude executable the side chat runs (not the npm .cmd shim).",
       "default": "claude"
+    },
+    "chordAction": {
+      "type": "string",
+      "title": "Chord action for 'open the side chat'",
+      "description": "An engine keybinding action the footer's side button borrows; bind a chord to it in ~/.claude/keybindings.json (Global), e.g. \"ctrl+x ctrl+o\": \"app:cycleDiffBase\". Default app:cycleDiffBase, which nothing else handles while the diff pane is closed. Empty hides the button.",
+      "default": "app:cycleDiffBase"
     }
   }
 }

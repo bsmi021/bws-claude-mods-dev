@@ -362,6 +362,100 @@ describe('Stop', () => {
   })
 })
 
+const footer = (surface: 'terminal' | 'desktop' = 'terminal', modes: string[] = ['plan']) =>
+  ({ plugin: 'bws-sidechat', component: 'SessionMode', surface, props: { modes } }) as const
+
+describe('hotkey', () => {
+  test('the footer carries a side button on the chord action, beside the engine mode labels', async ($, on) => {
+    world(on)
+    const ui = await $.ui.mount(footer())
+    const button = await ui.find({ key: 'side' })
+    expect(button).toBeDefined()
+    expect(button?.props?.action).toBe('app:cycleDiffBase')
+    expect(String(button?.props?.label)).toContain('side')
+    expect(await ui.find({ type: 'Text', text: 'plan' })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('pressing it opens the pane with no command typed, and takes the keys', async ($, on) => {
+    const { seen, clock } = world(on)
+    const ui = await $.ui.mount(footer())
+    expect(seen.opened).toEqual([])
+    await ui.press({ key: 'side' })
+    expect(seen.opened[0]).toEqual({ id: 'sidechat', focus: undefined })
+    await clock.advance(100)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
+    expect(seen.spawns).toEqual([]) // nothing is asked of the model by opening it
+    await ui.unmount()
+  })
+
+  test('it brings back the side chat that is there, not a new one', async ($, on) => {
+    const { seen, clock } = world(on)
+    await run($, 'btw', 'first question')
+    await clock.advance(200)
+    await run($, 'side', 'close')
+    const ui = await $.ui.mount(footer())
+    await ui.press({ key: 'side' })
+    await clock.advance(100)
+    await ui.unmount()
+    const pane1 = await $.ui.mount(PANE)
+    expect(await pane1.find({ type: 'Text', text: 'first question' })).toBeDefined()
+    await pane1.unmount()
+    expect(seen.spawns).toHaveLength(1)
+  })
+
+  test('with text in the prompt the pane opens but the keys stay with the person', async ($, on) => {
+    const { seen, clock } = world(on, { box: 'half a thought' })
+    const ui = await $.ui.mount(footer())
+    await ui.press({ key: 'side' })
+    await clock.advance(1000)
+    expect(seen.opened).toEqual([{ id: 'sidechat', focus: undefined }])
+    await ui.unmount()
+  })
+
+  test('chordAction picks the engine action', { options: { chordAction: 'app:toggleDiffNoiseFilter' } }, async ($, on) => {
+    world(on)
+    const ui = await $.ui.mount(footer())
+    expect((await ui.find({ key: 'side' }))?.props?.action).toBe('app:toggleDiffNoiseFilter')
+    await ui.unmount()
+  })
+
+  test('chordAction empty: the plugin draws nothing, so the engine draws its own footer', { options: { chordAction: '' } }, async ($, on) => {
+    world(on)
+    on('ui.render', () => ({ type: 'engine' }) as never)
+    let drew = true
+    try {
+      const ui = await $.ui.mount(footer())
+      await ui.unmount()
+    } catch (err) {
+      drew = !String(err).includes('drew nothing')
+    }
+    expect(drew).toBe(false)
+  })
+
+  test('not on the terminal (desktop): no button', async ($, on) => {
+    world(on)
+    on('ui.render', () => ({ type: 'engine' }) as never)
+    let drew = true
+    try {
+      const ui = await $.ui.mount(footer('desktop'))
+      await ui.unmount()
+    } catch (err) {
+      drew = !String(err).includes('drew nothing')
+    }
+    expect(drew).toBe(false)
+  })
+
+  test('headless: pressing opens nothing', async ($, on) => {
+    const { seen, clock } = world(on, { surfaces: [] })
+    const ui = await $.ui.mount(footer())
+    await ui.press({ key: 'side' })
+    await clock.advance(100)
+    expect(seen.opened).toEqual([])
+    await ui.unmount()
+  })
+})
+
 describe('failures', () => {
   test('a child that dies shows why in the pane and leaves the fork unmade', async ($, on) => {
     const { clock } = world(on, { lines: [], exit: 1 })

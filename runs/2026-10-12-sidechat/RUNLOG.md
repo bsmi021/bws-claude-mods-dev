@@ -60,3 +60,10 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - On the publish tree: validate (plugin and marketplace), 48/48 tests, tsc 5.8.3 clean. Commit `e788873`; `git push mods`: `de29b7d..e788873 publish -> main`; `mods/main` = `e788873`. Worktree removed.
 - `claude plugin marketplace update bws-mods` and `claude plugin update bws-sidechat@bws-mods`: both exit 0, 0.1.0 -> 0.1.1 (user scope). Fresh `claude -p` (no --plugin-dir) loaded `bws-sidechat@bws-mods` from cache/.../0.1.1, `/side` registered (`receipts/fresh-session-0.1.1.txt`).
 - Config note: cockpit, shell-lint, notify, design-picker, enhance and board load from local source via CLAUDE_CODE_PLUGIN_DIRS (shadowing their marketplace installs); bws-sidechat loads from the marketplace only.
+
+## 0.1.2: hotkey (2026-10-12)
+- A mod cannot bind a chord; a Button can borrow an engine keybinding action (`action=`), as bws-enhance does. Added a `◨ side` button to the footer (`ui.render` on `SessionMode`, terminal only, shares the footer with another mod's tree via `next`), option `chordAction` (default `app:cycleDiffBase`; empty hides it). Press = `openPane` (continues the side chat there is; focus asked after the command as before).
+- Bound `ctrl+x ctrl+o` -> `app:cycleDiffBase` (Global) in ~/.claude/keybindings.json on this machine: free per the binary's chord list (taken: ctrl+x b, ctrl+b, ctrl+s, ctrl+e, ctrl+k, ctrl+a, tab, x). Other computers need the same line (README).
+- 56 tests (7 new hotkey tests + 2 no-button). validate, tsc 5.8.3, plugin test pass.
+- Not checked live: the button's position next to bws-enhance's footer button (hook order decides whether another mod's tree is shared), the chord pressing it, while /diff is open the chord belongs to the diff pane.
+- Not published: marketplace and installed copy are still 0.1.1. Marketplace already lists bws-sidechat (mods/main e788873).
