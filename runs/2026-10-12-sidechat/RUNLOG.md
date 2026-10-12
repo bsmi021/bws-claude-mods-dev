@@ -53,3 +53,10 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - 48 tests (was 25): wrapLines/transcriptRows/windowRows/clampBack/killArgv unit tests; long answer keeps Input, scroll buttons step 6 rows at bodyRows 20, Stop kills a silent child, New fork and Close kill, focus retry/yield. validate passes, tsc 5.8.3 clean.
 - Not provable in a test: `$.ui.focus` (the engine answers it before a test stub); keyboard focus and scroll on a long answer need a live look.
 - Not published: marketplace and installed copies are still 0.1.0.
+
+## Published and installed 0.1.1 (2026-10-12)
+- main `93087f8` (test session id replaced with a dummy: the scan found a real throwaway fork id in side.test.ts; first scan regexes were mangled by Git Bash backslash halving, so the scan is now `runs/2026-10-12-sidechat/scan.py`, written with the Write tool).
+- Scratch worktree of `publish` (`de29b7d`), `git restore --source=93087f8 --staged --worktree -- bws-sidechat`; tree and file list match main (`receipts/tree-match-0.1.1.txt`). Scan of 496 added lines: 0 folder-name hits (67 names), 0 identifier hits except the dummy uuid (`receipts/scan-0.1.1.txt`).
+- On the publish tree: validate (plugin and marketplace), 48/48 tests, tsc 5.8.3 clean. Commit `e788873`; `git push mods`: `de29b7d..e788873 publish -> main`; `mods/main` = `e788873`. Worktree removed.
+- `claude plugin marketplace update bws-mods` and `claude plugin update bws-sidechat@bws-mods`: both exit 0, 0.1.0 -> 0.1.1 (user scope). Fresh `claude -p` (no --plugin-dir) loaded `bws-sidechat@bws-mods` from cache/.../0.1.1, `/side` registered (`receipts/fresh-session-0.1.1.txt`).
+- Config note: cockpit, shell-lint, notify, design-picker, enhance and board load from local source via CLAUDE_CODE_PLUGIN_DIRS (shadowing their marketplace installs); bws-sidechat loads from the marketplace only.

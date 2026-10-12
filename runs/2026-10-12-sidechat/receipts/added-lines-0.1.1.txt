@@ -1,0 +1,496 @@
++  "version": "0.1.1",
++The pane has New fork, Close, Stop, an Ask box, and ↑/↓ buttons that scroll the transcript half a pane at a time. It takes the keyboard when it opens (so you can type at once), and a long answer never pushes the Ask box or Stop out of view: the transcript is drawn as rows sized to the pane. Stop (and New fork or Close mid-answer) ends the child process at once, even while it is still thinking. In headless runs the built-in commands are left alone.
++- Tested on Claude Code 2.1.296, Windows 11, Windows Terminal at 120 columns. 0.1.0 by hand: `/btw`, `/fork` and `/side` opening the pane beside another pane and answering from the fork. 0.1.1: 48 automated tests, plus the Stop kill command run against a real long `claude -p` child (found by session id, killed, output stopped). Not re-checked by hand in a terminal: keyboard focus on open, the scroll buttons on a long answer, narrow terminals, the desktop app.
++import { askKey, clampBack, exitNote, killArgv, nativeArgs, parseSide, reduceLine, roomOf, scrollStep, sideArgs, splitLines, transcriptRows, windowRows } from './side'
++const EMPTY: SideChat = { mainId: null, sideId: null, msgs: [], live: '', isForked: false, isBusy: false, back: 0, asks: 0, isClosedByPerson: false }
++// open counts as unasked and waits below 144 columns).
++  focusSoon($)
++}
++
++// Keyboard focus is a request: it is granted over an empty composer, and the engine hands the keys back to the prompt
++// once the command that opened the pane has returned. So it is asked again a few times after that, each time only
++// while the box is still empty (the person who has started typing keeps the keys), then the ring goes to the Ask box.
++function focusSoon($: EngineInterface) {
++  for (const ms of [10, 250, 800]) $.clock.after(ms, () => void focusPane($).catch(() => undefined))
++  const pane = (await $.ui.panes()).find(p => p.id === PANE)
++  if (pane === undefined || pane.isFocused) return
++  await focusAsk($)
++}
++
++async function focusAsk($: EngineInterface) {
++  const c = await read($, chat)
++  await settle($.ui.focus({ requestId: PANE, key: askKey(c.asks) }))
++}
++
++// Ends the side chat's child at once. The stream ends it only when the next piece arrives, and a child that is
++// thinking sends none; the session id is in every argv of the child, so it is found by that.
++async function killChild($: EngineInterface, sideId: string | null) {
++  if (sideId === null) return
++  const argv = killArgv(sideId, (await $.env.get('OS')) === 'Windows_NT')
++  if (argv !== null) await settle($.process.run(argv, { timeoutMs: 15000 }))
++  const old = await read($, chat)
++  if (old.isBusy) await killChild($, old.sideId)
++  const old = await read($, chat)
++  if (old.isBusy) await killChild($, old.sideId)
++  await update($, chat, old => ({ ...old, ...draft, isBusy: true, back: 0, asks: old.asks + 1 }))
++  void settle(focusAsk($))
++  await killChild($, c.sideId)
++    const width = Math.max(20, (e.props.bodyColumns ?? 80) - 2)
++    // The transcript is drawn as rows no wider than the pane, so the rows are counted exactly and the header, the
++    // scroll buttons, Stop and the Ask box always keep the rows roomOf leaves them, however long an answer is.
++    const room = roomOf(e.props.scroll?.bodyRows ?? 24)
++    const rows = transcriptRows(c.msgs, c.live, width)
++    const back = clampBack(c.back, rows.length, room)
++    const win = windowRows(rows.length, room, back)
++    const step = scrollStep(room)
++        {rows.length === 0 && !c.isBusy && (
++        {win.above > 0 && (
++          <Button key="older" label={`↑ ${win.above} rows above`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: clampBack(back + step, rows.length, room) }))} />
++        )}
++        {rows.slice(win.from, win.to).map((r, i) => (
++          <Text
++            key={`r-${win.from + i}`}
++            wrap="truncate-end"
++            bold={r.kind === 'you' || r.kind === 'claude'}
++            dimColor={r.kind === 'tool' || r.kind === 'note'}
++            color={r.kind === 'you' ? 'success' : r.kind === 'note' ? 'warning' : undefined}
++          >
++            {r.text === '' ? ' ' : r.text}
++          </Text>
++        {win.below > 0 && (
++          <Button key="newer" label={`↓ ${win.below} rows below`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: clampBack(back - step, rows.length, room) }))} />
++            key={askKey(c.asks)}
++// Word-wraps `text` to `width` cells, one string per row. Blank lines stay; a word longer than a row is split.
++export function wrapLines(text: string, width: number): string[] {
++  const w = Math.max(8, Math.floor(width))
++  const out: string[] = []
++  for (const para of text.replace(/\r/g, '').split('\n')) {
++    if (para.trim() === '') {
++      out.push('')
++      continue
++    }
++    let row = ''
++    for (const word of para.split(/ +/)) {
++      if (word === '') continue
++      let rest = word
++      while (rest.length > w) {
++        if (row !== '') {
++          out.push(row)
++          row = ''
++        }
++        out.push(rest.slice(0, w))
++        rest = rest.slice(w)
++      }
++      if (row === '') row = rest
++      else if (row.length + 1 + rest.length <= w) row += ` ${rest}`
++      else {
++        out.push(row)
++        row = rest
++      }
++    }
++    if (row !== '') out.push(row)
++  }
++  return out
++export type Row = { text: string; kind: 'you' | 'claude' | 'body' | 'tool' | 'note' }
++
++// The whole transcript as rows the pane can window, the streaming answer last. Every row is at most `width` cells,
++// so the pane never wraps one itself and the row count is exact.
++export function transcriptRows(msgs: readonly SideMsg[], live: string, width: number): Row[] {
++  const rows: Row[] = []
++  for (const m of msgs) {
++    if (m.role === 'user' || m.role === 'assistant') {
++      rows.push({ text: ROLE_PREFIX[m.role], kind: m.role === 'user' ? 'you' : 'claude' })
++      for (const t of wrapLines(m.text, width)) rows.push({ text: t, kind: 'body' })
++    } else {
++      for (const t of wrapLines(`${ROLE_PREFIX[m.role]} ${m.text}`, width)) rows.push({ text: t, kind: m.role })
++    }
++  if (live !== '') {
++    rows.push({ text: 'Claude', kind: 'claude' })
++    for (const t of wrapLines(`${live}▌`, width)) rows.push({ text: t, kind: 'body' })
++  }
++  return rows
++}
++
++// Rows the pane keeps for everything that is not transcript: the header, the two scroll buttons, the busy row and the
++// Ask box (which may wrap to a second row), with one to spare.
++export const CHROME_ROWS = 7
++
++export const roomOf = (bodyRows: number) => Math.max(3, Math.floor(bodyRows) - CHROME_ROWS)
++
++// A scroll step of half the room (at least 3 rows).
++export const scrollStep = (room: number) => Math.max(3, Math.floor(room / 2))
++
++// `back` rows up from the newest, kept inside what there is to scroll.
++export const clampBack = (back: number, total: number, room: number) => Math.min(Math.max(0, back), Math.max(0, total - room))
++
++// The rows [from, to) shown, and how many hide above and below.
++export function windowRows(total: number, room: number, back: number): { from: number; to: number; above: number; below: number } {
++  const to = total - clampBack(back, total, room)
++  const from = Math.max(0, to - room)
++  return { from, to, above: from, below: total - to }
++}
++
++// The Ask box's key: it changes with each send, which clears the box.
++export const askKey = (asks: number) => `ask-${asks}`
++
++// The command line that ends the side chat's child by its session id (it is in every argv of the child, first turn or
++// later), since the stream only ends it once the next piece arrives. Null for an id that is not a uuid.
++export function killArgv(sideId: string, isWindows: boolean): string[] | null {
++  if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(sideId)) return null
++  if (!isWindows) return ['pkill', '-f', sideId]
++  const filter = `$_.CommandLine -like '*${sideId}*' -and $_.ProcessId -ne $PID`
++  return [
++    'powershell',
++    '-NoProfile',
++    '-NonInteractive',
++    '-Command',
++    `Get-CimInstance Win32_Process | Where-Object { ${filter} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
++  ]
++import {
++  askKey,
++  clampBack,
++  exitNote,
++  killArgv,
++  nativeArgs,
++  parseSide,
++  reduceLine,
++  roomOf,
++  scrollStep,
++  sideArgs,
++  splitLines,
++  toolNote,
++  transcriptRows,
++  windowRows,
++  wrapLines,
++} from '../hooks/side'
++const NL = String.fromCharCode(10)
++const SIDE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
++    const a = splitLines('', '{"a":1}' + NL + '{"b"')
++    expect(splitLines(a.rest, ':2}\r' + NL + NL)).toEqual({ lines: ['{"b":2}'], rest: '' })
++    expect(exitNote(1, 'a' + NL + 'b' + NL + 'boom')).toContain('exit 1')
++describe('wrapLines', () => {
++  test('wraps on words, keeps blank lines, and never exceeds the width', () => {
++    const rows = wrapLines('the quick brown fox' + NL + NL + 'jumps over', 10)
++    expect(rows).toEqual(['the quick', 'brown fox', '', 'jumps over'])
++    for (const text of ['x'.repeat(95), 'aa bb cc dd ee ff gg hh ii jj kk ll mm nn oo pp qq rr ss tt']) {
++      for (const r of wrapLines(text, 12)) expect(r.length).toBeLessThanOrEqual(12)
++    }
++  })
++
++  test('a word longer than a row is split across rows, and nothing is lost', () => {
++    const rows = wrapLines('x'.repeat(25), 10)
++    expect(rows).toEqual(['x'.repeat(10), 'x'.repeat(10), 'x'.repeat(5)])
++  })
++})
++
++describe('transcriptRows', () => {
++  const msgs: SideMsg[] = [
++    { role: 'user', text: 'hello' },
++    { role: 'tool', text: 'Read a.ts' },
++    { role: 'assistant', text: 'one two three four five six' },
++    { role: 'note', text: 'Stopped.' },
++  ]
++
++  test('headers, wrapped bodies, tool and note lines, the live answer last', () => {
++    const rows = transcriptRows(msgs, 'typing', 12)
++    expect(rows.map(r => `${r.kind}:${r.text}`)).toEqual([
++      'you:You',
++      'body:hello',
++      'tool:· Read a.ts',
++      'claude:Claude',
++      'body:one two',
++      'body:three four',
++      'body:five six',
++      'note:! Stopped.',
++      'claude:Claude',
++      'body:typing▌',
++    ])
++  })
++
++  test('every row fits the width, however long the text', () => {
++    const long: SideMsg[] = [{ role: 'assistant', text: ('lighthouse '.repeat(400) + NL).repeat(5) }]
++    for (const r of transcriptRows(long, 'y'.repeat(300), 40)) expect(r.text.length).toBeLessThanOrEqual(40)
++  })
++})
++
++describe('windowRows', () => {
++  test('shows the newest rows that fit; the rest is above', () => {
++    expect(windowRows(100, 10, 0)).toEqual({ from: 90, to: 100, above: 90, below: 0 })
++    expect(windowRows(5, 10, 0)).toEqual({ from: 0, to: 5, above: 0, below: 0 })
++    expect(windowRows(0, 10, 0)).toEqual({ from: 0, to: 0, above: 0, below: 0 })
++  })
++
++  test('scrolling back moves the window row by row and stops at both ends', () => {
++    expect(windowRows(100, 10, 7)).toEqual({ from: 83, to: 93, above: 83, below: 7 })
++    expect(windowRows(100, 10, 5000)).toEqual({ from: 0, to: 10, above: 0, below: 90 })
++    expect(clampBack(-4, 100, 10)).toBe(0)
++    expect(clampBack(95, 100, 10)).toBe(90)
++    expect(clampBack(3, 8, 10)).toBe(0)
++  })
++
++  test('stepping with the button reaches the top and returns to the bottom in whole steps, smoothly', () => {
++    const total = 100
++    const room = roomOf(24)
++    const step = scrollStep(room)
++    expect(room).toBe(17)
++    expect(step).toBe(8)
++    let back = 0
++    const seen: number[] = []
++    while (back < total - room) {
++      back = clampBack(back + step, total, room)
++      seen.push(windowRows(total, room, back).to)
++    }
++    // each press moves the view by `step` rows (the last one by what is left); no jump over a whole message
++    expect(seen.slice(0, 3)).toEqual([92, 84, 76])
++    expect(windowRows(total, room, back).from).toBe(0)
++    for (let i = 0; i < 20; i++) back = clampBack(back - step, total, room)
++    expect(back).toBe(0)
++  })
++
++  test('the room never goes below 3 rows and the step never below 3', () => {
++    expect(roomOf(2)).toBe(3)
++    expect(scrollStep(3)).toBe(3)
++  })
++
++  test('the transcript window plus the chrome never exceeds the pane', () => {
++    const msgs: SideMsg[] = [{ role: 'assistant', text: ('lighthouse '.repeat(200) + NL).repeat(4) }]
++    for (const bodyRows of [10, 18, 24, 40]) {
++      const rows = transcriptRows(msgs, 'streaming '.repeat(60), 50)
++      const w = windowRows(rows.length, roomOf(bodyRows), 0)
++      expect(w.to - w.from).toBeLessThanOrEqual(bodyRows - 4)
++    }
++  })
++})
++
++describe('killArgv', () => {
++  test('Windows: finds the child by its session id, never kills the powershell that looks', () => {
++    const a = killArgv(SIDE_ID, true) ?? []
++    expect(a.slice(0, 3)).toEqual(['powershell', '-NoProfile', '-NonInteractive'])
++    const script = a.at(-1) ?? ''
++    expect(script).toContain(`'*${SIDE_ID}*'`)
++    expect(script).toContain('$_.ProcessId -ne $PID')
++    expect(script).toContain('Stop-Process')
++  })
++  test('elsewhere: pkill -f the id', () => {
++    expect(killArgv(SIDE_ID, false)).toEqual(['pkill', '-f', SIDE_ID])
++  test('an id that is not a uuid is refused, so nothing odd reaches a shell', () => {
++    expect(killArgv("x' ; calc ; '", true)).toBeNull()
++    expect(killArgv('', false)).toBeNull()
++  test('the Ask box key changes with each send', () => {
++    expect(askKey(0)).not.toBe(askKey(1))
++const NL = String.fromCharCode(10)
++const pane = (bodyRows = 30) =>
++  ({
++    plugin: 'bws-sidechat',
++    component: 'Pane',
++    requestId: 'sidechat',
++    surface: 'terminal',
++    props: { title: 'Side chat', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows }, view: {} },
++  }) as const
++const PANE = pane()
++type World = {
++  surfaces?: string[]
++  box?: string
++  exit?: number
++  lines?: string[]
++  hold?: boolean // the child says one thing, then is silent until something kills it
++  grantsFocus?: boolean // false: the engine keeps the keys with the prompt
++}
++const line = (o: unknown) => JSON.stringify(o) + NL
++const LONG_TEXT = Array.from({ length: 40 }, (_, i) => `Paragraph ${i + 1}: lighthouses guard the coast with a light that can be seen for many miles at sea.`).join(NL + NL)
++const LONG = [
++  line({ type: 'system', subtype: 'init', session_id: 'side' }),
++  line({ type: 'assistant', message: { content: [{ type: 'text', text: LONG_TEXT }] } }),
++  line({ type: 'result', is_error: false, result: LONG_TEXT }),
++]
++  const seen = {
++    opened: [] as { id: string; focus?: boolean }[],
++    closed: [] as string[],
++    toasts: [] as string[],
++    spawns: [] as { argv: readonly string[]; env?: Record<string, string> }[],
++    focused: [] as string[],
++    kills: [] as (readonly string[])[],
++  }
++  let isFocused = false
++  let release: () => void = () => undefined
++  const gate = new Promise<void>(resolve => {
++    release = resolve
++  })
++  on('env.get', () => ({ value: 'Windows_NT' as never }))
++    if (e.focus === true && w.grantsFocus !== false) isFocused = true
++  on('ui.panes', () => ({ value: (seen.opened.length === 0 ? [] : [{ id: 'sidechat', title: 'Side chat', isShown: true, isFocused, isPlaced: true }]) as never }))
++  on('ui.focus', ($, e) => {
++    seen.focused.push(String(e.element))
++    return {}
++  })
++  on('process.run', ($, e) => {
++    seen.kills.push(e.argv)
++    release()
++    return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } as never }
++  })
++    if (w.hold === true) {
++      yield { stream: 'stdout' as const, text: line({ type: 'system', subtype: 'init', session_id: 'side' }) }
++      await gate // only a kill ends it: no piece arrives meanwhile
++      return { value: { code: null, signal: 'SIGKILL' } }
++    }
++const sideIdOf = (argv: readonly string[]) => /--session-id (\S+)/.exec(argv.join(' '))?.[1]
++describe('keyboard focus', () => {
++  test('/btw asks for the keys once, and not again when they are granted', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'btw', 'q')
++    await clock.advance(1000)
++    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1) // granted at once, so not asked again
++    // (the ring move itself, $.ui.focus, is answered by the engine before a test can see it: it needs a surface holding the keys)
++    expect(seen.spawns).toHaveLength(1)
++  })
++
++  test('/fork does the same', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'fork')
++    await clock.advance(1000)
++    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
++  })
++
++  test('when the engine keeps the keys with the prompt, the request is repeated a few times after the command returns', async ($, on) => {
++    const { seen, clock } = world(on, { grantsFocus: false })
++    await run($, 'fork')
++    await clock.advance(1000)
++    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(3)
++    await clock.advance(5000)
++    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(3) // and then stops
++  })
++
++  test('a person already typing in the prompt keeps the keys', async ($, on) => {
++    const { seen, clock } = world(on, { box: 'half a thought' })
++    await run($, 'fork')
++    await clock.advance(1000)
++    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(0)
++  })
++})
++
++describe('a long answer', () => {
++  test('never pushes the Ask box out of the pane', async ($, on) => {
++    const { clock } = world(on, { lines: LONG })
++    await run($, 'btw', 'write an essay')
++    await clock.advance(200)
++    for (const rows of [12, 20, 30]) {
++      const ui = await $.ui.mount(pane(rows))
++      expect(await ui.find({ type: 'Input' })).toBeDefined()
++      expect(await ui.find({ key: 'older' })).toBeDefined()
++      expect(await ui.find({ key: 'newer' })).toBeUndefined()
++      // header (2) + the rows left for the transcript: nothing else draws as text
++      const texts = await ui.findAll({ type: 'Text' })
++      expect(texts.length).toBeLessThanOrEqual(rows - 3)
++      await ui.unmount()
++    }
++  })
++
++  test('the newest rows show first', async ($, on) => {
++    const { clock } = world(on, { lines: LONG })
++    await run($, 'btw', 'write an essay')
++    await clock.advance(200)
++    const ui = await $.ui.mount(pane(20))
++    expect(await ui.find({ type: 'Text', text: /Paragraph 40/ })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /Paragraph 1:/ })).toBeUndefined()
++    await ui.unmount()
++  })
++})
++
++describe('scroll buttons', () => {
++  test('step by rows: up shows older rows and a way back, down returns to the newest', async ($, on) => {
++    const { clock } = world(on, { lines: LONG })
++    await run($, 'btw', 'write an essay')
++    await clock.advance(200)
++    const ui = await $.ui.mount(pane(20))
++    const above = async () => Number(/(\d+) rows above/.exec(String((await ui.find({ key: 'older' }))?.props?.label))?.[1])
++    const first = await above()
++    expect(first).toBeGreaterThan(0)
++    await ui.press({ key: 'older' })
++    const second = await above()
++    // roomOf(20) = 13 rows, half of it = 6 rows a press: a small, even step and not a whole message
++    expect(first - second).toBe(6)
++    expect(String((await ui.find({ key: 'newer' }))?.props?.label)).toContain('6 rows below')
++    await ui.press({ key: 'newer' })
++    expect(await ui.find({ key: 'newer' })).toBeUndefined()
++    expect(await above()).toBe(first)
++    await ui.unmount()
++  })
++
++  test('pressing up far past the top stops at the first row', async ($, on) => {
++    const { clock } = world(on, { lines: LONG })
++    await run($, 'btw', 'write an essay')
++    await clock.advance(200)
++    const ui = await $.ui.mount(pane(20))
++    for (let i = 0; i < 60 && (await ui.find({ key: 'older' })) !== undefined; i++) await ui.press({ key: 'older' })
++    expect(await ui.find({ key: 'older' })).toBeUndefined()
++    expect(await ui.find({ type: 'Text', text: 'You' })).toBeDefined()
++    await ui.unmount()
++  })
++})
++
++describe('Stop', () => {
++  test('kills the child at once, even when it is silent, and says so', async ($, on) => {
++    const { seen, clock } = world(on, { hold: true })
++    await run($, 'btw', 'think hard')
++    await clock.advance(200)
++    const sideId = sideIdOf(seen.spawns[0]?.argv ?? [])
++    expect(sideId).toBeDefined()
++    const ui = await $.ui.mount(pane(20))
++    expect(await ui.find({ key: 'stop' })).toBeDefined()
++    await ui.press({ key: 'stop' })
++    expect(seen.kills).toHaveLength(1)
++    const argv = seen.kills[0] ?? []
++    expect(argv[0]).toBe('powershell')
++    expect(argv.at(-1)).toContain(String(sideId))
++    await clock.advance(200)
++    expect(await ui.find({ key: 'stop' })).toBeUndefined()
++    expect(await ui.find({ type: 'Text', text: /Stopped\./ })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('after Stop the next message resumes the same fork (it exists once the child said hello)', async ($, on) => {
++    const { seen, clock } = world(on, { hold: true })
++    await run($, 'btw', 'first')
++    await clock.advance(200)
++    const ui = await $.ui.mount(pane(20))
++    await ui.press({ key: 'stop' })
++    await clock.advance(200)
++    await ui.unmount()
++    await run($, 'btw', 'second')
++    await clock.advance(200)
++    const sideId = sideIdOf(seen.spawns[0]?.argv ?? [])
++    expect((seen.spawns[1]?.argv ?? []).join(' ')).toContain(`--resume ${sideId}`)
++  })
++
++  test('a new fork while one is answering kills the old child', async ($, on) => {
++    const { seen, clock } = world(on, { hold: true })
++    await run($, 'btw', 'slow one')
++    await clock.advance(200)
++    await run($, 'fork')
++    await clock.advance(200)
++    expect(seen.kills).toHaveLength(1)
++    expect((seen.kills[0] ?? []).at(-1)).toContain(String(sideIdOf(seen.spawns[0]?.argv ?? [])))
++  })
++
++  test('Close while answering kills the child too', async ($, on) => {
++    const { seen, clock } = world(on, { hold: true })
++    await run($, 'btw', 'slow one')
++    await clock.advance(200)
++    await run($, 'side', 'close')
++    expect(seen.kills).toHaveLength(1)
++    expect(seen.closed).toEqual(['sidechat'])
++  })
++
++  test('Stop with nothing running does nothing', async ($, on) => {
++    const { seen, clock } = world(on)
++    await run($, 'btw', 'quick')
++    await clock.advance(200)
++    const ui = await $.ui.mount(pane(20))
++    expect(await ui.find({ key: 'stop' })).toBeUndefined()
++    await ui.unmount()
++    expect(seen.kills).toEqual([])
++  })
++})
++
++  back: number // rows scrolled up from the newest
++  asks: number // messages sent; the Ask box's key, so a send clears it
