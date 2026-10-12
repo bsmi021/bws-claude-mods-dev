@@ -3,10 +3,11 @@
 Brief: side chat in the right pane; /fork and /btw open it, forked from the current conversation, main untouched.
 
 ## Done
-- Probe: `claude -p /btw`, `/fork` headless don't exist (built-ins are interactive only), so the command names `btw`/`fork`/`branch` are matched by guess, unverified interactively.
+- Command names: headless `-p` has no `/btw`/`/fork`, so checked the binary instead: `btw`, `branch` and `fork` are all registered local-jsx commands (so `command.run` should see them; same kind as `/diff`, which a built-in mod takes over). Not yet seen firing in a live terminal.
 - Live backend check (receipts/): `claude -p ... --resume <this session> --fork-session --session-id <uuid> --strict-mcp-config --allowedTools Read Glob Grep` answered with this conversation's context; first token 3.8 s, total 8.5 s, fork file written, session_id = the minted one.
 - Mod spawn check: `$.process.spawn(['claude','--version'])` works on Windows.
 - bws-sidechat/ built: side.ts (pure), register.tsx, types, README, 25 tests.
+- Fixed: Stop no longer marks the fork as made unless the child printed its init line.
 - validate passes, tsc 5.8.3 clean, `claude plugin test` 25/25.
 
 ## Decisions / assumptions

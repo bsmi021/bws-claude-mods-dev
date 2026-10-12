@@ -15,6 +15,7 @@ const chat = atom({ plugin: 'bws-sidechat', key: 'chat' } as const, EMPTY)
 // bumps `runNo`, so the loop of a child that was left behind stops writing into the chat.
 let runNo = 0
 let isStopped = false
+let isInitSeen = false // the running child has printed its init line, so its session file exists
 
 // The pane opens after the command has returned, when the composer is clear (focus is granted only then).
 async function openPane($: EngineInterface) {
@@ -65,6 +66,7 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
   const sideId = c.sideId as string
   const mine = ++runNo
   isStopped = false
+  isInitSeen = false
   const isFirst = !c.isForked
   let draft: Draft = { msgs: [...c.msgs, { role: 'user', text: message }], live: '' }
   await update($, chat, old => ({ ...old, ...draft, isBusy: true, back: 0 }))
@@ -72,7 +74,6 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
   let pending = ''
   let stderr = ''
   let code: number | null = 0
-  let isInit = false
   const stream = $.process.spawn({
     argv: [cfg.exe, ...sideArgs({ message, mainId, sideId, isFirst }, cfg)],
     // No mods in the child: it starts faster, and cannot open a side chat of its own.
@@ -94,7 +95,7 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
       pending = split.rest
       if (split.lines.length === 0) continue
       for (const line of split.lines) {
-        if (line.includes('"subtype":"init"')) isInit = true
+        if (line.includes('"subtype":"init"')) isInitSeen = true
         draft = reduceLine(draft, line)
       }
       const snap = draft
@@ -115,7 +116,7 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
     msgs: [...draft.msgs, ...shown, ...extra],
     live: '',
     isBusy: false,
-    isForked: old.isForked || isInit || code === 0,
+    isForked: old.isForked || isInitSeen || code === 0,
   }))
 }
 
@@ -129,7 +130,7 @@ async function stop($: EngineInterface) {
     msgs: [...old.msgs, ...(old.live.trim() === '' ? [] : [{ role: 'assistant', text: old.live.trim() } as SideMsg]), { role: 'note', text: 'Stopped.' } as SideMsg],
     live: '',
     isBusy: false,
-    isForked: true,
+    isForked: old.isForked || isInitSeen,
   }))
 }
 

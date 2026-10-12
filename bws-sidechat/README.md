@@ -10,7 +10,7 @@ The child runs with `CLAUDE_CODE_PLUGIN_DIRS` emptied (faster start, no side-of-
 ## Commands
 | Command | Does |
 |---|---|
-| `/fork`, `/branch` | New side chat forked from the conversation as it stands. Text after it is sent as the first message. `/fork native` runs the built-in fork. |
+| `/fork`, `/branch` | (replaces the built-in background-agent fork and branch) New side chat forked from the conversation as it stands. Text after it is sent as the first message. `/fork native` runs the built-in fork. |
 | `/btw <question>` | Answer in the side chat. Continues an open side chat; forks if none. |
 | `/side [new [msg] \| close \| msg]` | The plugin's own entry point. |
 
