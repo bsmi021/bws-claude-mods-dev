@@ -23,7 +23,7 @@ import type { SideMsg } from '../types'
 const CFG: SideConfig = { tools: 'Read,Glob Grep', isMcpOff: true, model: '' }
 const RUN = { message: 'why?', mainId: 'main-1', sideId: 'side-1', isFirst: true }
 const NL = String.fromCharCode(10)
-const SIDE_ID = '5371cd5b-f19c-4247-8462-52bea173f29c'
+const SIDE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
 
 describe('sideArgs', () => {
   test('the first turn forks the main session into the side id', () => {
