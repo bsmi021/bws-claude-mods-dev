@@ -87,3 +87,11 @@ Stray text "rite a 400 word essay..." was left in the test window's main prompt 
 - bws-sidechat 0.1.3: no code change; 1 new test (57 total) that another mod's footer stays beside `◨ side`; README notes the pairing.
 - validate, tsc 5.8.3, plugin test pass for both (enhance 18/18, sidechat 57/57).
 - bws-enhance loads inline from source, so the fix is live in the next new session; sidechat 0.1.2 installed has the same hook. Not published (marketplace: enhance 0.2.0, sidechat 0.1.2). Not seen live: both buttons in the footer and the chord pressing `◨ side`.
+
+## Interactive pass 4: bws-enhance 0.2.1 from source + installed bws-sidechat 0.1.2 (2026-10-12, drive-screen; receipts 30-39 png)
+- Footer: FIXED. `◨ side ✦ enhance` both draw in the footer (30).
+- Chord `ctrl+x ctrl+o`: WORKS. Opens the Side chat tab beside Dashboard with the Ask box focused (31).
+- Long answer + scroll: `↑ 82 rows above` -> press -> 74 (33); `↓ 8 rows below` -> press -> back at the newest rows, button gone (34). Both buttons verified.
+- Stop: the button press works: "! Stopped." note, Ask box back, kill command ran (`powershell exited 0 in 5063ms`). But this Stop landed ~24 s into a 25 s answer (my screenshot-reading latency), the child had finished naturally (exit 0, 512 chunks), so a clean mid-answer kill was NOT re-seen live (it was proven earlier against a real child, receipts/kill-check.txt). The kill command itself takes ~5 s (Get-CimInstance Win32_Process is slow); the pane is not blocked by it.
+- NEW BUG: after Stop the Ask box does not get the keyboard back. My next typed question went to the MAIN prompt and was answered by the main session (39). stop() should call focusAsk after the button is gone (as send() does).
+- The retry helper (pclick.py) crashed on a cp1252 decode of screenctl output; the retry did not run.
