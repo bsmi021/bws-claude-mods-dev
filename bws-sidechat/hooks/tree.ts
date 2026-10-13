@@ -143,7 +143,7 @@ export type MapRow = { text: string; nodeId: string | null; isCurrent: boolean }
 
 // The whole tree as indented rows: the root question, then every option, an explored one followed by its own options.
 // A row that leads to a node carries its id (the map's buttons jump there); the current node is marked `>`.
-export function mapRows(t: DecisionTree): MapRow[] {
+export function mapRows(t: DecisionTree, optionWidth = 56): MapRow[] {
   const root = nodeOf(t, 'n1') ?? t.nodes[0]
   if (root === undefined) return []
   const rows: MapRow[] = [{ text: `${t.currentId === root.id ? '>' : ' '} ${clip(root.question || 'Decision', 70)}`, nodeId: root.id, isCurrent: t.currentId === root.id }]
@@ -152,7 +152,7 @@ export function mapRows(t: DecisionTree): MapRow[] {
       const child = childVia(t, node.id, i)
       const isCurrent = child !== undefined && child.id === t.currentId
       const tag = childTag(child)
-      rows.push({ text: `${isCurrent ? '>' : ' '} ${'  '.repeat(indent)}${clip(optionText(o), 56)}${tag === '' ? '' : ` ${tag}`}`, nodeId: child?.id ?? null, isCurrent })
+      rows.push({ text: `${isCurrent ? '>' : ' '} ${'  '.repeat(indent)}${clip(optionText(o), optionWidth)}${tag === '' ? '' : ` ${tag}`}`, nodeId: child?.id ?? null, isCurrent })
       if (child !== undefined && rows.length < 200) walk(child, indent + 1)
     })
   }
@@ -160,7 +160,7 @@ export function mapRows(t: DecisionTree): MapRow[] {
   return rows
 }
 
-export const mapText = (t: DecisionTree) => mapRows(t).map(r => r.text.trimEnd()).join('\n')
+export const mapText = (t: DecisionTree, optionWidth = 56) => mapRows(t, optionWidth).map(r => r.text.trimEnd()).join('\n')
 
 // The one paragraph Decide sends into the main session: each question on the path to `id` and the option taken there,
 // what the last exploration said, and a question it left open. Null at the root, where nothing was chosen yet.
