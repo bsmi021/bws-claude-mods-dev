@@ -1,0 +1,414 @@
+{
+ "id": "0bb80a4c-3d70-4581-a93e-ef48b136ae0b",
+ "rows": [
+  {
+   "role": "user",
+   "text": "This is a test of a plugin. Run these five Bash commands exactly as written (do not change the curly-brace placeholders), one Bash tool call each, in this order, then reply with the word DONE and nothing else:\n1. test -n \"{{secret:SPIKE_A}}\" && echo A-set\n2. echo \"B=[{{secret:SPIKE_B}}]\"\n3. printf %s \"{{secret:SPIKE_B}}\" | base64\n4. echo \"C=[{{secret:SPIKE_C}}]\"\n5. echo \"D=[{{secret:SPIKE_D}}]\"",
+   "toolUses": []
+  },
+  {
+   "role": "assistant",
+   "text": "",
+   "toolUses": [
+    {
+     "tool_use_id": "toolu_01HnBRVoU9M3UTJMnYqbkJRh",
+     "tool": "Bash",
+     "input": {
+      "command": "test -n \"{{secret:SPIKE_A}}\" && echo A-set"
+     },
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     },
+     "text": "A-set"
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "text": "",
+   "toolUses": [],
+   "toolResults": [
+    {
+     "tool_use_id": "toolu_01HnBRVoU9M3UTJMnYqbkJRh",
+     "text": "A-set",
+     "isError": false,
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     }
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "text": "",
+   "toolUses": [
+    {
+     "tool_use_id": "toolu_01KUoaPhSvYhZPZHiPJU6rLS",
+     "tool": "Bash",
+     "input": {
+      "command": "echo \"B=[{{secret:SPIKE_B}}]\""
+     },
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     },
+     "text": "B=[{{secret:SPIKE_B}}]"
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "text": "",
+   "toolUses": [],
+   "toolResults": [
+    {
+     "tool_use_id": "toolu_01KUoaPhSvYhZPZHiPJU6rLS",
+     "text": "B=[{{secret:SPIKE_B}}]",
+     "isError": false,
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     }
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "text": "",
+   "toolUses": [
+    {
+     "tool_use_id": "toolu_01H7dfUPbnStSnekPe3BqaFS",
+     "tool": "Bash",
+     "input": {
+      "command": "printf %s \"{{secret:SPIKE_B}}\" | base64"
+     },
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     },
+     "text": "{{secret:SPIKE_B}}"
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "text": "",
+   "toolUses": [],
+   "toolResults": [
+    {
+     "tool_use_id": "toolu_01H7dfUPbnStSnekPe3BqaFS",
+     "text": "{{secret:SPIKE_B}}",
+     "isError": false,
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     }
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "text": "",
+   "toolUses": [
+    {
+     "tool_use_id": "toolu_01HK71fu61LoSBfHmugWgj3K",
+     "tool": "Bash",
+     "input": {
+      "command": "echo \"C=[{{secret:SPIKE_C}}]\""
+     },
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     },
+     "text": "C=[{{secret:SPIKE_C}}]"
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "text": "",
+   "toolUses": [],
+   "toolResults": [
+    {
+     "tool_use_id": "toolu_01HK71fu61LoSBfHmugWgj3K",
+     "text": "C=[{{secret:SPIKE_C}}]",
+     "isError": false,
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     }
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "text": "",
+   "toolUses": [
+    {
+     "tool_use_id": "toolu_01Jz35xyvX6s5rhKCvzxXvbf",
+     "tool": "Bash",
+     "input": {
+      "command": "echo \"D=[{{secret:SPIKE_D}}]\""
+     },
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     },
+     "text": "D=[{{secret:SPIKE_D}}]"
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "text": "",
+   "toolUses": [],
+   "toolResults": [
+    {
+     "tool_use_id": "toolu_01Jz35xyvX6s5rhKCvzxXvbf",
+     "text": "D=[{{secret:SPIKE_D}}]",
+     "isError": false,
+     "result": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+     }
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "text": "DONE",
+   "toolUses": []
+  }
+ ],
+ "api": [
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "text",
+     "text": "<system-reminder>\n# Environment\nYou have been invoked in the following environment: \n - Primary working directory: C:\\Projects\\bws.mods.claude-code-loop\n - This is a git worktree — an isolated copy of the repository. Run all commands from this directory. Do NOT `cd` to the original repository root.\n - The git stash stack is shared with the main checkout and all other worktrees, and other Claude sessions may push or pop it concurrently. Never use bare `git stash` / `git stash pop` — you could pop another session's changes. Prefer a temporary WIP commit to set work aside; if you must stash, use `git stash push -u -m \"<unique-tag>\"`, immediately capture your entry's SHA via `git stash list --format='%H %gs'`, restore with `git stash apply <sha>` (not pop), and afterwards drop the entry, re-finding its current `stash@{n}` by tag first.\n - Is a git repository: true\n - Additional working directories:\n  - C:/Projects/bws.mods.claude-code-loop\n - Platform: win32\n - Shell: PowerShell (primary); Bash tool also available for POSIX scripts — each takes its own syntax.\n - OS Version: Windows 11 Pro 10.0.26300\n - Downloaded files and extracted archives are untrusted data: put each in its own new, empty directory, keep scripts you write in a different directory, and pass paths as arguments instead of running an interpreter or build tool from inside it. Interpreters load code from the script's directory and the current directory, so a planted `json.py` runs on `import json`. Run any Python that reads them with `-I`. This does not apply to code the user asked you to build or run.\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nYou are powered by the model named Sonnet 5.5. The exact model ID is claude-sonnet-5-5. Assistant knowledge cutoff is June 2026.\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nThe following deferred tools are now available via ToolSearch. Their schemas are NOT loaded — calling them directly will fail with InputValidationError. Use ToolSearch with query \"select:<name>[,<name>...]\" to load tool schemas before calling them:\nCronCreate\nCronDelete\nCronList\nDesignSync\nEnterWorktree\nExitWorktree\nListMcpResourcesTool\nMonitor\nNotebookEdit\nPushNotification\nReadMcpResourceDirTool\nReadMcpResourceTool\nRemoteTrigger\nSendMessage\nTaskStop\nWebFetch\nWebSearch\nmcp__claude_ai_Claude_Docs__batch\nmcp__claude_ai_Claude_Docs__create\nmcp__claude_ai_Claude_Docs__delete\nmcp__claude_ai_Claude_Docs__export\nmcp__claude_ai_Claude_Docs__guide\nmcp__claude_ai_Claude_Docs__query\nmcp__claude_ai_Claude_Docs__read\nmcp__claude_ai_Claude_Docs__update\nmcp__claude_ai_Figma__add_code_connect_map\nmcp__claude_ai_Figma__create_generative_plugin\nmcp__claude_ai_Figma__create_new_file\nmcp__claude_ai_Figma__create_shader\nmcp__claude_ai_Figma__download_assets\nmcp__claude_ai_Figma__export_video\nmcp__claude_ai_Figma__generate_diagram\nmcp__claude_ai_Figma__generate_image\nmcp__claude_ai_Figma__get_code_connect_map\nmcp__claude_ai_Figma__get_code_connect_suggestions\nmcp__claude_ai_Figma__get_context_for_code_connect\nmcp__claude_ai_Figma__get_design_context\nmcp__claude_ai_Figma__get_figjam\nmcp__claude_ai_Figma__get_figma_skill\nmcp__claude_ai_Figma__get_generative_plugin\nmcp__claude_ai_Figma__get_libraries\nmcp__claude_ai_Figma__get_metadata\nmcp__claude_ai_Figma__get_motion_context\nmcp__claude_ai_Figma__get_screenshot\nmcp__claude_ai_Figma__get_shader\nmcp__claude_ai_Figma__get_variable_defs\nmcp__claude_ai_Figma__list_file_components_for_code_connect\nmcp__claude_ai_Figma__list_file_shaders\nmcp__claude_ai_Figma__list_generative_plugins\nmcp__claude_ai_Figma__list_shaders\nmcp__claude_ai_Figma__search_design_system\nmcp__claude_ai_Figma__send_code_connect_mappings\nmcp__claude_ai_Figma__update_generative_plugin\nmcp__claude_ai_Figma__update_shader\nmcp__claude_ai_Figma__upload_assets\nmcp__claude_ai_Figma__use_figma\nmcp__claude_ai_Figma__weave_cancel_tool_run\nmcp__claude_ai_Figma__weave_find_model\nmcp__claude_ai_Figma__weave_get_model_run_output\nmcp__claude_ai_Figma__weave_get_tool_inputs\nmcp__claude_ai_Figma__weave_get_tool_run_output\nmcp__claude_ai_Figma__weave_list_tools\nmcp__claude_ai_Figma__weave_run_model\nmcp__claude_ai_Figma__weave_run_tool\nmcp__claude_ai_Figma__weave_upload_asset\nmcp__claude_ai_Figma__whoami\nmcp__claude_ai_Google_Drive__copy_file\nmcp__claude_ai_Google_Drive__create_file\nmcp__claude_ai_Google_Drive__download_file_content\nmcp__claude_ai_Google_Drive__get_file_metadata\nmcp__claude_ai_Google_Drive__get_file_permissions\nmcp__claude_ai_Google_Drive__list_recent_files\nmcp__claude_ai_Google_Drive__read_file_content\nmcp__claude_ai_Google_Drive__search_files\nmcp__claude_ai_Google_Drive__share_file\nmcp__claude_ai_Google_Drive__trash_file\nmcp__claude_ai_Google_Drive__update_file\nmcp__claude_ai_Slack__slack_add_list_record\nmcp__claude_ai_Slack__slack_add_reaction\nmcp__claude_ai_Slack__slack_complete_file_upload\nmcp__claude_ai_Slack__slack_create_canvas\nmcp__claude_ai_Slack__slack_create_conversation\nmcp__claude_ai_Slack__slack_create_list\nmcp__claude_ai_Slack__slack_get_file_upload_url\nmcp__claude_ai_Slack__slack_get_reactions\nmcp__claude_ai_Slack__slack_list_channel_members\nmcp__claude_ai_Slack__slack_list_user_channels\nmcp__claude_ai_Slack__slack_read_canvas\nmcp__claude_ai_Slack__slack_read_channel\nmcp__claude_ai_Slack__slack_read_file\nmcp__claude_ai_Slack__slack_read_list\nmcp__claude_ai_Slack__slack_read_thread\nmcp__claude_ai_Slack__slack_read_user_profile\nmcp__claude_ai_Slack__slack_schedule_message\nmcp__claude_ai_Slack__slack_search_channels\nmcp__claude_ai_Slack__slack_search_emojis\nmcp__claude_ai_Slack__slack_search_public\nmcp__claude_ai_Slack__slack_search_public_and_private\nmcp__claude_ai_Slack__slack_search_users\nmcp__claude_ai_Slack__slack_send_message\nmcp__claude_ai_Slack__slack_send_message_draft\nmcp__claude_ai_Slack__slack_update_canvas\nmcp__claude_ai_Slack__slack_update_list\nmcp__claude_ai_Slack__slack_update_list_record\n\nThe following MCP servers require authentication before their tools can be used:\nclaude.ai AINRI\nclaude.ai Atlassian\nclaude.ai Excalidraw\nclaude.ai Gmail\nclaude.ai Google Calendar\nclaude.ai Hugging Face\nclaude.ai Mermaid Chart\nclaude.ai Three.js 3D Viewer\nclaude.ai Vercel\nclaude.ai byterover-mcp\n\nThis session is non-interactive, so Claude cannot run the OAuth flow here. If the user's request depends on one of these servers (even if they didn't name it explicitly), or they ask about it, tell them that it needs to be authorized — for claude.ai connectors, via their claude.ai connector settings; for other servers, via `claude mcp` or /mcp in an interactive session — and that the capability is unavailable until they do. Otherwise carry on with the request and do not mention these servers. Do not ask the user for authorization codes, tokens, or callback URLs.\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nAvailable agent types for the Agent tool:\n- claude: Catch-all for any task that doesn't fit a more specific agent. FleetView's default when no agent name is typed. (Tools: *)\n- Explore: Read-only search agent for broad fan-out searches — when answering means sweeping many files, directories, or naming conventions and you only need the conclusion, not the file dumps. It reads excerpts rather than whole files, so it locates code; it doesn't review or audit it. Specify search breadth: \"medium\" for moderate exploration, \"very thorough\" for multiple locations and naming conventions. (Tools: All tools except Agent, Artifact, ArtifactComments, ArtifactData, ArtifactCheck, ExitPlanMode, Edit, Write, NotebookEdit)\n- general-purpose: General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you. (Tools: *)\n- Plan: Software architect agent for designing implementation plans. Use this when you need to plan the implementation strategy for a task. Returns step-by-step plans, identifies critical files, and considers architectural trade-offs. (Tools: All tools except Agent, Artifact, ArtifactComments, ArtifactData, ArtifactCheck, ExitPlanMode, Edit, Write, NotebookEdit)\n- statusline-setup: Use this agent to configure the user's Claude Code status line setting. (Tools: Read, Edit)\n\nWhen you launch multiple agents for independent work, send them in a single message with multiple tool uses so they run concurrently.\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\n# MCP Server Instructions\n\nThe following MCP servers have provided instructions for how to use their tools and resources:\n\n## claude.ai Claude Docs\nClaude Docs: living docs you create and edit here. A docs skill your client lists → load it before any docs call — also before a `read`, comment or tab change on a claude.ai …/artifact/… link (the link is a doc; never web-fetch it). No docs skill or guide text loaded → `guide( items = [\"topic.index\"] )` alone before any docs call but a doc's birth. Make a doc here — not a local file, even when coding — only when the user asks for one, and make it FIRST: the turn's first tool call is its skeleton (title, byline, a `pending` block per section) — a reflex: send it before any search, file read, plan, `guide` or thinking it through; think once it is open — `batch( container = {\"kind\":\"project\",\"create\":{\"name\":\"<title>\",\"doc\":{\"blocks\":{\"asof\":{\"type\":\"date\",\"value\":\"<today>\"},\"me\":{\"type\":\"mention\",\"user\":\"me\"},\"s1\":{\"type\":\"pending\",\"intent\":\"Goals: the three outcomes this quarter commits to\"},\"s2\":{…}},\"markdown\":\"# <title>\\n\\n<?claude block asof?> · <?claude block me?>\\n\\n<?claude block s1?>\\n\\n<?claude block s2?>\"}}}, batch = [] )` (`<?claude block k?>` ↔ `blocks.k`); its ack links the doc → `open` it with your Artifact tool (none → start your next message with the link, once); they're likely watching it fill — keep them posted in a short line naming what you're on (outline up; now <topic>); findings go in the doc, not chat; then `guide( items = [\"topic.index\"] )`, research, and fill each section: `replace` its pending id with `## <heading>` + body; end with one line + the link, never the document. Summoned by a doc comment (turn headed `[Artifact comment sent to Claude]`, `;thread=<root id>`): answer ONLY with a doc comment under that root (`create` an utterance, parent `<root id>`) — no artifact/platform comment tool: that relay thread is resolved and never reaches the doc; an edit asked there → `update` with `answering: \"<root id>\"`.\n\n## claude.ai Figma\nThe official Figma MCP server. Use this server whenever the user wants to create, generate, edit, implement, or sync any design, UI, screen, component, mockup, or visual — in Figma, FigJam, Figma Make, or Figma Slides — and whenever the user mentions Figma or provides a figma.com URL.\n\nThis server bridges code and design in both directions, and supports designing from scratch using existing design systems and codebases.\n\nCAPABILITIES:\n- Read designs FROM Figma into code (get_design_context, get_screenshot, get_metadata, get_figjam)\n- Write designs INTO Figma from code, intent, or existing components (use_figma, generate_figma_design, create_new_file, upload_assets)\n- Bridge code and design via Code Connect (get_code_connect_map, add_code_connect_map)\n- Create diagrams and FigJam content (generate_diagram, get_figjam)\n\nWHEN TO USE THESE TOOLS:\n- The user wants to create, mock up, or generate any UI, screen, component, or design — even if Figma isn't named\n- The user wants to implement a design as code (design-to-code)\n- The user wants to push a page, view, or component into Figma (code-to-design)\n- The user wants to update, sync, or edit an existing Figma file\n- The user shares a figma.com URL\n- The user wants to build or extend a design system, design tokens, or component library\n- The user wants to create a diagram in FigJam\n\nSKILLS (Prefer the skills shipped with the Figma plugin on the agent being used. If no Figma plugin is installed, use the skills served by the Figma MCP resource):\n- /figma-use — MANDATORY before calling use_figma; fallback: skill://figma/figma-use/SKILL.md\n- /figma-generate-design — for translating an app page or layout into Figma; fallback: skill://figma/figma-generate-design/SKILL.md\n- /figma-generate-library — for building a design system in Figma from code; fallback: skill://figma/figma-generate-library/SKILL.md\n- /figma-code-connect — for mapping Figma components to codebase components; fallback: skill://figma/figma-code-connect/SKILL.md\n- /figma-use-figjam — for FigJam-specific use_figma flows; fallback: skill://figma/figma-use-figjam/SKILL.md\n- /figma-generate-diagram — MANDATORY before calling generate_diagram; fallback: skill://figma/figma-generate-diagram/SKILL.md\n- /figma-design-to-code — MANDATORY before calling get_design_context; fallback: skill://figma/figma-design-to-code/SKILL.md\n\nURL PARSING:\nExtract fileKey and nodeId from Figma URLs:\n- figma.com/design/:fileKey/:fileName?node-id=:nodeId → convert \"-\" to \":\" in nodeId\n- figma.com/design/:fileKey/branch/:branchKey/:fileName → use branchKey as fileKey\n- figma.com/make/:makeFileKey/:makeFileName → use makeFileKey\n- figma.com/board/:fileKey/:fileName?node-id=:nodeId → FigJam file, use get_figjam\n- figma.com/slides/:fileKey/:fileName?node-id=:nodeId → Figma Slides file\n\nDESIGN-TO-CODE WORKFLOW (Figma → code):\nMANDATORY: load the /figma-design-to-code skill BEFORE calling get_design_context — it carries the full workflow (adapting the reference, reusing existing project components and tokens, and honoring the response's hints by priority). Call get_design_context with the nodeId and fileKey — it is your primary tool; its output is a REFERENCE to adapt to the target project, not final code.\n\nCODE-TO-DESIGN WORKFLOW (code → Figma):\n1. Load the /figma-generate-design skill if available.\n2. ALWAYS call search_design_system first to find existing components, variables, and styles to reuse — never generate components from scratch if a design system match exists.\n3. For web app pages, use both tools in parallel: generate_figma_design to capture a pixel-perfect screenshot, and use_figma to build the screen from imported design system components. Refine use_figma output against the screenshot, then delete the screenshot reference.\n4. For non-web targets (iOS, Android, generic UI), use use_figma with search_design_system.\n5. For updating or syncing a Figma page that has already been captured, use use_figma — even if the source code has changed.\n\nFROM-SCRATCH DESIGN WORKFLOW (no source design or code):\n1. Load the /figma-generate-design skill if… [truncated]\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nThe following skills are available for use with the Skill tool:\n\n- mods-harness: Run, resume or check the Video-derived mods harness loop. It runs the mods one at a time as headless worker sessions, relays worker questions to Brian, and keeps the live status board served. Use it to start, restart or recover the loop, or when Brian asks for status.\n- dataviz: Use this skill whenever you are about to create ANY chart, graph, plot, dashboard, or data visualization, in ANY output medium — an HTML or React artifact, inline SVG, plotting code in any library (matplotlib, plotly, d3, Recharts, …), an image/PNG you will render and upload, or a chart shared into Slack. Read it BEFORE writing the first line of chart code, choosing chart colors, building a stat tile / meter / KPI row, or laying out a dashboard. When the destination is a first-party document connector (host-designated, never self-described) that renders live charts, hand it the rows (inline, or as an uploaded data file the chart cites) rather than a rendered PNG/SVG — a picture of a chart loses hover, data inspection and per-value comments. Produces visualizations that read as one system — elegant, accessible, consistent in light and dark — using a brand-neutral placeholder palette you swap for your own. Teaches a design-system-agnostic method: a form heuristic, a color formula with a runnable validator, mark specs, and interaction rules. A validated default palette is documented in `references/palette.md` — swap that file's values for your brand's. Triggers on: \"chart\", \"graph\", \"plot\", \"data viz\", \"visualization\", \"dashboard\", \"analytics\", \"visualize data\", \"categorical colors\", \"sequential / diverging palette\", \"stat tile\", \"sparkline\", \"heatmap\", \"legend\", \"axis\", \"tooltip\", \"chart colors\", \"color by series\".\n- update-config: Use this skill to configure the Claude Code harness via settings.json. Automated behaviors (\"from now on when X\", \"each time X\", \"whenever X\", \"before/after X\") require hooks configured in settings.json - the harness executes these, not Claude, so memory/preferences cannot fulfill them. Also use for: permissions (\"allow X\", \"add permission\", \"move permission to\"), env vars (\"set X=Y\"), hook troubleshooting, or any changes to settings.json/settings.local.json files. Examples: \"allow npm commands\", \"add bq permission to global settings\", \"move permission to user settings\", \"set DEBUG=true\", \"when claude stops show X\". For simple settings like theme/model, suggest the /config command.\n- keybindings-help: Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: \"rebind ctrl+s\", \"add a chord shortcut\", \"change the submit key\", \"customize keybindings\".\n- code-review: Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the model's review recipe covers them) at the given effort level (low|medium|high|xhigh|max: from few high-confidence findings up to many, some of them uncertain; ultra: deep multi-agent review in the cloud); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply the findings to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding. The choice stays until you pass --max-findings default. For ultra on a GitHub.com PR target, --post asks to post the finished review’s findings to the PR as a single comment from the user’s GitHub account (not a review; the launch dialog still confirms in interactive sessions, while non-interactive mode posts on the flag alone) and --no-post hides that option.\n- simplify: Review the changed code for reuse, simplification, efficiency, and altitude cleanups, then apply the fixes. Quality only — it does not hunt for bugs; use /code-review for that.\n- fewer-permission-prompts: Scan your transcripts for common read-only Bash and MCP tool calls, then add a prioritized allowlist to project .claude/settings.json to reduce permission prompts.\n- loop: Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo). Omit the interval to let the model self-pace. - When the user wants to set up a recurring task, poll for status, or run something repeatedly on an interval (e.g. \"check the deploy every 5 minutes\", \"keep running /babysit-prs\"). Do NOT invoke for one-off tasks.\n- schedule: Create, update, list, or run scheduled cloud agents (routines) that execute on a cron schedule. - When the user wants to schedule a recurring cloud agent, set up automated tasks, create a cron job for Claude Code, or manage their scheduled agents/routines. Also use when the user wants a one-time scheduled run (\"run this once at 3pm\", \"remind me to check X tomorrow\").\n- claude-api: Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration.\nTRIGGER — read BEFORE opening the target file; don't skip because it \"looks like a one-liner\" — whenever: the prompt names Claude/Anthropic in any form (Claude, Anthropic, Fable, Opus, Sonnet, Haiku, `anthropic`, `@anthropic-ai`, `claude-*`, `us.anthropic.*`, `[1m]`); the user asks about an LLM (pricing/model choice/limits/caching) — never answer from memory; OR the task is LLM-shaped with provider unstated (agent/MCP/tool-definition/multi-agent/RAG/LLM-judge/computer-use; generate/summarize/extract/classify/rewrite/converse over NL; debugging refusals/cutoffs/streaming/tool-calls/tokens).\nSKIP only when another provider is being worked on (overrides all triggers): OpenAI/GPT/Gemini/Llama/Mistral/Cohere/Ollama named in the query; OR `grep -rE 'openai|langchain_openai|google.generativeai|genai|mistralai|cohere|ollama'` over the project hits (run this grep FIRST if no provider named — don't Read the file).\n- workflow-authoring: Reference for writing a Workflow tool script (script API and gotchas, resume, quality patterns, worked examples). Load before authoring a script for a workflow the user already opted into; it does not itself authorize running one.\n- run: Launch and drive this project's app to see a change working. Use when asked to run, start, or screenshot the app, or to confirm a change works in the real app (not just tests). First looks for a project skill that already covers launching the app; otherwise falls back to built-in patterns per project type (CLI, server, TUI, Electron, browser-driven, library).\n- plugin-authoring: Make a mod: a change to Claude's own interface or behaviour, such as a live pane or panel, a band above the prompt, a status line, a toast, a slash command, or a hook on tool calls or prompts. Use to make, change or debug a mod or its hooks module.\n- init: Initialize new CLAUDE.md file(s) and optional skills/hooks with codebase documentation\n- security-review: Complete a security review of the pending changes on the current branch\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\n<total_tokens>15000000 tokens left</total_tokens>\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nCodebase and user instructions are shown below. Be sure to adhere to these instructions. IMPORTANT: These instructions OVERRIDE any default behavior and you MUST follow them exactly as written.\n\nContents of C:\\Projects\\AGENTS.md (project instructions, checked into the codebase):\n\n\\## Unity Projects\r\n\r\n* All Unity projects must use the $unity-cli skill and commands for all Unity Editor work\n\nContents of C:\\Projects\\bws.mods.claude-code-loop\\AGENTS.md (project instructions, checked into the codebase):\n\n# Claude Code Mod Development\r\n\r\nThese instructions apply when creating or changing Claude Code mods in this project. Build the requested feature, preserve unrelated work, and report verified results. Place this file at the mod project's root. Claude Code's built-in `cc-plugin-agents-md` plugin loads `AGENTS.md`; keep it enabled.\r\n\r\n## Choose the implementation\r\n\r\nA mod runs JavaScript or TypeScript handlers inside Claude Code for UI, event interception, or direct commands. Consider settings hooks for scripts, skills for instructions, or MCP for external integrations.\r\n\r\nMods are not sandboxed; their processes run outside the Bash sandbox. Design access to secrets, files, session content, permissions, network, and model usage deliberately. Implement only requested capabilities. Never log secrets. Automatic tool approval requires an explicit feature request. Permission prompts cannot be restyled.\r\n\r\nSource: [Mods overview](https://code.claude.com/docs/en/plugins/mods/overview).\r\n\r\n## Establish the contract\r\n\r\n- State the visible behavior and the smallest acceptance check before editing.\r\n- Run `claude --version`. The documented baseline is **2.1.296**; verify requirements against the installed release.\r\n- Use `/plugin-authoring` when available.\r\n- Treat locally generated `.claude-plugin/types/` declarations as authoritative over online examples. Claude Code generates them when loading or reloading development mods.\r\n- Prefer TypeScript when it clarifies event inputs and results; JavaScript is also supported.\r\n- Claude Code loads JavaScript and TypeScript directly; no bundler is needed.\r\n\r\nCreate this structure:\r\n\r\n```text\r\nmy-mod/\r\n  .claude-plugin/plugin.json\r\n  hooks/hooks.json\r\n  hooks/register.ts\r\n```\r\n\r\nUse a descriptive plugin name and version in the manifest. In `hooks/hooks.json`, point to one module relative to that file:\r\n\r\n```json\r\n{ \"modules\": [\"./register.ts\"] }\r\n```\r\n\r\nSources: [Overview](https://code.claude.com/docs/en/plugins/mods/overview), [Files and versioned types](https://code.claude.com/docs/en/plugins/mods/reference), [Creation guide](https://code.claude.com/docs/en/plugins/mods/create).\r\n\r\n## Keep the module statically inspectable\r\n\r\nExport `register(on, options)`. Use literal event names and direct `$.namespace.method(...)` calls. Do not alias, destructure, dynamically index `$`, or shadow `on`.\r\n\r\nUse top-level ES module imports, with relative paths inside the plugin or the supported `claude-code` import. Avoid Node built-ins, npm imports, `require`, and dynamic imports. Pass `$` only to same-file, top-level helpers, apart from documented `$.state` callbacks.\r\n\r\nVerify that validation lists every intended hook and API call.\r\n\r\nSource: [Static analysis rules](https://code.claude.com/docs/en/plugins/mods/create#check-what-claude-code-reads-from-your-mod).\r\n\r\n## Preserve event behavior\r\n\r\nEach hook receives the mods API `$`, event `e`, and continuation `next`.\r\n\r\n- **Observe:** perform the observation, then return `next(e)`.\r\n- **Observe the result:** await `next(e)`, inspect its result, and return that result.\r\n- **Rewrite:** pass a modified copy to `next`. Events are deeply frozen; preserve unrelated fields and nested properties.\r\n- **Handle completely:** return the event's documented result without calling `next`. This prevents later handlers and Claude Code's normal behavior from running.\r\n\r\nUse matchers to restrict handlers to relevant commands, tools, or components. Do not intercept unrelated events. Plan for other mods in the middleware chain. Verify the exact input and result types before implementing a denial, replacement result, prompt rewrite, or permission decision.\r\n\r\nSource: [React to events](https://code.claude.com/docs/en/plugins/mods/events).\r\n\r\n## Use the appropriate API\r\n\r\nUse the mods API for effects outside the module: interface operations, files, processes, network requests, models, storage, and timers. Look up each method's actual signature in the generated declarations.\r\n\r\nRegister user commands and Claude-callable tools in `session.start`. For a command, pair `$.command.register(...)` with a `command.run` handler filtered to its name. Return `{ text }` for a transcript reply or `{}` when no reply is needed. Choose a name that does not collide with a built-in command. Use `immediate: true` only when the command should run while Claude is working.\r\n\r\nFor a tool, register its description and JSON Schema, then handle its fully qualified name: `mcp__<plugin-name>__<tool-name>`. Validate arguments and handle failures with a useful result.\r\n\r\nSource: [Mods API](https://code.claude.com/docs/en/plugins/mods/api).\r\n\r\n## Design the interface and state\r\n\r\nUse `ui.render` for the intended render site. Return supported mod elements as plain data, or follow the documented JSX approach. Reuse Claude Code's existing rendering through `next` when extending a component.\r\n\r\nKeep control identifiers stable and connect buttons, inputs, and selections to the corresponding events. Redraw when displayed data changes, using the documented invalidation API. Keep rendering fast and avoid unnecessary repeated work.\r\n\r\nChoose state lifetime deliberately. Module variables are temporary. Consult the state guide for values that must survive reloads or sessions, and define behavior after `/clear`, `/resume`, and `/branch`. Use `$.state` or persistent storage according to the required lifetime, not as interchangeable mechanisms.\r\n\r\nSource: [Interface and state guide](https://code.claude.com/docs/en/plugins/mods/interface).\r\n\r\n## Check exact event contracts\r\n\r\nConsult the generated types before selecting an event. Common choices include `tool.call`, `prompt.submit`, `command.run`, `turn.complete`, `session.start`, and `ui.render`.\r\n\r\n`session.start` runs when the mod starts and after reloads, but not after `/clear`, `/resume`, or `/branch`. Design initialization accordingly. `turn.step` and `process.spawn` handlers are async generators; other event handlers are async functions. Respect `next.signal` cancellation and the available time budget. Do not invent a return shape from another event's example.\r\n\r\nIf using `$.state` or extending the mods API, provide the required type declarations and reference them in the manifest.\r\n\r\nSource: [Mods reference](https://code.claude.com/docs/en/plugins/mods/reference).\r\n\r\n## Develop and validate\r\n\r\nDevelop from the source directory with `claude --plugin-dir ./my-mod`. Check `/plugin` to confirm loading, then exercise the requested behavior. Development modules hot-reload; verify initialization and state after an edit. Respect Claude Code's protected-path and hot-reload approval prompts.\r\n\r\nRun `claude plugin validate ./my-mod` and fix reported errors. Review its hook and API-call inventory. Validation proves static loading requirements, not runtime correctness.\r\n\r\nFor behavioral changes, add focused `.test.ts` tests importing `test` and `expect` from `claude-code/testing`. Run `claude plugin test` from the plugin directory. Stub downstream events and API calls; register stubs before the first test `$` call. Fire `session.start` explicitly when initialization matters. API stubs return `{ value }`; event stubs return the event's own result shape. Test normal behavior, the relevant failure branch, and unintended interception where applicable.\r\n\r\nSource: [Testing guide](https://code.claude.com/docs/en/plugins/mods/test).\r\n\r\n## Troubleshoot and hand off\r\n\r\nIf behavior is missing, check validation, module paths, the active-mod listing, and skip/refusal messages. Use `claude --debug` for diagnostics. Check workspace trust, disabled hooks, safe/bare mode, and organization policy. Report a policy block; do not alter settings to bypass it.\r\n\r\nVerify drawings in the target app. Terminal and Desktop support mod UI with surface-specific limits; VS Code chat, noninteractive runs, and cloud sessions do not display it. Supply a useful text fallback when the feature needs one.\r\n\r\nKeep source in a durable directory; session-created mods are temporary. Installed copies are version-cached: develop against source and bump the version for updates. Install with `claude plugin install <plugin>@<marketplace>`; run `/reload-plugins` in an existing session after shell installation or update.\r\n\r\nInclude a README stating purpose, loading commands, configuration, capabilities, and the Claude Code version and surfaces actually tested. Report static validation, automated tests, and interactive verification separately. Do not claim an untested surface works or publish without authorization.\r\n\r\nSources: [Troubleshooting](https://code.claude.com/docs/en/plugins/mods/troubleshoot), [Overview](https://code.claude.com/docs/en/plugins/mods/overview), [Creation and distribution](https://code.claude.com/docs/en/plugins/mods/create).\r\n\r\nDocumentation checked: 2026-10-02. Recheck local types and current official documentation when APIs differ.\r\n\r\nLocal Doc: ./docs/mods.md\r\n\r\n## This repo\r\n\r\n- `bws-cockpit/` is one plugin with many features. `hooks/register.tsx` is the only file that uses `$`; `lib.ts`, `shell.ts`, `loop.ts`, `finish.ts`, `projects.ts` and `handoff.ts` are pure and tested directly. `bws-shell-lint/` is separate.\r\n- Each feature gets `runs/<date>-<slug>/` with PLAN.md (finish line first), RUNLOG.md and `receipts/`.\r\n- Checks, all three before ending a turn: `claude plugin validate ./<plugin>`, `cd <plugin> && claude plugin test`, and tsc 5.x (strict, noUncheckedIndexedAccess) against `.claude-plugin/types/`. Validate does not type-check.\r\n- Both plugins load in every session through `CLAUDE_CODE_PLUGIN_DIRS`, so a broken `register.tsx` breaks every new session.\r\n- Validator rules: one unmatched hook per event, so merge into the existing `turn.complete` or `prompt.context` hook. Never name a local `next`.\r\n- `$.prompt.submit` inside a `command.run` hook deadlocks: defer it with `$.clock.after`.\r\n- `$.model.fork` gives `nothing-to-fork` on a resumed session's first command: fall back to `$.session.messages()` + `$.model.complete`.\r\n- Wrapping the AskUserQuestion dialog in `ui.render`, the engine refuses `width` on any Box around it and more than 12 rows. It counts side-by-side siblings as stacked and the dialog itself as one row. Draw one Raster/Svg.\r\n- A render rewrite of AskUserQuestion may not change previews; strip them from the input in `tool.call` instead.\r\n- `Select` and `Input` are missing on mobile, but `'Input' in table` can still be true there at runtime: narrow with `e.surface !== 'mobile' && 'Input' in table`.\r\n- Test stubs:\r\n  - `fs.*` paths arrive with backslashes: normalize them.\r\n  - A bottom `prompt.submit` stub must return `{ text }`.\r\n  - `classic.Stop` and `turn.complete` need bottom stubs.\r\n  - Unmount a pane before mounting it again.\r\n  - `$.model.complete` stubs answer `{ value: { isAnswered, text, usage } }`. The stub's `next.signal` aborts with the caller's AbortController.\r\n  - The test `$` has no `state` noun, and test hooks can't call `$.state`. Assert plugin state through `$.ui.mount` + `find`.\r\n- Git Bash here halves backslash runs before bash sees them. Never put Windows backslash paths in heredoc or inline Python strings; use forward slashes, or the Edit/Write tools.\r\n- Live checks: `claude -p \"...\" --plugin-dir ./<plugin> --output-format stream-json --verbose`.\r\n  - Prefix slash commands with `MSYS_NO_PATHCONV=1`.\r\n  - Pass plugin options with `--settings <file>` (`pluginConfigs`); it merges with user settings.\r\n- Test terminals: the tool shell sets `NO_COLOR=1`, so clear it to see band colors. Launch `wt.exe` through a `.ps1` file, since `wt` splits commands on `;`.\r\n- Guard and lint rules that block or rewrite match the command position only. Replay them over the real-command corpus before shipping.\r\n- Generated `.claude-plugin/types/claude-code-mcp` is rewritten only on an interactive save; for a new plugin, copy a sibling's types and add its own `mcp__<plugin>__*` tool inputs by hand so tsc accepts the matchers.\r\n  - `claude plugin test` regenerates that folder too and drops hand edits. Declare a plugin's own tool inputs instead as an `interface McpToolInputs` augmentation in its `types/index.d.ts` (bws-cockpit does).\r\n- In the manifest's types contract (`types/index.d.ts`), an `import('…')` type makes the validator report every `PluginState` key as not declared. Write the shapes inline.\r\n- Never push `main` to `mods`: its `runs/` holds private prompts and transcripts. `git push private main` is fine (bws-claude-mods-dev, a private repo). Publish to `mods` only the orphan `publish` branch:\r\n  - Refresh it in a scratch worktree with `git checkout main -- bws-cockpit bws-shell-lint`.\r\n  - That checkout never deletes files the source commit dropped. Use `git restore --source=<commit> --staged --worktree -- <dirs>` instead, then confirm with `git ls-files` vs `git ls-tree -r --name-only <commit>` and `git diff --cached --quiet <commit> -- <dirs>`.\r\n  - A fresh worktree has no `.claude-plugin/types/` (gitignored), so tsc fails with TS5083. Copy each mod's generated types folder in from the working tree first.\r\n- Install: the published repo is the `bws-mods` marketplace (`.claude-plugin/marketplace.json`, installed from `bsmi021/bws-claude-mods`). While `CLAUDE_CODE_PLUGIN_DIRS` lists a mod's source folder, that source copy shadows the installed copy, so nothing loads twice.\r\n  - Remote `mods` is the private repo github.com/bsmi021/bws-claude-mods. Its push rule maps only `publish` to `main`, so `git push mods` never sends this repo's `main`.\r\n  - Scan for names, project and game names, serials and paths first.\n\nContents of C:\\Users\\bsmi0\\.claude\\projects\\C--Projects-bws-mods-claude-code\\memory\\MEMORY.md (user's auto-memory, persists across conversations):\n\n- [Real tsc path](real-tsc-path.md) — PATH tsc is a bogus package; use pnpm global typescript@5.8.3\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nAs you answer the user's questions, you can use the following context:\n# userEmail\nThe user's email address is bsmi021@gmail.com. Use it only to identify the user, such as for authorship, attribution, or filtering their own work. Never send it to an unrelated service, such as in a request header, URL, or payload, unless the user explicitly asks.\n# gitStatus\nThis is the git status at the start of the conversation. Note that this status is a snapshot in time, and will not update during the conversation.\n\nCurrent branch: feat/video-mods\n\nMain branch (you will usually use this for PRs): main\n\nGit user: Brian Smith\n\nStatus:\n?? bws-secrets-spike/\n?? runs/2026-10-13-mods-m8-secrets/\n\nRecent commits:\nc62ecbc M7 T08, T10: harness gate passed at 6facd4f; mod DONE\n6facd4f M7 T05: Decide closes the tree (and ends forks) before scheduling the send\ne8579a5 M7: MANUAL-CHECKS, HANDOFF and RUNLOG drafts\nb50e54d M7 T07: AC-DT-01 probe receipt (/explain opens the root with three options)\n89b910f M7 T06: bws-sidechat 0.2.0, README decision tree section and options\n\nClaude Code attached this context automatically; it isn't part of the user's message. It describes the user's own account and workspace, so they don't need it reported back.\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nToday's date is 2026-10-13.\n</system-reminder>"
+    },
+    {
+     "type": "text",
+     "text": "<system-reminder>\nAttribution for git commits and pull requests you create from here on (this replaces Claude Code's own earlier attribution guidance, such as a previous copy of this reminder; the user's own instructions about these lines, such as a CLAUDE.md or memory rule, take precedence over this reminder, but do not add attribution lines this reminder leaves out):\n- End git commit messages with:\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n- End pull request descriptions with:\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n</system-reminder>\n"
+    },
+    {
+     "type": "text",
+     "text": "This is a test of a plugin. Run these five Bash commands exactly as written (do not change the curly-brace placeholders), one Bash tool call each, in this order, then reply with the word DONE and nothing else:\n1. test -n \"{{secret:SPIKE_A}}\" && echo A-set\n2. echo \"B=[{{secret:SPIKE_B}}]\"\n3. printf %s \"{{secret:SPIKE_B}}\" | base64\n4. echo \"C=[{{secret:SPIKE_C}}]\"\n5. echo \"D=[{{secret:SPIKE_D}}]\""
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_01HnBRVoU9M3UTJMnYqbkJRh",
+     "name": "Bash",
+     "input": {
+      "command": "test -n \"{{secret:SPIKE_A}}\" && echo A-set"
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_01HnBRVoU9M3UTJMnYqbkJRh",
+     "type": "tool_result",
+     "content": "A-set\n\n<system-reminder>\n<total_tokens>14966716 tokens left</total_tokens>\n</system-reminder>",
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_01KUoaPhSvYhZPZHiPJU6rLS",
+     "name": "Bash",
+     "input": {
+      "command": "echo \"B=[{{secret:SPIKE_B}}]\""
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_01KUoaPhSvYhZPZHiPJU6rLS",
+     "type": "tool_result",
+     "content": "B=[{{secret:SPIKE_B}}]\n\n<system-reminder>\n<total_tokens>14966616 tokens left</total_tokens>\n</system-reminder>",
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_01H7dfUPbnStSnekPe3BqaFS",
+     "name": "Bash",
+     "input": {
+      "command": "printf %s \"{{secret:SPIKE_B}}\" | base64"
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_01H7dfUPbnStSnekPe3BqaFS",
+     "type": "tool_result",
+     "content": "{{secret:SPIKE_B}}\n\n<system-reminder>\n<total_tokens>14966500 tokens left</total_tokens>\n</system-reminder>",
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_01HK71fu61LoSBfHmugWgj3K",
+     "name": "Bash",
+     "input": {
+      "command": "echo \"C=[{{secret:SPIKE_C}}]\""
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_01HK71fu61LoSBfHmugWgj3K",
+     "type": "tool_result",
+     "content": "C=[{{secret:SPIKE_C}}]\n\n<system-reminder>\n<total_tokens>14966389 tokens left</total_tokens>\n</system-reminder>",
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_01Jz35xyvX6s5rhKCvzxXvbf",
+     "name": "Bash",
+     "input": {
+      "command": "echo \"D=[{{secret:SPIKE_D}}]\""
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ]
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_01Jz35xyvX6s5rhKCvzxXvbf",
+     "type": "tool_result",
+     "content": "D=[{{secret:SPIKE_D}}]\n\n<system-reminder>\nThe user hasn't heard from you in a while — say in a few words what you're doing, then continue.\n</system-reminder>\n\n<system-reminder>\n<total_tokens>14966274 tokens left</total_tokens>\n</system-reminder>",
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "type": "text",
+     "text": "DONE"
+    }
+   ]
+  }
+ ]
+}

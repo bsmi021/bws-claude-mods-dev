@@ -1,0 +1,18 @@
+# spike probe 1 greps (session 0bb80a4c-3d70-4581-a93e-ef48b136ae0b, Claude Code 2.1.296 (Claude Code), model sonnet, cost 0.155 USD)
+# command: python tools/probe.py --plugin bws-secrets-spike --prompt-file runs/2026-10-13-mods-m8-secrets/spike/prompt-1.txt --settings runs/2026-10-13-mods-m8-secrets/spike/settings.json --model sonnet --out runs/2026-10-13-mods-m8-secrets/receipts/spike-probe-1.json
+# counts of each fake value: (i) stream-json  (ii) messages-dump.json ($.session.messages rows + api)  (iii) transcript file on disk
+spkAAA-7731 | stream=0 dump=0 transcript=0
+spkBBB-4402 | stream=0 dump=0 transcript=0
+c3BrQkJCLTQ0MDI= | stream=0 dump=0 transcript=0
+spkCCC-9915 | stream=1 dump=0 transcript=1
+spkDDD-5068 | stream=0 dump=0 transcript=0
+export SPIKE | stream=0 dump=0 transcript=0
+bws-m8-spike | stream=0 dump=0 transcript=0
+# the one C hit in the transcript:
+"toolUseResult":{"stdout":"C=[spkCCC-9915]"
+# tool_use inputs as recorded (transcript):
+"input":{"command":"test -n \"{{secret:SPIKE_A}
+"input":{"command":"echo \"B=[{{secret:SPIKE_B}
+"input":{"command":"printf %s \"{{secret:SPIKE_B}
+"input":{"command":"echo \"C=[{{secret:SPIKE_C}
+"input":{"command":"echo \"D=[{{secret:SPIKE_D}

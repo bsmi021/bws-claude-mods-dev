@@ -1,0 +1,6 @@
+This is a test of a plugin. Run these five Bash commands exactly as written (do not change the curly-brace placeholders), one Bash tool call each, in this order, then reply with the word DONE and nothing else:
+1. test -n "{{secret:SPIKE_A}}" && echo A-set
+2. echo "B=[{{secret:SPIKE_B}}]"
+3. printf %s "{{secret:SPIKE_B}}" | base64
+4. echo "C=[{{secret:SPIKE_C}}]"
+5. echo "D=[{{secret:SPIKE_D}}]"
