@@ -159,7 +159,7 @@ export const register: Register = (on, options) => {
     try {
       await update($, entry, () => ({ name: args.name, purpose: args.purpose, hasSaved, note: '' }))
       await publish($)
-      const opened = await $.ui.open({ id: SECRETS_PANE, title: `Secret ${args.name}`, focus: true })
+      const opened = await $.ui.open({ id: SECRETS_PANE, title: `Secret ${args.name}`, focus: true, closeOnEscape: true })
       if (!opened.isPlaced) return { deny: notPlacedText(opened.reason) }
       const argv = sleeperArgv((await $.env.get('OS')) === 'Windows_NT')
       for (;;) {
