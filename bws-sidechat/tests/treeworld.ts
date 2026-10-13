@@ -114,7 +114,7 @@ export const TREE_PANE = (bodyRows = 30, surface: 'terminal' | 'desktop' = 'term
     component: 'Pane',
     requestId: 'decisiontree',
     surface,
-    props: { title: 'Decision tree', isFocused: false, bodyColumns: 70, placement: 'dock', scroll: { offset: 0, bodyRows }, view: {} },
+    props: { title: 'Decision tree', isFocused: false, bodyColumns: 140, placement: 'dock', scroll: { offset: 0, bodyRows }, view: {} },
   }) as const
 
 export const run = ($: { command: { run: (i: never) => Promise<{ text?: string }> } }, command: string, args = '') => $.command.run({ command, args } as never)
