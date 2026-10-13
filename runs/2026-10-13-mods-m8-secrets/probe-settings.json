@@ -1,0 +1,4 @@
+{
+  "pluginConfigs": { "bws-secrets": { "options": { "secretsDir": "C:/Users/bsmi0/AppData/Local/Temp/bws-m8-probe" } } },
+  "permissions": { "allow": ["Bash", "mcp__bws-secrets__request_secret"] }
+}
