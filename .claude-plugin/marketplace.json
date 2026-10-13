@@ -18,12 +18,24 @@
       "source": "./bws-design-picker"
     },
     {
+      "name": "bws-diagram",
+      "source": "./bws-diagram"
+    },
+    {
       "name": "bws-enhance",
       "source": "./bws-enhance"
     },
     {
+      "name": "bws-memory",
+      "source": "./bws-memory"
+    },
+    {
       "name": "bws-notify",
       "source": "./bws-notify"
+    },
+    {
+      "name": "bws-secrets",
+      "source": "./bws-secrets"
     },
     {
       "name": "bws-shell-lint",
@@ -32,6 +44,13 @@
     {
       "name": "bws-sidechat",
       "source": "./bws-sidechat"
+    },
+    {
+      "name": "bws-skillgate",
+      "source": "./bws-skillgate"
     }
-  ]
+  ],
+  "metadata": {
+    "version": "1.0.0"
+  }
 }
