@@ -130,3 +130,19 @@ characters in its own local state, draws one `•` per character, and on Enter p
 a click has given it the focus"), so the pane says "click the box, type, press Enter". Surfaces without `Client`
 (mobile, VS Code) and headless runs get no pane: a name already saved is reused (`saved as NAME; ...`); otherwise the
 call is refused with a note that the person must run it in a terminal or desktop session.
+
+## D8. The read guard (FR-SB-03)
+- Read: refused when `file_path` resolves inside the folder. Grep and Glob: refused when the search root (`path`, else
+  the working directory) is the folder, inside it, or a parent of it (a search would walk into it); a Glob pattern with
+  its own absolute path is checked the same way. Paths are compared lower-cased with forward slashes.
+- Bash, "command position only": the folder is a path, so a command is refused when it names the folder's path in any
+  shell form (absolute, `C:\...`, `/c/...`, `~/`, `$HOME/`, `${HOME}/`, `%USERPROFILE%\`, `$env:USERPROFILE\`, relative
+  to cwd), anywhere in the command, quotes dropped. A script in a heredoc can read the file, so heredoc bodies count.
+  The bare folder name (`bws-secrets`, the plugin's own source folder) never matches, nor does a longer name that starts
+  the same (`bws-secrets-old`).
+- Replay: `replay_guard.py` (a 1:1 port of the Bash rule) over 64,110 real Bash commands from 1,234 transcripts of the
+  last 30 days refused none (`receipts/t04-corpus-replay.txt`). The hand corpus in `tests/guard.test.ts` holds 24 clean
+  commands near the name and 13 reads in every form.
+- A guard that throws refuses the call (fail closed), unless the call already went on.
+- Not caught (README): a recursive search of a parent folder in Bash (`grep -r KEY ~`), a path built at run time, and
+  other tools (PowerShell, an MCP server, a subagent's own process).

@@ -1,0 +1,3 @@
+bws-secrets FR-SB-03 corpus replay, 2026-10-13 11:16
+secrets folder: ~/.claude/bws-secrets; transcripts (last 30 days): 1234; Bash commands: 64110
+refused: 0

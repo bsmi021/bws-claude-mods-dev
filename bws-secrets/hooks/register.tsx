@@ -18,11 +18,13 @@ import {
   waitText,
   type Answer,
 } from './request'
+import { denyText, touchesSecrets, type GuardInput } from './guard'
 import { formatEnv, parseEnv, secretsDir, secretsFile, setSecret, valueError, type Secret } from './secrets'
 
 const SECRETS_PANE = 'bws-secrets'
 const ENTRY_KEY = 'secret-entry'
 const SLEEPER_TIMEOUT_MS = 5_000
+const GUARD_FAILED = 'bws-secrets: the secrets guard failed, so the call was refused. Try again.'
 
 const entry = atom({ plugin: 'bws-secrets', key: 'entry' } as const, null as EntryView | null)
 
@@ -31,10 +33,17 @@ let dirOption = ''
 // The one open request: its name and the person's answer once one arrives (memory only; never the atom).
 let pending: { name: string; answer: Answer | null } | null = null
 
-async function paths($: EngineInterface): Promise<{ dir: string; file: string }> {
+async function paths($: EngineInterface): Promise<{ dir: string; file: string; home: string; cwd: string }> {
   const home = (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE')) ?? ''
   const dir = secretsDir(dirOption, home)
-  return { dir, file: secretsFile(dir, await $.session.cwd()) }
+  const cwd = await $.session.cwd()
+  return { dir, file: secretsFile(dir, cwd), home, cwd }
+}
+
+// FR-SB-03: the refusal for a call that would read the secrets folder, or null.
+async function guardText($: EngineInterface, e: GuardInput): Promise<string | null> {
+  const p = await paths($)
+  return touchesSecrets(e, p.dir, p.cwd, p.home) ? denyText(e.tool, p.dir) : null
 }
 
 // The saved names and values; a missing or unreadable file is an empty list.
@@ -134,6 +143,25 @@ export const register: Register = (on, options) => {
     await $.ui.close({ id: SECRETS_PANE })
     return { deny: FAILED_TEXT }
   })
+
+  // FR-SB-03: Read, Grep, Glob and Bash calls that would read the secrets folder are refused. A guard that fails
+  // refuses (fail closed) unless the call already went on.
+  on('tool.call', { tool: 'Read' }, async ($, e, next) => {
+    const no = await guardText($, e)
+    return no ? { deny: no } : next(e)
+  }).catch(($, e, next) => (next.called ? next(e) : { deny: GUARD_FAILED }))
+  on('tool.call', { tool: 'Grep' }, async ($, e, next) => {
+    const no = await guardText($, e)
+    return no ? { deny: no } : next(e)
+  }).catch(($, e, next) => (next.called ? next(e) : { deny: GUARD_FAILED }))
+  on('tool.call', { tool: 'Glob' }, async ($, e, next) => {
+    const no = await guardText($, e)
+    return no ? { deny: no } : next(e)
+  }).catch(($, e, next) => (next.called ? next(e) : { deny: GUARD_FAILED }))
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    const no = await guardText($, e)
+    return no ? { deny: no } : next(e)
+  }).catch(($, e, next) => (next.called ? next(e) : { deny: GUARD_FAILED }))
 
   // The entry posts the typed value here, and only here: handled completely, so it goes no further.
   on('ui.message', { requestId: SECRETS_PANE }, async ($, e, next) => {
