@@ -1,5 +1,5 @@
 # M8 — Secret box
-Status: IN_PROGRESS
+Status: DONE
 Session: 1
 
 ## Tasks
@@ -11,9 +11,10 @@ Session: 1
 - [x] T06 [FR-SB-05] Implement, with tests: `/secrets` lists names only (never values) and removes one; the pane never shows a saved value.
 - [x] T07 [FR-SB-06] Implement, with tests: README with the threat model and what it does not protect (a command that sends the value somewhere, a file the user points it at). Summary atom show…
 - [x] T08 [AC-SB-01] Verify, saving the receipt under the run folder's receipts/: Probe: Claude is asked to call `request_secret` then run a command using the placeholder; the receipt shows the transcript contains no value. (evidence: `receipts/m8-probe.json`)
-- [~] T09 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
+- [x] T09 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
+  - note: harness gate PASS at a46ea21 (2026-10-13 11:23), receipt written by the harness
 - [x] T10 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
-- [ ] T11 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
+- [x] T11 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
 
 ## Needs Brian
 

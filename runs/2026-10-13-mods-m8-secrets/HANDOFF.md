@@ -1,6 +1,6 @@
 # Handoff: M8 secret box (bws-secrets 0.1.0, new plugin)
 
-Status: all tasks done and committed on `feat/video-mods`; the harness gate result is in RUNLOG.md. Brian's interactive
+Status: DONE. All tasks committed on `feat/video-mods`; the harness gate passed at a46ea21 (RUNLOG.md). Brian's interactive
 checks are in MANUAL-CHECKS.md (13 checks; the worker only ran headless). Decisions D1 to D8: DECISIONS.md.
 
 ## What exists (later mods: read this)
@@ -77,6 +77,12 @@ checks are in MANUAL-CHECKS.md (13 checks; the worker only ran headless). Decisi
 - `claude plugin validate` reports `gating hook without .catch: ui.close` (its handler only records a cancel).
 - Test engine: `$` calls are slow; tests wait with `settle()` until the request's sleeper runs. The stub sleeper takes
   20 ms, so the 900-sleep cap is not reached while a test acts.
+- Known test gap: the `.catch` paths (`GUARD_FAILED`, `WITHHELD`, `FAILED_TEXT`) are untested; the test engine skips a
+  throwing stub instead of failing the hook (as M6 found). They refuse or withhold (fail closed).
+- The `.catch` handlers write no debug line. FR-ALL-03's debug line is read as covering classifier and fork failures.
+  This mod has neither.
+- Decision: the scrub of a large output writes into Claude Code's own `tool-results` file (`persistedOutputPath`) to
+  remove the leaked copy there. It is a deliberate write to an engine-owned file.
 - `hooks/kit/` is generated; never edit it. New plugin: `.claude-plugin/types/` is gitignored (copied from a sibling).
 
 ## Next step

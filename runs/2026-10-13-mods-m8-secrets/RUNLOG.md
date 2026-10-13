@@ -19,3 +19,5 @@ Brief: build bws-secrets (FR-SB-01 to 06, AC-SB-01) per docs/SPEC-VIDEO-MODS.md,
 - T10 MANUAL-CHECKS.md (13 checks). T11 HANDOFF.md.
 - Assumptions recorded: A1 to A7. Plugin version: bws-secrets 0.1.0 (new). No other plugin changed.
 - Chronicler: not consulted (no TMS content).
+- T09 harness gate (`python tools/mods-harness/harness.py gate`): PASS at a46ea21, 2026-10-13 11:23 (all plugins: validate,
+  plugin test, tsc strict, kit sync). Status DONE.
