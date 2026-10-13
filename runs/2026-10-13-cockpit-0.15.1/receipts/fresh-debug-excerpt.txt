@@ -1,0 +1,20 @@
+2026-10-13T19:39:43.610Z [DEBUG] Read hooks.json for plugin bws-cockpit (enabled=true): C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-cockpit\0.15.1\hooks\hooks.json
+2026-10-13T19:39:43.714Z [DEBUG] Checking plugin bws-cockpit: skillsPath=none, skillsPaths=0 paths
+2026-10-13T19:39:46.210Z [DEBUG] Keeping C:\Users\bsmi0\.claude\plugins\cache\bws-mods\bws-cockpit: it still holds a directory, a symlink, a versioned archive or an entry of unknown type
+2026-10-13T19:39:47.342Z [DEBUG] hooks module bws-cockpit@bws-mods loaded (worker, environment 3, tier user); events: command.run,agent.spawn,tool.call,prompt.submit,classic.Stop,turn.complete,session.start,prompt.context,prompt.compose,ui.close,state.set,ui.render
+2026-10-13T19:39:47.501Z [DEBUG] engine.create: no plugin-provided interfaces; $ built for next-steps,bws-board,bws-cockpit,bws-design-picker,bws-enhance,bws-notify,bws-shell-lint,bws-sidechat,cc-plugin-agents-md,cc-plugin-you-should-know
+2026-10-13T19:39:47.503Z [DEBUG] plugin.register: bws-cockpit (user, bws-cockpit@bws-mods), judged by core alone: admitted
+2026-10-13T19:39:48.384Z [DEBUG] Checking plugin bws-cockpit: skillsPath=none, skillsPaths=0 paths
+2026-10-13T19:39:49.126Z [DEBUG] hooks module bws-cockpit@bws-mods: state.set nested in bws-board#0
+2026-10-13T19:39:49.129Z [DEBUG] hooks module bws-cockpit@bws-mods state.set settled in 3.5ms (worker hop, next() included)
+2026-10-13T19:39:49.139Z [DEBUG] $.command.register (bws-cockpit): /cockpit listed
+2026-10-13T19:39:49.140Z [DEBUG] Checking plugin bws-cockpit: skillsPath=none, skillsPaths=0 paths
+2026-10-13T19:39:49.149Z [DEBUG] $.command.register (bws-cockpit): /resume-run listed
+2026-10-13T19:39:49.151Z [DEBUG] Checking plugin bws-cockpit: skillsPath=none, skillsPaths=0 paths
+2026-10-13T19:39:49.182Z [DEBUG] $.command.register (bws-cockpit): /loop-watch listed
+2026-10-13T19:39:49.183Z [DEBUG] Checking plugin bws-cockpit: skillsPath=none, skillsPaths=0 paths
+2026-10-13T19:39:49.191Z [DEBUG] $.command.register (bws-cockpit): /handoff listed
+2026-10-13T19:39:49.193Z [DEBUG] Checking plugin bws-cockpit: skillsPath=none, skillsPaths=0 paths
+2026-10-13T19:39:49.232Z [DEBUG] $.command.register (bws-cockpit): /projects listed
+2026-10-13T19:39:49.233Z [DEBUG] Checking plugin bws-cockpit: skillsPath=none, skillsPaths=0 paths
+2026-10-13T19:39:49.261Z [DEBUG] $.tool.register (bws-cockpit): 1 tool(s) served at 127.0.0.1:55866/<secret>/bws-cockpit v1

@@ -162,6 +162,7 @@ type Options = {
   projects: { isOn: boolean; roots: string[] }
   pin: { model: string; types: string[] }
   isShelfNudge: boolean
+  isDashboardOnStart: boolean
   handoffNudgePercent: number
   mods: KnownMod[]
   cache: { ttlMs: number; lowMs: number; isAutoHandoff: boolean }
@@ -867,6 +868,12 @@ async function showTab($: EngineInterface, tab: DashTab) {
   await openDash($, tab)
 }
 
+// The bar's hide button: say how to get it back, since the bar is gone once it is hidden.
+async function hideBar($: EngineInterface) {
+  await update($, isHidden, () => true)
+  $.ui.toast('Cockpit bar hidden. /cockpit show brings it back.')
+}
+
 // The bar's idea button: the prompt box's draft goes on the shelf, and the box is cleared.
 async function pressIdea($: EngineInterface) {
   const draft = (await $.prompt.read()).text.trim()
@@ -939,6 +946,7 @@ export const register: Register = (on, options) => {
       types: parseTypes(String(options.workerAgentTypes ?? 'general-purpose,claude')),
     },
     isShelfNudge: options.shelfNudge !== false,
+    isDashboardOnStart: options.dashboardOnStart !== false,
     handoffNudgePercent: Number(options.handoffNudgePercent ?? 70),
     mods: parseMods(String(options.modSummaries ?? DEFAULT_MODS)),
     cache: {
@@ -1154,7 +1162,9 @@ export const register: Register = (on, options) => {
       // bws-board's first summary write, below).
       await settle(refreshShelf($))
       const waiting = active(await read($, assumptions)).length > 0 ? 'assumptions' : (await read($, shelf)).count > 0 ? 'shelf' : null
-      if (waiting !== null) await settle(raise($, waiting))
+      // dashboardOnStart: the dashboard is there from the first prompt, on the first tab with something waiting.
+      const tab = waiting ?? (o.isDashboardOnStart ? 'assumptions' : null)
+      if (tab !== null) await settle(raise($, tab))
     }
     return next(e)
   })
@@ -1196,13 +1206,20 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'cockpit' }, async ($, e, next) => {
+    // The bar's hide button has no key to undo it once the bar is gone: /cockpit brings it back, /cockpit hide hides it.
+    const word = e.args.trim().toLowerCase()
+    if (word === 'hide') {
+      await update($, isHidden, () => true)
+      return { text: 'Cockpit bar hidden. /cockpit show brings it back.' }
+    }
+    await update($, isHidden, () => false)
     await refresh($, o, 0)
     const v = await read($, view)
     const devices = v?.devices ? devicesText(v.devices) : 'devices: n/a'
     const guard = v?.lastGuard ? `\nLast guard action: ${v.lastGuard}` : ''
     const lp = await selectedLoop($)
     const loop = lp ? `\nLoop: ${lp.name} ${loopState(lp).word}${lp.boardUrl ? ` · board ${lp.boardUrl}` : ''}` : ''
-    return { text: `${runSummary(v?.run ?? null)}\n${devices}${loop}${guard}` }
+    return { text: `${runSummary(v?.run ?? null)}\n${devices}${loop}${guard}${word === 'show' ? '\nCockpit bar shown.' : ''}` }
   })
 
   on('command.run', { command: 'resume-run' }, async ($, e, next) => {
@@ -1730,7 +1747,7 @@ export const register: Register = (on, options) => {
       ),
       <Button key="idea" plain dimColor label="idea" hotkey="i" onPress={() => void pressIdea($)} />,
       <Button key="enhance" plain dimColor label="enhance" hotkey="e" onPress={() => void pressEnhance($)} />,
-      <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => update($, isHidden, () => true)} />,
+      <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => void hideBar($)} />,
     ]
     const guardRow = showGuard ? (
       <Box flexDirection="row">

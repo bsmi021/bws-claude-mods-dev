@@ -1,0 +1,5 @@
+bws-cockpit: Run: runs/2026-09-21-system-hang-rca
+Next: Brian to action the fix list (driver update is step 1, highest value, ~15 min).
+Open items: 0
+UE off · Unity open · Blender off · adb ready · VRAM 5.4/8.0 GB (pressure)
+Cockpit bar shown.
