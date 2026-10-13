@@ -14,21 +14,25 @@ const mount = ($: { ui: { mount: (i: never) => Promise<unknown> } }, surface: st
   }>
 
 describe('FR-DG-05: the pane', () => {
-  test('heading, legend, the Raster on the terminal, labelled edges, pinned list, Prev / Next / Close', async ($, on) => {
+  test('heading, legend, the drawn boxes, footer, pinned list, Prev / Next / Close', async ($, on) => {
     const w = world(on)
     await $.session.start(START)
     await turn($, { answer: block(FLOW) })
     await drain(w.clock) // the big turn's fork adds a drawn diagram after the pin
     const ui = await mount($, 'terminal')
     expect((await ui.find({ type: 'Text', text: /^Refactor {2}2\/2 {2}\(last turn\)$/ }))).toBeDefined()
-    for (const t of ['[] file', '() new component', '[[]] step', '<> decision']) expect(await ui.find({ type: 'Text', text: new RegExp(t.replace(/[[\]()]/g, '\\$&')) })).toBeDefined()
-    expect(await ui.find({ key: 'diagram' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'config.ts -> Loader: extract' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '┌ file   ╭ component   ╔ step   ╱ decision   ▶ now' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /║ Read config ║/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /▼ extract/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /▶ Loader/ })).toBeDefined() // the fork's `now` node
+    expect(await ui.find({ type: 'Text', text: 'map drawn at turn 1' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'Pinned diagrams:' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /1\. Pinned: Parse request/ })).toBeDefined()
     await ui.press({ key: 'prev' })
     expect(await ui.find({ type: 'Text', text: /^Pinned: Parse request {2}1\/2 {2}\(pinned\)$/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'Valid? -> Write file: yes' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /▼ yes/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'pinned at turn 1' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '┌ file   ╭ component   ╔ step   ╱ decision' })).toBeDefined() // no `now`, no head in the legend
     await ui.press({ key: 'prev' }) // already first: stays
     expect(await ui.find({ type: 'Text', text: /1\/2/ })).toBeDefined()
     await ui.press({ key: 'next' })
@@ -39,29 +43,28 @@ describe('FR-DG-05: the pane', () => {
     await ui.unmount()
   })
 
-  test('resize-safe: drawn from the body width each time; too narrow shows the outline with a note', async ($, on) => {
+  test('resize-safe: drawn from the body width each time; too narrow still draws and says how wide it wants', async ($, on) => {
     const w = world(on, { surfaces: [] })
     await $.session.start(START)
     await turn($, { answer: block(FLOW) })
     const wide = await mount($, 'terminal', 80)
-    expect(await wide.find({ key: 'diagram' })).toBeDefined()
+    expect(await wide.find({ type: 'Text', text: /▼ yes/ })).toBeDefined()
+    expect(await wide.find({ type: 'Text', text: /widen the pane/ })).toBe(undefined)
     await wide.unmount()
-    const narrow = await mount($, 'terminal', 30)
-    expect(await narrow.find({ key: 'diagram' })).toBe(undefined)
-    expect(await narrow.find({ type: 'Text', text: /Too narrow to draw/ })).toBeDefined()
-    expect(await narrow.find({ type: 'Text', text: '1: [Parse request]' })).toBeDefined()
+    const narrow = await mount($, 'terminal', 6)
+    expect(await narrow.find({ type: 'Text', text: /▼/ })).toBeDefined()
+    expect(await narrow.find({ type: 'Text', text: /^pinned at turn 1; widen the pane to \d+ columns to see it all$/ })).toBeDefined()
     await narrow.unmount()
     void w
   })
 
-  test('Desktop draws the Svg with the outline as alt; an unsupported pin shows its source', async ($, on) => {
+  test('Desktop draws the same text rows; an unsupported pin shows its source', async ($, on) => {
     const w = world(on, { surfaces: [] })
     await $.session.start(START)
     await turn($, { answer: block(FLOW) })
     const desk = await mount($, 'desktop')
-    const svg = await desk.find({ type: 'Svg' })
-    expect(svg).toBeDefined()
-    expect(String(svg?.props?.alt)).toContain('[Parse request]')
+    expect(await desk.find({ type: 'Text', text: /▼ yes/ })).toBeDefined()
+    expect(await desk.find({ type: 'Svg' })).toBe(undefined)
     await desk.unmount()
     await turn($, { answer: block(SEQ) })
     const ui = await mount($, 'terminal')

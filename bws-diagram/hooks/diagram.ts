@@ -72,9 +72,10 @@ export function forkPrompt(scope: 'turn' | 'session'): string {
   const what = scope === 'turn' ? 'what happened in the last turn (since my last message)' : 'what happened in this whole session so far'
   return [
     `Draw ${what} as a small diagram for a side pane. Do not use any tools. Reply with only one JSON object:`,
-    '{"title": "...", "nodes": [{"id": "n1", "label": "...", "kind": "step"}], "edges": [{"from": "n1", "to": "n2", "label": "..."}]}',
+    '{"title": "...", "nodes": [{"id": "n1", "label": "...", "kind": "step"}], "edges": [{"from": "n1", "to": "n2", "label": "..."}], "now": "n2"}',
     `Kinds: "step" for an action taken, "file" for an existing file touched, "new" for a new component or file created, "decision" for a choice made. At most ${MAX_NODES} nodes (prefer 6 to 12).`,
     'Labels: at most 20 characters, plain ASCII (file names without folders). Edges run in the order things happened or depend; edge labels are optional and short. Title: at most 40 characters.',
+    '"now" is the id of the node where things stand now (the last step taken); leave it out if there is none.',
   ].join('\n')
 }
 
@@ -98,7 +99,7 @@ export function move(b: Board, delta: number): Board {
 export const shownEntry = (b: Board): Entry | null => b.entries[Math.max(0, Math.min(b.entries.length - 1, b.shown))] ?? null
 
 /** An entry for a drawn spec. */
-export const diagramEntry = (origin: 'auto' | 'session', d: Diagram, at: number): Omit<Entry, 'id'> => ({ origin, at, title: d.title, diagram: d, source: '' })
+export const diagramEntry = (origin: 'auto' | 'session', d: Diagram, at: number, turn?: number): Omit<Entry, 'id'> => ({ origin, at, title: d.title, diagram: d, source: '', ...(turn === undefined ? {} : { turn }) })
 
 const count = (b: Board, pinned: boolean) => b.entries.filter(e => (e.origin === 'pinned') === pinned).length
 
@@ -131,7 +132,7 @@ export function statusText(b: Board, autoDiagram: boolean): string {
 const MAX_SOURCE = 4000
 
 /** The pins a reply adds: each fenced mermaid block (five at most) not already pinned, parsed or kept as source text. */
-export function pinsFrom(answer: string, at: number, existing: readonly Entry[]): Omit<Entry, 'id'>[] {
+export function pinsFrom(answer: string, at: number, existing: readonly Entry[], turn?: number): Omit<Entry, 'id'>[] {
   const known = new Set(existing.filter(e => e.origin === 'pinned').map(e => e.source))
   const out: Omit<Entry, 'id'>[] = []
   for (const block of mermaidBlocks(answer).slice(0, MAX_PINS_PER_REPLY)) {
@@ -139,7 +140,8 @@ export function pinsFrom(answer: string, at: number, existing: readonly Entry[])
     if (known.has(source)) continue
     known.add(source)
     const p = parseMermaid(block)
-    out.push(p.ok ? { origin: 'pinned', at, title: p.diagram.title, diagram: p.diagram, source } : { origin: 'pinned', at, title: `Pinned mermaid (${p.kind})`.slice(0, 40), diagram: null, source })
+    const t = turn === undefined ? {} : { turn }
+    out.push(p.ok ? { origin: 'pinned', at, title: p.diagram.title, diagram: p.diagram, source, ...t } : { origin: 'pinned', at, title: `Pinned mermaid (${p.kind})`.slice(0, 40), diagram: null, source, ...t })
   }
   return out
 }
@@ -149,13 +151,14 @@ export const failLine = (step: string, reason: string) => `${PLUGIN}: ${step} fa
 
 // ---------- the pane ----------
 
-/** The legend: each kind's colour (render.ts's COLORS) and its shape. */
-export const LEGEND: readonly { kind: 'file' | 'new' | 'step' | 'decision'; text: string }[] = [
-  { kind: 'file', text: '[] file' },
-  { kind: 'new', text: '() new component' },
-  { kind: 'step', text: '[[]] step' },
-  { kind: 'decision', text: '<> decision' },
-]
+/** How many messages the person has sent: the turn a diagram is drawn at. */
+export const turnNumber = (rows: readonly Row[]): number => rows.filter(r => r.role === 'user' && !r.hasToolResults && r.text.trim() !== '').length
+
+/** The footer under the drawing: where and when it was made. */
+export function footerOf(e: Entry): string {
+  const what = e.origin === 'pinned' ? 'pinned' : 'map drawn'
+  return e.turn === undefined ? what : `${what} at turn ${e.turn}`
+}
 
 /** The pane's heading: the shown diagram's title, where it is in the list, and where it came from. */
 export function heading(b: Board): string {

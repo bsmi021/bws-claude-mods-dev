@@ -151,6 +151,20 @@ describe('FR-DG-03: classify big, fork once, show', () => {
     expect(w.seen.opened[w.seen.opened.length - 1]?.focus).toBe(true)
   })
 
+  test('a pin whose pane is not placed is written into the transcript, drawn, so it is seen anyway', async ($, on) => {
+    const w = world(on, { placed: false, surfaces: [] })
+    await $.session.start(START)
+    await turn($, { answer: 'Here:\n\n```mermaid\ngraph LR\n  A[Parse request] --> B{Valid?}\n  B -- yes --> C[Write file]\n```\n' })
+    await drain(w.clock)
+    const log = w.seen.logs.find(l => l.to !== 'debug' && l.text.includes('▼ yes'))
+    expect(log).toBeDefined()
+    expect(log!.text).toContain('Pinned: Parse request')
+    expect(log!.text).toContain('┌ file   ╭ component   ╔ step   ╱ decision')
+    expect(log!.text).toContain('pinned at turn 1')
+    expect(log!.text).toContain('/diagram show opens it')
+    expect(w.seen.toasts[0]).toContain('/diagram show')
+  })
+
   test('the dumpFile option writes the board after each change', { options: { dumpFile: DUMP } }, async ($, on) => {
     const w = world(on)
     await $.session.start(START)

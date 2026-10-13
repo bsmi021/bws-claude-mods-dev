@@ -2,7 +2,7 @@
 // in a side pane. Mermaid blocks Claude writes are pinned there too. The only file that uses `$`.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
-import type { Board, Diagram } from '../types'
+import type { Board, Diagram, Entry } from '../types'
 import { classifyGate, runFork } from './kit/classify-fork'
 import type { KitModel } from './kit/classify-fork'
 import {
@@ -16,7 +16,7 @@ import {
   heading,
   keepBoard,
   keptBoard,
-  LEGEND,
+  footerOf,
   move,
   failLine,
   pinsFrom,
@@ -26,11 +26,10 @@ import {
   skipReason,
   statusText,
   turnCounts,
+  turnNumber,
   type Row,
 } from './diagram'
-import { drawKind } from './draw'
-import { layered } from './layout'
-import { COLORS, edgeLines, outline, rasterOf, svgOf } from './render'
+import { INK, legendOf, textRows } from './render'
 import { parseDiagramReply } from './spec'
 
 const PANE = 'bws-diagram'
@@ -76,11 +75,22 @@ async function setBoard($: EngineInterface, f: (b: Board) => Board, isKept = tru
   if (dumpFile) await $.fs.write(dumpFile, JSON.stringify(b, null, 2)).catch(() => $.ui.log(failLine('dump', 'not written'), { to: 'debug' }))
 }
 
-// Opens the pane fresh: close first, so it is never mounted twice. An open the person did not ask for may not be placed.
-async function openPane($: EngineInterface) {
+// Opens the pane fresh: close first, so it is never mounted twice. An open the person did not ask for may not be placed
+// (under 144 columns, 110 once they have asked for it): then the diagram is written into the transcript instead, so it
+// is seen either way.
+async function openPane($: EngineInterface, entry?: Entry | null) {
   await $.ui.close({ id: PANE })
   const r = await $.ui.open({ id: PANE, title: 'Diagram', columns: 100, closeOnEscape: true })
-  if (!r.isPlaced) $.ui.toast(`Diagram ready, pane not shown (${r.reason}). /diagram show opens it.`)
+  if (r.isPlaced) return
+  $.ui.toast(`Diagram ready, pane not shown (${r.reason}). /diagram show opens it.`)
+  if (entry) $.ui.log(transcriptText(entry, `The pane needs a wider window (${r.reason}); /diagram show opens it.`))
+}
+
+// The shown entry as lines for the transcript: title, legend, the drawing at 100 columns, the footer.
+function transcriptText(e: Entry, note: string): string {
+  const d = e.diagram
+  const body = d ? textRows(d, 100).rows : ['(not a flowchart this pane can draw)', ...e.source.split('\n').slice(0, 12)]
+  return [e.title, ...(d ? [legendOf(d)] : []), ...body, footerOf(e), note].join('\n')
 }
 
 async function closePane($: EngineInterface) {
@@ -154,8 +164,9 @@ async function draw($: EngineInterface, scope: 'turn' | 'session', material: str
     const spec = parseDiagramReply(reply)
     if (!spec.ok) return await fail('validate', spec.error)
     const at = await $.clock.now()
-    await setBoard($, b => ({ ...addEntry(b, diagramEntry(scope === 'turn' ? 'auto' : 'session', spec.diagram, at)), phase: 'idle', note: '' }))
-    await openPane($)
+    const turn = turnNumber(await rows($))
+    await setBoard($, b => ({ ...addEntry(b, diagramEntry(scope === 'turn' ? 'auto' : 'session', spec.diagram, at, turn)), phase: 'idle', note: '' }))
+    await openPane($, shownEntry(await read($, board)))
     return { text: `Diagram drawn: ${spec.diagram.title} (${spec.diagram.nodes.length} nodes).`, isDrawn: true }
   } catch (err) {
     return await fail('draw', err instanceof Error ? err.message.slice(0, 80) : 'error')
@@ -180,10 +191,10 @@ async function pin($: EngineInterface, answer: string) {
   if (!answer.includes('mermaid')) return
   await syncSession($)
   const b = await read($, board)
-  const pins = pinsFrom(answer, await $.clock.now(), b.entries)
+  const pins = pinsFrom(answer, await $.clock.now(), b.entries, turnNumber(await rows($)))
   if (pins.length === 0) return
   await setBoard($, x => pins.reduce(addEntry, x))
-  await openPane($)
+  await openPane($, shownEntry(await read($, board)))
 }
 
 // /diagram: the whole session, no classifier. Headless the process may end once the command returns, so it is awaited.
@@ -263,16 +274,9 @@ export const register: Register = (on, options) => {
     const { Box, Button, Text } = table
     if (!entry) return <Text dimColor>No diagrams yet. /diagram draws the session.</Text>
     const d: Diagram | null = entry.diagram
-    const legend = (
-      <Box key="legend" flexDirection="row">
-        {LEGEND.map(x => (
-          <Text key={`legend-${x.kind}`} color={COLORS[x.kind]}>
-            {x.text}{'  '}
-          </Text>
-        ))}
-      </Box>
-    )
     let body
+    let legend = null
+    let footer = footerOf(entry)
     if (!d) {
       body = (
         <Box key="body" flexDirection="column">
@@ -281,35 +285,14 @@ export const register: Register = (on, options) => {
         </Box>
       )
     } else {
-      const l = layered(d)
-      const kind = drawKind(e.surface, { raster: 'Raster' in table, svg: 'Svg' in table })
-      const notes = edgeLines(d, false).map((n, i) => <Text key={`note${i}`} dimColor wrap="truncate-end">{n}</Text>)
-      const art = kind === 'raster' ? rasterOf(d, e.props.bodyColumns, l) : null
-      if (art && 'Raster' in table) {
-        const { Raster } = table
-        body = (
-          <Box key="body" flexDirection="column">
-            <Raster key="diagram" columns={art.columns} rows={art.rows} cells={art.cells} />
-            {notes}
-          </Box>
-        )
-      } else if (kind === 'svg' && 'Svg' in table) {
-        const { Svg } = table
-        const svg = svgOf(d, l)
-        body = (
-          <Box key="body" flexDirection="column">
-            <Svg source={svg.source} alt={svg.alt} width={svg.width} />
-            {notes}
-          </Box>
-        )
-      } else {
-        body = (
-          <Box key="body" flexDirection="column">
-            {kind === 'raster' ? <Text dimColor>Too narrow to draw; widen the pane. The outline:</Text> : null}
-            {outline(d, l).map((line, i) => <Text key={`line${i}`} wrap="truncate-end">{line}</Text>)}
-          </Box>
-        )
-      }
+      const drawn = textRows(d, e.props.bodyColumns)
+      legend = <Text key="legend" color={INK}>{legendOf(d)}</Text>
+      if (drawn.isCut) footer += `; widen the pane to ${drawn.needed} columns to see it all`
+      body = (
+        <Box key="body" flexDirection="column">
+          {drawn.rows.map((line, i) => <Text key={`row${i}`} color={INK} wrap="truncate-end">{line === '' ? ' ' : line}</Text>)}
+        </Box>
+      )
     }
     const pinned = b.entries.flatMap((x, i) => (x.origin === 'pinned' ? [{ x, i }] : []))
     const atStart = b.shown <= 0, atEnd = b.shown >= b.entries.length - 1
@@ -318,6 +301,7 @@ export const register: Register = (on, options) => {
         <Text bold wrap="truncate-end">{heading(b)}</Text>
         {legend}
         {body}
+        <Text key="footer" dimColor wrap="truncate-end">{footer}</Text>
         {pinned.length > 0 ? <Text key="pinned-head" dimColor>Pinned diagrams:</Text> : null}
         {pinned.map(p => (
           <Text key={`pin${p.x.id}`} wrap="truncate-end" bold={p.i === b.shown}>

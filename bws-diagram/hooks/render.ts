@@ -1,104 +1,234 @@
-// A laid-out diagram drawn with the kit's raster.ts (FR-DG-02): a `Spec` of blocks, then `rasterize` for the
-// terminal's Raster or `toSvg` for the remote surfaces' Svg; plus the text outline every surface can show. Pure: no `$`.
-import type { Diagram, NodeKind } from '../types'
-import { printable, rasterize, toBase64, toSvg, type Block, type Spec } from './kit/raster'
-import { NODE_ROWS, fitNodeWidth, wantedNodeWidth } from './draw'
-import { edgeCells, gapWidths, layered, place, type Geometry, type Layered } from './layout'
+// A laid-out diagram drawn as plain text rows (FR-DG-02), top to bottom, in thin box-drawing characters: a box per
+// node (its corners say what it is), `▼ label` where an edge arrives, a legend and a footer. Every surface draws the
+// same rows, so there is no Raster or Svg and nothing to fall back from. Pure: no `$`.
+import type { Diagram, DiagramNode, NodeKind } from '../types'
+import { printable } from './kit/raster'
+import { isDummy, layered, type Layered } from './layout'
 
-export const BG = '#1b1d23'
-export const EDGE = '#9ca3af'
-export const COLORS: Record<NodeKind, string> = { file: '#3b82f6', new: '#10b981', step: '#f59e0b', decision: '#a855f7' }
-export const SHAPE_NAMES: Record<NodeKind, string> = { file: 'square: file', new: 'rounded: new component', step: 'double: step', decision: 'oval: decision' }
+export const INK = '#22b8cf'
 
-const hasStep = (d: Diagram) => d.nodes.some(n => n.kind === 'step')
+const NODE_H = 3 // top border, label, bottom border
+const MARGIN = 1
+const SPACE = 2 // columns between two slots of a layer
+export const MIN_W = 8
+export const MAX_W = 26
 
-/** The label as it fits a node of width `w`: ASCII, cut to the node's text room (a step's inner box is narrower). */
-export const fitLabel = (label: string, kind: NodeKind, w: number) => printable(label).slice(0, Math.max(1, w - (kind === 'step' ? 6 : 2)))
+// Direction bits per cell; the glyph is chosen once every segment is in, so crossings and joins come out right.
+const U = 1, D = 2, L = 4, R = 8
+const JOIN = [' ', '│', '│', '│', '─', '┘', '┐', '┤', '─', '└', '┌', '├', '─', '┴', '┬', '┼']
 
-/** The blocks of a placed diagram, in a frame `frame` cells wide and `frameRows` rows tall (rows are 2 pixels). */
-export function blocks(g: Geometry, mode: 'raster' | 'svg', frame: { columns: number; rows: number }): Block[] {
-  const W = frame.columns, H = frame.rows * 2
-  const at = (x: number, y: number, w: number, h: number) => ({ x: (x / W) * 100, y: (y / H) * 100, w: (w / W) * 100, h: (h / H) * 100 })
-  const out: Block[] = []
-  const tall = NODE_ROWS * 2
-  for (const n of g.nodes) {
-    const y = n.row * 2
-    const c = COLORS[n.kind]
-    const text = fitLabel(n.label, n.kind, g.nodeW)
-    if (n.kind === 'step') {
-      // A terminal pixel is a half cell, so the frames are a pixel; in the Svg they are thinner, so the label has room.
-      const t = mode === 'raster' ? 1 : 0.5
-      out.push({ ...at(n.x, y, g.nodeW, tall), fill: c, shape: 'rect' })
-      out.push({ ...at(n.x + 1, y + t, g.nodeW - 2, tall - 2 * t), fill: BG, shape: 'rect' })
-      out.push({ ...at(n.x + 2, y + 2 * t, g.nodeW - 4, tall - 4 * t), fill: c, text, shape: 'rect' })
+type Frame = { tl: string; tr: string; bl: string; br: string; h: string; v: string }
+const FRAMES: Record<NodeKind, Frame> = {
+  file: { tl: '┌', tr: '┐', bl: '└', br: '┘', h: '─', v: '│' },
+  new: { tl: '╭', tr: '╮', bl: '╰', br: '╯', h: '─', v: '│' },
+  step: { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' },
+  decision: { tl: '╱', tr: '╲', bl: '╲', br: '╱', h: '─', v: '│' },
+}
+
+export type Drawn = { rows: string[]; needed: number; isCut: boolean }
+
+type Hop = { a: string; b: string; gap: number; down: boolean; up: boolean; label: string; upLabel: string; xa: number; xb: number; track: number }
+
+/**
+ * The rows for a pane `columns` wide. Nodes shrink (down to MIN_W, labels cut) until the widest layer fits; if even
+ * that overflows, the rows are drawn anyway, `isCut` is true and `needed` says how many columns they want.
+ */
+export function textRows(d: Diagram, columns: number, l: Layered = layered(d)): Drawn {
+  const labelOf = (n: DiagramNode) => (n.id === d.now ? '▶ ' : '') + printable(n.label)
+  const byId = new Map(d.nodes.map(n => [n.id, n]))
+  const longest = d.nodes.reduce((m, n) => Math.max(m, labelOf(n).length), 0)
+  const widthAt = (w: number) => Math.max(...l.layers.map(s => MARGIN * 2 + s.reduce((t, v) => t + (isDummy(v) ? 1 : w), 0) + SPACE * (s.length - 1)))
+  let W = Math.max(MIN_W, Math.min(MAX_W, longest + 4))
+  while (W > MIN_W && widthAt(W) > columns) W--
+  const wOf = (s: string) => (isDummy(s) ? 1 : W)
+
+  // x of each slot: packed left, then pulled toward the centre of its neighbours a few sweeps each way.
+  const x = new Map<string, number>()
+  for (const slots of l.layers) {
+    let cx = MARGIN
+    for (const s of slots) {
+      x.set(s, cx)
+      cx += wOf(s) + SPACE
+    }
+  }
+  const packed = new Map(x)
+  const cen = (s: string) => x.get(s)! + Math.floor(wOf(s) / 2)
+  const above = new Map<string, string[]>(), below = new Map<string, string[]>()
+  for (const c of l.chains) {
+    for (let i = 0; i + 1 < c.slots.length; i++) {
+      const a = c.slots[i]!, b = c.slots[i + 1]!
+      below.set(a, [...(below.get(a) ?? []), b])
+      above.set(b, [...(above.get(b) ?? []), a])
+    }
+  }
+  const settle = (slots: string[], toward: Map<string, string[]>) => {
+    let cx = MARGIN
+    for (const s of slots) {
+      const ns = toward.get(s) ?? []
+      const want = ns.length ? Math.round(ns.reduce((t, n) => t + cen(n), 0) / ns.length) - Math.floor(wOf(s) / 2) : x.get(s)!
+      const nx = Math.max(want, cx)
+      x.set(s, nx)
+      cx = nx + wOf(s) + SPACE
+    }
+  }
+  for (let it = 0; it < 3; it++) {
+    for (let i = 1; i < l.layers.length; i++) settle(l.layers[i]!, above)
+    for (let i = l.layers.length - 2; i >= 0; i--) settle(l.layers[i]!, below)
+  }
+  const shift = Math.min(...x.values()) - MARGIN
+  for (const [s, v] of x) x.set(s, v - shift)
+  const span = () => Math.max(...[...x].map(([s, v]) => v + wOf(s))) + MARGIN
+  if (span() > columns && widthAt(W) <= columns) for (const [s, v] of packed) x.set(s, v)
+  const needed = Math.max(span(), widthAt(W))
+  const isCut = needed > columns
+
+  // Every edge as hops between neighbouring layers; a reversed edge keeps its line and gets its head at the upper end.
+  const layerOf = new Map<string, number>()
+  l.layers.forEach((slots, i) => slots.forEach(s => layerOf.set(s, i)))
+  const labelFor = (from: string, to: string) => d.edges.find(e => e.from === from && e.to === to)?.label ?? ''
+  const hops = new Map<string, Hop>()
+  for (const c of l.chains) {
+    for (let i = 0; i + 1 < c.slots.length; i++) {
+      const a = c.slots[i]!, b = c.slots[i + 1]!
+      const key = `${a}|${b}`
+      let h = hops.get(key)
+      if (!h) {
+        h = { a, b, gap: layerOf.get(a)!, down: false, up: false, label: '', upLabel: '', xa: 0, xb: 0, track: 0 }
+        hops.set(key, h)
+      }
+      if (c.isReversed) {
+        if (i === 0) {
+          h.up = true
+          h.upLabel = labelFor(c.from, c.to)
+        }
+      } else if (i + 2 === c.slots.length) {
+        h.down = true
+        h.label = labelFor(c.from, c.to)
+      }
+    }
+  }
+  const all = [...hops.values()]
+
+  // Ports: where each edge leaves a node's bottom and arrives at its top, spread when several share a side.
+  const port = (s: string, k: number, j: number) => {
+    const x0 = x.get(s)!
+    const mid = x0 + Math.floor(wOf(s) / 2)
+    if (isDummy(s) || k === 1) return mid
+    const lo = x0 + 2, hi = x0 + wOf(s) - 3
+    return hi <= lo ? mid : lo + Math.round((j * (hi - lo)) / (k - 1))
+  }
+  for (const s of x.keys()) {
+    const outs = all.filter(h => h.a === s).sort((p, q) => cen(p.b) - cen(q.b))
+    outs.forEach((h, j) => (h.xa = port(s, outs.length, j)))
+    const ins = all.filter(h => h.b === s).sort((p, q) => cen(p.a) - cen(q.a))
+    ins.forEach((h, j) => (h.xb = port(s, ins.length, j)))
+  }
+
+  // One horizontal track row per bending hop that would overlap another in its gap.
+  const gaps = Math.max(0, l.layers.length - 1)
+  const tracks: number[] = Array.from({ length: gaps }, () => 0)
+  for (let g = 0; g < gaps; g++) {
+    const rows: [number, number][][] = []
+    const bending = all.filter(h => h.gap === g && h.xa !== h.xb).sort((p, q) => Math.min(p.xa, p.xb) - Math.min(q.xa, q.xb) || p.xa - q.xa)
+    for (const h of bending) {
+      const lo = Math.min(h.xa, h.xb), hi = Math.max(h.xa, h.xb)
+      let t = rows.findIndex(r => r.every(([a, b]) => hi < a || b < lo))
+      if (t < 0) {
+        rows.push([])
+        t = rows.length - 1
+      }
+      rows[t]!.push([lo, hi])
+      h.track = t + 1
+    }
+    tracks[g] = rows.length
+  }
+  const top: number[] = []
+  let y = 0
+  l.layers.forEach((_, i) => {
+    top.push(y)
+    y += NODE_H + (i < gaps ? 2 + tracks[i]! : 0)
+  })
+  const height = y
+  const width = Math.max(needed, columns)
+  const mask: number[][] = Array.from({ length: height }, () => Array.from({ length: width }, () => 0))
+  const text: (string | null)[][] = Array.from({ length: height }, () => Array.from({ length: width }, () => null))
+  const link = (cx: number, cy: number, m: number) => {
+    const row = mask[cy]
+    if (row && cx >= 0 && cx < width) row[cx] = row[cx]! | m
+  }
+  const put = (cx: number, cy: number, ch: string) => {
+    const row = text[cy]
+    if (row && cx >= 0 && cx < width) row[cx] = ch
+  }
+
+  // Boxes, and a straight line down through each dummy slot's band.
+  l.layers.forEach((slots, li) => {
+    for (const s of slots) {
+      const x0 = x.get(s)!, y0 = top[li]!
+      const n = byId.get(s)
+      if (!n) {
+        for (let r = 0; r < NODE_H; r++) link(x0, y0 + r, U | D)
+        continue
+      }
+      const f = FRAMES[n.kind]
+      const inner = W - 2
+      const room = W - 4
+      let label = labelOf(n)
+      if (label.length > room) label = `${label.slice(0, Math.max(0, room - 1))}…`
+      const left = Math.floor((inner - label.length) / 2)
+      const mid = ' '.repeat(left) + label + ' '.repeat(inner - left - label.length)
+      const rows = [f.tl + f.h.repeat(inner) + f.tr, f.v + mid + f.v, f.bl + f.h.repeat(inner) + f.br]
+      rows.forEach((line, r) => Array.from(line).forEach((ch, c) => put(x0 + c, y0 + r, ch)))
+    }
+  })
+
+  // Lines between the layers, then the heads and labels on top.
+  const tags: { x: number; y: number; text: string }[] = []
+  for (const h of all) {
+    const base = top[h.gap]! + NODE_H
+    const arrow = base + tracks[h.gap]! + 1
+    const first = isDummy(h.a) ? U | D : D
+    if (h.xa === h.xb) {
+      for (let r = base; r < arrow; r++) link(h.xa, r, r === base ? first : U | D)
     } else {
-      out.push({ ...at(n.x, y, g.nodeW, tall), fill: c, text, shape: n.kind === 'file' ? 'rect' : n.kind === 'new' ? 'pill' : 'circle' })
+      const t = base + h.track
+      const right = h.xb > h.xa
+      for (let r = base; r < t; r++) link(h.xa, r, r === base ? first : U | D)
+      link(h.xa, t, U | (right ? R : L))
+      for (let c = Math.min(h.xa, h.xb) + 1; c < Math.max(h.xa, h.xb); c++) link(c, t, L | R)
+      link(h.xb, t, D | (right ? L : R))
+      for (let r = t + 1; r < arrow; r++) link(h.xb, r, U | D)
+    }
+    if (h.down) {
+      put(h.xb, arrow, '▼')
+      if (h.label) tags.push({ x: h.xb, y: arrow, text: printable(h.label) })
+    } else link(h.xb, arrow, U | D)
+    if (h.up) {
+      put(h.xa, base, '▲')
+      if (h.upLabel) tags.push({ x: h.xa, y: base, text: printable(h.upLabel) })
     }
   }
-  if (mode === 'raster') {
-    // One-cell ASCII blocks: a fill in the background colour under each glyph, the glyph in the edge colour.
-    for (const [k, ch] of edgeCells(g)) out.push({ ...at(k % g.columns, Math.floor(k / g.columns) * 2, 1, 2), fill: BG, ink: EDGE, text: ch, shape: 'rect' })
-  } else {
-    for (const s of g.segs) {
-      if (s.kind === 'h') out.push({ ...at(Math.min(s.x0, s.x1), s.row * 2 + 0.8, Math.abs(s.x1 - s.x0) + 1, 0.4), fill: EDGE, shape: 'rect' })
-      else out.push({ ...at(s.x + 0.4, Math.min(s.r0, s.r1) * 2 + 1, 0.2, Math.abs(s.r1 - s.r0) * 2), fill: EDGE, shape: 'rect' })
-    }
-    // The head is a small square at the arrow's end: the kit's Svg text sits 4 units in, off a one-cell glyph.
-    for (const h of g.heads) out.push({ ...at(h.x + 0.1, h.row * 2 + 0.5, 0.8, 1), fill: EDGE, shape: 'rect' })
+  const isFree = (cx: number, cy: number) => text[cy]![cx] === null && mask[cy]![cx] === 0
+  for (const t of tags.sort((p, q) => p.y - q.y || p.x - q.x)) {
+    let end = t.x + 2
+    while (end < width && isFree(end, t.y)) end++
+    const room = (end < width ? end - 1 : end) - (t.x + 2)
+    if (room < 1) continue
+    const s = t.text.length > room ? `${t.text.slice(0, room - 1)}…` : t.text
+    Array.from(s).forEach((ch, i) => put(t.x + 2 + i, t.y, ch))
   }
-  return out
+  const rows = Array.from({ length: height }, (_, r) => Array.from({ length: width }, (_, c) => text[r]![c] ?? JOIN[mask[r]![c]!]!).join('').trimEnd())
+  return { rows, needed, isCut }
 }
 
-export type RasterOut = { columns: number; rows: number; cells: string }
-
-/** The Raster for a pane `columns` wide; null when even the narrowest nodes do not fit (draw the outline then). */
-export function rasterOf(d: Diagram, columns: number, l: Layered = layered(d)): RasterOut | null {
-  const w = fitNodeWidth(columns, l.layers.length, gapWidths(l), wantedNodeWidth(d.nodes.map(n => printable(n.label)), hasStep(d)))
-  if (w === null) return null
-  const g = place(d, l, w)
-  const spec: Spec = { bg: BG, font: 'mono', palette: [], blocks: blocks(g, 'raster', g) }
-  return { columns: g.columns, rows: g.rows, cells: toBase64(new Uint8Array(rasterize(spec, g).buffer)) }
-}
-
-/** The 16:10 frame (in cells, a cell 1 x 2 pixels) that holds `g` unstretched in the kit's 320 x 200 view box. */
-export function svgFrame(g: { columns: number; rows: number }): { columns: number; rows: number } {
-  const ratio = g.columns / (g.rows * 2)
-  return ratio < 1.6 ? { columns: Math.ceil(g.rows * 3.2), rows: g.rows } : { columns: g.columns, rows: Math.ceil(g.columns / 3.2) }
-}
-
-/**
- * The kit's Svg text is 0.55 of a block's height, 7 to 22 units, in a 320-unit view box, so a label is wider there
- * than in cells. The Svg node width is the narrowest from the terminal's up to 60 cells whose longest label fits.
- */
-export function svgNodeWidth(d: Diagram, l: Layered): number {
-  const longest = d.nodes.reduce((n, x) => Math.max(n, printable(x.label).length), 0)
-  const start = wantedNodeWidth(d.nodes.map(n => printable(n.label)), hasStep(d))
-  for (let w = start; w < 60; w++) {
-    const u = 320 / svgFrame(place(d, l, w)).columns
-    const font = Math.max(7, Math.min(22, 0.55 * NODE_ROWS * 2 * u))
-    if (0.62 * font * longest + 8 <= (w - (hasStep(d) ? 4 : 0)) * u) return w
-  }
-  return 60
-}
-
-export type SvgOut = { source: string; alt: string; width: number }
-
-/**
- * The Svg for the remote surfaces: the same blocks through the kit's `toSvg`, edges as thin lines, in a 16:10 frame;
- * an outer view box crops the frame's unused part, so nothing is stretched.
- */
-export function svgOf(d: Diagram, l: Layered = layered(d)): SvgOut {
-  const g = place(d, l, svgNodeWidth(d, l))
-  const frame = svgFrame(g)
-  const spec: Spec = { bg: BG, font: 'mono', palette: [], blocks: blocks(g, 'svg', frame) }
-  const w = (320 * g.columns) / frame.columns, h = (200 * g.rows) / frame.rows
-  const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}">${toSvg(spec, ' x="0" y="0" width="320" height="200"')}</svg>`
-  return { source, alt: outline(d, l).join('; '), width: Math.round(Math.min(900, Math.max(320, g.columns * 6))) }
+/** The legend under the heading; `▶ now` only when the diagram marks a node. */
+export function legendOf(d: Diagram): string {
+  return `┌ file   ╭ component   ╔ step   ╱ decision${d.now ? '   ▶ now' : ''}`
 }
 
 const MARK: Record<NodeKind, (s: string) => string> = { file: s => `[${s}]`, new: s => `(${s})`, step: s => `[[${s}]]`, decision: s => `<${s}>` }
 
-/** The text form: one line per layer (nodes in their shape's brackets), then every edge. */
+/** The text form for a headless run: one line per layer (nodes in their shape's brackets), then every edge. */
 export function outline(d: Diagram, l: Layered = layered(d)): string[] {
   const byId = new Map(d.nodes.map(n => [n.id, n]))
   const lines = l.layers.map((slots, i) => `${i + 1}: ${slots.flatMap(s => (byId.has(s) ? [MARK[byId.get(s)!.kind](byId.get(s)!.label)] : [])).join('  ')}`)
