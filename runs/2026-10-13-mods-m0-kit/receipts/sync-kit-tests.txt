@@ -1,0 +1,13 @@
+test_a_plugin_without_kit_json_is_left_alone (__main__.SyncKit.test_a_plugin_without_kit_json_is_left_alone) ... ok
+test_bad_kit_json_and_unknown_module_fail_without_a_crash (__main__.SyncKit.test_bad_kit_json_and_unknown_module_fail_without_a_crash) ... ok
+test_check_fails_when_a_copy_is_tampered (__main__.SyncKit.test_check_fails_when_a_copy_is_tampered) ... ok
+test_check_fails_when_the_kit_moves_on_and_a_copy_is_missing_or_stale (__main__.SyncKit.test_check_fails_when_the_kit_moves_on_and_a_copy_is_missing_or_stale) ... ok
+test_check_passes_after_sync (__main__.SyncKit.test_check_passes_after_sync) ... ok
+test_crlf_checkout_does_not_count_as_a_difference (__main__.SyncKit.test_crlf_checkout_does_not_count_as_a_difference) ... ok
+test_sync_copies_listed_modules_and_their_siblings_with_a_header (__main__.SyncKit.test_sync_copies_listed_modules_and_their_siblings_with_a_header) ... ok
+test_the_real_repo_is_in_sync (__main__.SyncKit.test_the_real_repo_is_in_sync) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 2.074s
+
+OK
