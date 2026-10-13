@@ -22,9 +22,12 @@ Probes (each through `tools/probe.py`, haiku): spike-probe-1 ($0.003), m5-probe 
 Results: `claude plugin test` in `bws-diagram/`: 59 pass, 0 fail. `python tools/mods-gate.py --plugin bws-diagram`: ok.
 Assumptions A1 to A9 recorded on the dashboard (listed in HANDOFF.md).
 
-Commits: 435106b (T01), T02, 1617d44 (T03), 73d7ff2 (T04), d29daa2 (T05), 625086f (T06), f750e6b (T07),
-3e8f76b (T08), then T10 and the gate (below).
+Commits: 435106b (T01), a1e5b4a (T02), 1617d44 (T03), 73d7ff2 (T04), d29daa2 (T05), 625086f (T06), f750e6b (T07),
+3e8f76b (T08), 69bd992 (T10), 07abf59 (T09 started).
 
 Version bumped: bws-diagram 0.1.0 (new). No other plugin changed.
 
-Gate: see below.
+Gate: `python tools/mods-harness/harness.py gate` PASSED at 07abf59 (2026-10-13 09:57; `python tools/mods-gate.py`
+for all plugins, the kit and the sync check); receipt written by the harness. One gate run this session.
+
+Pending: Brian runs MANUAL-CHECKS.md. No Needs Brian items. Status DONE.

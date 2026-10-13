@@ -1,6 +1,6 @@
 # Handoff: M5 diagram pane (bws-diagram 0.1.0, new plugin)
 
-Status: all code tasks done and committed on `feat/video-mods`; the gate result is in RUNLOG.md. Brian's interactive
+Status: DONE. All tasks committed on `feat/video-mods`; the harness gate passed at 07abf59 (RUNLOG.md). Brian's interactive
 checks are in MANUAL-CHECKS.md (16 checks; the worker only ran headless).
 
 ## What exists (later mods: read this)
