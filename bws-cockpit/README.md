@@ -192,7 +192,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
 | `modSummaries` | `bws-memory,bws-diagram,bws-skillgate,bws-secrets` | Mods whose `summary` atom shows as a bar chip; others are ignored |
 | `cacheTtlMinutes` | `60` | How long the main thread's prompt cache lasts after its last turn (sub-agents about 5; not counted here) |
-| `cacheLowMinutes` | `5` | The cache chip turns warning, and auto handoff fires, at this many minutes or fewer left |
+| `cacheLowMinutes` | `5` | The cache chip turns warning, and auto handoff fires, when under this many minutes are left |
 | `autoHandoff` | `true` | Write HANDOFF.md once per cache window when the cache runs low while idle (see Cache clock) |
 
 ## Capabilities it uses

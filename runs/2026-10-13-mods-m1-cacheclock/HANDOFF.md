@@ -41,7 +41,9 @@ Manual checks that need Brian's interactive session are in MANUAL-CHECKS.md.
 ## Decisions you must know (all also in RUNLOG.md)
 - The engine exposes no per-request timestamp to mods (`SessionMessage`, `TurnCompleteInput`, `$.session.usage()`
   have none; `seconds_since_last_response` is only on settings hooks). So the clock starts at each main-loop
-  `turn.complete` (the spec's fallback). After a resume the chip stays hidden until the next turn ends.
+  `turn.complete` (the spec's fallback). **Unverified:** whether the `cacheClock` atom survives a resume. If it does
+  not, the chip stays hidden until the next turn ends. If it does, the chip shows the time left from the earlier
+  process's last turn. Brian's check 2 or 3 settles it.
 - Auto handoff fires only in state `low`, never `expired`. A request after expiry re-caches the whole context at full
   price, which defeats the purpose. The tick runs every minute, so a `low` sample normally comes first.
 - A manual `/handoff` counts as the window's handoff (it resets the turn gate).
@@ -53,6 +55,17 @@ Manual checks that need Brian's interactive session are in MANUAL-CHECKS.md.
 - Auto handoff with no run folder writes `runs/<date>-handoff/HANDOFF.md`, like `/handoff`.
 
 ## Watch out for
+- **Unverified: the turn flag.** `isTurnActive` is set by `prompt.submit` and cleared by the main-loop `turn.complete`.
+  The generated types do not say whether a slash command (such as `/cacheclock`) passes through `prompt.submit`. If it
+  does, and no turn ends after it, the flag stays true and the auto handoff never fires until the next real turn. The
+  flag predates M1 (the Enhance button reads it too). Not changed under FR-ALL-08. MANUAL-CHECKS check 14 tests it.
+- **Failure logging (FR-ALL-03).** A failed auto handoff (a fork that does not answer) writes one debug line, `cache
+  clock: No handoff written: ...`, and one toast. Known gap: if `writeHandoff` throws (not a failed fork), `settle` in
+  the timer swallows it and no line is logged.
+- **Test-file changes (FR-ALL-08).** `receipts/test-diff-additions-only.txt` is `git diff 92ad8d7` for `bws-cockpit/tests/`.
+  Existing tests are unchanged. In `dashboard.test.ts` `world()` two lines are replaced, not added: the `session.usage`
+  stub (now reads a mutable `usage.startedAt`, which is 5 by default, as before) and the `return` (now also returns
+  `usage`). Behaviour is the same for every existing test.
 - `claude plugin test` runs the tests. `tests/dashboard.test.ts` `world()` now returns `usage` (a mutable
   `startedAt`); the existing tests are unchanged apart from that additive return.
 - Timers: `session.start` registers one `$.clock.every(60_000)` tick, like the existing refresh. A reload registers

@@ -714,12 +714,17 @@ describe('cache clock: auto handoff', () => {
     expect(forks.length).toBe(1)
   })
 
-  test('a failed attempt is not retried every minute', async ($, on) => {
+  test('a failed attempt is not retried every minute, and leaves one debug line', async ($, on) => {
     const { clock } = world(on, {})
     const forks: string[] = []
+    const debug: string[] = []
     on('model.fork', ($, e) => {
       forks.push(String((e as { prompt?: string }).prompt))
       return { value: { isAnswered: false, reason: 'error', usage: USAGE } as never }
+    })
+    on('ui.log', ($, e) => {
+      if (e.to === 'debug') debug.push(e.text)
+      return { value: undefined } as never
     })
     await $.session.start({ cwd: ROOT } as never)
     await $.turn.complete(TURN)
@@ -729,6 +734,8 @@ describe('cache clock: auto handoff', () => {
     await clock.advance(3 * MIN)
     await clock.settle()
     expect(forks.length).toBe(1)
+    expect(debug.length).toBe(1)
+    expect(debug[0]).toMatch(/^cache clock: No handoff written: the model call failed/)
   })
 
   test('a new turn after a handoff starts a new window, and its low point gets one more', async ($, on) => {

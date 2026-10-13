@@ -600,6 +600,8 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
 // ---------- /handoff ----------
 
 // Writes HANDOFF.md into this session's run folder (as the Finish-Line Guard sees it), never one a worker freshened.
+const WRITTEN = 'Handoff written:' // the first words of a successful writeHandoff reply
+
 // `isAuto`: written by the cache clock. It does not copy the start prompt, and it counts as this window's handoff.
 async function writeHandoff($: EngineInterface, focus: string, how: { isAuto?: boolean } = {}): Promise<string> {
   const cwd = await $.session.cwd()
@@ -631,7 +633,7 @@ async function writeHandoff($: EngineInterface, focus: string, how: { isAuto?: b
   const surfaces = await $.session.surfaces()
   const copied = how.isAuto !== true && surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
   return (
-    `Handoff written: ${folder}/HANDOFF.md (${words(body)} words)` +
+    `${WRITTEN} ${folder}/HANDOFF.md (${words(body)} words)` +
     (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
     `.\nStart the next session with this prompt${copied ? ' (copied to the clipboard)' : ''}:\n${start}`
   )
@@ -686,8 +688,10 @@ async function syncCache($: EngineInterface, o: Options) {
   if (!shouldAutoHandoff({ isOn: o.cache.isAutoHandoff, status, isTurnActive, turns })) return
   // The turn count resets before the write, so a failed attempt is not retried every minute.
   await update($, cacheClock, r => noteHandoff(r, startedAt, now, false))
-  const text = await writeHandoff($, '', { isAuto: true })
-  $.ui.toast(`cache clock: ${text.split('\n')[0] ?? text}`, { timeoutMs: 8000 })
+  const line = (await writeHandoff($, '', { isAuto: true })).split('\n')[0] ?? ''
+  $.ui.toast(`cache clock: ${line}`, { timeoutMs: 8000 })
+  // FR-ALL-03: a failed attempt leaves one debug line. It holds the reply's first line only, never the prompt.
+  if (!line.startsWith(WRITTEN)) $.ui.log(`cache clock: ${line}`, { to: 'debug' })
 }
 
 // ---------- Shelf (moved from bws-shelf; the same shelf file) ----------

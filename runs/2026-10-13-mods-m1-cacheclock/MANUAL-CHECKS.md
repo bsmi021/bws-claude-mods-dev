@@ -24,12 +24,14 @@ Desktop checks are below.
 
 5. **Warning and cold (fast window).** Command: `claude --plugin-dir ./bws-cockpit --settings runs/2026-10-13-mods-m1-cacheclock/cache-fast.settings.json`,
    then send a short prompt.
-   Expected: `cache 3m` plain at once; `cache 2m` in warning colour after about one minute; `cache cold` in warning
-   colour after about three minutes.
+   Expected: `cache 3m` plain at once; `cache 2m` plain about one minute later (2 minutes left is not under 2);
+   `cache 1m` in warning colour between one and two minutes after the reply; `cache cold` in warning colour after
+   three minutes. Each number moves on at the next minute tick, so it can be up to a minute late.
 
-6. **Auto handoff, once.** Command: same fast session. After the reply, leave it idle for about two minutes.
+6. **Auto handoff, once.** Command: same fast session. After the reply, leave it idle for three minutes.
    Expected: one toast, `cache clock: Handoff written: runs/<date>-handoff/HANDOFF.md (N words).` (or the current
-   run folder's HANDOFF.md). The clipboard is not changed. Wait for the cache to run out: no second toast in that window.
+   run folder's HANDOFF.md), between one and two minutes after the reply (the first tick under 2 minutes left). The
+   clipboard is not changed. Wait for the cache to run out: no second toast in that window.
 
 7. **Not mid-turn.** Command: in the fast session, send a prompt that takes more than two minutes, such as
    `list every .md file under docs/ and summarise each one in a line`. Let it run while the chip is `cache 2m`.
@@ -56,6 +58,12 @@ Desktop checks are below.
 13. **Headless.** Command: `claude -p "/cacheclock status" --plugin-dir ./bws-cockpit`.
     Expected: the same text as check 3, printed, with no model call.
 
-14. **Desktop bar (if you use the Desktop app).** Command: load the plugin in Claude Desktop the same way as check 1
+14. **A slash command between turns does not block auto handoff.** Command: in the fast session, after a reply, run
+    `/cacheclock` at about one minute, then leave it idle.
+    Expected: the auto-handoff toast still comes between one and two minutes after the reply. If it does not, a
+    slash command probably passes through `prompt.submit` and leaves the turn flag set (HANDOFF.md, "Watch out for").
+    Report which.
+
+15. **Desktop bar (if you use the Desktop app).** Command: load the plugin in Claude Desktop the same way as check 1
     (or from the installed marketplace copy), send a prompt.
     Expected: the same `cache NNm` chip on the Desktop bar. Not tested live by the worker.

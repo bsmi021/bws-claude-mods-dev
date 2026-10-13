@@ -159,7 +159,7 @@
     "cacheLowMinutes": {
       "type": "number",
       "title": "Cache clock: low threshold (minutes)",
-      "description": "The cache chip turns warning when this many minutes or fewer are left.",
+      "description": "The cache chip turns warning when under this many minutes are left.",
       "default": 5
     },
     "autoHandoff": {
