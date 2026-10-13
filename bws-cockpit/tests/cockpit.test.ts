@@ -424,6 +424,38 @@ describe('action bar', () => {
     await ui.unmount()
   })
 
+  test('mod chips: one per loaded, non-idle mod summary; absent plugins draw nothing', async ($, on) => {
+    world(on, { ...RUN_WORLD, procs: '', vram: '1000, 8188' })
+    const atoms: Record<string, unknown> = {}
+    on('state.get', ($, e, next) => {
+      const ref = e as unknown as { plugin?: string; key?: string }
+      return ref.key === 'summary' && ref.plugin !== undefined && ref.plugin in atoms ? ({ value: { value: atoms[ref.plugin], version: 1 } } as never) : next(e)
+    })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const chips = async (surface: 'terminal' | 'desktop') => {
+      const ui = await $.ui.mount({ ...BAND, surface, props: { ...BAND.props, bodyColumns: 140 } })
+      const found = await Promise.all(['bws-memory', 'bws-diagram', 'bws-skillgate', 'bws-secrets'].map(async n => (await ui.find({ key: `chip-mod-${n}` })) !== undefined))
+      const text = await ui.find({ type: 'Text', text: /memory updating/ })
+      const secrets = await ui.find({ key: 'chip-mod-bws-secrets' })
+      const dot = secrets?.children[0] as { props?: { color?: string } } | undefined
+      await ui.unmount()
+      return { found, hasText: text !== undefined, secretsColor: dot?.props?.color }
+    }
+    for (const surface of ['terminal', 'desktop'] as const) {
+      expect((await chips(surface)).found).toEqual([false, false, false, false]) // none loaded
+    }
+    atoms['bws-memory'] = { state: 'busy', label: 'memory updating' }
+    atoms['bws-diagram'] = { state: 'idle', label: 'diagram' }
+    atoms['bws-skillgate'] = null
+    atoms['bws-secrets'] = { state: 'warn', label: '2 secrets' }
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const r = await chips(surface)
+      expect(r.found).toEqual([true, false, false, true])
+      expect(r.hasText).toBe(true)
+      expect(r.secretsColor).toBe('warning')
+    }
+  })
+
   test('one row that wraps when narrow, on desktop too', async ($, on) => {
     world(on, { ...RUN_WORLD, procs: '' })
     await $.command.run({ command: 'cockpit', args: '' } as never)

@@ -1,0 +1,2 @@
+32	0	bws-cockpit/tests/cockpit.test.ts
+37	0	bws-cockpit/tests/modchips.test.ts

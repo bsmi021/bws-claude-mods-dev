@@ -1,0 +1,29 @@
+{
+  "name": "bws-diagram",
+  "version": "0.1.0",
+  "description": "Diagram pane: after a big turn a small model decides whether it is worth a diagram; if so a fork draws what happened (steps, files, new components, decisions) in a side pane with a legend. Mermaid blocks Claude writes are pinned there too. /diagram draws the whole session.",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "autoDiagram": {
+      "type": "boolean",
+      "title": "Diagram big turns",
+      "description": "After a turn, ask the small model whether it was big enough to diagram, and if so draw it. Off: only /diagram and pinned mermaid blocks.",
+      "default": true
+    },
+    "model": {
+      "type": "string",
+      "title": "Classifier model",
+      "description": "Model alias or id that decides whether a turn is big (haiku, sonnet, opus, or a full id).",
+      "default": "haiku"
+    },
+    "dumpFile": {
+      "type": "string",
+      "title": "State dump file",
+      "description": "Diagnostic: when set, the diagram list is written to this file as JSON after every change. Empty (default): nothing is written.",
+      "default": ""
+    }
+  }
+}

@@ -1,0 +1,1 @@
+Reply with one line starting "SKILLS-1:" followed by the names of every skill you can invoke with the Skill tool, from every list of skills given to you in this conversation, comma-separated.

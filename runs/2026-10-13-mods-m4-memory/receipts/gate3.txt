@@ -1,0 +1,2 @@
+ok   bws-memory
+1 plugin(s), 8s

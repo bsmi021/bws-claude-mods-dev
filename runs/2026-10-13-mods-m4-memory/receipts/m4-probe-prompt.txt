@@ -1,0 +1,1 @@
+/remember that the staging deploy for this project needs the REGION flag set to eu-west-1, and the user prefers short commit messages

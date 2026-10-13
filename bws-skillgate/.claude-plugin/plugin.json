@@ -1,0 +1,29 @@
+{
+  "name": "bws-skillgate",
+  "version": "0.1.0",
+  "description": "Skill gating: on a conversation's first prompt a small model picks the skills that fit it and the skill listing the model reads is cut to those (plus any /name the prompt names); later prompts only add skills, so the prompt cache holds. /skillgate [off|on|status|explain].",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "Skill gate",
+      "description": "off (default): the model sees the full skill listing. on: a small model picks the skills that fit the prompt and the listing is cut to those. Change it for a session with /skillgate.",
+      "default": "off"
+    },
+    "topK": {
+      "type": "number",
+      "title": "Skills kept",
+      "description": "At most this many skills the classifier picks (1 to 20), plus any the prompt names with /name.",
+      "default": 5
+    },
+    "model": {
+      "type": "string",
+      "title": "Classifier model",
+      "description": "Model alias or id that picks the skills (haiku, sonnet, opus, or a full id).",
+      "default": "haiku"
+    }
+  }
+}

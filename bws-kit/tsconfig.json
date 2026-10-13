@@ -1,0 +1,5 @@
+{
+  "extends": "../bws-cockpit/.claude-plugin/types/tsconfig.json",
+  "compilerOptions": { "typeRoots": ["../bws-cockpit/.claude-plugin/types"] },
+  "include": ["./*.ts", "./hooks", "./tests"]
+}

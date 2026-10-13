@@ -1,0 +1,39 @@
+FAIL bws-memory
+1 plugin(s), 7s
+
+---
+bws-memory: plugin test failed
+xisting files by name and description, and asks for JSON only [0.42ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > jsonOf and parseEntries: bare, fenced, wrapped in prose, an array, and garbage [1.08ms]
+(fail) FR-MEM-02: the fork prompt, its JSON, and the write plan > parseEntries drops entries with no body, a bad type or a repeated file, and caps the count [0.45ms]
+  AssertionError: expect(received).toEqual()
+  
+  Expected: ["n.md", "two.md"]
+  Received: ["n.md", "n.md", "two.md"]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > slugify: never the index name, never a path [0.27ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > memoryFile uses the repo memory frontmatter; readExisting reads it back [0.40ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > planWrites: new, update by file name, update by name under another file name, duplicate refused [0.80ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > lineDiff counts lines added and removed as multisets [0.39ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > the index: one line per file, replaced in place when the file is already listed [0.40ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > resolveDir: the default folder, a relative option, an absolute one, backslashes [0.37ms]
+(fail) FR-MEM-03: redaction > keys, tokens and passwords become [redacted] [0.82ms]
+  AssertionError: expect(received).toBe()
+  
+  Expected: "postgres://[redacted]db.example.com/x"
+  Received: "[redacted]db.example.com/x"
+(pass) FR-MEM-03: redaction > ordinary prose, paths, versions and short ids are left alone [0.24ms]
+(pass) FR-MEM-03: redaction > cleanEntries redacts every field before writing [0.41ms]
+(pass) FR-MEM-03: redaction > a reply that is mostly secrets is dropped [0.32ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > memorySummary: the chip while working, the count when done, a warning on failure, nothing when idle [0.44ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > sources: parse, add a batch, keep the cap, list the last 20 newest first with the session [0.95ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > the undo record parses; the undo text says what was restored and what was only emptied [0.45ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > resultText [0.28ms]
+
+ 47 pass
+ 7 fail
+Ran 54 tests across 2 files. [4.99s]
+
+---
+bws-memory: tsc failed
+bws-memory/tests/mem.test.ts(116,55): error TS2304: Cannot find name 'setTimeout'.
+bws-memory/tests/mem.test.ts(256,57): error TS2304: Cannot find name 'setTimeout'.

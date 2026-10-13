@@ -1,0 +1,423 @@
+diff --git a/bws-cockpit/tests/cacheclock.test.ts b/bws-cockpit/tests/cacheclock.test.ts
+new file mode 100644
+index 0000000..cc99da6
+--- /dev/null
++++ b/bws-cockpit/tests/cacheclock.test.ts
+@@ -0,0 +1,148 @@
++import { describe, expect, test } from 'claude-code/testing'
++
++import { cacheChip, cacheStatus, chipText, clockText, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from '../hooks/cacheclock'
++import type { CacheRecord, CacheStatus } from '../hooks/cacheclock'
++
++const MIN = 60_000
++const TTL = 60 * MIN
++const LOW = 5 * MIN
++const START = 1_000_000 // the session window's startedAt
++const T0 = 5_000_000 // the last main-loop turn end
++
++const rec = (over: Partial<CacheRecord> = {}): CacheRecord => ({ startedAt: START, lastAt: T0, turns: 1, autoHandoffAt: null, ...over })
++
++describe('cache clock: remaining time and state', () => {
++  test('no clock before a request, or for an earlier window (after /clear)', () => {
++    expect(cacheStatus(null, START, T0, TTL, LOW)).toBe(null)
++    expect(cacheStatus(rec({ startedAt: START - 1 }), START, T0, TTL, LOW)).toBe(null)
++  })
++
++  test('fresh until under the low threshold, low under it, expired at the TTL', () => {
++    const at = (ms: number) => cacheStatus(rec(), START, T0 + ms, TTL, LOW)
++    expect(at(0)?.state).toBe('fresh')
++    expect(at(0)?.remainingMs).toBe(TTL)
++    expect(at(TTL - LOW)?.state).toBe('fresh') // exactly 5 min left is not under 5 min
++    expect(at(TTL - LOW + 1)?.state).toBe('low')
++    expect(at(TTL - 1)?.state).toBe('low')
++    expect(at(TTL)?.state).toBe('expired')
++    expect(at(TTL)?.remainingMs).toBe(0)
++    expect(at(TTL * 3)?.remainingMs).toBe(0) // never negative
++  })
++
++  test('the window ends at the last request plus the TTL', () => {
++    expect(cacheStatus(rec(), START, T0 + MIN, TTL, LOW)?.expiresAt).toBe(T0 + TTL)
++  })
++
++  test('a later turn restarts the clock', () => {
++    const later = noteTurn(rec(), START, T0 + 30 * MIN)
++    expect(cacheStatus(later, START, T0 + 31 * MIN, TTL, LOW)?.remainingMs).toBe(TTL - MIN)
++  })
++
++  test('the TTL and the low threshold are options: a 5 min TTL with 1 min low', () => {
++    expect(cacheStatus(rec(), START, T0 + 4 * MIN, 5 * MIN, MIN)?.state).toBe('fresh') // 1 min left: not under 1 min
++    expect(cacheStatus(rec(), START, T0 + 4.5 * MIN, 5 * MIN, MIN)?.state).toBe('low')
++    expect(cacheStatus(rec(), START, T0 + 4.5 * MIN, 5 * MIN, MIN)?.remainingMs).toBe(30_000)
++    expect(cacheStatus(rec(), START, T0 + 4.5 * MIN, 5 * MIN, MIN - 30_001)?.state).toBe('fresh')
++  })
++})
++
++describe('cache clock: chip', () => {
++  const at = (remainingMs: number, state: CacheStatus['state'] = 'fresh'): CacheStatus => ({ state, remainingMs, expiresAt: 0 })
++
++  test('whole minutes rounded down, under a minute, cold after expiry', () => {
++    expect(chipText(at(42 * MIN + 30_000))).toBe('cache 42m')
++    expect(chipText(at(MIN))).toBe('cache 1m')
++    expect(chipText(at(MIN - 1, 'low'))).toBe('cache <1m')
++    expect(chipText(at(0, 'expired'))).toBe('cache cold')
++  })
++
++  test('the number and the warning agree: 4m59s reads 4m and is low; 5m is fresh', () => {
++    expect(cacheChip(at(5 * MIN - 1, 'low'))).toEqual({ text: 'cache 4m', state: 'low' })
++    expect(cacheChip(at(5 * MIN))).toEqual({ text: 'cache 5m', state: 'fresh' })
++  })
++
++  test('no chip without a clock', () => {
++    expect(cacheChip(null)).toBe(null)
++  })
++})
++
++describe('cache clock: records', () => {
++  test('a main-loop turn counts one; a new window starts the count over', () => {
++    const a = noteTurn(null, START, T0)
++    expect(a).toEqual({ startedAt: START, lastAt: T0, turns: 1, autoHandoffAt: null })
++    const b = noteTurn(a, START, T0 + MIN)
++    expect(b.turns).toBe(2)
++    const c = noteTurn(b, START + 1, T0 + 2 * MIN) // /clear starts a new window
++    expect(c).toEqual({ startedAt: START + 1, lastAt: T0 + 2 * MIN, turns: 1, autoHandoffAt: null })
++  })
++
++  test('a handoff needs a new turn; only a written auto handoff sets its time', () => {
++    const t = rec({ turns: 3 })
++    expect(noteHandoff(t, START, T0 + MIN, false)).toEqual({ ...t, turns: 0, autoHandoffAt: null })
++    expect(noteHandoff(t, START, T0 + MIN, true)).toEqual({ ...t, turns: 0, autoHandoffAt: T0 + MIN })
++    expect(noteHandoff(rec({ autoHandoffAt: 7 }), START, T0 + MIN, false)?.autoHandoffAt).toBe(7) // a manual one keeps it
++    expect(noteHandoff(t, START + 1, T0, true)).toBe(t) // another window: left alone
++    expect(noteHandoff(null, START, T0, true)).toBe(null)
++  })
++
++  test('liveRecord is null for another window', () => {
++    expect(liveRecord(rec(), START)).toEqual(rec())
++    expect(liveRecord(rec(), START + 1)).toBe(null)
++  })
++})
++
++describe('cache clock: auto handoff decision', () => {
++  const low: CacheStatus = { state: 'low', remainingMs: MIN, expiresAt: 0 }
++  const base = { isOn: true, status: low, isTurnActive: false, turns: 1 }
++
++  test('fires for a low cache, idle, with a turn since the last handoff', () => {
++    expect(shouldAutoHandoff(base)).toBe(true)
++  })
++
++  test('not while a turn runs', () => {
++    expect(shouldAutoHandoff({ ...base, isTurnActive: true })).toBe(false)
++  })
++
++  test('not without a turn since the last handoff', () => {
++    expect(shouldAutoHandoff({ ...base, turns: 0 })).toBe(false)
++  })
++
++  test('not while fresh, not after expiry (a request then re-caches in full), not without a clock', () => {
++    expect(shouldAutoHandoff({ ...base, status: { state: 'fresh', remainingMs: TTL, expiresAt: 0 } })).toBe(false)
++    expect(shouldAutoHandoff({ ...base, status: { state: 'expired', remainingMs: 0, expiresAt: 0 } })).toBe(false)
++    expect(shouldAutoHandoff({ ...base, status: null })).toBe(false)
++  })
++
++  test('off when disabled', () => {
++    expect(shouldAutoHandoff({ ...base, isOn: false })).toBe(false)
++  })
++
++  test('once per cache window: a handoff resets the turns, so it does not fire again', () => {
++    const after = noteHandoff(rec({ turns: 1 }), START, T0 + MIN, true)
++    expect(shouldAutoHandoff({ ...base, turns: liveRecord(after, START)?.turns ?? 0 })).toBe(false)
++  })
++})
++
++describe('cache clock: /cacheclock text', () => {
++  test('no request yet: says so, and the auto handoff line', () => {
++    const text = statusText(null, TTL, LOW, { isOn: true, at: null })
++    expect(text).toContain('no request yet in this session')
++    expect(text).toContain('Auto handoff: none this session.')
++  })
++
++  test('fresh, low and cold, with the auto handoff time or off', () => {
++    const fresh: CacheStatus = { state: 'fresh', remainingMs: 42 * MIN, expiresAt: T0 + TTL }
++    const shown = statusText(fresh, TTL, LOW, { isOn: true, at: T0 })
++    expect(shown).toContain('42m left of 60m (fresh)')
++    expect(shown).toContain(`window ends at ${clockText(T0 + TTL)}`)
++    expect(shown).toContain(`Auto handoff: last written ${clockText(T0)}.`)
++
++    const low: CacheStatus = { state: 'low', remainingMs: 4 * MIN, expiresAt: T0 + TTL }
++    const off = statusText(low, TTL, LOW, { isOn: false, at: null })
++    expect(off).toContain('4m left of 60m (low, under 5m)')
++    expect(off).toContain('Auto handoff: off (none this session).')
++
++    const cold: CacheStatus = { state: 'expired', remainingMs: 0, expiresAt: T0 + TTL }
++    expect(statusText(cold, TTL, LOW, { isOn: true, at: null })).toContain(`cold. The 60m window ended at ${clockText(T0 + TTL)}`)
++  })
++})
+diff --git a/bws-cockpit/tests/dashboard.test.ts b/bws-cockpit/tests/dashboard.test.ts
+index 9e9b3ca..c4332bf 100644
+--- a/bws-cockpit/tests/dashboard.test.ts
++++ b/bws-cockpit/tests/dashboard.test.ts
+@@ -20,6 +20,7 @@ type World = {
+   box?: string
+   isPlaced?: boolean
+   percent?: number
++  startedAt?: number
+   board?: { summary: { agents: number; openAsks: number; askedOfMe: number } | null; lines: string[] }
+   commands?: string[]
+ }
+@@ -42,7 +43,9 @@ function world(on: On, w: World = {}) {
+   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
+   on('session.root', () => ({ value: `${ROOT}\\` }))
+   on('session.cwd', () => ({ value: ROOT }))
+-  on('session.usage', () => ({ value: { startedAt: 5, context: { window: 200_000, percent: w.percent }, rateLimits: [] } as never }))
++  // startedAt moves on a /clear: the test changes usage.startedAt to make one.
++  const usage = { startedAt: w.startedAt ?? 5 }
++  on('session.usage', () => ({ value: { startedAt: usage.startedAt, context: { window: 200_000, percent: w.percent }, rateLimits: [] } as never }))
+   on('env.get', ($, e) => {
+     const name = String((e as unknown as { name: string }).name)
+     return { value: (name === 'USERPROFILE' ? 'C:\\Users\\me' : undefined) as never }
+@@ -114,7 +117,7 @@ function world(on: On, w: World = {}) {
+   const setBox = (text: string) => {
+     box = text
+   }
+-  return { seen, clock, files, shelf, panes, setBox }
++  return { seen, clock, files, shelf, panes, setBox, usage }
+ }
+ 
+ const seeded = () => {
+@@ -575,6 +578,236 @@ describe('dashboard', () => {
+   })
+ })
+ 
++// ---------- the cache clock chip ----------
++
++describe('cache clock: bar chip', () => {
++  const MIN = 60_000
++  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
++
++  test('hidden before the first turn; then it counts down a minute at a time, warns under 5 minutes, and goes cold', async ($, on) => {
++    const { clock } = world(on, {})
++    await $.session.start({ cwd: ROOT } as never)
++    await withBar($)
++    let ui = await $.ui.mount(BAND)
++    expect(await ui.find({ key: 'chip-cache' })).toBeUndefined()
++    await ui.unmount()
++
++    await $.turn.complete(TURN)
++    await clock.settle()
++    ui = await $.ui.mount(BAND)
++    expect((await ui.find({ type: 'Text', text: /^cache 60m$/ }))?.props?.color).toBeUndefined()
++    await ui.unmount()
++
++    await clock.advance(55 * MIN) // 5 minutes left: fresh, not under the threshold
++    await clock.settle()
++    ui = await $.ui.mount(BAND)
++    expect((await ui.find({ type: 'Text', text: /^cache 5m$/ }))?.props?.color).toBeUndefined()
++    await ui.unmount()
++
++    await clock.advance(MIN) // 4 minutes left: low
++    await clock.settle()
++    ui = await $.ui.mount(BAND)
++    expect((await ui.find({ type: 'Text', text: /^cache 4m$/ }))?.props?.color).toBe('warning')
++    await ui.unmount()
++
++    await clock.advance(4 * MIN) // the hour is up
++    await clock.settle()
++    ui = await $.ui.mount(BAND)
++    expect((await ui.find({ type: 'Text', text: /^cache cold$/ }))?.props?.color).toBe('warning')
++    await ui.unmount()
++  })
++
++  test('a /clear starts the window over: the chip hides within a minute, and the next turn starts it again', async ($, on) => {
++    const { clock, usage } = world(on, {})
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    usage.startedAt = 99 // a new session window
++    await clock.advance(MIN)
++    await clock.settle()
++    let ui = await $.ui.mount(BAND)
++    expect(await ui.find({ key: 'chip-cache' })).toBeUndefined()
++    await ui.unmount()
++
++    await $.turn.complete(TURN)
++    await clock.settle()
++    ui = await $.ui.mount(BAND)
++    expect(await ui.find({ type: 'Text', text: /^cache 60m$/ })).toBeDefined()
++    await ui.unmount()
++  })
++
++  test('drawn on the desktop surface as well', async ($, on) => {
++    world(on, {})
++    await $.turn.complete(TURN)
++    await withBar($)
++    const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
++    expect(await ui.find({ key: 'chip-cache' })).toBeDefined()
++    expect(await ui.find({ type: 'Text', text: /^cache 60m$/ })).toBeDefined()
++    await ui.unmount()
++  })
++})
++
++// ---------- the cache clock's auto handoff ----------
++
++describe('cache clock: auto handoff', () => {
++  const MIN = 60_000
++  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
++  const HANDOFF = '# Handoff: test\n\n## Next step\nnone'
++  const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
++
++  test('fires once when the cache drops under the threshold while idle, after a turn', async ($, on) => {
++    const { seen, clock } = world(on, {})
++    const forks: string[] = []
++    on('model.fork', ($, e) => {
++      forks.push(String((e as { prompt?: string }).prompt))
++      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
++    })
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    await clock.advance(55 * MIN) // 5 minutes left: fresh
++    await clock.settle()
++    expect(forks.length).toBe(0)
++    await clock.advance(MIN) // 4 minutes left: low
++    await clock.settle()
++    expect(forks.length).toBe(1)
++    expect(seen.toasts.some(t => /cache clock: Handoff written/.test(t))).toBe(true)
++    await clock.advance(4 * MIN) // still low, but no turn since the handoff
++    await clock.settle()
++    expect(forks.length).toBe(1)
++  })
++
++  test('not while a turn is running', async ($, on) => {
++    const { clock } = world(on, {})
++    const forks: string[] = []
++    on('model.fork', ($, e) => {
++      forks.push(String((e as { prompt?: string }).prompt))
++      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
++    })
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    await clock.advance(50 * MIN)
++    await $.prompt.submit({ text: 'next' } as never) // a turn starts; it has not ended
++    await clock.advance(6 * MIN) // low, and a turn has happened, but one is running
++    await clock.settle()
++    expect(forks.length).toBe(0)
++    await $.turn.complete(TURN) // it ends: the clock restarts, so it is fresh again
++    await clock.settle()
++    expect(forks.length).toBe(0)
++  })
++
++  test('a manual /handoff is the window\'s handoff: no auto one after it', async ($, on) => {
++    const { clock } = world(on, {})
++    const forks: string[] = []
++    on('model.fork', ($, e) => {
++      forks.push(String((e as { prompt?: string }).prompt))
++      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
++    })
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    await clock.advance(50 * MIN)
++    await $.command.run({ command: 'handoff', args: '' } as never)
++    await clock.advance(6 * MIN) // low, with no turn since the manual handoff
++    await clock.settle()
++    expect(forks.length).toBe(1)
++  })
++
++  test('a failed attempt is not retried every minute, and leaves one debug line', async ($, on) => {
++    const { clock } = world(on, {})
++    const forks: string[] = []
++    const debug: string[] = []
++    on('model.fork', ($, e) => {
++      forks.push(String((e as { prompt?: string }).prompt))
++      return { value: { isAnswered: false, reason: 'error', usage: USAGE } as never }
++    })
++    on('ui.log', ($, e) => {
++      if (e.to === 'debug') debug.push(e.text)
++      return { value: undefined } as never
++    })
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    await clock.advance(56 * MIN)
++    await clock.settle()
++    await clock.advance(3 * MIN)
++    await clock.settle()
++    expect(forks.length).toBe(1)
++    expect(debug.length).toBe(1)
++    expect(debug[0]).toMatch(/^cache clock: No handoff written: the model call failed/)
++  })
++
++  test('a new turn after a handoff starts a new window, and its low point gets one more', async ($, on) => {
++    const { clock } = world(on, {})
++    const forks: string[] = []
++    on('model.fork', ($, e) => {
++      forks.push(String((e as { prompt?: string }).prompt))
++      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
++    })
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    await clock.advance(56 * MIN)
++    await clock.settle()
++    expect(forks.length).toBe(1)
++    await $.turn.complete(TURN) // the window restarts at 56 min
++    await clock.settle()
++    await clock.advance(56 * MIN) // low again at 112 min
++    await clock.settle()
++    expect(forks.length).toBe(2)
++  })
++
++  test('off when autoHandoff is switched off', { options: { autoHandoff: false } }, async ($, on) => {
++    const { clock } = world(on, {})
++    const forks: string[] = []
++    on('model.fork', ($, e) => {
++      forks.push(String((e as { prompt?: string }).prompt))
++      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
++    })
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    await clock.advance(58 * MIN)
++    await clock.settle()
++    expect(forks.length).toBe(0)
++  })
++})
++
++// ---------- /cacheclock ----------
++
++describe('cache clock: /cacheclock', () => {
++  const MIN = 60_000
++  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
++
++  test('says there is no request yet before the first turn', async ($, on) => {
++    world(on, {})
++    const r = await $.command.run({ command: 'cacheclock', args: '' } as never)
++    expect(r.text).toContain('no request yet in this session')
++    expect(r.text).toContain('Auto handoff: none this session.')
++  })
++
++  test('prints the time left, the state and the TTL; headless too', async ($, on) => {
++    world(on, { surfaces: [] })
++    await $.turn.complete(TURN)
++    const r = await $.command.run({ command: 'cacheclock', args: 'status' } as never)
++    expect(r.text).toContain('60m left of 60m (fresh)')
++  })
++
++  test('shows when the last auto handoff was written', async ($, on) => {
++    const { clock } = world(on, {})
++    on('model.fork', () => ({ value: { isAnswered: true, text: '# Handoff: test', usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } as never }))
++    await $.session.start({ cwd: ROOT } as never)
++    await $.turn.complete(TURN)
++    await clock.settle()
++    await clock.advance(56 * MIN)
++    await clock.settle()
++    const r = await $.command.run({ command: 'cacheclock', args: '' } as never)
++    expect(r.text).toContain('4m left of 60m (low, under 5m)')
++    expect(r.text).toMatch(/Auto handoff: last written \d\d:\d\d\./)
++  })
++})
++
+ // ---------- the action bar's buttons ----------
+ 
+ describe('bar buttons', () => {

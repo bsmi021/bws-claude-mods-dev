@@ -1,0 +1,1 @@
+wrote runs/2026-10-13-mods-m2-bouncer/receipts/m2-probe.json (9754 chars, exit 0)

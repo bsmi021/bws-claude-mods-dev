@@ -1,0 +1,15 @@
+# Driver runtime state: rewritten constantly, and must never dirty the tree
+state.json
+state.tmp
+state.json.tmp
+state.bak
+state.bak.tmp
+state.corrupt
+state.corrupt-*.json
+logs/
+receipts/
+*.out.log
+supervisor.log
+dryrun-state/
+serve.log
+HARNESS-LOG.md

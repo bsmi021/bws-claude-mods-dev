@@ -1,0 +1,123 @@
+[
+  {
+    "at": 1791896039806,
+    "submit": "Reply with one line starting \"SKILLS-1:\"",
+    "origin": {
+      "kind": "sdk"
+    },
+    "phase": "C"
+  },
+  {
+    "at": 1791896039806,
+    "addedContext": true
+  },
+  {
+    "at": 1791896039851,
+    "turns": 0,
+    "type": "environment",
+    "agentId": null,
+    "length": 1571,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039851,
+    "turns": 0,
+    "type": "model",
+    "agentId": null,
+    "length": 126,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039851,
+    "turns": 0,
+    "type": "deferred_tools_delta",
+    "agentId": null,
+    "length": 5012,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039851,
+    "turns": 0,
+    "type": "agent_listing_delta",
+    "agentId": null,
+    "length": 1636,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039851,
+    "turns": 0,
+    "type": "mcp_instructions_delta",
+    "agentId": null,
+    "length": 6146,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039852,
+    "turns": 0,
+    "type": "skill_listing",
+    "agentId": null,
+    "length": 7017,
+    "phase": "C",
+    "firstLine": "The following skills are available for use with the Skill tool:",
+    "sentNames": [
+      "- mods-harness",
+      "- dataviz"
+    ]
+  },
+  {
+    "at": 1791896039852,
+    "turns": 0,
+    "type": "total_tokens_reminder",
+    "agentId": null,
+    "length": 49,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039852,
+    "turns": 0,
+    "type": "hook_additional_context",
+    "agentId": null,
+    "length": 214,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039852,
+    "turns": 0,
+    "type": "instructions",
+    "agentId": null,
+    "length": 14377,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039852,
+    "turns": 0,
+    "type": "session_context",
+    "agentId": null,
+    "length": 1299,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039852,
+    "turns": 0,
+    "type": "date",
+    "agentId": null,
+    "length": 27,
+    "phase": "C"
+  },
+  {
+    "at": 1791896039852,
+    "turns": 0,
+    "type": "remote_session_change",
+    "agentId": null,
+    "length": 544,
+    "phase": "C"
+  },
+  {
+    "at": 1791896041938,
+    "turnComplete": 1
+  },
+  {
+    "at": 1791896041938,
+    "invalidated": true
+  }
+]

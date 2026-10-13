@@ -1,0 +1,2 @@
+- [prefers-tabs](prefers-tabs.md) — The user wants tabs, not spaces, for indentation in all code and files
+- [uses-pnpm](uses-pnpm.md) — The build uses pnpm

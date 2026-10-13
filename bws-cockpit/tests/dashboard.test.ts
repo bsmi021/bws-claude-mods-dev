@@ -20,6 +20,7 @@ type World = {
   box?: string
   isPlaced?: boolean
   percent?: number
+  startedAt?: number
   board?: { summary: { agents: number; openAsks: number; askedOfMe: number } | null; lines: string[] }
   commands?: string[]
 }
@@ -42,7 +43,9 @@ function world(on: On, w: World = {}) {
   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
   on('session.root', () => ({ value: `${ROOT}\\` }))
   on('session.cwd', () => ({ value: ROOT }))
-  on('session.usage', () => ({ value: { startedAt: 5, context: { window: 200_000, percent: w.percent }, rateLimits: [] } as never }))
+  // startedAt moves on a /clear: the test changes usage.startedAt to make one.
+  const usage = { startedAt: w.startedAt ?? 5 }
+  on('session.usage', () => ({ value: { startedAt: usage.startedAt, context: { window: 200_000, percent: w.percent }, rateLimits: [] } as never }))
   on('env.get', ($, e) => {
     const name = String((e as unknown as { name: string }).name)
     return { value: (name === 'USERPROFILE' ? 'C:\\Users\\me' : undefined) as never }
@@ -114,7 +117,7 @@ function world(on: On, w: World = {}) {
   const setBox = (text: string) => {
     box = text
   }
-  return { seen, clock, files, shelf, panes, setBox }
+  return { seen, clock, files, shelf, panes, setBox, usage }
 }
 
 const seeded = () => {
@@ -587,6 +590,236 @@ describe('dashboard', () => {
     await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never)
     await clock.settle()
     expect(seen.toasts.filter(t => /context at/.test(t))).toEqual([])
+  })
+})
+
+// ---------- the cache clock chip ----------
+
+describe('cache clock: bar chip', () => {
+  const MIN = 60_000
+  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
+
+  test('hidden before the first turn; then it counts down a minute at a time, warns under 5 minutes, and goes cold', async ($, on) => {
+    const { clock } = world(on, {})
+    await $.session.start({ cwd: ROOT } as never)
+    await withBar($)
+    let ui = await $.ui.mount(BAND)
+    expect(await ui.find({ key: 'chip-cache' })).toBeUndefined()
+    await ui.unmount()
+
+    await $.turn.complete(TURN)
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache 60m$/ }))?.props?.color).toBeUndefined()
+    await ui.unmount()
+
+    await clock.advance(55 * MIN) // 5 minutes left: fresh, not under the threshold
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache 5m$/ }))?.props?.color).toBeUndefined()
+    await ui.unmount()
+
+    await clock.advance(MIN) // 4 minutes left: low
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache 4m$/ }))?.props?.color).toBe('warning')
+    await ui.unmount()
+
+    await clock.advance(4 * MIN) // the hour is up
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache cold$/ }))?.props?.color).toBe('warning')
+    await ui.unmount()
+  })
+
+  test('a /clear starts the window over: the chip hides within a minute, and the next turn starts it again', async ($, on) => {
+    const { clock, usage } = world(on, {})
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    usage.startedAt = 99 // a new session window
+    await clock.advance(MIN)
+    await clock.settle()
+    let ui = await $.ui.mount(BAND)
+    expect(await ui.find({ key: 'chip-cache' })).toBeUndefined()
+    await ui.unmount()
+
+    await $.turn.complete(TURN)
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect(await ui.find({ type: 'Text', text: /^cache 60m$/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('drawn on the desktop surface as well', async ($, on) => {
+    world(on, {})
+    await $.turn.complete(TURN)
+    await withBar($)
+    const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+    expect(await ui.find({ key: 'chip-cache' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^cache 60m$/ })).toBeDefined()
+    await ui.unmount()
+  })
+})
+
+// ---------- the cache clock's auto handoff ----------
+
+describe('cache clock: auto handoff', () => {
+  const MIN = 60_000
+  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
+  const HANDOFF = '# Handoff: test\n\n## Next step\nnone'
+  const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
+
+  test('fires once when the cache drops under the threshold while idle, after a turn', async ($, on) => {
+    const { seen, clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(55 * MIN) // 5 minutes left: fresh
+    await clock.settle()
+    expect(forks.length).toBe(0)
+    await clock.advance(MIN) // 4 minutes left: low
+    await clock.settle()
+    expect(forks.length).toBe(1)
+    expect(seen.toasts.some(t => /cache clock: Handoff written/.test(t))).toBe(true)
+    await clock.advance(4 * MIN) // still low, but no turn since the handoff
+    await clock.settle()
+    expect(forks.length).toBe(1)
+  })
+
+  test('not while a turn is running', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(50 * MIN)
+    await $.prompt.submit({ text: 'next' } as never) // a turn starts; it has not ended
+    await clock.advance(6 * MIN) // low, and a turn has happened, but one is running
+    await clock.settle()
+    expect(forks.length).toBe(0)
+    await $.turn.complete(TURN) // it ends: the clock restarts, so it is fresh again
+    await clock.settle()
+    expect(forks.length).toBe(0)
+  })
+
+  test('a manual /handoff is the window\'s handoff: no auto one after it', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(50 * MIN)
+    await $.command.run({ command: 'handoff', args: '' } as never)
+    await clock.advance(6 * MIN) // low, with no turn since the manual handoff
+    await clock.settle()
+    expect(forks.length).toBe(1)
+  })
+
+  test('a failed attempt is not retried every minute, and leaves one debug line', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    const debug: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: false, reason: 'error', usage: USAGE } as never }
+    })
+    on('ui.log', ($, e) => {
+      if (e.to === 'debug') debug.push(e.text)
+      return { value: undefined } as never
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(56 * MIN)
+    await clock.settle()
+    await clock.advance(3 * MIN)
+    await clock.settle()
+    expect(forks.length).toBe(1)
+    expect(debug.length).toBe(1)
+    expect(debug[0]).toMatch(/^cache clock: No handoff written: the model call failed/)
+  })
+
+  test('a new turn after a handoff starts a new window, and its low point gets one more', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(56 * MIN)
+    await clock.settle()
+    expect(forks.length).toBe(1)
+    await $.turn.complete(TURN) // the window restarts at 56 min
+    await clock.settle()
+    await clock.advance(56 * MIN) // low again at 112 min
+    await clock.settle()
+    expect(forks.length).toBe(2)
+  })
+
+  test('off when autoHandoff is switched off', { options: { autoHandoff: false } }, async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(58 * MIN)
+    await clock.settle()
+    expect(forks.length).toBe(0)
+  })
+})
+
+// ---------- /cacheclock ----------
+
+describe('cache clock: /cacheclock', () => {
+  const MIN = 60_000
+  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
+
+  test('says there is no request yet before the first turn', async ($, on) => {
+    world(on, {})
+    const r = await $.command.run({ command: 'cacheclock', args: '' } as never)
+    expect(r.text).toContain('no request yet in this session')
+    expect(r.text).toContain('Auto handoff: none this session.')
+  })
+
+  test('prints the time left, the state and the TTL; headless too', async ($, on) => {
+    world(on, { surfaces: [] })
+    await $.turn.complete(TURN)
+    const r = await $.command.run({ command: 'cacheclock', args: 'status' } as never)
+    expect(r.text).toContain('60m left of 60m (fresh)')
+  })
+
+  test('shows when the last auto handoff was written', async ($, on) => {
+    const { clock } = world(on, {})
+    on('model.fork', () => ({ value: { isAnswered: true, text: '# Handoff: test', usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } as never }))
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(56 * MIN)
+    await clock.settle()
+    const r = await $.command.run({ command: 'cacheclock', args: '' } as never)
+    expect(r.text).toContain('4m left of 60m (low, under 5m)')
+    expect(r.text).toMatch(/Auto handoff: last written \d\d:\d\d\./)
   })
 })
 

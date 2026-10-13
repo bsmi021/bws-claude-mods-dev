@@ -1,0 +1,8 @@
+Reply with only this fenced block, exactly as written, and nothing else:
+
+```mermaid
+graph LR
+  A[Parse request] --> B{Valid?}
+  B -- yes --> C[Write file]
+  B -- no --> D[Show error]
+```

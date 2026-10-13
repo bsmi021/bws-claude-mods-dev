@@ -1,0 +1,124 @@
+
+tests\mem.test.ts:
+(fail) FR-MEM-01: classify the last exchange after a turn > remember: the turn returns at once, then one classify call, one fork and a file under memoryDir [81.00ms]
+  HooksError: no implementation for session.start
+  
+  nothing beneath the plugins answers session.start: a test answers it with on('session.start', ...)
+(pass) FR-MEM-01: classify the last exchange after a turn > none: a "no" from the classifier forks nothing and writes nothing [109.59ms]
+(pass) FR-MEM-01: classify the last exchange after a turn > skips: a short turn with no tools makes no model call at all [97.79ms]
+(pass) FR-MEM-01: classify the last exchange after a turn > skips: headless runs [92.88ms]
+(pass) FR-MEM-01: classify the last exchange after a turn > skips: a subagent turn and an interrupted turn [94.12ms]
+(pass) FR-MEM-01: classify the last exchange after a turn > a short turn that used tools is classified [100.62ms]
+(pass) FR-MEM-01: classify the last exchange after a turn > minWords is an option [103.40ms]
+(pass) FR-MEM-01: classify the last exchange after a turn > the model option picks the classifier [108.01ms]
+(pass) FR-MEM-01: classify the last exchange after a turn > skip while a previous memory fork is running; the next turn is looked at once it ends [374.35ms]
+(fail) FR-MEM-01: classify the last exchange after a turn > does not intercept unrelated events: a panel of another plugin and an unknown command draw nothing of ours [41.96ms]
+  HooksError: no implementation for session.start
+  
+  nothing beneath the plugins answers session.start: a test answers it with on('session.start', ...)
+(pass) FR-ALL-03: fails open > a classifier error: nothing is written, one debug line, the next turn is still looked at [165.76ms]
+(pass) FR-ALL-03: fails open > a fork that throws: nothing is written, one debug line [99.07ms]
+(pass) FR-ALL-03: fails open > a fork that answers with no JSON: nothing is written, the guard resets [159.67ms]
+(pass) FR-ALL-03: fails open > a fork that does not answer within 90 s: the guard releases and the late reply is ignored [194.89ms]
+(fail) FR-MEM-02: files, MEMORY.md, update and duplicate > a new file, one MEMORY.md line, a sources.json record [107.12ms]
+  AssertionError: expect(received).toEqual()
+  
+  Expected: {
+    writes: [
+      {
+        file: "prefers-tabs.md",
+        session: "session-aaaa-1111",
+        at: 1700000000000,
+        kind: "new"
+      }
+    ]
+  }
+  Received: {
+    writes: [
+      {
+        file: "prefers-tabs.md",
+        session: "session-aaaa-1111",
+        at: 1700000000010,
+        kind: "new"
+      }
+    ]
+  }
+  
+  the engine reported:
+    test's fs.list hook was skipped: test: ENOENT
+    test's fs.list hook was skipped: test: ENOENT
+    test's fs.read hook was skipped: test: ENOENT C:/proj/.claude/bws-memory/MEMORY.md
+    test's fs.read hook was skipped: test: ENOENT C:/proj/.claude/bws-memory/sources.json
+(pass) FR-MEM-02: files, MEMORY.md, update and duplicate > the fork is told about the existing files; a same-name entry updates, never duplicates [107.10ms]
+(pass) FR-MEM-02: files, MEMORY.md, update and duplicate > the same file name updates in place: one MEMORY.md line, one file [101.50ms]
+(pass) FR-MEM-02: files, MEMORY.md, update and duplicate > the same entry again is refused as a duplicate: nothing is written [95.32ms]
+(pass) FR-MEM-02: files, MEMORY.md, update and duplicate > a name that matches an existing file under another file name updates that file [92.26ms]
+(pass) FR-MEM-02: files, MEMORY.md, update and duplicate > memoryDir option: absolute, and relative to the project [100.14ms]
+(pass) FR-MEM-03: redaction > a secret in the fork reply is [redacted] in the file, the index and the sources [92.73ms]
+(pass) FR-MEM-03: redaction > a reply that is mostly secrets is dropped: nothing written, one debug line without the secret [89.60ms]
+(fail) FR-MEM-04: chip and pane > working: the pane view says memory updating; done: a closable pane lists the file with + and - [208.26ms]
+  AssertionError: expect(received).toBeDefined()
+  
+  Expected: defined
+  Received: undefined
+  
+  the engine reported:
+    test's fs.list hook was skipped: test: ENOENT
+    test's fs.list hook was skipped: test: ENOENT
+    test's fs.read hook was skipped: test: ENOENT C:/proj/.claude/bws-memory/MEMORY.md
+    test's fs.read hook was skipped: test: ENOENT C:/proj/.claude/bws-memory/sources.json
+(pass) FR-MEM-04: chip and pane > a failed run shows a closable warning in the pane view [147.57ms]
+(pass) FR-MEM-05: /remember, /memories, /memory-undo > /remember with no text prints the usage and makes no call [62.89ms]
+(pass) FR-MEM-05: /remember, /memories, /memory-undo > /remember <text>: no classifier; the fork gets the text; a file is written (interactive: behind the command) [148.02ms]
+(fail) FR-MEM-05: /remember, /memories, /memory-undo > /remember headless: awaited inline; with nothing to fork it asks the model with the text alone [93.39ms]
+  AssertionError: expect(received).toBe()
+  
+  Expected: "Memory updated: prefers-tabs.md (new) +5 -0."
+  Received: "Memory updated: prefers-tabs.md (new) +9 -0."
+  
+  the engine reported:
+    test's fs.list hook was skipped: test: ENOENT
+    test's fs.list hook was skipped: test: ENOENT
+    test's fs.read hook was skipped: test: ENOENT C:/proj/.claude/bws-memory/MEMORY.md
+    test's fs.read hook was skipped: test: ENOENT C:/proj/.claude/bws-memory/sources.json
+(pass) FR-MEM-05: /remember, /memories, /memory-undo > /remember while a run is in flight is refused [148.07ms]
+(pass) FR-MEM-05: /remember, /memories, /memory-undo > /memories lists the last 20 writes with their session; none yet says so [142.87ms]
+(pass) FR-MEM-05: /remember, /memories, /memory-undo > /memory-undo restores the previous version of an updated file, empties a new one, and is one deep [164.79ms]
+(pass) FR-MEM-06: /clear, /resume, /branch > /clear while a fork runs: the guard resets, the pane closes, the late reply writes nothing [290.02ms]
+(pass) FR-MEM-06: /clear, /resume, /branch > /clear itself starts no work: no model call, no file [114.45ms]
+(pass) FR-MEM-06: /clear, /resume, /branch > /resume resets the guard too; a logout or exit does not touch the pane [208.10ms]
+(pass) FR-MEM-06: /clear, /resume, /branch > /branch (a new session id, no event): the next turn resets the guard and drops the old fork [291.03ms]
+
+tests\memory.test.ts:
+(pass) FR-MEM-01: what is looked at > skipReason: headless, subagent, an unfinished turn, a running fork, a short turn with no tools [2.38ms]
+(pass) FR-MEM-01: what is looked at > exchangeOf: the last typed user message, the tool calls after it, the final answer [1.08ms]
+(pass) FR-MEM-01: what is looked at > parseMinWords: a number, a numeric string, else the default [0.40ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > the fork prompt lists the existing files by name and description, and asks for JSON only [0.46ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > jsonOf and parseEntries: bare, fenced, wrapped in prose, an array, and garbage [1.23ms]
+(fail) FR-MEM-02: the fork prompt, its JSON, and the write plan > parseEntries drops entries with no body, a bad type or a repeated file, and caps the count [0.63ms]
+  AssertionError: expect(received).toEqual()
+  
+  Expected: ["n.md", "two.md"]
+  Received: ["n.md", "n.md", "two.md"]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > slugify: never the index name, never a path [0.29ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > memoryFile uses the repo memory frontmatter; readExisting reads it back [0.53ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > planWrites: new, update by file name, update by name under another file name, duplicate refused [0.84ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > lineDiff counts lines added and removed as multisets [0.41ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > the index: one line per file, replaced in place when the file is already listed [0.41ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > resolveDir: the default folder, a relative option, an absolute one, backslashes [0.45ms]
+(fail) FR-MEM-03: redaction > keys, tokens and passwords become [redacted] [0.91ms]
+  AssertionError: expect(received).toBe()
+  
+  Expected: "postgres://[redacted]db.example.com/x"
+  Received: "[redacted]db.example.com/x"
+(pass) FR-MEM-03: redaction > ordinary prose, paths, versions and short ids are left alone [0.25ms]
+(pass) FR-MEM-03: redaction > cleanEntries redacts every field before writing [0.45ms]
+(pass) FR-MEM-03: redaction > a reply that is mostly secrets is dropped [0.35ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > memorySummary: the chip while working, the count when done, a warning on failure, nothing when idle [0.47ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > sources: parse, add a batch, keep the cap, list the last 20 newest first with the session [0.83ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > the undo record parses; the undo text says what was restored and what was only emptied [0.48ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > resultText [0.25ms]
+
+ 47 pass
+ 7 fail
+Ran 54 tests across 2 files. [4.88s]

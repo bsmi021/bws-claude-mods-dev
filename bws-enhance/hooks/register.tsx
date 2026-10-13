@@ -2,8 +2,26 @@
 // puts it in the prompt box, and opens a small pane with Send / Revert.
 // Triggers: /enhance <rough prompt>, or the chord bound to the footer button's action on the draft in the box.
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
-import type { View } from '../types'
+import type { EngineInterface, PromptSubmitInput, Register } from 'claude-code'
+import type { Setting, View } from '../types'
+import { bound, classifyGate } from './kit/classify-fork'
+import type { KitModel } from './kit/classify-fork'
+import {
+  BOUNCE_TIMEOUT_MS,
+  bounceSummary,
+  failLine,
+  glossaryText,
+  MODE_NOTE,
+  parseMode,
+  reasonPrompt,
+  reasonText,
+  REASON_SYSTEM,
+  resolvePath,
+  skipReason,
+  statusText,
+  vagueQuestion,
+  type BounceMode,
+} from './bounce'
 import {
   cleanReply,
   commandsText,
@@ -21,9 +39,17 @@ import {
 } from './lib'
 
 const COMMAND = 'enhance'
+const BOUNCE = 'bounce'
 const PANE = 'bws-enhance'
 const IDLE: View = { phase: 'idle', original: '', enhanced: '', isFilled: false, note: '' }
 const view = atom({ plugin: 'bws-enhance', key: 'view' } as const, IDLE)
+// What /bounce set for this session: mode null leaves the bounce option in charge; warned is the text held once in warn mode.
+const setting = atom({ plugin: 'bws-enhance', key: 'setting' } as const, { mode: null, warned: null } as Setting)
+const summary = atom({ plugin: 'bws-enhance', key: 'summary' } as const, null)
+// The options, copied in by register on every load.
+let bounceOption: BounceMode = 'off'
+let bounceModel = 'haiku'
+let glossaryOption = ''
 
 type Outcome = { ok: true; text: string } | { ok: false; note: string }
 
@@ -133,6 +159,14 @@ async function start($: EngineInterface, rough: string, model: string) {
 async function closeAll($: EngineInterface) {
   await update($, view, () => IDLE)
   await $.ui.close({ id: PANE })
+  await publish($)
+}
+
+// The summary atom (FR-ALL-05): the bounce mode, or the held prompt's reason while one is held.
+async function publish($: EngineInterface) {
+  const set = await read($, setting)
+  const v = await read($, view)
+  await update($, summary, () => bounceSummary(set.mode ?? bounceOption, v.phase === 'bounced' ? v.note : null))
 }
 
 async function send($: EngineInterface) {
@@ -186,9 +220,137 @@ async function settle<T>(p: Promise<T>): Promise<T | undefined> {
   }
 }
 
+// The adapter classify-fork runs on: the mods API calls and nothing else.
+function kitModel($: EngineInterface): KitModel {
+  return {
+    classify: (text, labels, options) => $.model.classify(text, labels, options),
+    complete: (request, options) => $.model.complete(request, options),
+    fork: request => $.model.fork(request),
+    messages: async () => (await $.session.messages()).map(m => ({ role: m.role, text: m.text ?? '' })),
+    sessionModel: () => $.session.model(),
+    after: (ms, fn) => $.clock.after(ms, fn),
+  }
+}
+
+// The project's glossary: the glossaryFile option, else docs/GLOSSARY.md, else the ## Glossary section of AGENTS.md or CLAUDE.md.
+// Empty when none is found or readable; the bouncer then runs without one.
+async function loadGlossary($: EngineInterface): Promise<string> {
+  const root = (await settle($.session.root())) ?? ''
+  if (root === '') return ''
+  const from = async (rel: string, wholeFile: boolean) => {
+    try {
+      return glossaryText(String(await $.fs.read(resolvePath(root, rel))), wholeFile)
+    } catch {
+      return ''
+    }
+  }
+  if (glossaryOption !== '') return from(glossaryOption, true)
+  for (const [rel, wholeFile] of [['docs/GLOSSARY.md', true], ['AGENTS.md', false], ['CLAUDE.md', false]] as const) {
+    const text = await from(rel, wholeFile)
+    if (text !== '') return text
+  }
+  return ''
+}
+
+// The second small-model call: what is missing, with the glossary. Null when it fails, so the prompt is sent.
+async function vagueReason($: EngineInterface, km: KitModel, text: string, glossary: string): Promise<string | null> {
+  const cut = new AbortController()
+  $.clock.after(BOUNCE_TIMEOUT_MS, () => cut.abort())
+  const r = await bound(
+    // classify-fork's request has no system field, so the rules go in front of the prompt.
+    km.complete({ model: bounceModel, prompt: `${REASON_SYSTEM}\n\n${reasonPrompt(text, glossary)}`, maxTokens: 120, timeoutMs: BOUNCE_TIMEOUT_MS }, { signal: cut.signal }),
+    km.after,
+    { timeoutMs: BOUNCE_TIMEOUT_MS, signal: cut.signal },
+  )
+  if (!r.ok) {
+    $.ui.log(failLine('reason', r.reason), { to: 'debug' })
+    return null
+  }
+  if (!r.value.isAnswered) {
+    $.ui.log(failLine('reason', r.value.reason), { to: 'debug' })
+    return null
+  }
+  const reason = reasonText(r.value.text)
+  if (reason === '') {
+    $.ui.log(failLine('reason', 'empty-reply'), { to: 'debug' })
+    return null
+  }
+  return reason
+}
+
+// Runs after the hook has answered, so the box is free: the draft goes back in if the engine cleared it, and the pane shows the reason.
+async function showHeld($: EngineInterface, text: string, reason: string) {
+  await update($, view, () => ({ ...IDLE, phase: 'bounced', original: text, note: reason }))
+  if ((await $.prompt.read()).text.trim() === '') await $.prompt.fill({ text })
+  await placed($, await $.ui.open({ id: PANE, title: 'Prompt held' }))
+  await publish($)
+}
+
+// The prompt bouncer. null sends the prompt; { drop } holds it, the reason shown to the person. Every failure sends the
+// prompt unchanged, with one debug line that carries no prompt text (FR-PB-05).
+async function bounceCheck($: EngineInterface, e: PromptSubmitInput): Promise<{ drop: string } | null> {
+  try {
+    const set = await read($, setting)
+    const mode = set.mode ?? bounceOption
+    if (mode === 'off') return null
+    // Warn: the second Enter of the same text sends it.
+    const again = mode === 'warn' && set.warned !== null && set.warned === e.text
+    if (set.warned !== null) await update($, setting, old => ({ ...old, warned: null }))
+    if (again) return null
+    // A run with no surface (claude -p) has no pane: warn is not checked there; block refuses with the reason.
+    const headless = ((await settle($.session.surfaces())) ?? []).length === 0
+    if (skipReason(e, mode, headless) !== null) return null
+    const km = kitModel($)
+    const glossary = await loadGlossary($)
+    const gate = await classifyGate(km, { question: vagueQuestion(glossary), material: e.text, model: bounceModel, timeoutMs: BOUNCE_TIMEOUT_MS })
+    if (!gate.ok) {
+      $.ui.log(failLine('classify', gate.reason), { to: 'debug' })
+      return null
+    }
+    if (!gate.verdict) return null
+    const reason = await vagueReason($, km, e.text, glossary)
+    if (reason === null) return null
+    if (mode === 'warn') await update($, setting, old => ({ ...old, warned: e.text }))
+    $.clock.after(10, () => void showHeld($, e.text, reason).catch(() => $.ui.log(failLine('show', 'error'), { to: 'debug' })))
+    const hint = headless ? 'Edit it and send it again.' : mode === 'warn' ? 'Press Enter again to send it as it is.' : 'Edit it, or use Send anyway in the bws-enhance pane.'
+    return { drop: `Held by bws-enhance: ${reason} ${hint}` }
+  } catch {
+    $.ui.log(failLine('check', 'error'), { to: 'debug' })
+    return null
+  }
+}
+
+// Send anyway: the held text goes in as the person's own words; the bouncer does not check it again (its origin is the plugin).
+async function sendAnyway($: EngineInterface) {
+  const v = await read($, view)
+  const text = v.original
+  if (text.trim() === '') return
+  const box = await $.prompt.read()
+  await update($, setting, old => ({ ...old, warned: null }))
+  if (box.text === text) await $.prompt.fill({ text: '' })
+  await closeAll($)
+  $.clock.after(10, () => void $.prompt.submit({ text, asUser: true }))
+}
+
+// Enhance: the held text goes through the enhance pipeline; the rewrite replaces the box as usual.
+async function enhanceHeld($: EngineInterface, model: string) {
+  const v = await read($, view)
+  await update($, setting, old => ({ ...old, warned: null }))
+  await start($, v.original, model)
+}
+
+// Edit: the draft stays in the box for editing; the pane closes.
+async function editHeld($: EngineInterface) {
+  await update($, setting, old => ({ ...old, warned: null }))
+  await closeAll($)
+}
+
 export const register: Register = (on, options) => {
   const model = String(options.model ?? '').trim() || 'haiku'
   const action = String(options.chordAction ?? '').trim()
+  bounceOption = parseMode(options.bounce) ?? 'off'
+  bounceModel = String(options.bounceModel ?? '').trim() || 'haiku'
+  glossaryOption = String(options.glossaryFile ?? '').trim()
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -197,6 +359,13 @@ export const register: Register = (on, options) => {
       argumentHint: '<rough prompt>',
       immediate: true,
     })
+    await $.command.register({
+      name: BOUNCE,
+      description: 'Hold a vague prompt before it is sent: off, warn (Enter again sends it) or block (the draft stays in the box); no argument shows the mode',
+      argumentHint: '[off|warn|block|status]',
+      immediate: true,
+    })
+    await publish($)
     return next(e)
   })
 
@@ -216,11 +385,24 @@ export const register: Register = (on, options) => {
     }
   })
 
-  // The person sent the box themselves: the pane has done its job.
+  on('command.run', { command: BOUNCE }, async ($, e) => {
+    const arg = e.args.trim().toLowerCase()
+    const set = await read($, setting)
+    if (arg === '' || arg === 'status') return { text: statusText(set.mode ?? bounceOption, set.mode !== null) }
+    const mode = parseMode(arg)
+    if (mode === null) return { text: 'Usage: /bounce [off|warn|block|status]' }
+    await update($, setting, old => ({ ...old, mode, warned: null }))
+    await publish($)
+    return { text: statusText(mode, true) }
+  })
+
+  // The bouncer may hold a prompt the person typed. Then the person sent the box themselves: the pane has done its job.
   on('prompt.submit', async ($, e, next) => {
+    const held = await bounceCheck($, e)
+    if (held) return held
     try {
       const v = await read($, view)
-      if (e.origin.kind === 'composer' && (v.phase === 'ready' || v.phase === 'error')) await closeAll($)
+      if (e.origin.kind === 'composer' && (v.phase === 'ready' || v.phase === 'error' || v.phase === 'bounced')) await closeAll($)
     } catch {
       // never hold up a prompt over the pane
     }
@@ -232,6 +414,7 @@ export const register: Register = (on, options) => {
     if (e.id === PANE && e.origin.kind === 'person') {
       stop.abort()
       await update($, view, () => IDLE)
+      await publish($)
     }
     return next(e)
   })
@@ -271,6 +454,21 @@ export const register: Register = (on, options) => {
         <Box flexDirection="column">
           <Text color="red">✦ Enhance failed: {v.note}</Text>
           <Button key="dismiss" label="Dismiss" hotkey="d" onPress={() => cancel($)} />
+        </Box>
+      )
+    }
+
+    if (v.phase === 'bounced') {
+      const mode = (await read($, setting)).mode ?? bounceOption
+      return (
+        <Box flexDirection="column">
+          <Text color="yellow">✦ Held as vague: {v.note}</Text>
+          {mode === 'warn' && <Text dimColor>Enter in the box sends it as it is.</Text>}
+          <Box flexDirection="row" gap={1}>
+            <Button key="sendanyway" label="Send anyway" hotkey="s" variant="primary" autoFocus onPress={() => sendAnyway($)} />
+            <Button key="enhance" label="Enhance" hotkey="e" onPress={() => enhanceHeld($, model)} />
+            <Button key="edit" label="Edit" hotkey="x" onPress={() => editHeld($)} />
+          </Box>
         </Box>
       )
     }

@@ -41,7 +41,10 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
+import { DEFAULT_MODS, modChips, parseMods } from './modchips'
+import type { KnownMod } from './modchips'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
+import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from './cacheclock'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
 import {
   GUIDE,
@@ -91,6 +94,14 @@ const touched = atom({ plugin: 'bws-cockpit', key: 'touched' } as const, null)
 const boardSummary = atom({ plugin: 'bws-board', key: 'summary' } as const, null)
 // bws-board's lines for its board, drawn by the dashboard's Board tab.
 const boardLines = atom({ plugin: 'bws-board', key: 'lines' } as const, [])
+// The video-derived mods' summaries (bws-kit/summary.ts), drawn as chips when they are loaded and not idle.
+const memorySummary = atom({ plugin: 'bws-memory', key: 'summary' } as const, null)
+const diagramSummary = atom({ plugin: 'bws-diagram', key: 'summary' } as const, null)
+const skillgateSummary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
+const secretsSummary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
+// The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
+const cacheClock = atom({ plugin: 'bws-cockpit', key: 'cacheClock' } as const, null)
+const cacheBar = atom({ plugin: 'bws-cockpit', key: 'cacheBar' } as const, null)
 
 // ---------- Dashboard: one pane with its own tabs (Assumptions, Shelf, Board, Loop while one is live) ----------
 
@@ -153,6 +164,8 @@ type Options = {
   isShelfNudge: boolean
   isDashboardOnStart: boolean
   handoffNudgePercent: number
+  mods: KnownMod[]
+  cache: { ttlMs: number; lowMs: number; isAutoHandoff: boolean }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -588,7 +601,10 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
 // ---------- /handoff ----------
 
 // Writes HANDOFF.md into this session's run folder (as the Finish-Line Guard sees it), never one a worker freshened.
-async function writeHandoff($: EngineInterface, focus: string): Promise<string> {
+const WRITTEN = 'Handoff written:' // the first words of a successful writeHandoff reply
+
+// `isAuto`: written by the cache clock. It does not copy the start prompt, and it counts as this window's handoff.
+async function writeHandoff($: EngineInterface, focus: string, how: { isAuto?: boolean } = {}): Promise<string> {
   const cwd = await $.session.cwd()
   const now = await $.clock.now()
   const run = await sessionRunFolder($)
@@ -611,11 +627,14 @@ async function writeHandoff($: EngineInterface, focus: string): Promise<string> 
   if (kept !== null) await $.fs.write(joinPath(cwd, `${folder}/${kept}`), previous ?? '')
   await $.fs.write(path, `${body}\n`)
   await update($, handoffNudge, h => (h === null ? h : { ...h, isDone: true }))
+  const startedAt = (await $.session.usage()).startedAt
+  const at = await $.clock.now()
+  await update($, cacheClock, rec => noteHandoff(rec, startedAt, at, how.isAuto === true))
   const start = startPrompt(folder)
   const surfaces = await $.session.surfaces()
-  const copied = surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
+  const copied = how.isAuto !== true && surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
   return (
-    `Handoff written: ${folder}/HANDOFF.md (${words(body)} words)` +
+    `${WRITTEN} ${folder}/HANDOFF.md (${words(body)} words)` +
     (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
     `.\nStart the next session with this prompt${copied ? ' (copied to the clipboard)' : ''}:\n${start}`
   )
@@ -636,6 +655,44 @@ async function nudgeHandoff($: EngineInterface, atPercent: number) {
 async function isNudged($: EngineInterface) {
   const h = await read($, handoffNudge)
   return h !== null && !h.isDone && h.startedAt === (await $.session.usage()).startedAt
+}
+
+// ---------- Cache clock (hooks/cacheclock.ts) ----------
+
+// A main-loop turn ended: the cache was just written or read, so the window restarts here.
+async function stampTurn($: EngineInterface, o: Options) {
+  const startedAt = (await $.session.usage()).startedAt
+  const now = await $.clock.now()
+  await update($, cacheClock, rec => noteTurn(rec, startedAt, now))
+  await syncCache($, o)
+}
+
+// /cacheclock: the clock as of now, its TTL and threshold, and when the last auto handoff was written.
+async function cacheText($: EngineInterface, o: Options) {
+  const startedAt = (await $.session.usage()).startedAt
+  const rec = await read($, cacheClock)
+  const status = cacheStatus(rec, startedAt, await $.clock.now(), o.cache.ttlMs, o.cache.lowMs)
+  return statusText(status, o.cache.ttlMs, o.cache.lowMs, { isOn: o.cache.isAutoHandoff, at: liveRecord(rec, startedAt)?.autoHandoffAt ?? null })
+}
+
+// Redraws the chip, and only when its text changed, so the minute tick re-renders the bar about once a minute.
+// Then the auto handoff: the cache has just run low, nobody is mid-turn, and a turn has happened since the last handoff.
+async function syncCache($: EngineInterface, o: Options) {
+  const startedAt = (await $.session.usage()).startedAt
+  const now = await $.clock.now()
+  const rec = await read($, cacheClock)
+  const status = cacheStatus(rec, startedAt, now, o.cache.ttlMs, o.cache.lowMs)
+  const chip = cacheChip(status)
+  const prev = await read($, cacheBar)
+  if (prev?.text !== chip?.text || prev?.state !== chip?.state) await update($, cacheBar, () => chip)
+  const turns = liveRecord(rec, startedAt)?.turns ?? 0
+  if (!shouldAutoHandoff({ isOn: o.cache.isAutoHandoff, status, isTurnActive, turns })) return
+  // The turn count resets before the write, so a failed attempt is not retried every minute.
+  await update($, cacheClock, r => noteHandoff(r, startedAt, now, false))
+  const line = (await writeHandoff($, '', { isAuto: true })).split('\n')[0] ?? ''
+  $.ui.toast(`cache clock: ${line}`, { timeoutMs: 8000 })
+  // FR-ALL-03: a failed attempt leaves one debug line. It holds the reply's first line only, never the prompt.
+  if (!line.startsWith(WRITTEN)) $.ui.log(`cache clock: ${line}`, { to: 'debug' })
 }
 
 // ---------- Shelf (moved from bws-shelf; the same shelf file) ----------
@@ -891,12 +948,22 @@ export const register: Register = (on, options) => {
     isShelfNudge: options.shelfNudge !== false,
     isDashboardOnStart: options.dashboardOnStart !== false,
     handoffNudgePercent: Number(options.handoffNudgePercent ?? 70),
+    mods: parseMods(String(options.modSummaries ?? DEFAULT_MODS)),
+    cache: {
+      ttlMs: Math.max(1, Number(options.cacheTtlMinutes ?? 60)) * 60_000,
+      lowMs: Math.max(0, Number(options.cacheLowMinutes ?? 5)) * 60_000,
+      isAutoHandoff: options.autoHandoff !== false,
+    },
   }
   shelfOption = String(options.shelfPath ?? '')
 
   // ---------- /handoff ----------
 
   on('command.run', { command: 'handoff' }, async ($, e, next) => ({ text: await writeHandoff($, e.args.trim()) }))
+
+  // ---------- Cache clock ----------
+
+  on('command.run', { command: 'cacheclock' }, async ($, e, next) => ({ text: await cacheText($, o) }))
 
   // ---------- worker model pin ----------
 
@@ -997,6 +1064,7 @@ export const register: Register = (on, options) => {
   // when the context is full, then add the finish-line line under the answer.
   on('turn.complete', async ($, e, next) => {
     if (!e.agentId) isTurnActive = false
+    if (!e.agentId) void settle(stampTurn($, o))
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0 && o.isBackgroundProbe) void refresh($, o, 15000)
     if (surfaces.length > 0 && !e.agentId) {
@@ -1018,6 +1086,7 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
     await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy its start prompt', argumentHint: '[focus]' })
+    await $.command.register({ name: 'cacheclock', description: 'Show the prompt cache clock: time left, state, and the last auto handoff', argumentHint: '[status]', immediate: true })
     if (o.projects.isOn) {
       await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })
       await $.tool.register({
@@ -1084,6 +1153,7 @@ export const register: Register = (on, options) => {
     })
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0) {
+      $.clock.every(60_000, () => void settle(syncCache($, o)))
       if (o.isBackgroundProbe) {
         void refresh($, o, 0)
         $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
@@ -1588,6 +1658,27 @@ export const register: Register = (on, options) => {
     const sv = await read($, shelf)
     const bs = await read($, boardSummary)
     const isHandoffDue = await isNudged($)
+    // The scan wants a literal source at every read, so one read per mod, and only for the ones the option names.
+    const raw: Partial<Record<KnownMod, unknown>> = {
+      'bws-memory': o.mods.includes('bws-memory') ? await read($, memorySummary) : null,
+      'bws-diagram': o.mods.includes('bws-diagram') ? await read($, diagramSummary) : null,
+      'bws-skillgate': o.mods.includes('bws-skillgate') ? await read($, skillgateSummary) : null,
+      'bws-secrets': o.mods.includes('bws-secrets') ? await read($, secretsSummary) : null,
+    }
+    const modBoxes = modChips(o.mods, raw).map(c => (
+      <Box key={`chip-mod-${c.name}`} flexDirection="row">
+        <Text color={c.color} dimColor={c.isDim}>{'● '}</Text>
+        <Text dimColor={c.isDim}>{c.label}</Text>
+      </Box>
+    ))
+    // The cache clock: plain while fresh, warning once under cacheLowMinutes or cold; hidden before the first turn.
+    const cache = await read($, cacheBar)
+    const cacheBox =
+      cache !== null ? (
+        <Box key="chip-cache" flexDirection="row">
+          <Text color={cache.state === 'fresh' ? undefined : 'warning'}>{cache.text}</Text>
+        </Box>
+      ) : null
 
     const runName = run ? run.folder.replace(/^runs\//, '').replace(/^\d{4}-\d{2}-\d{2}-/, '') : ''
     const runChip = run ? (
@@ -1673,7 +1764,9 @@ export const register: Register = (on, options) => {
           {runChip}
           {deviceChips}
           {loopBox}
+          {cacheBox}
           {boardChip}
+          {modBoxes}
           {asmChip}
           {shelfChip}
           <Text dimColor>│</Text>

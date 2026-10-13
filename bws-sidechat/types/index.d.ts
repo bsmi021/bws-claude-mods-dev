@@ -13,8 +13,53 @@ export type SideChat = {
   isClosedByPerson: boolean
 }
 
+// ---------- the decision tree (/explain) ----------
+
+// One option of a decision question: its marker as written (`1`, `b`, `C`; `you` for one the person typed) and its words.
+export type TreeOption = { label: string; text: string }
+
+// One decision question. The root comes from the main conversation's last reply; every other node from the reply of a
+// fork that explored one option of its parent (`viaOption`). A node with no options is a free answer (a leaf).
+export type TreeNode = {
+  id: string
+  parentId: string | null
+  viaOption: number | null // the parent's option this node explores
+  question: string // '' for a free answer
+  options: TreeOption[]
+  chosen: number | null // the option last explored or picked here
+  answer: string // what the reply said about the option before its next question
+  forkId: string | null // the fork session that wrote this node; null for the root (the main conversation)
+  depth: number // 0 at the root
+  state: 'ready' | 'exploring' | 'failed'
+  note: string // why it failed; '' otherwise
+}
+
+// An edge: the option `option` of `from` was explored into `to`.
+export type TreeEdge = { from: string; to: string; option: number }
+
+export type DecisionTree = {
+  mainId: string // the main conversation the root was read from
+  nodes: TreeNode[]
+  edges: TreeEdge[]
+  currentId: string
+  nextId: number
+}
+
+// The tree pane: the tree, which view shows, and how far it is scrolled.
+export type TreePane = {
+  tree: DecisionTree | null
+  view: 'node' | 'map'
+  back: number // rows scrolled up from the bottom, as the side chat's transcript
+  answers: number // free answers typed; the answer box's key, so a send clears it
+}
+
 declare module 'claude-code' {
   interface PluginState {
-    'bws-sidechat': { chat: SideChat }
+    'bws-sidechat': {
+      chat: SideChat
+      tree: TreePane
+      // The summary atom every mod publishes (FR-ALL-05); null draws no chip.
+      summary: { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string } | null
+    }
   }
 }

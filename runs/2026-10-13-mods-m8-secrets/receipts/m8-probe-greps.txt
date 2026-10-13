@@ -1,0 +1,12 @@
+# AC-SB-01 probe greps: session 2f5d475d-844e-4784-81b4-17e376b264f2, Claude Code 2.1.296 (Claude Code), model sonnet, cost 0.148 USD, exit 0
+# command: python tools/probe.py --plugin bws-secrets --prompt-file runs/2026-10-13-mods-m8-secrets/probe-prompt.txt --settings runs/2026-10-13-mods-m8-secrets/probe-settings.json --model sonnet --out runs/2026-10-13-mods-m8-secrets/receipts/m8-probe.json
+# secretsDir (pluginConfigs): a temp folder outside ~/.claude, seeded before the run with PROBE_TOKEN (headless: request_secret reuses a saved name, D7)
+# counts of the value and its base64 (bThwcm9iZS1acTd4LTU1MjE=) in: the stream-json, the transcript file on disk (read only)
+m8probe-Zq7x-5521 | stream=0 transcript=0
+bThwcm9iZS1acTd4LTU1MjE= | stream=0 transcript=0
+# placeholder in the transcript (the model's own command and the scrubbed result): 12 occurrences
+# the rewritten command (export ... sed) in the transcript: 0
+# tool results as recorded:
+"toolUseResult":{"stdout":"token=[{{secret:PROBE_TOKEN}}]\n{{secret:PROBE_TOKEN}}"
+# note: step 3 (cat ~/.claude/bws-secrets/*.env) was not refused because this run's secretsDir is the temp folder; the guard protects the configured folder (tests/guard.test.ts covers refusals)
+# proof the value was injected: had the placeholder reached the shell unreplaced, line 2 would be the base64 of the literal text {{secret:PROBE_TOKEN}} (e3tzZWNyZXQ6UFJPQkVfVE9LRU59fQ==); it reads {{secret:PROBE_TOKEN}}, the scrub of the value's base64

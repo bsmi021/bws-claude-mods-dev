@@ -2,6 +2,7 @@
 
     python tools/mods-gate.py                 # every plugin, plus the kit sync check when tools/sync-kit.py exists
     python tools/mods-gate.py --plugin bws-enhance   # one plugin (a fast check while working)
+    python tools/mods-gate.py --plugin bws-kit       # the kit folder: its tests and tsc (it is not a plugin)
 
 Exit 0 only when everything passes. Failures print the tail of the failing command.
 A plugin folder is any top-level folder with .claude-plugin/plugin.json.
@@ -74,13 +75,30 @@ def check(plugin: Path) -> list[str]:
     return problems
 
 
+KIT = ROOT / "bws-kit"
+
+
+def check_kit() -> list[str]:
+    """bws-kit is a folder of pure modules, not a plugin: run its tests and type-check it against cockpit's types."""
+    bootstrap_types(ROOT / "bws-cockpit")
+    problems: list[str] = []
+    ok, out = run(["claude", "plugin", "test"], KIT)
+    if not ok:
+        problems.append(f"bws-kit: plugin test failed\n{out[-2500:]}")
+    ok, out = run(["node", TSC, "-p", str(KIT), "--noEmit"], ROOT)
+    if not ok:
+        problems.append(f"bws-kit: tsc failed\n{out[-2500:]}")
+    return problems
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--plugin", help="check one plugin folder only")
     a = ap.parse_args()
     t0 = time.time()
     todo = [p for p in plugins() if a.plugin in (None, p.name)]
-    if not todo:
+    do_kit = KIT.is_dir() and a.plugin in (None, "bws-kit")
+    if not todo and not do_kit:
         print(f"no plugin folder matches {a.plugin!r}", file=sys.stderr)
         return 2
     problems: list[str] = []
@@ -88,13 +106,23 @@ def main() -> int:
         found = check(p)
         print(f"{'FAIL' if found else 'ok  '} {p.name}")
         problems += found
+    if do_kit:
+        found = check_kit()
+        print(f"{'FAIL' if found else 'ok  '} bws-kit")
+        problems += found
     sync = ROOT / "tools" / "sync-kit.py"
     if a.plugin is None and sync.exists():
         ok, out = run([sys.executable, str(sync), "--check"], ROOT)
         print(f"{'ok  ' if ok else 'FAIL'} kit sync")
         if not ok:
             problems.append(f"kit sync failed\n{out[-1500:]}")
-    print(f"{len(todo)} plugin(s), {time.time() - t0:.0f}s")
+        sync_tests = ROOT / "tools" / "test_sync_kit.py"
+        if sync_tests.exists():
+            ok, out = run([sys.executable, str(sync_tests)], ROOT)
+            print(f"{'ok  ' if ok else 'FAIL'} kit sync tests")
+            if not ok:
+                problems.append(f"kit sync tests failed\n{out[-1500:]}")
+    print(f"{len(todo)} plugin(s){' + kit' if do_kit else ''}, {time.time() - t0:.0f}s")
     for pr in problems:
         print("\n---\n" + pr)
     return 1 if problems else 0

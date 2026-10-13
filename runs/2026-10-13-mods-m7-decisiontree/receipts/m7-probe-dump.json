@@ -1,0 +1,41 @@
+{
+  "tree": {
+    "mainId": "36a96959-ef27-4db3-9fa8-b29564434850",
+    "nodes": [
+      {
+        "id": "n1",
+        "parentId": null,
+        "viaOption": null,
+        "question": "Which would you like me to go with?",
+        "options": [
+          {
+            "label": "1",
+            "text": "SQLite — one file, no server, good enough for a single process."
+          },
+          {
+            "label": "2",
+            "text": "Postgres — the team already runs it; more setup for local dev."
+          },
+          {
+            "label": "3",
+            "text": "Plain JSON files — simplest, but no concurrent writes."
+          }
+        ],
+        "chosen": null,
+        "answer": "",
+        "forkId": null,
+        "depth": 0,
+        "state": "ready",
+        "note": ""
+      }
+    ],
+    "edges": [],
+    "currentId": "n1",
+    "nextId": 2
+  },
+  "view": "node",
+  "back": 0,
+  "answers": 0,
+  "exploring": [],
+  "map": "> Which would you like me to go with?\n    1. SQLite — one file, no server, good enough for a sing…\n    2. Postgres — the team already runs it; more setup for …\n    3. Plain JSON files — simplest, but no concurrent write…"
+}

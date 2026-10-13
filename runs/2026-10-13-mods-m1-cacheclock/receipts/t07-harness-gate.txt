@@ -1,0 +1,2 @@
+[harness 2026-10-13T08:25:31] M1: gate python tools/mods-gate.py (worker)
+[harness 2026-10-13T08:26:09] M1: gate PASS: receipt written; the harness reuses it if nothing outside the run folders changes

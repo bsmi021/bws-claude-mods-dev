@@ -1,0 +1,1 @@
+problems (dry=False): [] -- real gate python tools/mods-gate.py passed on a clean tree in the worktree (2026-10-12)

@@ -1,6 +1,7 @@
 # bws-enhance
 
-Turns a vague prompt into a specific one Claude Code can act on, then lets you send it.
+Turns a vague prompt into a specific one Claude Code can act on, then lets you send it. Optionally, it also holds a vague
+prompt before it is sent and says what is missing (the prompt bouncer, below).
 
 The rewrite is grounded in what this session actually has:
 - the instruction files the session loaded (user and project `CLAUDE.md`), plus the project's `AGENTS.md` / `CLAUDE.md` / `.claude/CLAUDE.md`
@@ -28,6 +29,41 @@ back to the box for editing.
 
 Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output.
 
+## The prompt bouncer (`bounce`, off by default)
+
+Holds a prompt you type when it is too vague for Claude Code to act on without asking, and says what is missing.
+
+| `bounce` | A vague prompt |
+| --- | --- |
+| `off` (default) | Sent as typed. Nothing is checked and no model is called. |
+| `warn` | Held with the reason; the draft stays in the box. Enter again sends it as it is. |
+| `block` | Not sent; the draft stays in the box. The pane offers **Send anyway** (`s`), **Enhance** (`e`, the enhance pipeline on the held text) and **Edit** (`x`, closes the pane). A headless `claude -p` prompt is refused, and the reason is its output. |
+
+How it decides: one small-model call answers vague or clear for the prompt (4 s timeout). A vague prompt gets a second call
+that writes one sentence, at most 40 words, on what is missing, with the glossary. At most two small-model calls per prompt.
+
+What is checked: prompts you type (Enter), prompts from the Remote Control bridge, and prompts from the SDK host (`claude -p`).
+What is not: slash commands; short answers (under 4 words such as yes, no, continue, ok, a number or an option letter);
+prompts with an attachment or a leftover paste placeholder; and anything a plugin, another session, a schedule or a task
+sends, including the bouncer's own **Send anyway**. In `warn` mode a headless run is not checked, because it has no pane
+to send anyway from.
+
+Pastes arrive expanded, so the paste skip only sees leftover placeholders. A long pasted log is checked as ordinary text.
+
+Fails open: a classifier error, a 4 s timeout, an unreadable answer or a failed reason call sends the prompt unchanged and
+writes one debug line, such as `bws-enhance: bounce classify failed (timeout); the prompt was sent unchanged`. The line never
+contains the prompt.
+
+Glossary: the `glossaryFile` option if set (the whole file); else `docs/GLOSSARY.md`; else the `## Glossary` section of
+`AGENTS.md`, then of `CLAUDE.md`. Capped at 4,000 characters and given to both calls. None found: the calls run without one.
+
+`/bounce [off|warn|block|status]` sets the mode for the current session; it is not written to your settings. With no
+argument it shows the mode and where it came from.
+
+Summary: the mod publishes the `summary` state atom (no chip when off, `bounce <mode>` when on, `prompt held` with the
+reason while a prompt is held). bws-cockpit draws only the mods in its `modSummaries` option, whose default is four other
+names, so no chip shows for this mod unless that option lists it.
+
 ## The chord
 
 Mods can't define new keybinding actions. Instead, the footer shows a small `✦ enhance` button that borrows an engine
@@ -44,6 +80,9 @@ In `~/.claude/keybindings.json`:
 
 - `model`: model that rewrites the prompt (default `haiku`; `sonnet` or `opus` for heavier rewrites).
 - `chordAction`: the engine action the footer button borrows; empty hides the button.
+- `bounce`: `off` (default), `warn` or `block`, as above. `/bounce` changes it for the session.
+- `bounceModel`: model that classifies the prompt and writes the reason (default `haiku`).
+- `glossaryFile`: markdown file of project terms for the bouncer (empty: the defaults above).
 
 ## Load
 
@@ -54,12 +93,18 @@ or add the folder's absolute path to `CLAUDE_CODE_PLUGIN_DIRS`.
 
 ## Tested
 
-Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes. Automated: `claude plugin test`, 18 tests (pane and footer
-trees on terminal and desktop, presses, fill/submit/revert, failure path, options). Type-check: tsc 5.6 strict. Live: headless
-`claude -p "/enhance ..."` runs return grounded rewrites.
+Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes (receipt `runs/2026-10-13-mods-m2-bouncer/receipts/t06-validate.txt`).
+Automated: `claude plugin test`, 47 tests: the enhance tests, the bouncer's table tests (skips, glossary, reason cut,
+summary shape, status text) and its mod tests (block, warn, Send anyway, Enhance, the failure branches, the 4 s timeout,
+the headless cases, `/bounce`). Type-check: tsc 5.8.3 strict through the gate. Live: headless `claude -p` runs return
+grounded rewrites (0.2.x).
 
 Live in Windows Terminal (fullscreen layout, 2026-10-10): `/enhance` filled the box and docked the pane; `Enter` sent the
 rewrite; `ctrl+x ctrl+p` enhanced a typed draft, also while Claude was mid-turn; clicking **Revert** restored the draft and
 closed the pane. 0.2.0 (same day): the file tree reached the rewriter live (it named sibling plugin folders). Pane focus on result, and so `s`/`r`/`d`, is not yet confirmed live: the first try showed the pane never got focus, fixed by close-and-reopen; the retest was cut short by outside input in the test window.
 Not tried: main-screen (inline) layout, desktop app.
+
+Not tested live yet: the bouncer in an interactive terminal (the pane's buttons and keys, the warn hint, the draft going
+back into the box after a hold). The headless probe for the bouncer is recorded in
+`runs/2026-10-13-mods-m2-bouncer/receipts/`. Desktop, the Remote Control bridge and the main-screen layout are untested.
 VS Code / mobile / cloud draw no mod UI; use `/enhance` and copy the rewrite.

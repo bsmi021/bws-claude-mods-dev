@@ -1,7 +1,7 @@
 {
   "name": "bws-sidechat",
-  "version": "0.1.5",
-  "description": "Side chat in the right-hand pane: /fork (or /branch) and /btw open a copy of this conversation beside it, answered by a forked headless session so the main conversation is never touched.",
+  "version": "0.2.1",
+  "description": "Side chat in the right-hand pane: /fork (or /branch) and /btw open a copy of this conversation beside it, answered by a forked headless session so the main conversation is never touched. /explain turns the last reply's options into a decision tree you explore in forks.",
   "author": {
     "name": "Brian"
   },
@@ -48,6 +48,18 @@
       "title": "Chord action for 'open the side chat'",
       "description": "An engine keybinding action the footer's side button borrows; bind a chord to it in ~/.claude/keybindings.json (Global), e.g. \"ctrl+x ctrl+o\": \"app:cycleDiffBase\". Default app:cycleDiffBase, which nothing else handles while the diff pane is closed. Empty hides the button.",
       "default": "app:cycleDiffBase"
+    },
+    "exploreTimeoutSeconds": {
+      "type": "number",
+      "title": "Decision tree: Explore time limit (seconds)",
+      "description": "An Explore fork that has not answered by then is ended and its node marked failed.",
+      "default": 180
+    },
+    "treeDumpFile": {
+      "type": "string",
+      "title": "Decision tree: state dump file",
+      "description": "Empty (default): off. A path: the tree is written there as JSON after every change (for checks and probes).",
+      "default": ""
     }
   }
 }

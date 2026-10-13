@@ -1,0 +1,35 @@
+FAIL bws-memory
+1 plugin(s), 8s
+
+---
+bws-memory: plugin test failed
+age, the tool calls after it, the final answer [1.59ms]
+(pass) FR-MEM-01: what is looked at > parseMinWords: a number, a numeric string, else the default [0.54ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > the fork prompt lists the existing files by name and description, and asks for JSON only [0.73ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > jsonOf and parseEntries: bare, fenced, wrapped in prose, an array, and garbage [2.19ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > parseEntries drops entries with no body, a bad type or a repeated file, and caps the count [0.81ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > slugify: never the index name, never a path [0.43ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > memoryFile uses the repo memory frontmatter; readExisting reads it back [1.18ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > planWrites: new, update by file name, update by name under another file name, duplicate refused [1.24ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > lineDiff counts lines added and removed as multisets [0.53ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > the index: one line per file, replaced in place when the file is already listed [0.76ms]
+(pass) FR-MEM-02: the fork prompt, its JSON, and the write plan > resolveDir: the default folder, a relative option, an absolute one, backslashes [0.70ms]
+(pass) FR-MEM-03: redaction > keys, tokens and passwords become [redacted] [1.38ms]
+(pass) FR-MEM-03: redaction > ordinary prose, paths, versions and short ids are left alone [0.34ms]
+(pass) FR-MEM-03: redaction > cleanEntries redacts every field before writing [0.67ms]
+(pass) FR-MEM-03: redaction > a reply that is mostly secrets is dropped [0.57ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > memorySummary: the chip while working, the count when done, a warning on failure, nothing when idle [0.89ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > sources: parse, add a batch, keep the cap, list the last 20 newest first with the session [1.60ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > the undo record parses; the undo text says what was restored and what was only emptied [1.15ms]
+(pass) FR-MEM-04 and FR-MEM-05: texts, sources, undo record > resultText [0.88ms]
+
+ 53 pass
+ 1 fail
+Ran 54 tests across 2 files. [5.64s]
+
+---
+bws-memory: tsc failed
+bws-memory/tests/mem.test.ts(119,66): error TS2345: Argument of type '(value: unknown) => void' is not assignable to parameter of type '() => void'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0.
+bws-memory/tests/mem.test.ts(259,68): error TS2345: Argument of type '(value: unknown) => void' is not assignable to parameter of type '() => void'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0.

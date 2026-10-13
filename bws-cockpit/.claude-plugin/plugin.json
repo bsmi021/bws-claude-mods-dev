@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.15.1",
-  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. Claude records assumptions and shelves tangents through its tools.",
+  "version": "0.17.1",
+  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "Brian"
   },
@@ -138,6 +138,12 @@
       "description": "Add one line to the conversation's opening context with the open-idea count and the shelve_idea tool.",
       "default": true
     },
+    "modSummaries": {
+      "type": "string",
+      "title": "Mod chips",
+      "description": "Mods whose summary shows as a chip in the action bar while loaded and not idle, comma-separated. Known: bws-memory, bws-diagram, bws-skillgate, bws-secrets.",
+      "default": "bws-memory,bws-diagram,bws-skillgate,bws-secrets"
+    },
     "dashboardOnStart": {
       "type": "boolean",
       "title": "Open the dashboard at session start",
@@ -149,6 +155,24 @@
       "title": "Handoff nudge (context %)",
       "description": "Once per session, when the context passes this percentage, toast and highlight Handoff on the bar. 0 turns it off.",
       "default": 70
+    },
+    "cacheTtlMinutes": {
+      "type": "number",
+      "title": "Cache clock: TTL (minutes)",
+      "description": "How long the main thread's prompt cache lasts after its last request (about 60; sub-agents about 5).",
+      "default": 60
+    },
+    "cacheLowMinutes": {
+      "type": "number",
+      "title": "Cache clock: low threshold (minutes)",
+      "description": "The cache chip turns warning when under this many minutes are left.",
+      "default": 5
+    },
+    "autoHandoff": {
+      "type": "boolean",
+      "title": "Cache clock: auto handoff",
+      "description": "When the cache drops under the low threshold while idle, after at least one new turn, write HANDOFF.md once for that cache window (as /handoff does, without copying the start prompt).",
+      "default": true
     }
   }
 }

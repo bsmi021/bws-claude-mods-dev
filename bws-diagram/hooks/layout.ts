@@ -1,0 +1,204 @@
+// The layered layout (FR-DG-02): left to right by dependency. Pure: no `$`.
+//
+// Layers by longest path from the sources (cycles broken by reversing the edges a depth-first walk finds going back);
+// an edge that spans more than one layer passes through dummy slots, so it never crosses a node; the order inside a
+// layer follows the barycentre of the neighbours, a few sweeps each way. Placement is in terminal cells: a node is
+// NODE_ROWS rows, a layer's nodes stack with ROW_GAP between, and each gap between layers has its own vertical tracks.
+import type { Diagram, NodeKind } from '../types'
+import { MARGIN, MIN_GAP, NODE_ROWS, ROW_GAP, layoutRows, layoutWidth } from './draw'
+
+export type Chain = { from: string; to: string; slots: string[]; isReversed: boolean }
+export type Layered = { layers: string[][]; chains: Chain[] }
+
+const DUMMY = '\u0000d'
+export const isDummy = (slot: string) => slot.startsWith(DUMMY)
+
+/** The layers (node ids and dummy slots, in drawing order) and every edge as its chain of slots, left to right. */
+export function layered(d: Diagram): Layered {
+  const ids = d.nodes.map(n => n.id)
+  const out = new Map<string, string[]>(ids.map(id => [id, []]))
+  for (const e of d.edges) out.get(e.from)!.push(e.to)
+
+  // Back edges: the ones a depth-first walk (in node order) meets pointing at a node still on its stack.
+  const state = new Map<string, 'open' | 'done'>()
+  const back = new Set<string>()
+  const walk = (v: string) => {
+    state.set(v, 'open')
+    for (const w of out.get(v)!) {
+      const s = state.get(w)
+      if (s === 'open') back.add(`${v}\u0000${w}`)
+      else if (s === undefined) walk(w)
+    }
+    state.set(v, 'done')
+  }
+  for (const id of ids) if (!state.has(id)) walk(id)
+
+  const dag = d.edges.map(e => (back.has(`${e.from}\u0000${e.to}`) ? { from: e.to, to: e.from, isReversed: true, e } : { from: e.from, to: e.to, isReversed: false, e }))
+
+  // Longest path from the sources; the edges are few, so relax until nothing moves.
+  const layer = new Map<string, number>(ids.map(id => [id, 0]))
+  for (let pass = 0; pass < ids.length; pass++) {
+    let moved = false
+    for (const x of dag) {
+      const want = layer.get(x.from)! + 1
+      if (layer.get(x.to)! < want) {
+        layer.set(x.to, want)
+        moved = true
+      }
+    }
+    if (!moved) break
+  }
+  const count = Math.max(...layer.values()) + 1
+  const layers: string[][] = Array.from({ length: count }, () => [])
+  for (const id of ids) layers[layer.get(id)!]!.push(id)
+
+  // A reversed edge that runs alongside a forward one (A -> F and F -> A) shares its slots: one line, a head each end.
+  let dummies = 0
+  const shared = new Map<string, string[]>()
+  const chains: Chain[] = dag.map(x => {
+    const key = `${x.from}\u0000${x.to}`
+    let slots = shared.get(key)
+    if (!slots) {
+      slots = [x.from]
+      for (let l = layer.get(x.from)! + 1; l < layer.get(x.to)!; l++) {
+        const slot = `${DUMMY}${dummies++}`
+        layers[l]!.push(slot)
+        slots.push(slot)
+      }
+      slots.push(x.to)
+      shared.set(key, slots)
+    }
+    return { from: x.e.from, to: x.e.to, slots, isReversed: x.isReversed }
+  })
+
+  // Barycentre ordering: down by the left neighbours, up by the right ones.
+  const left = new Map<string, string[]>(), right = new Map<string, string[]>()
+  for (const c of chains) {
+    for (let i = 0; i + 1 < c.slots.length; i++) {
+      const a = c.slots[i]!, b = c.slots[i + 1]!
+      right.set(a, [...(right.get(a) ?? []), b])
+      left.set(b, [...(left.get(b) ?? []), a])
+    }
+  }
+  const pos = new Map<string, number>()
+  const index = () => layers.forEach(l => l.forEach((s, i) => pos.set(s, i)))
+  index()
+  const sweep = (l: number, by: Map<string, string[]>) => {
+    const key = (s: string) => {
+      const ns = by.get(s) ?? []
+      return ns.length ? ns.reduce((t, n) => t + pos.get(n)!, 0) / ns.length : pos.get(s)!
+    }
+    const keyed = layers[l]!.map((s, i) => ({ s, k: key(s), i }))
+    // Nodes first, the dummy slots after them: a long edge runs below the layer's nodes, not between them.
+    keyed.sort((a, b) => Number(isDummy(a.s)) - Number(isDummy(b.s)) || a.k - b.k || a.i - b.i)
+    layers[l] = keyed.map(x => x.s)
+    layers[l]!.forEach((s, i) => pos.set(s, i))
+  }
+  for (let it = 0; it < 4; it++) {
+    for (let l = 1; l < count; l++) sweep(l, left)
+    for (let l = count - 2; l >= 0; l--) sweep(l, right)
+  }
+  index()
+  return { layers, chains }
+}
+
+// ---------- placement ----------
+
+export type Placed = { id: string; label: string; kind: NodeKind; x: number; row: number }
+export type Seg = { kind: 'h'; row: number; x0: number; x1: number } | { kind: 'v'; x: number; r0: number; r1: number }
+export type Head = { x: number; row: number; dir: '>' | '<' }
+export type Geometry = { columns: number; rows: number; nodeW: number; nodes: Placed[]; segs: Seg[]; heads: Head[] }
+
+const slotRow = (i: number) => 1 + i * (NODE_ROWS + ROW_GAP)
+const centre = (i: number) => slotRow(i) + Math.floor(NODE_ROWS / 2)
+
+type Hop = { gap: number; a: string; b: string; ra: number; rb: number }
+
+function hops(l: Layered): Hop[] {
+  const where = new Map<string, { layer: number; i: number }>()
+  l.layers.forEach((slots, layer) => slots.forEach((s, i) => where.set(s, { layer, i })))
+  const out: Hop[] = []
+  for (const c of l.chains) {
+    for (let k = 0; k + 1 < c.slots.length; k++) {
+      const a = where.get(c.slots[k]!)!, b = where.get(c.slots[k + 1]!)!
+      out.push({ gap: a.layer, a: c.slots[k]!, b: c.slots[k + 1]!, ra: centre(a.i), rb: centre(b.i) })
+    }
+  }
+  return out
+}
+
+// One vertical track per source slot that bends in that gap, ordered by its row.
+function tracks(l: Layered): Map<string, number>[] {
+  const hs = hops(l)
+  return l.layers.slice(0, -1).map((_, g) => {
+    const bending = hs.filter(h => h.gap === g && h.ra !== h.rb).sort((x, y) => x.ra - y.ra)
+    const t = new Map<string, number>()
+    for (const h of bending) if (!t.has(h.a)) t.set(h.a, t.size)
+    return t
+  })
+}
+
+/** Each gap's width: two stub columns, its tracks, a stub and the arrow head; at least MIN_GAP. */
+export const gapWidths = (l: Layered): number[] => tracks(l).map(t => Math.max(MIN_GAP, t.size + 4))
+
+/** Cells for every node, edge segment and arrow head at node width `nodeW`. */
+export function place(d: Diagram, l: Layered, nodeW: number): Geometry {
+  const gaps = gapWidths(l)
+  const xs: number[] = []
+  let x = MARGIN
+  l.layers.forEach((_, i) => {
+    xs.push(x)
+    x += nodeW + (gaps[i] ?? 0)
+  })
+  const byId = new Map(d.nodes.map(n => [n.id, n]))
+  const slotX = new Map<string, number>()
+  const nodes: Placed[] = []
+  l.layers.forEach((slots, li) =>
+    slots.forEach((s, i) => {
+      slotX.set(s, xs[li]!)
+      const n = byId.get(s)
+      if (n) nodes.push({ id: n.id, label: n.label, kind: n.kind, x: xs[li]!, row: slotRow(i) })
+    }),
+  )
+  const tr = tracks(l)
+  const segs: Seg[] = []
+  const heads: Head[] = []
+  for (const h of hops(l)) {
+    const x0 = slotX.get(h.a)! + nodeW // first gap column
+    const x1 = slotX.get(h.b)! - 1 // last gap column, the head's
+    if (h.ra === h.rb) segs.push({ kind: 'h', row: h.ra, x0, x1 })
+    else {
+      const tx = x0 + 2 + tr[h.gap]!.get(h.a)!
+      segs.push({ kind: 'h', row: h.ra, x0, x1: tx }, { kind: 'v', x: tx, r0: h.ra, r1: h.rb }, { kind: 'h', row: h.rb, x0: tx, x1 })
+    }
+    if (isDummy(h.b)) segs.push({ kind: 'h', row: h.rb, x0: x1 + 1, x1: x1 + nodeW }) // through the dummy slot
+  }
+  for (const c of l.chains) {
+    const last = c.slots[c.slots.length - 1]!, first = c.slots[0]!
+    const lastHop = hops({ layers: l.layers, chains: [c] })
+    if (c.isReversed) heads.push({ x: slotX.get(first)! + nodeW, row: lastHop[0]!.ra, dir: '<' })
+    else heads.push({ x: slotX.get(last)! - 1, row: lastHop[lastHop.length - 1]!.rb, dir: '>' })
+  }
+  const slots = Math.max(...l.layers.map(s => s.length))
+  return { columns: layoutWidth(l.layers.length, nodeW, gaps), rows: layoutRows(slots), nodeW, nodes, segs, heads }
+}
+
+/** The edge cells as ASCII: `-` and `|` runs, `+` where they meet or bend, the heads on top. Key: row * columns + x. */
+export function edgeCells(g: Geometry): Map<number, string> {
+  const cells = new Map<number, string>()
+  const put = (x: number, row: number, ch: '-' | '|') => {
+    const k = row * g.columns + x
+    const was = cells.get(k)
+    cells.set(k, was === undefined || was === ch ? ch : '+')
+  }
+  for (const s of g.segs) {
+    if (s.kind === 'h') for (let x = Math.min(s.x0, s.x1); x <= Math.max(s.x0, s.x1); x++) put(x, s.row, '-')
+    else {
+      for (let r = Math.min(s.r0, s.r1); r <= Math.max(s.r0, s.r1); r++) put(s.x, r, '|')
+      cells.set(s.r0 * g.columns + s.x, '+')
+      cells.set(s.r1 * g.columns + s.x, '+')
+    }
+  }
+  for (const h of g.heads) cells.set(h.row * g.columns + h.x, h.dir)
+  return cells
+}

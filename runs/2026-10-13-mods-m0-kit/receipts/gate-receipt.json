@@ -1,0 +1,19 @@
+{
+  "unit": "M0",
+  "head": "f7dceaec6205419f6a77783136236484cc320d4f",
+  "gates": "73ea132000c3",
+  "at": "2026-10-13T08:10:53",
+  "by": "worker",
+  "passed": true,
+  "results": [
+    {
+      "gate": [
+        "python",
+        "tools/mods-gate.py"
+      ],
+      "exit": 0,
+      "seconds": 36.6,
+      "log": "M0-wgate-0.log"
+    }
+  ]
+}
