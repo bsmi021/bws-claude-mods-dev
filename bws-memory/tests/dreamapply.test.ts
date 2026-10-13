@@ -1,8 +1,8 @@
 import { test, expect, describe } from 'claude-code/testing'
-import { backupName, basesOf, dreamChanges, dreamIndex, dreamSources, dreamStatusText, hashText, IDLE_DREAM, latestBackup, staleFiles } from '../hooks/dreamapply'
+import { backupName, basesOf, combinedSummary, dreamChanges, dreamIndex, dreamSources, dreamStatusText, hashText, IDLE_DREAM, latestBackup, parseEveryTurns, staleFiles } from '../hooks/dreamapply'
 import { dreamFiles } from '../hooks/dream'
 import type { DreamAction } from '../hooks/dream'
-import { memoryFile } from '../hooks/memory'
+import { IDLE_VIEW, memoryFile } from '../hooks/memory'
 import { OLD, PNPM, TABS_A, TABS_B } from './dreamworld'
 
 const FILES = dreamFiles([TABS_A, TABS_B, PNPM, OLD].map(e => ({ file: e.file, text: memoryFile(e) }))).files
@@ -67,5 +67,36 @@ describe('FR-DP-02: fingerprints and backups', () => {
     expect(dreamStatusText(IDLE_DREAM, 20, 3)).toBe('Dream: nothing waiting. Automatic: every 20 turns (3 so far) and before a compaction.')
     expect(dreamStatusText({ ...IDLE_DREAM, due: true }, 0, 0)).toBe('Dream: due: run /dream. Automatic: off.')
     expect(dreamStatusText({ ...IDLE_DREAM, phase: 'preview', actions: [MERGE] }, 20, 0)).toContain('a plan is waiting (1 action)')
+  })
+})
+
+describe('FR-DP-05: the summary atom', () => {
+  const dream = (o: Partial<typeof IDLE_DREAM>) => ({ ...IDLE_DREAM, ...o })
+  const view = (o: Partial<typeof IDLE_VIEW>) => ({ ...IDLE_VIEW, ...o })
+
+  test('dream due: when the trigger fired and nothing is waiting yet, and while the plan waits', () => {
+    expect(combinedSummary(IDLE_VIEW, dream({ due: true }))).toEqual({ state: 'ok', label: 'dream due' })
+    const waiting = combinedSummary(IDLE_VIEW, dream({ phase: 'preview', due: true, actions: [MERGE] }))
+    expect(waiting?.label).toBe('dream due')
+    expect(waiting?.state).toBe('ok')
+    expect(waiting?.detail).toContain('merge tabs-a.md + tabs-b.md')
+  })
+
+  test('a plan asked for with /dream is a preview, not "due"', () => {
+    expect(combinedSummary(IDLE_VIEW, dream({ phase: 'preview', actions: [MERGE] }))?.label).toBe('dream preview')
+  })
+
+  test('dreaming while the fork plans; a failure is a warning; applied says what changed', () => {
+    expect(combinedSummary(IDLE_VIEW, dream({ phase: 'working', due: true }))).toEqual({ state: 'busy', label: 'dreaming' })
+    expect(combinedSummary(IDLE_VIEW, dream({ phase: 'error', note: 'fork: error' }))).toEqual({ state: 'warn', label: 'dream failed', detail: 'fork: error' })
+    expect(combinedSummary(IDLE_VIEW, dream({ phase: 'applied', actions: [MERGE, REMOVE] }))).toEqual({ state: 'ok', label: 'dream applied', detail: '1 merged, 1 removed, 0 rewritten' })
+  })
+
+  test('nothing when idle and not due; the memory chip keeps its place; dreaming outranks it', () => {
+    expect(combinedSummary(IDLE_VIEW, IDLE_DREAM)).toBeNull()
+    const memory = view({ phase: 'done', written: [{ file: 'a.md', kind: 'new', added: 1, removed: 0 }] })
+    expect(combinedSummary(memory, dream({ due: true }))?.label).toBe('memory: 1 file')
+    expect(combinedSummary(view({ phase: 'working' }), dream({ phase: 'working' }))?.label).toBe('dreaming')
+    expect(combinedSummary(view({ phase: 'working' }), dream({ due: true }))?.label).toBe('memory updating')
   })
 })
