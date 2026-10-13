@@ -227,3 +227,32 @@ export function scrub(text: string, secrets: readonly Secret[]): string {
 export function holdsSecret(text: string, secrets: readonly Secret[]): boolean {
   return scrub(text, secrets) !== text
 }
+
+// Every string in a JSON-like value scrubbed; the shape kept.
+export function scrubValue(v: unknown, secrets: readonly Secret[]): unknown {
+  if (typeof v === 'string') return scrub(v, secrets)
+  if (Array.isArray(v)) return v.map(x => scrubValue(x, secrets))
+  if (v !== null && typeof v === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, x] of Object.entries(v)) out[k] = scrubValue(x, secrets)
+    return out
+  }
+  return v
+}
+
+// Why a Bash command with placeholders cannot run, or null (FR-SB-04).
+export function injectionError(names: readonly string[], saved: readonly Secret[], isBackground: boolean): string | null {
+  for (const n of names) {
+    const bad = nameError(n)
+    if (bad) return `bws-secrets: {{secret:${n}}}: ${bad}`
+  }
+  const missing = names.filter(n => !saved.some(s => s.name === n))
+  if (missing.length > 0) {
+    const list = missing.map(n => `{{secret:${n}}}`).join(', ')
+    return `bws-secrets: no saved secret for ${list}. Call request_secret with that name first; the user types the value.`
+  }
+  if (isBackground) {
+    return 'bws-secrets: a command that uses {{secret:...}} cannot run in the background (its later output would not be redacted). Run it in the foreground.'
+  }
+  return null
+}

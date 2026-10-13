@@ -19,12 +19,27 @@ import {
   type Answer,
 } from './request'
 import { denyText, touchesSecrets, type GuardInput } from './guard'
-import { formatEnv, parseEnv, secretsDir, secretsFile, setSecret, valueError, type Secret } from './secrets'
+import {
+  formatEnv,
+  holdsSecret,
+  injectCommand,
+  injectionError,
+  parseEnv,
+  placeholders,
+  scrub,
+  scrubValue,
+  secretsDir,
+  secretsFile,
+  setSecret,
+  valueError,
+  type Secret,
+} from './secrets'
 
 const SECRETS_PANE = 'bws-secrets'
 const ENTRY_KEY = 'secret-entry'
 const SLEEPER_TIMEOUT_MS = 5_000
 const GUARD_FAILED = 'bws-secrets: the secrets guard failed, so the call was refused. Try again.'
+const WITHHELD = 'bws-secrets: the output could not be checked for secrets, so it was withheld.'
 
 const entry = atom({ plugin: 'bws-secrets', key: 'entry' } as const, null as EntryView | null)
 
@@ -60,6 +75,26 @@ async function endRequest($: EngineInterface) {
   pending = null
   await update($, entry, () => null)
   await $.ui.close({ id: SECRETS_PANE })
+}
+
+// A result with a saved value in it, rebuilt scrubbed (no `ref`, so core stores this one); else the result as it was.
+// An error result is withheld with its text scrubbed. A large output the engine kept in a file is scrubbed there too.
+async function scrubResult<R extends { deny?: string; result?: unknown; text?: string; isError?: true; context?: readonly string[] }>(
+  $: EngineInterface,
+  r: R,
+  saved: readonly Secret[],
+): Promise<R | { deny: string } | { result: unknown; context?: string[] }> {
+  if (r.deny !== undefined) return holdsSecret(r.deny, saved) ? { deny: scrub(r.deny, saved) } : r
+  const raw = JSON.stringify([r.result ?? null, r.text ?? '', r.context ?? []])
+  const kept = (r.result as { persistedOutputPath?: unknown } | undefined)?.persistedOutputPath
+  if (typeof kept === 'string' && kept !== '') {
+    const text = await $.fs.read(kept).catch(() => null)
+    if (typeof text === 'string' && holdsSecret(text, saved)) await $.fs.write(kept, scrub(text, saved))
+  }
+  if (!holdsSecret(raw, saved)) return r
+  if (r.isError) return { deny: scrub(r.text ?? 'the command failed', saved) }
+  const context = r.context?.map(c => scrub(c, saved))
+  return { result: scrubValue(r.result, saved), ...(context ? { context } : {}) }
 }
 
 function answer(a: Answer) {
@@ -158,10 +193,24 @@ export const register: Register = (on, options) => {
     const no = await guardText($, e)
     return no ? { deny: no } : next(e)
   }).catch(($, e, next) => (next.called ? next(e) : { deny: GUARD_FAILED }))
+  // FR-SB-04: a command with {{secret:NAME}} runs with NAME read from the file by the shell; every Bash result is
+  // scrubbed of saved values and their encodings before the engine stores it (DECISIONS.md D1, D5). Fails closed.
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const no = await guardText($, e)
-    return no ? { deny: no } : next(e)
-  }).catch(($, e, next) => (next.called ? next(e) : { deny: GUARD_FAILED }))
+    if (no) return { deny: no }
+    const p = await paths($)
+    const saved = await loadSecrets($, p.file)
+    const names = placeholders(e.command)
+    let r
+    if (names.length > 0) {
+      const bad = injectionError(names, saved, e.run_in_background === true)
+      if (bad) return { deny: bad }
+      r = await next({ ...e, command: injectCommand(e.command, names, p.file) })
+    } else {
+      r = await next(e)
+    }
+    return saved.length === 0 ? r : await scrubResult($, r, saved)
+  }).catch(($, e, next) => ({ deny: next.called ? WITHHELD : GUARD_FAILED }))
 
   // The entry posts the typed value here, and only here: handled completely, so it goes no further.
   on('ui.message', { requestId: SECRETS_PANE }, async ($, e, next) => {
