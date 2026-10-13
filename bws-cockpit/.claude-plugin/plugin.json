@@ -149,6 +149,18 @@
       "title": "Handoff nudge (context %)",
       "description": "Once per session, when the context passes this percentage, toast and highlight Handoff on the bar. 0 turns it off.",
       "default": 70
+    },
+    "cacheTtlMinutes": {
+      "type": "number",
+      "title": "Cache clock: TTL (minutes)",
+      "description": "How long the main thread's prompt cache lasts after its last request (about 60; sub-agents about 5).",
+      "default": 60
+    },
+    "cacheLowMinutes": {
+      "type": "number",
+      "title": "Cache clock: low threshold (minutes)",
+      "description": "The cache chip turns warning when this many minutes or fewer are left.",
+      "default": 5
     }
   }
 }

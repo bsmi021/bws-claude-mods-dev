@@ -20,6 +20,7 @@ type World = {
   box?: string
   isPlaced?: boolean
   percent?: number
+  startedAt?: number
   board?: { summary: { agents: number; openAsks: number; askedOfMe: number } | null; lines: string[] }
   commands?: string[]
 }
@@ -42,7 +43,9 @@ function world(on: On, w: World = {}) {
   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
   on('session.root', () => ({ value: `${ROOT}\\` }))
   on('session.cwd', () => ({ value: ROOT }))
-  on('session.usage', () => ({ value: { startedAt: 5, context: { window: 200_000, percent: w.percent }, rateLimits: [] } as never }))
+  // startedAt moves on a /clear: the test changes usage.startedAt to make one.
+  const usage = { startedAt: w.startedAt ?? 5 }
+  on('session.usage', () => ({ value: { startedAt: usage.startedAt, context: { window: 200_000, percent: w.percent }, rateLimits: [] } as never }))
   on('env.get', ($, e) => {
     const name = String((e as unknown as { name: string }).name)
     return { value: (name === 'USERPROFILE' ? 'C:\\Users\\me' : undefined) as never }
@@ -114,7 +117,7 @@ function world(on: On, w: World = {}) {
   const setBox = (text: string) => {
     box = text
   }
-  return { seen, clock, files, shelf, panes, setBox }
+  return { seen, clock, files, shelf, panes, setBox, usage }
 }
 
 const seeded = () => {
@@ -572,6 +575,75 @@ describe('dashboard', () => {
     await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never)
     await clock.settle()
     expect(seen.toasts.filter(t => /context at/.test(t))).toEqual([])
+  })
+})
+
+// ---------- the cache clock chip ----------
+
+describe('cache clock: bar chip', () => {
+  const MIN = 60_000
+  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
+
+  test('hidden before the first turn; then it counts down a minute at a time, warns under 5 minutes, and goes cold', async ($, on) => {
+    const { clock } = world(on, {})
+    await $.session.start({ cwd: ROOT } as never)
+    await withBar($)
+    let ui = await $.ui.mount(BAND)
+    expect(await ui.find({ key: 'chip-cache' })).toBeUndefined()
+    await ui.unmount()
+
+    await $.turn.complete(TURN)
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache 60m$/ }))?.props?.color).toBeUndefined()
+    await ui.unmount()
+
+    await clock.advance(55 * MIN) // 5 minutes left: fresh, not under the threshold
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache 5m$/ }))?.props?.color).toBeUndefined()
+    await ui.unmount()
+
+    await clock.advance(MIN) // 4 minutes left: low
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache 4m$/ }))?.props?.color).toBe('warning')
+    await ui.unmount()
+
+    await clock.advance(4 * MIN) // the hour is up
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect((await ui.find({ type: 'Text', text: /^cache cold$/ }))?.props?.color).toBe('warning')
+    await ui.unmount()
+  })
+
+  test('a /clear starts the window over: the chip hides within a minute, and the next turn starts it again', async ($, on) => {
+    const { clock, usage } = world(on, {})
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    usage.startedAt = 99 // a new session window
+    await clock.advance(MIN)
+    await clock.settle()
+    let ui = await $.ui.mount(BAND)
+    expect(await ui.find({ key: 'chip-cache' })).toBeUndefined()
+    await ui.unmount()
+
+    await $.turn.complete(TURN)
+    await clock.settle()
+    ui = await $.ui.mount(BAND)
+    expect(await ui.find({ type: 'Text', text: /^cache 60m$/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('drawn on the desktop surface as well', async ($, on) => {
+    world(on, {})
+    await $.turn.complete(TURN)
+    await withBar($)
+    const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+    expect(await ui.find({ key: 'chip-cache' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^cache 60m$/ })).toBeDefined()
+    await ui.unmount()
   })
 })
 

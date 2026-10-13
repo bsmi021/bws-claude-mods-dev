@@ -44,6 +44,7 @@ import type { ProjectEntry, ProjectIndex } from './projects'
 import { DEFAULT_MODS, modChips, parseMods } from './modchips'
 import type { KnownMod } from './modchips'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
+import { cacheChip, cacheStatus, noteTurn } from './cacheclock'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
 import {
   GUIDE,
@@ -98,6 +99,9 @@ const memorySummary = atom({ plugin: 'bws-memory', key: 'summary' } as const, nu
 const diagramSummary = atom({ plugin: 'bws-diagram', key: 'summary' } as const, null)
 const skillgateSummary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
 const secretsSummary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
+// The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
+const cacheClock = atom({ plugin: 'bws-cockpit', key: 'cacheClock' } as const, null)
+const cacheBar = atom({ plugin: 'bws-cockpit', key: 'cacheBar' } as const, null)
 
 // ---------- Dashboard: one pane with its own tabs (Assumptions, Shelf, Board, Loop while one is live) ----------
 
@@ -160,6 +164,7 @@ type Options = {
   isShelfNudge: boolean
   handoffNudgePercent: number
   mods: KnownMod[]
+  cache: { ttlMs: number; lowMs: number }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -645,6 +650,25 @@ async function isNudged($: EngineInterface) {
   return h !== null && !h.isDone && h.startedAt === (await $.session.usage()).startedAt
 }
 
+// ---------- Cache clock (hooks/cacheclock.ts) ----------
+
+// A main-loop turn ended: the cache was just written or read, so the window restarts here.
+async function stampTurn($: EngineInterface, o: Options) {
+  const startedAt = (await $.session.usage()).startedAt
+  const now = await $.clock.now()
+  await update($, cacheClock, rec => noteTurn(rec, startedAt, now))
+  await syncCache($, o)
+}
+
+// Redraws the chip, and only when its text changed, so the minute tick re-renders the bar about once a minute.
+async function syncCache($: EngineInterface, o: Options) {
+  const startedAt = (await $.session.usage()).startedAt
+  const status = cacheStatus(await read($, cacheClock), startedAt, await $.clock.now(), o.cache.ttlMs, o.cache.lowMs)
+  const chip = cacheChip(status)
+  const prev = await read($, cacheBar)
+  if (prev?.text !== chip?.text || prev?.state !== chip?.state) await update($, cacheBar, () => chip)
+}
+
 // ---------- Shelf (moved from bws-shelf; the same shelf file) ----------
 
 async function shelfFile($: EngineInterface) {
@@ -892,6 +916,10 @@ export const register: Register = (on, options) => {
     isShelfNudge: options.shelfNudge !== false,
     handoffNudgePercent: Number(options.handoffNudgePercent ?? 70),
     mods: parseMods(String(options.modSummaries ?? DEFAULT_MODS)),
+    cache: {
+      ttlMs: Math.max(1, Number(options.cacheTtlMinutes ?? 60)) * 60_000,
+      lowMs: Math.max(0, Number(options.cacheLowMinutes ?? 5)) * 60_000,
+    },
   }
   shelfOption = String(options.shelfPath ?? '')
 
@@ -998,6 +1026,7 @@ export const register: Register = (on, options) => {
   // when the context is full, then add the finish-line line under the answer.
   on('turn.complete', async ($, e, next) => {
     if (!e.agentId) isTurnActive = false
+    if (!e.agentId) void settle(stampTurn($, o))
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0 && o.isBackgroundProbe) void refresh($, o, 15000)
     if (surfaces.length > 0 && !e.agentId) {
@@ -1085,6 +1114,7 @@ export const register: Register = (on, options) => {
     })
     const surfaces = await $.session.surfaces()
     if (surfaces.length > 0) {
+      $.clock.every(60_000, () => void settle(syncCache($, o)))
       if (o.isBackgroundProbe) {
         void refresh($, o, 0)
         $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
@@ -1593,6 +1623,14 @@ export const register: Register = (on, options) => {
         <Text dimColor={c.isDim}>{c.label}</Text>
       </Box>
     ))
+    // The cache clock: plain while fresh, warning once under cacheLowMinutes or cold; hidden before the first turn.
+    const cache = await read($, cacheBar)
+    const cacheBox =
+      cache !== null ? (
+        <Box key="chip-cache" flexDirection="row">
+          <Text color={cache.state === 'fresh' ? undefined : 'warning'}>{cache.text}</Text>
+        </Box>
+      ) : null
 
     const runName = run ? run.folder.replace(/^runs\//, '').replace(/^\d{4}-\d{2}-\d{2}-/, '') : ''
     const runChip = run ? (
@@ -1678,6 +1716,7 @@ export const register: Register = (on, options) => {
           {runChip}
           {deviceChips}
           {loopBox}
+          {cacheBox}
           {boardChip}
           {modBoxes}
           {asmChip}

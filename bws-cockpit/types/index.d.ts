@@ -149,6 +149,11 @@ declare module 'claude-code' {
       dash: DashView
       shelf: ShelfView
       handoffNudge: HandoffNudge | null
+      // Cache clock: the window (its startedAt), the last main-loop turn end, the main-loop turns since the last
+      // handoff, and when the last auto handoff was written (hooks/cacheclock.ts)
+      cacheClock: { startedAt: number; lastAt: number; turns: number; autoHandoffAt: number | null } | null
+      // the chip the bar draws from it
+      cacheBar: { text: string; state: 'fresh' | 'low' | 'expired' } | null
     }
   }
 }
