@@ -87,3 +87,26 @@ export async function waitFor(io: WaitIo, limitMs = WAIT_LIMIT_MS, maxSleeps = M
     }
   }
 }
+
+// ---------- /secrets (FR-SB-05): names only, never a value ----------
+
+export const SECRETS_USAGE = 'Usage: /secrets (list the saved names) | /secrets remove NAME'
+
+export type SecretsArgs = { kind: 'list' } | { kind: 'remove'; name: string } | { kind: 'usage' }
+
+export function parseSecretsArgs(args: string): SecretsArgs {
+  const words = args.trim().split(/\s+/).filter(w => w !== '')
+  if (words.length === 0 || (words.length === 1 && (words[0] === 'list' || words[0] === 'status'))) return { kind: 'list' }
+  if (words.length === 2 && (words[0] === 'remove' || words[0] === 'rm')) return { kind: 'remove', name: words[1] ?? '' }
+  return { kind: 'usage' }
+}
+
+export function listText(names: readonly string[], file: string): string {
+  if (names.length === 0) return `No secrets saved for this project (${file}). Claude asks with request_secret.`
+  const lines = names.map(n => `  ${n}  ->  {{secret:${n}}}`)
+  return [`${names.length} secret${names.length === 1 ? '' : 's'} saved for this project (values not shown; ${file}):`, ...lines].join('\n')
+}
+
+export function removedText(name: string, isFound: boolean): string {
+  return isFound ? `Removed ${name}. Commands that use {{secret:${name}}} are now refused.` : `No saved secret named ${name}.`
+}

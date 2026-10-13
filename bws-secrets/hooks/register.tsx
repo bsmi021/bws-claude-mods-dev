@@ -8,11 +8,15 @@ import type { EntryView } from '../types'
 import {
   cancelText,
   FAILED_TEXT,
+  listText,
   noScreenText,
   notPlacedText,
   parsePost,
   parseRequest,
+  parseSecretsArgs,
+  removedText,
   savedText,
+  SECRETS_USAGE,
   sleeperArgv,
   waitFor,
   waitText,
@@ -26,6 +30,7 @@ import {
   injectionError,
   parseEnv,
   placeholders,
+  removeSecret,
   scrub,
   scrubValue,
   secretsDir,
@@ -106,6 +111,7 @@ export const register: Register = (on, options) => {
   pending = null
 
   on('session.start', async ($, e, next) => {
+    await $.command.register({ name: 'secrets', description: 'List the saved secret names (never the values), or remove one', argumentHint: '[remove NAME]' })
     await $.tool.register({
       name: 'request_secret',
       description:
@@ -177,6 +183,18 @@ export const register: Register = (on, options) => {
     pending = null
     await $.ui.close({ id: SECRETS_PANE })
     return { deny: FAILED_TEXT }
+  })
+
+  // FR-SB-05: /secrets lists names only and removes one; no value is ever read into a reply.
+  on('command.run', { command: 'secrets' }, async ($, e) => {
+    const a = parseSecretsArgs(e.args)
+    if (a.kind === 'usage') return { text: SECRETS_USAGE }
+    const { file } = await paths($)
+    const saved = await loadSecrets($, file)
+    if (a.kind === 'list') return { text: listText(saved.map(s => s.name), file) }
+    const isFound = saved.some(s => s.name === a.name)
+    if (isFound) await $.fs.write(file, formatEnv(removeSecret(saved, a.name)))
+    return { text: removedText(a.name, isFound) }
   })
 
   // FR-SB-03: Read, Grep, Glob and Bash calls that would read the secrets folder are refused. A guard that fails
