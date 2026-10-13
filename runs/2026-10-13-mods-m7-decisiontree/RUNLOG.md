@@ -22,6 +22,8 @@ Actions:
 Outcomes: `python tools/mods-gate.py --plugin bws-sidechat` ok after every task; `claude plugin test` 118 pass (58 before,
 untouched); validate passes with the new hooks listed. Assumptions A1 to A8 recorded on the dashboard.
 
-Gate: (filled in after `python tools/mods-harness/harness.py gate`).
+- T05 follow-up `6facd4f`: Decide now closes the tree (ending forks, which can take seconds) before it schedules the send, so the deferred submit cannot fire while `/explain decide` still waits (advisor review).
+
+Gate: `python tools/mods-harness/harness.py gate` PASS at `6facd4f` (2026-10-13 10:47, all plugins: validate, plugin test, tsc strict, kit sync); receipt written. One gate run this session (a first background start failed on a bad log redirect before the gate ran).
 
 No Chronicler consultation: purely technical work, no TMS content.
