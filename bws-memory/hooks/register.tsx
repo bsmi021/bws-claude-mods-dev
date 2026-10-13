@@ -34,13 +34,24 @@ import {
   resultText,
   skipReason,
   SOURCES_FILE,
-  textOnlyPrompt,
   UNDO_FILE,
   undoneText,
   upsertIndex,
   type Change,
   type Existing,
 } from './memory'
+import {
+  cleanPlan,
+  dreamFailLine,
+  dreamFiles,
+  dreamPrompt,
+  FORK_DREAM_TIMEOUT_MS,
+  parseDreamPlan,
+  planText,
+  sessionsByFile,
+  validatePlan,
+  type DreamAction,
+} from './dream'
 
 const PANE = 'bws-memory'
 const view = atom({ plugin: 'bws-memory', key: 'view' } as const, IDLE_VIEW)
@@ -130,17 +141,17 @@ async function loadExisting($: EngineInterface, dir: string): Promise<{ list: Ex
   return { list, full }
 }
 
-// /remember's fork JSON, or the reason there is none. With nothing to fork (a first command, or after /clear) it asks
-// `complete` with the text alone.
-async function askForced($: EngineInterface, existing: readonly Existing[], text: string): Promise<{ text: string } | { reason: string }> {
-  const f = await runFork(kitModel($), { prompt: forkPrompt(existing, text), timeoutMs: FORK_TIMEOUT_MS })
+// A model's reply to one prompt: the fork, or `complete` with the prompt alone when there is nothing to fork (a first
+// command, or after /clear, or headless). /remember and /dream both ask this way.
+async function askText($: EngineInterface, prompt: string, timeoutMs: number): Promise<{ text: string } | { reason: string }> {
+  const f = await runFork(kitModel($), { prompt, timeoutMs })
   if (f.ok) return { text: f.text }
   if (f.reason !== 'nothing-to-fork') return { reason: f.reason }
   const stop = new AbortController()
   const c = await bound(
-    $.model.complete({ model: await $.session.model(), prompt: textOnlyPrompt(existing, text), maxTokens: 3000, timeoutMs: FORK_TIMEOUT_MS }, { signal: stop.signal }),
+    $.model.complete({ model: await $.session.model(), prompt, maxTokens: 3000, timeoutMs }, { signal: stop.signal }),
     (ms, fn) => $.clock.after(ms, fn),
-    { timeoutMs: FORK_TIMEOUT_MS, signal: stop.signal },
+    { timeoutMs, signal: stop.signal },
   )
   if (!c.ok) {
     stop.abort()
@@ -148,6 +159,9 @@ async function askForced($: EngineInterface, existing: readonly Existing[], text
   }
   return c.value.isAnswered ? { text: c.value.text } : { reason: c.value.reason }
 }
+
+// /remember's fork JSON, or the reason there is none.
+const askForced = ($: EngineInterface, existing: readonly Existing[], text: string) => askText($, forkPrompt(existing, text), FORK_TIMEOUT_MS)
 
 // Writes the plan: the undo record first, then the files, MEMORY.md and sources.json. Returns what was written.
 async function writePlan($: EngineInterface, dir: string, session: string, plan: readonly Change[]): Promise<Written[]> {
@@ -256,6 +270,47 @@ async function remember($: EngineInterface, text: string): Promise<string> {
   return 'Remembering... the pane lists what changed.'
 }
 
+type Planned = { ok: true; actions: DreamAction[]; skipped: number } | { ok: false; step: string; reason: string }
+
+// FR-DP-01: reads every memory file and sources.json, asks the fork (or `complete`) for a plan and checks it. Never writes.
+async function planDream($: EngineInterface): Promise<Planned> {
+  const dir = await dirNow($)
+  const { full } = await loadExisting($, dir)
+  const { files, skipped } = dreamFiles([...full].map(([file, text]) => ({ file, text })))
+  if (files.length < 2) return { ok: true, actions: [], skipped }
+  const sources = parseSources((await readText($, joinPath(dir, SOURCES_FILE))) ?? '')
+  const r = await askText($, dreamPrompt(files, sessionsByFile(sources)), FORK_DREAM_TIMEOUT_MS)
+  if ('reason' in r) return { ok: false, step: 'fork', reason: r.reason }
+  const parsed = parseDreamPlan(r.text)
+  if (!parsed.ok) return { ok: false, step: 'parse', reason: parsed.error }
+  const valid = validatePlan(parsed.actions, files)
+  if (!valid.ok) return { ok: false, step: 'validate', reason: valid.error }
+  const clean = cleanPlan(valid.actions)
+  if (!clean.ok) return { ok: false, step: 'redact', reason: clean.error }
+  return { ok: true, actions: clean.actions, skipped }
+}
+
+// One /dream run. The shared `running` guard keeps it off the memory fork's files. Never throws.
+async function runDream($: EngineInterface): Promise<string> {
+  if (running) return 'A memory update is already running; try again in a moment.'
+  running = true
+  const gen = generation
+  try {
+    const plan = await planDream($)
+    if (gen !== generation) return 'Dream dropped: the conversation changed.'
+    if (!plan.ok) {
+      $.ui.log(dreamFailLine(plan.step, plan.reason), { to: 'debug' })
+      return `Dream failed. (${plan.step}: ${plan.reason}) Nothing changed.`
+    }
+    return planText(plan.actions, plan.skipped)
+  } catch (err) {
+    $.ui.log(dreamFailLine('run', err instanceof Error ? err.message.slice(0, 80) : 'error'), { to: 'debug' })
+    return 'Dream failed. (error) Nothing changed.'
+  } finally {
+    if (gen === generation) running = false
+  }
+}
+
 async function undo($: EngineInterface): Promise<string> {
   const dir = await dirNow($)
   const rec = parseUndo(await readText($, joinPath(dir, UNDO_FILE)))
@@ -277,6 +332,7 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'remember', description: 'Save something to memory now (no classifier): /remember <text>', argumentHint: '<text>' })
     await $.command.register({ name: 'memories', description: 'List the last 20 memory writes and the session each came from', immediate: true })
+    await $.command.register({ name: 'dream', description: 'Consolidate the memory: merge duplicates, drop stale entries, rewrite for clarity: /dream' })
     await $.command.register({ name: 'memory-undo', description: 'Restore the files the last memory write changed (one level)', immediate: true })
     await update($, summary, () => memorySummary(IDLE_VIEW))
     return next(e)
@@ -291,6 +347,11 @@ export const register: Register = (on, options) => {
   on('command.run', { command: 'memories' }, async $ => {
     const dir = await dirNow($)
     return { text: memoriesText(parseSources((await readText($, joinPath(dir, SOURCES_FILE))) ?? '')) }
+  })
+
+  on('command.run', { command: 'dream' }, async $ => {
+    await syncSession($)
+    return { text: await runDream($).catch(() => 'Dream failed. (error) Nothing changed.') }
   })
 
   on('command.run', { command: 'memory-undo' }, async $ => ({ text: await undo($).catch(() => 'Nothing was undone. (error)') }))
