@@ -1,0 +1,38 @@
+// SPIKE ONLY (T01): records what a headless turn.complete sees, whether an fs write inside it lands before the
+// process exits, and what $.ui.open answers headless. T02 replaces this file.
+import type { Register } from 'claude-code'
+
+let spikeLog = ''
+
+export const register: Register = (on, options) => {
+  spikeLog = typeof options.spikeLog === 'string' ? options.spikeLog : ''
+
+  on('turn.complete', async ($, e, next) => {
+    const surfaces = await $.session.surfaces()
+    const rows = await $.session.messages()
+    const last = rows[rows.length - 1]
+    let open: unknown = null
+    try {
+      open = await $.ui.open({ id: 'bws-diagram', title: 'Diagram spike pinned 1' })
+    } catch (err) {
+      open = { threw: err instanceof Error ? err.message : String(err) }
+    }
+    const fact = {
+      at: await $.clock.now(),
+      agentId: e.agentId ?? null,
+      reason: e.reason,
+      durationMs: e.durationMs,
+      answerChars: e.answer.length,
+      answerHasMermaid: e.answer.includes('```mermaid'),
+      answerHead: e.answer.slice(0, 400),
+      surfaces,
+      messages: rows.length,
+      lastRole: last?.role ?? null,
+      lastHasMermaid: (last?.text ?? '').includes('```mermaid'),
+      toolUses: rows.reduce((n, m) => n + m.toolUses.length, 0),
+      open,
+    }
+    if (spikeLog) await $.fs.write(spikeLog, JSON.stringify(fact, null, 2))
+    return next(e)
+  })
+}
