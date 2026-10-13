@@ -3,7 +3,7 @@ import { describe, expect, test } from 'claude-code/testing'
 import { EXPLORE_LEAF, EXPLORE_NEXT } from './replies'
 import { DUMP, TREE_PANE, resumeOf, run, settle, sideIdOf, treeWorld } from './treeworld'
 
-type Mounted = { press: (t: { key: string }) => Promise<unknown>; input: (t: { key: string; text: string }) => Promise<unknown>; unmount: () => Promise<void> }
+type Mounted = { press: (t: { key: string }) => Promise<unknown>; unmount: () => Promise<void> }
 
 // Presses one button on a fresh mount of the tree pane, then lets the child's lines be read.
 async function press($: { ui: { mount: (t: never) => Promise<Mounted> } }, clock: { advance: (ms: number) => Promise<void> }, key: string) {
