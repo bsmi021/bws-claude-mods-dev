@@ -161,6 +161,12 @@
       "title": "Cache clock: low threshold (minutes)",
       "description": "The cache chip turns warning when this many minutes or fewer are left.",
       "default": 5
+    },
+    "autoHandoff": {
+      "type": "boolean",
+      "title": "Cache clock: auto handoff",
+      "description": "When the cache drops under the low threshold while idle, after at least one new turn, write HANDOFF.md once for that cache window (as /handoff does, without copying the start prompt).",
+      "default": true
     }
   }
 }

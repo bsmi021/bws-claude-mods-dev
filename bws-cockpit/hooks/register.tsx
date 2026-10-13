@@ -44,7 +44,7 @@ import type { ProjectEntry, ProjectIndex } from './projects'
 import { DEFAULT_MODS, modChips, parseMods } from './modchips'
 import type { KnownMod } from './modchips'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
-import { cacheChip, cacheStatus, noteTurn } from './cacheclock'
+import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff } from './cacheclock'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
 import {
   GUIDE,
@@ -164,7 +164,7 @@ type Options = {
   isShelfNudge: boolean
   handoffNudgePercent: number
   mods: KnownMod[]
-  cache: { ttlMs: number; lowMs: number }
+  cache: { ttlMs: number; lowMs: number; isAutoHandoff: boolean }
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -600,7 +600,8 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
 // ---------- /handoff ----------
 
 // Writes HANDOFF.md into this session's run folder (as the Finish-Line Guard sees it), never one a worker freshened.
-async function writeHandoff($: EngineInterface, focus: string): Promise<string> {
+// `isAuto`: written by the cache clock. It does not copy the start prompt, and it counts as this window's handoff.
+async function writeHandoff($: EngineInterface, focus: string, how: { isAuto?: boolean } = {}): Promise<string> {
   const cwd = await $.session.cwd()
   const now = await $.clock.now()
   const run = await sessionRunFolder($)
@@ -623,9 +624,12 @@ async function writeHandoff($: EngineInterface, focus: string): Promise<string> 
   if (kept !== null) await $.fs.write(joinPath(cwd, `${folder}/${kept}`), previous ?? '')
   await $.fs.write(path, `${body}\n`)
   await update($, handoffNudge, h => (h === null ? h : { ...h, isDone: true }))
+  const startedAt = (await $.session.usage()).startedAt
+  const at = await $.clock.now()
+  await update($, cacheClock, rec => noteHandoff(rec, startedAt, at, how.isAuto === true))
   const start = startPrompt(folder)
   const surfaces = await $.session.surfaces()
-  const copied = surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
+  const copied = how.isAuto !== true && surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
   return (
     `Handoff written: ${folder}/HANDOFF.md (${words(body)} words)` +
     (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
@@ -661,12 +665,21 @@ async function stampTurn($: EngineInterface, o: Options) {
 }
 
 // Redraws the chip, and only when its text changed, so the minute tick re-renders the bar about once a minute.
+// Then the auto handoff: the cache has just run low, nobody is mid-turn, and a turn has happened since the last handoff.
 async function syncCache($: EngineInterface, o: Options) {
   const startedAt = (await $.session.usage()).startedAt
-  const status = cacheStatus(await read($, cacheClock), startedAt, await $.clock.now(), o.cache.ttlMs, o.cache.lowMs)
+  const now = await $.clock.now()
+  const rec = await read($, cacheClock)
+  const status = cacheStatus(rec, startedAt, now, o.cache.ttlMs, o.cache.lowMs)
   const chip = cacheChip(status)
   const prev = await read($, cacheBar)
   if (prev?.text !== chip?.text || prev?.state !== chip?.state) await update($, cacheBar, () => chip)
+  const turns = liveRecord(rec, startedAt)?.turns ?? 0
+  if (!shouldAutoHandoff({ isOn: o.cache.isAutoHandoff, status, isTurnActive, turns })) return
+  // The turn count resets before the write, so a failed attempt is not retried every minute.
+  await update($, cacheClock, r => noteHandoff(r, startedAt, now, false))
+  const text = await writeHandoff($, '', { isAuto: true })
+  $.ui.toast(`cache clock: ${text.split('\n')[0] ?? text}`, { timeoutMs: 8000 })
 }
 
 // ---------- Shelf (moved from bws-shelf; the same shelf file) ----------
@@ -919,6 +932,7 @@ export const register: Register = (on, options) => {
     cache: {
       ttlMs: Math.max(1, Number(options.cacheTtlMinutes ?? 60)) * 60_000,
       lowMs: Math.max(0, Number(options.cacheLowMinutes ?? 5)) * 60_000,
+      isAutoHandoff: options.autoHandoff !== false,
     },
   }
   shelfOption = String(options.shelfPath ?? '')

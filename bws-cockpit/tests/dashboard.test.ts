@@ -647,6 +647,126 @@ describe('cache clock: bar chip', () => {
   })
 })
 
+// ---------- the cache clock's auto handoff ----------
+
+describe('cache clock: auto handoff', () => {
+  const MIN = 60_000
+  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
+  const HANDOFF = '# Handoff: test\n\n## Next step\nnone'
+  const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
+
+  test('fires once when the cache drops under the threshold while idle, after a turn', async ($, on) => {
+    const { seen, clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(55 * MIN) // 5 minutes left: fresh
+    await clock.settle()
+    expect(forks.length).toBe(0)
+    await clock.advance(MIN) // 4 minutes left: low
+    await clock.settle()
+    expect(forks.length).toBe(1)
+    expect(seen.toasts.some(t => /cache clock: Handoff written/.test(t))).toBe(true)
+    await clock.advance(4 * MIN) // still low, but no turn since the handoff
+    await clock.settle()
+    expect(forks.length).toBe(1)
+  })
+
+  test('not while a turn is running', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(50 * MIN)
+    await $.prompt.submit({ text: 'next' } as never) // a turn starts; it has not ended
+    await clock.advance(6 * MIN) // low, and a turn has happened, but one is running
+    await clock.settle()
+    expect(forks.length).toBe(0)
+    await $.turn.complete(TURN) // it ends: the clock restarts, so it is fresh again
+    await clock.settle()
+    expect(forks.length).toBe(0)
+  })
+
+  test('a manual /handoff is the window\'s handoff: no auto one after it', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(50 * MIN)
+    await $.command.run({ command: 'handoff', args: '' } as never)
+    await clock.advance(6 * MIN) // low, with no turn since the manual handoff
+    await clock.settle()
+    expect(forks.length).toBe(1)
+  })
+
+  test('a failed attempt is not retried every minute', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: false, reason: 'error', usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(56 * MIN)
+    await clock.settle()
+    await clock.advance(3 * MIN)
+    await clock.settle()
+    expect(forks.length).toBe(1)
+  })
+
+  test('a new turn after a handoff starts a new window, and its low point gets one more', async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(56 * MIN)
+    await clock.settle()
+    expect(forks.length).toBe(1)
+    await $.turn.complete(TURN) // the window restarts at 56 min
+    await clock.settle()
+    await clock.advance(56 * MIN) // low again at 112 min
+    await clock.settle()
+    expect(forks.length).toBe(2)
+  })
+
+  test('off when autoHandoff is switched off', { options: { autoHandoff: false } }, async ($, on) => {
+    const { clock } = world(on, {})
+    const forks: string[] = []
+    on('model.fork', ($, e) => {
+      forks.push(String((e as { prompt?: string }).prompt))
+      return { value: { isAnswered: true, text: HANDOFF, usage: USAGE } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(58 * MIN)
+    await clock.settle()
+    expect(forks.length).toBe(0)
+  })
+})
+
 // ---------- the action bar's buttons ----------
 
 describe('bar buttons', () => {
