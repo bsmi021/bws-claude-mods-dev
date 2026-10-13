@@ -30,7 +30,7 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
 
 ### Action bar (above the prompt, terminal and Desktop)
 - One row that wraps when narrow:
-  - **Chips:** the run folder name with its open count (`- [ ]` in PLAN.md and TASKS.md), devices that are up or in trouble (UE and its unreal-mcp port, Unity, Blender, adb, VRAM used/total, warning on `pressure`), the loop state while a loop is live, the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), `⚑ N` unsent assumptions (warning while any are unreviewed), `💡 N` open ideas.
+  - **Chips:** the run folder name with its open count (`- [ ]` in PLAN.md and TASKS.md), devices that are up or in trouble (UE and its unreal-mcp port, Unity, Blender, adb, VRAM used/total, warning on `pressure`), the loop state while a loop is live, the cache clock (`cache 42m`, see Cache clock), the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), `⚑ N` unsent assumptions (warning while any are unreviewed), `💡 N` open ideas.
   - **Buttons:** `1` resume run, `2` dashboard open/close, `a` Assumptions, `s` Shelf, `b` Board (with bws-board loaded), `4` Loop (with a loop), `h` handoff, `i` idea, `e` enhance, `3` hide.
 - Digits answer from an empty prompt box; letters need the bar focused (`ctrl+x tab`; it moves the keys bar → pane → prompt).
 - **`i` idea** shelves the prompt box's draft and clears the box. **`e` enhance** runs bws-enhance's `/enhance` on the draft (mid-turn it queues until the turn ends); without bws-enhance it says so. **`h` handoff** writes HANDOFF.md as `/handoff` does, and is highlighted after the handoff nudge.
@@ -118,6 +118,12 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 - **The bar's `h`** writes it the same way (no focus text) and toasts the result's first line.
 - **Nudge:** once per session, when the context passes `handoffNudgePercent` (default 70%), a toast says it's time for a handoff and `h` is highlighted on the bar until a handoff is written.
 
+### Cache clock
+- **The chip:** on the action bar after the loop chip, `cache 42m`: the time left on the main thread's prompt cache, counted from the end of its last turn for `cacheTtlMinutes` (default 60). Plain while fresh; warning under `cacheLowMinutes` (default 5); `cache cold` once the window has ended. Hidden before the first turn and after `/clear`. It refreshes about once a minute and redraws only when its text changes.
+- **What counts:** only main-thread turns. A sub-agent's turn does not restart it. The engine gives mods no per-request timestamp, so after a resume the chip stays hidden until the next turn ends. A handoff's own request may also re-read the cache, which the clock does not count, so it can show cold while the cache is warm (the safe side).
+- **Auto handoff** (`autoHandoff`, default on): when the cache drops under the low threshold while the session is idle, and at least one turn has ended since the last handoff, it writes HANDOFF.md once for that window. It uses the `/handoff` pipeline (same sections, same keep-the-previous-one rule) but does not copy the start prompt. It never runs mid-turn, and not after expiry, because a request then re-caches the whole context at full price. A manual `/handoff` counts as the window's handoff. A failed attempt is not retried in that window. Like `/handoff`, it writes into this session's run folder, or a new `runs/<date>-handoff/`.
+- **`/cacheclock [status]`** prints the time left, the TTL, the state, when the window ends, and when the last auto handoff was written. Plain text, so headless runs print it too.
+
 ### Worker model pin
 - **`workerModel`** (e.g. `claude-sonnet-5-5`): subagents of the types in `workerAgentTypes` (default `general-purpose,claude`) run on it whenever the Agent call names no model.
 - **Left alone:** an explicit `model` in the call still wins, for the complex task. Forks always inherit, and other types (Explore, Plan, plugin agents with their own model) are not touched.
@@ -185,20 +191,23 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `shelfNudge` | `true` | The shelf line in a conversation's opening context |
 | `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
 | `modSummaries` | `bws-memory,bws-diagram,bws-skillgate,bws-secrets` | Mods whose `summary` atom shows as a bar chip; others are ignored |
+| `cacheTtlMinutes` | `60` | How long the main thread's prompt cache lasts after its last turn (sub-agents about 5; not counted here) |
+| `cacheLowMinutes` | `5` | The cache chip turns warning, and auto handoff fires, at this many minutes or fewer left |
+| `autoHandoff` | `true` | Write HANDOFF.md once per cache window when the cache runs low while idle (see Cache clock) |
 
 ## Capabilities it uses
 
 | Category | What it uses |
 |---|---|
-| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `prompt.compose` (the assumptions guide), `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff, dashboard, assumptions, idea, shelf), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea`; Edit/Write/NotebookEdit/Bash/PowerShell, observe only, to see which run folders the session writes), `ui.render` (AbovePrompt, the dashboard Pane), `ui.close` (your close of the dashboard), `state.set` (observes bws-board's `summary` writes; never changes them), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
+| Hooks | `session.start`, `turn.complete`, `prompt.submit`, `prompt.compose` (the assumptions guide), `classic.Stop`, `prompt.context`, `command.run` (cockpit, resume-run, loop-watch, projects, handoff, cacheclock, dashboard, assumptions, idea, shelf), `$.clock.every` (the cache clock's minute tick, and the existing refresh), `agent.spawn`, `tool.call` (`Glob`, the plugin's own `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea`; Edit/Write/NotebookEdit/Bash/PowerShell, observe only, to see which run folders the session writes), `ui.render` (AbovePrompt, the dashboard Pane), `ui.close` (your close of the dashboard), `state.set` (observes bws-board's `summary` writes; never changes them), `tool.call` (unreal MCP tools; Bash/PowerShell commands mentioning adb, unity or UnrealEditor.exe) |
 | Processes | `powershell` (Get-CimInstance for UnrealEditor/Unity/blender), `nvidia-smi`, `adb devices`. Only when you press or type them in the Loop tab: `python <harness.py> start --resume`, `stop` and `answer` |
 | Network | a JSON-RPC `ping` POST to the project's unreal-mcp URL (localhost) |
 | Files | lists the folders under `projectRoots` (3 deep) and reads `.uproject` markers, ProjectVersion.txt and package.json; reads `runs/*/RUNLOG.md`, `PLAN.md`, `TASKS.md`, `.mcp.json`, `Tools/*/loop.json`, the loop's `state.json`, and each unit's `TASKS.md` and `ANSWERS.md`; reads and writes the shelf file; writes `HANDOFF.md` (keeping the previous one) |
 | Prompts | `$.prompt.submit` for resume and the assumption review; `$.prompt.read`/`fill` for the bar's idea and enhance and the Shelf's ▶; `$.command.run` for bws-enhance's `/enhance` |
-| Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
+| Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff and the cache clock's auto handoff, on the session's own model |
 | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
 | Tools | registers `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea` |
-| State | reads bws-board's `summary` and `lines` (no dependency: absent, the Board tab says so), and the `summary` atoms of the mods in `modSummaries` (absent: no chip) |
+| State | reads bws-board's `summary` and `lines` (no dependency: absent, the Board tab says so), and the `summary` atoms of the mods in `modSummaries` (absent: no chip); keeps its own `cacheClock` (the window and its last turn) and `cacheBar` (the chip) atoms |
 
 It writes only the shelf file and HANDOFF.md.
 
@@ -208,6 +217,7 @@ Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 
 
 | Check | Result |
 |---|---|
+| 0.17.0 (2.1.296) | Cache clock: validate, tsc and `claude plugin test` in the M1 receipts (`runs/2026-10-13-mods-m1-cacheclock/receipts/`), 199/199 tests: the pure clock (state boundaries, chip text, records, the auto-handoff decision table, `/cacheclock` text) and the bar (chip hidden before a turn, counts down a minute at a time, warning under 5 min, cold after the hour, hidden after a `/clear`, drawn on terminal and desktop); the auto handoff (fires once, not mid-turn, not without a new turn, a manual `/handoff` counts, a failed attempt is not retried, a new turn starts a new window, off when `autoHandoff` is false). Time is stubbed (mock clock), so no live cache was measured. The live probe is in the M1 receipts |
 | 0.16.0 (2.1.296) | Mod chips: validate, tsc and tests in the gate receipt of `runs/2026-10-13-mods-m0-kit`. Tested with stubbed atoms on terminal and desktop only; no real mod publishes a summary yet, so no chip has been seen in a live bar |
 | 0.15.0 (2.1.296) | Dashboard pane, one-row bar, bws-assumptions and bws-shelf folded in. validate passed; tsc 5.8.3 clean; 162/162 tests (tabs and counts, raise vs a focused pane, closed from the bar, session-start open, the handoff nudge, a loop alert raising the Loop tab, the bar's idea/enhance/tab/dash buttons, the moved assumption and shelf tests). Live in a 170-column tmux terminal with Sonnet (`runs/2026-10-10-bws-dashboard/receipts/ui-*.txt`): the dashboard opened at start on Shelf; Claude's `record_assumption` calls switched it to Assumptions; an ask from another session switched it to Board; the handoff toast and highlight; in-pane tab keys, Right/Wrong/Instead/Send/Clear sent, the shelf scope, ✗ and ▶; `/board pane`; the bar's 2, a, s, b, i, e, h and 3. Then checked by Brian in his own session. Not tried live: bar `1` resume, `4` and the Loop tab with a real loop (tests only), ✓ in the Shelf tab (tests), the Desktop app |
 | 0.14.0 (2.1.296) | Session Bus removed (back to 0.11.0's hooks); board chip added. validate passed, with `bws-board.summary` listed as another plugin's state, so no dependency is needed. 122/122 tests, including the chip: hidden without bws-board and when alone, `board 3 · 2 open · 1 for you` in warning color in the tiles, `board 2 · 0 open` in the grid. tsc clean. A fresh `claude -p "/board"` with both plugins in `CLAUDE_CODE_PLUGIN_DIRS` loaded both, listed no `bus_*` tools, and printed the board. The chip has not been checked by eye in an interactive band yet |
