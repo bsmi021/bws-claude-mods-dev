@@ -72,10 +72,12 @@ Shapes that read at 3 cell rows (6 pixels) a node:
 
    | Pane body columns | Layers that fit at node width 10 | at node width 16 |
    |---|---|---|
-   | 40 | 2 | 1 |
-   | 60 (a typical dock) | 4 | 2 |
-   | 80 (a typical inline pane) | 5 | 3 |
+   | 40 | 2 | 2 |
+   | 60 (a typical dock) | 4 | 3 |
+   | 80 (a typical inline pane) | 5 | 4 |
    | 120 | 8 | 5 |
+
+   (Width = 1 margin column + layers x node width + (layers - 1) x gap; `fitLayers` in `hooks/draw.ts`, tested.)
 
    Rows are not the limit: a Raster may be 256 rows (63 node slots) and the pane scrolls. The spec's 24-node cap holds.
    The layout shrinks the node width toward 10 to fit; when the layers still do not fit, the pane draws the text
