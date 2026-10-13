@@ -1,0 +1,7 @@
+{
+  "writes": [
+    { "file": "prefers-tabs.md", "session": "aaaa1111-0000-0000-0000-000000000001", "at": 1760000000000, "kind": "new" },
+    { "file": "tabs-not-spaces.md", "session": "bbbb2222-0000-0000-0000-000000000002", "at": 1760100000000, "kind": "new" },
+    { "file": "uses-pnpm.md", "session": "cccc3333-0000-0000-0000-000000000003", "at": 1760200000000, "kind": "new" }
+  ]
+}

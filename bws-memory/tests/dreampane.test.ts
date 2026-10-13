@@ -214,3 +214,53 @@ describe('FR-DP-02: /dream undo', () => {
     expect(w.seen.fork.length).toBe(0) // one live file left: nothing to consolidate, no model call
   })
 })
+
+describe('FR-DP-03: /clear, /resume, /branch', () => {
+  const END = (reason: string) => ({ reason, sessionId: 'session-aaaa-1111', resume: {} }) as never
+
+  test('/clear drops a plan that is still being made: it is never shown or applied', async ($, on) => {
+    const w = world(on, { files: TWO, fork: 'defer' })
+    await run($, 'dream', 'apply')
+    await drain(w.clock)
+    await $.session.end(END('clear'))
+    w.release(plan(MERGE_AB))
+    await drain(w.clock)
+    expect(w.seen.opened).toEqual([])
+    expect(w.seen.writes).toEqual([])
+    expect(await run($, 'dream', 'status')).toContain('nothing waiting')
+  })
+
+  test('/clear closes a waiting plan; one that came from the trigger stays due, one asked for with /dream does not', { options: { dreamEveryTurns: 2 } }, async ($, on) => {
+    const w = world(on, { files: TWO })
+    for (let i = 0; i < 2; i++) {
+      await $.turn.complete({ answer: 'ok', durationMs: 1, isAborted: false, turnId: `t${i}`, reason: 'answer' } as never)
+      await drain(w.clock)
+    }
+    expect(w.seen.opened).toEqual(['bws-dream'])
+    const n = w.seen.closed.length
+    await $.session.end(END('clear'))
+    expect(w.seen.closed.slice(n)).toContain('bws-dream')
+    expect(await run($, 'dream', 'status')).toContain('due: run /dream')
+    await run($, 'dream')
+    await drain(w.clock)
+    await $.session.end(END('resume'))
+    expect(await run($, 'dream', 'status')).toContain('due: run /dream') // still due: nobody applied or dismissed it
+  })
+
+  test('a manual preview is gone after /clear and leaves nothing due', async ($, on) => {
+    const w = world(on, { files: TWO })
+    await preview($ as never, w)
+    await $.session.end(END('clear'))
+    expect(await run($, 'dream', 'status')).toBe('Dream: nothing waiting. Automatic: every 20 turns (0 so far) and before a compaction.')
+  })
+
+  test('a new session id (/branch has no event) resets the same way on the next command', async ($, on) => {
+    const w = world(on, { files: TWO })
+    await run($, 'dream', 'status') // the session this conversation started in
+    await preview($ as never, w)
+    const n = w.seen.closed.length
+    w.who.session = 'session-bbbb-2222'
+    expect(await run($, 'dream', 'status')).toContain('nothing waiting')
+    expect(w.seen.closed.slice(n)).toContain('bws-dream')
+  })
+})

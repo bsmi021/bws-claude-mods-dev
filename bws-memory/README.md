@@ -80,7 +80,7 @@ dropped, and entries are rewritten for clarity. Nothing changes until you press 
   dream stays quiet (no pane, one debug line) and leaves `dream due`. `dreamEveryTurns` 0 turns both triggers off. The
   turn counter is temporary: it resets on a reload, `/clear`, `/resume` and `/branch`.
 - **After `/clear`, `/resume`, `/branch`.** A dream that was planning is dropped (its reply is never applied), a plan
-  on screen is closed and the dream stays `due`.
+  on screen is closed, and a dream that was `due` (from the trigger) stays due until you apply or dismiss one.
 
 ## After `/clear`, `/resume`, `/branch` (remembering)
 
