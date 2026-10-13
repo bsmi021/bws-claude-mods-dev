@@ -174,7 +174,8 @@ export function decisionParagraph(t: DecisionTree, id = t.currentId): string | n
     if (parent === undefined || child === undefined || child.viaOption === null) continue
     const o = parent.options[child.viaOption]
     if (o === undefined) continue
-    const picked = o.label === 'you' ? `my own answer (${clip(o.text, 160)})` : `${o.label} (${clip(o.text, 160)})`
+    const words = clip(o.text, 160).replace(/[.;:,]+$/, '')
+    const picked = o.label === 'you' ? `my own answer (${words})` : `${o.label} (${words})`
     steps.push(`${steps.length === 0 ? 'for' : 'then for'} "${clip(parent.question || 'the decision', 120)}" I chose ${picked}`)
   }
   if (steps.length === 0) return null
