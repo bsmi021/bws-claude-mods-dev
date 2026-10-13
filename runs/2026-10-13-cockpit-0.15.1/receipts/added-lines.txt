@@ -1,0 +1,71 @@
+  "version": "0.15.1",
+    "dashboardOnStart": {
+      "type": "boolean",
+      "title": "Open the dashboard at session start",
+      "description": "Open the Dashboard pane (Assumptions, Shelf, Board, Loop tabs) when a session starts, on the first tab with something waiting. Needs a terminal 144 columns wide or Desktop.",
+      "default": true
+    },
+  - Session start with unsent assumptions or open ideas for the project → the dashboard opens on that tab; with nothing waiting it opens on Assumptions (`dashboardOnStart`, on by default; headless opens nothing). Not after `/clear`, `/resume` or `/branch` (no `session.start` there).
+- **Hide and show:** `3` hides the bar with a toast saying how to get it back; `/cockpit` (or `/cockpit show`) brings it back, `/cockpit hide` hides it.
+- Known: the bar draws only once the first refresh has landed.
+- **`/cockpit [show|hide]`** gives the run, devices, loop and guard as text, for sessions where nothing draws, and shows the bar again; `hide` hides it.
+| `dashboardOnStart` | `true` | Open the dashboard at session start even with nothing waiting, on Assumptions. Needs 144 terminal columns or Desktop |
+| 0.15.1 (2.1.296) | `/cockpit hide` and `/cockpit show` (the bar's hide is no longer one-way; the `3` button toasts the way back), `dashboardOnStart`. validate passed; tsc 5.8.3 clean; 165/165 tests (hide by the button, back with `/cockpit show`, hidden again with `/cockpit hide`; session start opens the dashboard on Assumptions with nothing waiting, nothing headless, nothing with the option off). Not checked by eye yet |
+  isDashboardOnStart: boolean
+// The bar's hide button: say how to get it back, since the bar is gone once it is hidden.
+async function hideBar($: EngineInterface) {
+  await update($, isHidden, () => true)
+  $.ui.toast('Cockpit bar hidden. /cockpit show brings it back.')
+}
+
+    isDashboardOnStart: options.dashboardOnStart !== false,
+      // dashboardOnStart: the dashboard is there from the first prompt, on the first tab with something waiting.
+      const tab = waiting ?? (o.isDashboardOnStart ? 'assumptions' : null)
+      if (tab !== null) await settle(raise($, tab))
+    // The bar's hide button has no key to undo it once the bar is gone: /cockpit brings it back, /cockpit hide hides it.
+    const word = e.args.trim().toLowerCase()
+    if (word === 'hide') {
+      await update($, isHidden, () => true)
+      return { text: 'Cockpit bar hidden. /cockpit show brings it back.' }
+    }
+    await update($, isHidden, () => false)
+    return { text: `${runSummary(v?.run ?? null)}\n${devices}${loop}${guard}${word === 'show' ? '\nCockpit bar shown.' : ''}` }
+      <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => void hideBar($)} />,
+
+  test('/cockpit brings a hidden bar back; /cockpit hide hides it again', async ($, on) => {
+    world(on, RUN_WORLD)
+    on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', children: ['other band'] }) as never)
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const first = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    await first.press({ key: 'hide' })
+    await first.unmount()
+    const hidden = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await hidden.find({ type: 'Text', text: /^bow-fix$/ })).toBeUndefined()
+    await hidden.unmount()
+    const shown = await $.command.run({ command: 'cockpit', args: 'show' } as never)
+    expect(String((shown as { text?: string }).text)).toContain('Cockpit bar shown.')
+    const back = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await back.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
+    await back.unmount()
+    const hid = await $.command.run({ command: 'cockpit', args: 'hide' } as never)
+    expect(String((hid as { text?: string }).text)).toContain('/cockpit show')
+    const gone = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await gone.find({ type: 'Text', text: /^bow-fix$/ })).toBeUndefined()
+    await gone.unmount()
+  })
+  test('dashboardOnStart off: session start with nothing waiting opens nothing', { options: { dashboardOnStart: false } }, async ($, on) => {
+  test('session start with nothing waiting still opens the dashboard, on Assumptions; headless opens nothing', async ($, on) => {
+    const { seen } = world(on)
+    await $.session.start({ cwd: ROOT } as never)
+    expect(seen.opened).toEqual([{ id: 'dashboard', focus: undefined }])
+    const ui = await $.ui.mount(PANE)
+    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.variant).toBe('primary')
+    await ui.unmount()
+  })
+
+  test('session start headless opens no dashboard', async ($, on) => {
+    const { seen } = world(on, { surfaces: [] })
+    await $.session.start({ cwd: ROOT } as never)
+    expect(seen.opened).toEqual([])
+  })
+
