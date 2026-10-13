@@ -55,4 +55,24 @@ scope. Pending jobs: none.
 - Each reload of the plugin adds another minute tick, as the existing refresh timer already does. Not fixed here.
 - After a resume the engine gives no timestamp, so the chip is hidden until the next turn ends.
 
+## Review pass (same session, after DONE)
+An advisor review of the finished work raised four blocking items and some checks. Fixed in commit 5a99b2a:
+- **Threshold wording.** `plugin.json` and the README said "this many minutes or fewer". The code uses `remaining < low`
+  (with floor rounding, `cache 5m` is plain and `cache 4m` is warning), so the text now says "under this many minutes".
+- **Manual checks 5 and 6 were wrong** for TTL 3 and low 2. Corrected; check 14 added (a slash command between turns
+  must not block the auto handoff). Check numbering fixed.
+- **FR-ALL-03.** An auto-handoff failure now writes one debug line (`$.ui.log(..., { to: 'debug' })`) as well as the
+  toast. Asserted in "a failed attempt is not retried every minute, and leaves one debug line". Known gap: a throw inside
+  `writeHandoff` (not a failed fork) is still swallowed by `settle` with no line.
+- **FR-ALL-08.** `receipts/test-diff-additions-only.txt` is `git diff 92ad8d7 -- bws-cockpit/tests/`: 2 deletions, both
+  in `dashboard.test.ts` `world()` (the `session.usage` stub and the `return`), each replaced to read a mutable
+  `usage.startedAt` (default 5, as before). No existing test changed.
+- **Unverified, now marked as such in HANDOFF.md:** whether atoms survive a resume (the chip after a resume), and whether a
+  slash command passes through `prompt.submit` (which would leave `isTurnActive` set; the flag predates M1). Check 14
+  tests the second one.
+
+**Gate runs charged this session: 2 of 3.** The first passing harness gate was at 788cfde
+(`receipts/t07-harness-gate.txt`); the second passed at 5a99b2a after the review fixes (`receipts/t07-harness-gate-2.txt`).
+The refused run before the first pass was not charged. Cockpit tests after the review: 199 pass, 0 fail.
+
 **Next step.** None for this session. Next mod: M2 (prompt bouncer, bws-enhance), from a clean tree on `feat/video-mods`.
