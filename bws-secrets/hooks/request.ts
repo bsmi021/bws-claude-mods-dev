@@ -1,4 +1,5 @@
 // Pure pieces of request_secret (no `$`): its arguments, its texts, and the wait for the person (DECISIONS.md D6).
+import { makeSummary, type ModSummary } from './kit/summary'
 import { nameError } from './secrets'
 
 export const WAIT_LIMIT_MS = 10 * 60_000
@@ -109,4 +110,12 @@ export function listText(names: readonly string[], file: string): string {
 
 export function removedText(name: string, isFound: boolean): string {
   return isFound ? `Removed ${name}. Commands that use {{secret:${name}}} are now refused.` : `No saved secret named ${name}.`
+}
+
+// ---------- The summary atom (FR-SB-06, FR-ALL-05): the count of names, never a name's value ----------
+
+export function secretsSummary(count: number, asking: string | null): ModSummary | null {
+  if (asking !== null) return makeSummary('busy', `secret: asking for ${asking}`)
+  if (count === 0) return null
+  return makeSummary('ok', `secrets ${count}`, `${count} saved name${count === 1 ? '' : 's'} for this project`)
 }

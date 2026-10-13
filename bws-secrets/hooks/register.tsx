@@ -17,6 +17,7 @@ import {
   removedText,
   savedText,
   SECRETS_USAGE,
+  secretsSummary,
   sleeperArgv,
   waitFor,
   waitText,
@@ -47,6 +48,7 @@ const GUARD_FAILED = 'bws-secrets: the secrets guard failed, so the call was ref
 const WITHHELD = 'bws-secrets: the output could not be checked for secrets, so it was withheld.'
 
 const entry = atom({ plugin: 'bws-secrets', key: 'entry' } as const, null as EntryView | null)
+const summary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
 
 // The options, copied in by register on every load.
 let dirOption = ''
@@ -76,10 +78,18 @@ async function loadSecrets($: EngineInterface, file: string): Promise<Secret[]> 
   }
 }
 
+// FR-SB-06: the summary atom: how many names are saved for this project, or the request being asked.
+async function publish($: EngineInterface) {
+  const { file } = await paths($)
+  const count = (await loadSecrets($, file)).length
+  await update($, summary, () => secretsSummary(count, pending?.name ?? null))
+}
+
 async function endRequest($: EngineInterface) {
   pending = null
   await update($, entry, () => null)
   await $.ui.close({ id: SECRETS_PANE })
+  await publish($)
 }
 
 // A result with a saved value in it, rebuilt scrubbed (no `ref`, so core stores this one); else the result as it was.
@@ -130,6 +140,7 @@ export const register: Register = (on, options) => {
       },
       isDeferred: false,
     })
+    await publish($)
     return next(e)
   })
 
@@ -147,6 +158,7 @@ export const register: Register = (on, options) => {
     pending = { name: args.name, answer: null }
     try {
       await update($, entry, () => ({ name: args.name, purpose: args.purpose, hasSaved, note: '' }))
+      await publish($)
       const opened = await $.ui.open({ id: SECRETS_PANE, title: `Secret ${args.name}`, focus: true })
       if (!opened.isPlaced) return { deny: notPlacedText(opened.reason) }
       const argv = sleeperArgv((await $.env.get('OS')) === 'Windows_NT')
@@ -194,6 +206,7 @@ export const register: Register = (on, options) => {
     if (a.kind === 'list') return { text: listText(saved.map(s => s.name), file) }
     const isFound = saved.some(s => s.name === a.name)
     if (isFound) await $.fs.write(file, formatEnv(removeSecret(saved, a.name)))
+    if (isFound) await publish($)
     return { text: removedText(a.name, isFound) }
   })
 
