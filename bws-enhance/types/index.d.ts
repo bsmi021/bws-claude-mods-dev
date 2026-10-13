@@ -1,6 +1,7 @@
-export type Phase = 'idle' | 'working' | 'ready' | 'error'
+export type Phase = 'idle' | 'working' | 'ready' | 'error' | 'bounced'
 
-// The enhance in flight or waiting on Send: what the band above the prompt draws.
+// The enhance in flight or waiting on Send, or a prompt held by the bouncer (phase bounced, note = the reason):
+// what the band above the prompt draws.
 export type View = {
   phase: Phase
   original: string
@@ -10,8 +11,19 @@ export type View = {
   note: string
 }
 
+// What /bounce set for this session (mode null: the bounce option decides), and the text held once in warn mode.
+export type Setting = {
+  mode: 'off' | 'warn' | 'block' | null
+  warned: string | null
+}
+
 declare module 'claude-code' {
   interface PluginState {
-    'bws-enhance': { view: View }
+    'bws-enhance': {
+      view: View
+      setting: Setting
+      // The summary atom every mod publishes (FR-ALL-05); null draws no chip.
+      summary: { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string } | null
+    }
   }
 }

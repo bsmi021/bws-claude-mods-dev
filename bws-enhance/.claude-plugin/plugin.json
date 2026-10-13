@@ -1,7 +1,7 @@
 {
   "name": "bws-enhance",
-  "version": "0.2.1",
-  "description": "/enhance <rough prompt>, or a chord on the draft in the box: rewrites a vague prompt into a specific, actionable one using this project's instructions, installed skills and commands, MCP servers, the recent conversation and Anthropic's prompting guidance for the session's model, puts it in the prompt box, and offers Send / Revert in a small pane.",
+  "version": "0.3.0",
+  "description": "/enhance <rough prompt>, or a chord on the draft in the box: rewrites a vague prompt into a specific, actionable one using this project's instructions, installed skills and commands, MCP servers, the recent conversation and Anthropic's prompting guidance for the session's model, puts it in the prompt box, and offers Send / Revert in a small pane. Optional prompt bouncer: holds a vague prompt before it is sent, with the reason and the project glossary.",
   "author": {
     "name": "Brian"
   },
@@ -18,6 +18,24 @@
       "title": "Chord action for 'enhance the draft'",
       "description": "An engine keybinding action the footer's enhance button borrows; bind a chord to it in ~/.claude/keybindings.json (Global). Default app:toggleDiffPreSession, which nothing else handles while the cc-plugin-diff mod is on. Empty hides the button.",
       "default": "app:toggleDiffPreSession"
+    },
+    "bounce": {
+      "type": "string",
+      "title": "Prompt bouncer",
+      "description": "off (default): prompts are sent as typed. warn: a vague prompt is held with the reason; Enter again sends it. block: a vague prompt is not sent and the draft stays in the box. Change it for a session with /bounce.",
+      "default": "off"
+    },
+    "bounceModel": {
+      "type": "string",
+      "title": "Bouncer model",
+      "description": "Model alias or id that classifies a prompt as vague and writes the reason (haiku, sonnet, opus, or a full id).",
+      "default": "haiku"
+    },
+    "glossaryFile": {
+      "type": "string",
+      "title": "Glossary file",
+      "description": "Markdown file of project terms the bouncer and its reason use (first 4,000 characters). Empty: docs/GLOSSARY.md, else the ## Glossary section of AGENTS.md or CLAUDE.md.",
+      "default": ""
     }
   }
 }
