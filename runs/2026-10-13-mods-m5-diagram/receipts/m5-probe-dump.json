@@ -1,0 +1,56 @@
+{
+  "entries": [
+    {
+      "origin": "pinned",
+      "at": 1791899522757,
+      "title": "Pinned: Parse request",
+      "diagram": {
+        "title": "Pinned: Parse request",
+        "nodes": [
+          {
+            "id": "A",
+            "label": "Parse request",
+            "kind": "file"
+          },
+          {
+            "id": "B",
+            "label": "Valid?",
+            "kind": "decision"
+          },
+          {
+            "id": "C",
+            "label": "Write file",
+            "kind": "file"
+          },
+          {
+            "id": "D",
+            "label": "Show error",
+            "kind": "file"
+          }
+        ],
+        "edges": [
+          {
+            "from": "A",
+            "to": "B"
+          },
+          {
+            "from": "B",
+            "to": "C",
+            "label": "yes"
+          },
+          {
+            "from": "B",
+            "to": "D",
+            "label": "no"
+          }
+        ]
+      },
+      "source": "graph LR\n  A[Parse request] --> B{Valid?}\n  B -- yes --> C[Write file]\n  B -- no --> D[Show error]",
+      "id": 1
+    }
+  ],
+  "shown": 0,
+  "phase": "idle",
+  "note": "",
+  "nextId": 2
+}
