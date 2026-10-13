@@ -767,6 +767,40 @@ describe('cache clock: auto handoff', () => {
   })
 })
 
+// ---------- /cacheclock ----------
+
+describe('cache clock: /cacheclock', () => {
+  const MIN = 60_000
+  const TURN = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answered' } as never
+
+  test('says there is no request yet before the first turn', async ($, on) => {
+    world(on, {})
+    const r = await $.command.run({ command: 'cacheclock', args: '' } as never)
+    expect(r.text).toContain('no request yet in this session')
+    expect(r.text).toContain('Auto handoff: none this session.')
+  })
+
+  test('prints the time left, the state and the TTL; headless too', async ($, on) => {
+    world(on, { surfaces: [] })
+    await $.turn.complete(TURN)
+    const r = await $.command.run({ command: 'cacheclock', args: 'status' } as never)
+    expect(r.text).toContain('60m left of 60m (fresh)')
+  })
+
+  test('shows when the last auto handoff was written', async ($, on) => {
+    const { clock } = world(on, {})
+    on('model.fork', () => ({ value: { isAnswered: true, text: '# Handoff: test', usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } as never }))
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await clock.settle()
+    await clock.advance(56 * MIN)
+    await clock.settle()
+    const r = await $.command.run({ command: 'cacheclock', args: '' } as never)
+    expect(r.text).toContain('4m left of 60m (low, under 5m)')
+    expect(r.text).toMatch(/Auto handoff: last written \d\d:\d\d\./)
+  })
+})
+
 // ---------- the action bar's buttons ----------
 
 describe('bar buttons', () => {

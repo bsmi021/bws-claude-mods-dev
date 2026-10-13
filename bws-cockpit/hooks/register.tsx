@@ -44,7 +44,7 @@ import type { ProjectEntry, ProjectIndex } from './projects'
 import { DEFAULT_MODS, modChips, parseMods } from './modchips'
 import type { KnownMod } from './modchips'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
-import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff } from './cacheclock'
+import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from './cacheclock'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
 import {
   GUIDE,
@@ -664,6 +664,14 @@ async function stampTurn($: EngineInterface, o: Options) {
   await syncCache($, o)
 }
 
+// /cacheclock: the clock as of now, its TTL and threshold, and when the last auto handoff was written.
+async function cacheText($: EngineInterface, o: Options) {
+  const startedAt = (await $.session.usage()).startedAt
+  const rec = await read($, cacheClock)
+  const status = cacheStatus(rec, startedAt, await $.clock.now(), o.cache.ttlMs, o.cache.lowMs)
+  return statusText(status, o.cache.ttlMs, o.cache.lowMs, { isOn: o.cache.isAutoHandoff, at: liveRecord(rec, startedAt)?.autoHandoffAt ?? null })
+}
+
 // Redraws the chip, and only when its text changed, so the minute tick re-renders the bar about once a minute.
 // Then the auto handoff: the cache has just run low, nobody is mid-turn, and a turn has happened since the last handoff.
 async function syncCache($: EngineInterface, o: Options) {
@@ -941,6 +949,10 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'handoff' }, async ($, e, next) => ({ text: await writeHandoff($, e.args.trim()) }))
 
+  // ---------- Cache clock ----------
+
+  on('command.run', { command: 'cacheclock' }, async ($, e, next) => ({ text: await cacheText($, o) }))
+
   // ---------- worker model pin ----------
 
   on('agent.spawn', async ($, e, next) => {
@@ -1062,6 +1074,7 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
     await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy its start prompt', argumentHint: '[focus]' })
+    await $.command.register({ name: 'cacheclock', description: 'Show the prompt cache clock: time left, state, and the last auto handoff', argumentHint: '[status]', immediate: true })
     if (o.projects.isOn) {
       await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })
       await $.tool.register({
