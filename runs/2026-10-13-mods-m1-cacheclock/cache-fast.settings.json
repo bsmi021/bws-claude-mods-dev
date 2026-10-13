@@ -1,0 +1,10 @@
+{
+  "pluginConfigs": {
+    "bws-cockpit": {
+      "options": {
+        "cacheTtlMinutes": 3,
+        "cacheLowMinutes": 2
+      }
+    }
+  }
+}

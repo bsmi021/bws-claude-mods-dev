@@ -1,5 +1,5 @@
 # M1 — Cache clock
-Status: IN_PROGRESS
+Status: DONE
 Session: 1
 
 ## Tasks
@@ -9,9 +9,9 @@ Session: 1
 - [x] T04 [FR-CC-04] Implement, with tests: `/cacheclock [status]` prints remaining time, TTL, state, and when the last auto handoff was written. Headless prints text.
 - [x] T05 [FR-CC-05] Implement, with tests: cockpit README documents the feature and options; cockpit version bumped (minor).
 - [x] T06 [AC-CC-01] Verify, saving the receipt under the run folder's receipts/: `claude -p` probe with `--plugin-dir ./bws-cockpit` runs `/cacheclock status` and saves its stream-json output. (evidence: `receipts/m1-probe.json`)
-- [~] T07 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
-- [ ] T08 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
-- [ ] T09 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
+- [x] T07 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
+- [x] T08 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
+- [x] T09 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
 
 ## Needs Brian
 
