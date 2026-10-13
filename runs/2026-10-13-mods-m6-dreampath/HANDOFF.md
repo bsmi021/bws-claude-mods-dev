@@ -1,6 +1,6 @@
 # Handoff: M6 DreamPath (bws-memory 0.1.0 -> 0.2.0; extends the M4 plugin, no new plugin)
 
-Status: code tasks T01 to T06 done and committed on `feat/video-mods`; the harness gate result is in RUNLOG.md. Brian's
+Status: DONE. All tasks committed on `feat/video-mods`; the harness gate passed at a9ded74 (RUNLOG.md). Brian's
 interactive checks are in MANUAL-CHECKS.md (15 checks; the worker only ran headless). Decisions: DECISIONS.md (D1 to D7).
 
 ## What exists (later mods: read this)
@@ -59,13 +59,15 @@ interactive checks are in MANUAL-CHECKS.md (15 checks; the worker only ran headl
 - AC-DP-01: `receipts/m6-probe.json`, `receipts/m6-probe.md`, `receipts/m6-probe-fixture/` (before),
   `receipts/m6-probe-memdir/` (after): headless `/dream apply` merged the two near-duplicates (exit 0).
 
-## Decisions you must know (assumptions A1 to A7 on the dashboard; D1 to D7 in DECISIONS.md)
+## Decisions you must know (assumptions A1 to A8 on the dashboard; D1 to D7 in DECISIONS.md)
 - A1 only `remove` counts toward the 40% cap. A2 removed = emptied (no fs delete); M4's `loadExisting` unchanged, so an
   emptied file still shows in the memory fork's "existing files" list. A3 `/dream apply` plans and applies in one command.
   A4 sessions come from `sources.json`, not frontmatter. A5 compaction triggers manual / auto / plugin; `dreamEveryTurns` 0
   turns both off. A6 pane id `bws-dream`; chip precedence. A7 automatic dream quiet rules.
 - The compaction event exists (`session.compact`): D1.
 - The turn counter is a module variable (resets on reload, /clear, /resume, /branch); the `dream` atom survives a reload.
+- FR-ALL-08: `git diff b2f9ef0 -- bws-memory/tests/mem.test.ts bws-memory/tests/memory.test.ts bws-memory/hooks/memory.ts bws-memory/hooks/kit bws-kit` is empty; the existing M4 tests and `memory.ts` are untouched (`register.tsx` only gained code; `askForced` now delegates to `askText`).
+- A8 the dream sees only non-empty `.md` files up to 4,000 characters, at most 40 (D4).
 - Version: bws-memory 0.2.0 (minor). No other plugin changed; `bws-kit` unchanged; `hooks/kit/` regenerated nothing.
 
 ## Watch out for

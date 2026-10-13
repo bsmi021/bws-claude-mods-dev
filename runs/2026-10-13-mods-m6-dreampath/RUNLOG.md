@@ -23,10 +23,10 @@ Actions:
 Probes (through `tools/probe.py`): m6-probe, one headless `/dream apply` with the session model.
 
 Results: `claude plugin test` in `bws-memory/`: 136 pass, 0 fail (was 54). `python tools/mods-gate.py --plugin bws-memory`: ok.
-Assumptions A1 to A7 recorded on the dashboard.
+Assumptions A1 to A8 recorded on the dashboard.
 
 Version bumped: bws-memory 0.1.0 -> 0.2.0. No other plugin changed.
 
-Gate: see the final entry below.
+Gate: `python tools/mods-harness/harness.py gate` PASSED at a9ded74 (2026-10-13 10:19; `python tools/mods-gate.py` for all plugins, the kit and the sync check); receipt written by the harness. One gate run this session.
 
 Pending: Brian runs MANUAL-CHECKS.md. No Needs Brian items.
