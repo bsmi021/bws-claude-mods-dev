@@ -1,22 +1,8 @@
 import { test, expect, describe } from 'claude-code/testing'
 import type { Diagram } from '../types'
 import { MAX_NODES, parseDiagramReply, validateDiagram } from '../hooks/spec'
-import { edgeCells, gapWidths, isDummy, layered, place } from '../hooks/layout'
-import { outline, edgeLines, rasterOf, svgOf, fitLabel } from '../hooks/render'
-import { layoutWidth } from '../hooks/draw'
-
-const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-function words(cells: string): Uint32Array {
-  const clean = cells.replace(/=+$/, '')
-  const bytes: number[] = []
-  for (let i = 0; i < clean.length; i += 4) {
-    const n = [0, 1, 2, 3].reduce((t, k) => (t << 6) | (k + i < clean.length ? B64.indexOf(clean[i + k]!) : 0), 0)
-    bytes.push((n >> 16) & 255, (n >> 8) & 255, n & 255)
-  }
-  const len = Math.floor((clean.length * 3) / 4)
-  return new Uint32Array(Uint8Array.from(bytes.slice(0, len)).buffer)
-}
-const rowText = (w: Uint32Array, columns: number, row: number) => String.fromCharCode(...Array.from({ length: columns }, (_, c) => w[(row * columns + c) * 3]!))
+import { isDummy, layered } from '../hooks/layout'
+import { outline, edgeLines } from '../hooks/render'
 
 const SAMPLE: Diagram = {
   title: 'sample',
@@ -57,6 +43,14 @@ describe('FR-DG-02: the spec, validated', () => {
     expect(validateDiagram({ nodes: [{ id: 'a', kind: 'file' }], edges: 'a->b' }).ok).toBe(false)
   })
 
+  test('now: kept when it names a node, dropped when it does not', async () => {
+    const base = { nodes: [{ id: 'a', kind: 'step' }, { id: 'b', kind: 'step' }], edges: [{ from: 'a', to: 'b' }] }
+    const of = (v: unknown) => (validateDiagram(v) as { diagram: Diagram }).diagram.now
+    expect(of({ ...base, now: 'b' })).toBe('b')
+    expect(of({ ...base, now: 'zzz' })).toBeUndefined()
+    expect(of(base)).toBeUndefined()
+  })
+
   test('a self loop and a repeated edge are dropped, not refused', async () => {
     const r = validateDiagram({ nodes: [{ id: 'a', kind: 'file' }, { id: 'b', kind: 'file' }], edges: [{ from: 'a', to: 'a' }, { from: 'a', to: 'b' }, { from: 'a', to: 'b', label: 'again' }] })
     expect(r.ok && r.diagram.edges).toEqual([{ from: 'a', to: 'b' }])
@@ -71,7 +65,7 @@ describe('FR-DG-02: the spec, validated', () => {
   })
 })
 
-describe('FR-DG-02: the layered layout, left to right by dependency', () => {
+describe('FR-DG-02: the layered layout, top to bottom by dependency', () => {
   test('a chain is one node a layer, in order', async () => {
     expect(layered(chain(3)).layers).toEqual([['n0'], ['n1'], ['n2']])
   })
@@ -100,74 +94,10 @@ describe('FR-DG-02: the layered layout, left to right by dependency', () => {
     const back = l.chains.find(c => c.from === 'b')!
     expect(back.isReversed).toBe(true)
     expect(back.slots).toBe(l.chains.find(c => c.from === 'a')!.slots)
-    const g = place(d, l, 10)
-    expect(g.heads.map(h => h.dir).sort()).toEqual(['<', '>'])
-  })
-
-  test('placement: nodes never overlap, edge cells never fall on a node, heads sit left of their target', async () => {
-    const d: Diagram = { ...SAMPLE, nodes: [...SAMPLE.nodes, { id: 'E', label: 'Run tests', kind: 'step' }], edges: [...SAMPLE.edges, { from: 'A', to: 'E' }, { from: 'A', to: 'C' }] }
-    const l = layered(d)
-    const g = place(d, l, 14)
-    const taken = new Set<number>()
-    for (const n of g.nodes) {
-      for (let r = n.row; r < n.row + 3; r++) {
-        for (let x = n.x; x < n.x + 14; x++) {
-          const k = r * g.columns + x
-          expect(taken.has(k)).toBe(false)
-          taken.add(k)
-        }
-      }
-    }
-    for (const k of edgeCells(g).keys()) expect(taken.has(k)).toBe(false)
-    const target = g.nodes.find(n => n.id === 'B')!
-    expect(g.heads.some(h => h.dir === '>' && h.x === target.x - 1 && h.row === target.row + 1)).toBe(true)
-    expect(g.columns).toBe(layoutWidth(l.layers.length, 14, gapWidths(l)))
-    expect(gapWidths(l)).toEqual([5, 6]) // gap 2 has two bending sources (B and the long edge's dummy): two tracks
   })
 })
 
-describe('FR-DG-02: drawn with the kit\'s raster.ts', () => {
-  test('the Raster: sized to the layout, the labels in the cells, the edge glyphs between', async () => {
-    const r = rasterOf(SAMPLE, 80)!
-    expect(r.columns <= 80).toBe(true)
-    expect(r.rows).toBe(9) // two slots in the tallest layer: a row above and below, 2 x 4 rows less the last gap
-    const w = words(r.cells)
-    expect(w.length).toBe(r.columns * r.rows * 3)
-    const all = Array.from({ length: r.rows }, (_, i) => rowText(w, r.columns, i)).join('\n')
-    for (const label of ['Parse request', 'Valid?', 'writer.ts', 'ErrorPanel']) expect(all.includes(label)).toBe(true)
-    expect(all.includes('->')).toBe(true)
-    expect(all.includes('|')).toBe(true)
-  })
-
-  test('narrow panes shrink the nodes and cut the labels; too narrow is null (the outline is drawn instead)', async () => {
-    const r = rasterOf(SAMPLE, 42)!
-    expect(r.columns <= 42).toBe(true)
-    expect(rasterOf(chain(5), 40)).toBe(null)
-    expect(fitLabel('Parse request', 'step', 10)).toBe('Pars')
-    expect(fitLabel('writer.ts', 'file', 10)).toBe('writer.t')
-    expect(fitLabel('café menu', 'new', 20)).toBe('caf menu')
-  })
-
-  test('24 nodes stay inside the Raster limits (512 x 256) and the Svg limit (131,072 characters)', async () => {
-    const d = chain(MAX_NODES)
-    const wide = rasterOf(d, 512)!
-    expect(wide.columns <= 512 && wide.rows <= 256).toBe(true)
-    const star: Diagram = { title: 's', nodes: chain(MAX_NODES).nodes, edges: chain(MAX_NODES).nodes.slice(1).map(n => ({ from: 'n0', to: n.id })) }
-    const tall = rasterOf(star, 120)!
-    expect(tall.rows <= 256).toBe(true)
-    expect(svgOf(d).source.length < 131072).toBe(true)
-    expect(svgOf(star).source.length < 131072).toBe(true)
-  })
-
-  test('the Svg: the kit\'s toSvg inside a cropping view box, labels as text, the outline as alt', async () => {
-    const s = svgOf(SAMPLE)
-    expect(s.source.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ')).toBe(true)
-    expect(s.source.includes('viewBox="0 0 320 200"')).toBe(true)
-    expect(s.source.includes('>Parse request</text>')).toBe(true)
-    expect(s.alt.includes('[[Parse request]]')).toBe(true)
-    expect(s.width >= 320 && s.width <= 900).toBe(true)
-  })
-
+describe('FR-DG-02: the text forms', () => {
   test('the outline: one line per layer with shape brackets, then every edge; labelled edges alone for the notes', async () => {
     expect(outline(SAMPLE)).toEqual(['1: [[Parse request]]', '2: <Valid?>', expect.stringMatching(/^3: /) as unknown as string, 'Parse request -> Valid?', 'Valid? -> writer.ts: yes', 'Valid? -> ErrorPanel: no'])
     expect(outline(SAMPLE)[2]!.includes('[writer.ts]') && outline(SAMPLE)[2]!.includes('(ErrorPanel)')).toBe(true)

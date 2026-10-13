@@ -52,7 +52,8 @@ export function validateDiagram(v: unknown): Checked {
     edges.push(label ? { from, to, label } : { from, to })
   }
   const title = (str(o.title) || 'Diagram').slice(0, MAX_TITLE)
-  return { ok: true, diagram: { title, nodes, edges } }
+  const now = str(o.now)
+  return { ok: true, diagram: { title, nodes, edges, ...(now && ids.has(now) ? { now } : {}) } }
 }
 
 /** The JSON object in a model's reply (bare, or fenced), validated. */

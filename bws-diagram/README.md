@@ -1,5 +1,7 @@
 # bws-diagram
 
+0.2.0: the pane draws box-drawing text rows top to bottom (it drew filled blocks left to right before), opens whenever a pin or a drawing lands, and writes the diagram into the transcript when the pane cannot be placed.
+
 After a big turn, a small model decides whether it is worth a diagram. If yes, a fork of the session draws what
 happened (the steps taken, the files touched, new components, decisions) and a side pane shows it with a legend. The
 main session never does that work and never waits for it. Mermaid flowcharts Claude writes in a reply are pinned in the
@@ -16,24 +18,26 @@ same pane ("Pinned diagrams"), drawn instead of being left as text.
   JSON: a title, nodes `{ id, label, kind }` with kind `file`, `new`, `step` or `decision`, and edges
   `{ from, to, label? }`; at most 24 nodes. The reply is validated (known kinds, unique ids, edges between known nodes);
   an invalid reply is dropped.
-- **The drawing.** A layered layout, left to right by dependency (cycles broken, long edges routed through empty slots
-  below the nodes), drawn with bws-kit's `raster.ts`:
-  - Terminal: a `Raster` sized to the pane's width. File = square rectangle (blue), new component = rounded rectangle
-    (green), step = double rectangle (amber), decision = oval (purple). Edges are ASCII lines with `>` heads; labelled
-    edges are listed under the drawing as `A -> B: label`.
-  - Desktop and the other remote surfaces: an `Svg` of the same blocks.
-  - Too narrow to draw (under 10 columns a node), or a surface with neither: a text outline, one line per layer.
+- **The drawing.** Plain text rows in thin box-drawing characters, top to bottom by dependency (cycles broken, long
+  edges routed down beside the middle layers), the same on every surface. Each node is a three-row box whose corners
+  say what it is: `┌` file, `╭` new component, `╔` step, `╱` decision. Edges leave a node's bottom, run along a bus and
+  arrive on the target's top as `▼ label` (a back edge of a cycle gets `▲` at its upper end). A fork can mark the node
+  where things stand with `now`; it is drawn `▶ label` and the legend adds `▶ now`. Under the drawing a footer says
+  `map drawn at turn N` or `pinned at turn N`. Nodes shrink to 8 columns and labels are cut with `…` to fit the pane; if
+  even that is too wide the rows are still drawn, cut at the edge, and the footer says how many columns they want.
 - **Pinned diagrams.** When a turn ends, each fenced ` ```mermaid ` block in the reply (five at most, each pinned once)
-  is parsed: `graph` / `flowchart` (LR, TD, TB, RL, BT; drawn left to right), node shapes `[..]` square, `(..)` and
+  is parsed: `graph` / `flowchart` (LR, TD, TB, RL, BT; all drawn top to bottom), node shapes `[..]` square, `(..)` and
   `([..])` rounded, `[[..]]` double, `{..}`, `{{..}}` and `((..))` decision, edges `-->`, `---`, `==>`, `-.->`,
   `A -- label --> B` and `A -->|label| B`, chains on one line. Styling lines (`style`, `classDef`, `subgraph`, ...) are
   ignored. Anything else (another diagram type, `A & B`, over 24 nodes) is pinned as its source text. Pinning is plain
   parsing, so it also runs headless.
-- **The pane.** A heading (title, `2/5`, where it came from), the legend, the drawing, the labelled edges, the
+- **The pane.** A heading (title, `2/5`, where it came from), the legend, the drawing, its footer, the
   "Pinned diagrams" list, and buttons `< Prev` (`p`), `Next >` (`n`) and `Close` (`c`); Esc closes it too. It is drawn
   again for every width change. In the terminal's fullscreen layout from 110 columns it docks right of the transcript;
-  otherwise it sits above the prompt. An open the mod makes on its own is not drawn below 144 columns until you have
-  opened the pane once; the mod then shows a toast and `/diagram show` opens it.
+  otherwise it sits above the prompt. A pin or a drawn diagram opens the pane, but an open the mod makes on its own
+  is not drawn below 144 columns (110 once you have opened the pane yourself): the engine decides that, not the mod.
+  Then the mod shows a toast and writes the diagram into the transcript, drawn at 100 columns, so it is seen anyway;
+  `/diagram show` opens the pane at any width.
 - **Fail open.** A classifier error or unreadable answer (15 s timeout), a fork error or timeout (90 s) or an invalid
   spec leaves the session as it was and writes one debug-log line that never carries your text. A fork cannot be
   cancelled, so a timeout only stops waiting for it.
@@ -77,7 +81,7 @@ same pane ("Pinned diagrams"), drawn instead of being left as text.
 `session.start`, `session.end`, `command.run` (`/diagram`), `ui.render` and `ui.close` for the pane,
 `$.model.classify`, `$.model.fork`, `$.model.complete` (only as the fork's fallback), `$.session.*` (id, messages,
 surfaces, model), `$.state`, `$.store` (its own key `boards`), `$.fs.write` (only the `dumpFile`, when set), `$.ui.log`
-(debug only), `$.ui.toast`. It makes no network calls of its own, runs no processes and never touches `~/.claude`.
+(debug only, and the diagram into the transcript when its pane is not placed), `$.ui.toast`. It makes no network calls of its own, runs no processes and never touches `~/.claude`.
 
 ## Load
 
@@ -92,8 +96,7 @@ claude --plugin-dir ./bws-diagram
   count and the test names per requirement.
 - **Headless probe:** `claude -p` with a reply holding a mermaid block pins it (`receipts/m5-probe.json` and the
   `dumpFile` receipt).
-- **Rendered, not live:** the PNGs in `runs/2026-10-13-mods-m5-diagram/receipts/` are painted from the Raster cells and
-  the Svg source, not captured from a terminal or Desktop.
+- **Drawing:** `tests/render.test.ts` asserts the exact rows for a chain, a fan-out, a fan-in, a skipped layer, a cycle, narrow widths and a single node. The pane tests read the same rows back through a stubbed engine.
 - **Not tested live:** the pane in a real terminal (dock, inline, keys, resize), Desktop, the classifier path after a
   real turn, the cockpit chip, `/clear`, `/resume`, `/branch`. `runs/2026-10-13-mods-m5-diagram/MANUAL-CHECKS.md`
   lists them.

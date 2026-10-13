@@ -1,11 +1,9 @@
-// The layered layout (FR-DG-02): left to right by dependency. Pure: no `$`.
+// The layering (FR-DG-02): which layer each node sits in, by dependency, top to bottom as render.ts draws it. Pure: no `$`.
 //
 // Layers by longest path from the sources (cycles broken by reversing the edges a depth-first walk finds going back);
 // an edge that spans more than one layer passes through dummy slots, so it never crosses a node; the order inside a
-// layer follows the barycentre of the neighbours, a few sweeps each way. Placement is in terminal cells: a node is
-// NODE_ROWS rows, a layer's nodes stack with ROW_GAP between, and each gap between layers has its own vertical tracks.
-import type { Diagram, NodeKind } from '../types'
-import { MARGIN, MIN_GAP, NODE_ROWS, ROW_GAP, layoutRows, layoutWidth } from './draw'
+// layer follows the barycentre of the neighbours, a few sweeps each way.
+import type { Diagram } from '../types'
 
 export type Chain = { from: string; to: string; slots: string[]; isReversed: boolean }
 export type Layered = { layers: string[][]; chains: Chain[] }
@@ -13,7 +11,7 @@ export type Layered = { layers: string[][]; chains: Chain[] }
 const DUMMY = '\u0000d'
 export const isDummy = (slot: string) => slot.startsWith(DUMMY)
 
-/** The layers (node ids and dummy slots, in drawing order) and every edge as its chain of slots, left to right. */
+/** The layers (node ids and dummy slots, in drawing order) and every edge as its chain of slots, top to bottom. */
 export function layered(d: Diagram): Layered {
   const ids = d.nodes.map(n => n.id)
   const out = new Map<string, string[]>(ids.map(id => [id, []]))
@@ -100,105 +98,4 @@ export function layered(d: Diagram): Layered {
   }
   index()
   return { layers, chains }
-}
-
-// ---------- placement ----------
-
-export type Placed = { id: string; label: string; kind: NodeKind; x: number; row: number }
-export type Seg = { kind: 'h'; row: number; x0: number; x1: number } | { kind: 'v'; x: number; r0: number; r1: number }
-export type Head = { x: number; row: number; dir: '>' | '<' }
-export type Geometry = { columns: number; rows: number; nodeW: number; nodes: Placed[]; segs: Seg[]; heads: Head[] }
-
-const slotRow = (i: number) => 1 + i * (NODE_ROWS + ROW_GAP)
-const centre = (i: number) => slotRow(i) + Math.floor(NODE_ROWS / 2)
-
-type Hop = { gap: number; a: string; b: string; ra: number; rb: number }
-
-function hops(l: Layered): Hop[] {
-  const where = new Map<string, { layer: number; i: number }>()
-  l.layers.forEach((slots, layer) => slots.forEach((s, i) => where.set(s, { layer, i })))
-  const out: Hop[] = []
-  for (const c of l.chains) {
-    for (let k = 0; k + 1 < c.slots.length; k++) {
-      const a = where.get(c.slots[k]!)!, b = where.get(c.slots[k + 1]!)!
-      out.push({ gap: a.layer, a: c.slots[k]!, b: c.slots[k + 1]!, ra: centre(a.i), rb: centre(b.i) })
-    }
-  }
-  return out
-}
-
-// One vertical track per source slot that bends in that gap, ordered by its row.
-function tracks(l: Layered): Map<string, number>[] {
-  const hs = hops(l)
-  return l.layers.slice(0, -1).map((_, g) => {
-    const bending = hs.filter(h => h.gap === g && h.ra !== h.rb).sort((x, y) => x.ra - y.ra)
-    const t = new Map<string, number>()
-    for (const h of bending) if (!t.has(h.a)) t.set(h.a, t.size)
-    return t
-  })
-}
-
-/** Each gap's width: two stub columns, its tracks, a stub and the arrow head; at least MIN_GAP. */
-export const gapWidths = (l: Layered): number[] => tracks(l).map(t => Math.max(MIN_GAP, t.size + 4))
-
-/** Cells for every node, edge segment and arrow head at node width `nodeW`. */
-export function place(d: Diagram, l: Layered, nodeW: number): Geometry {
-  const gaps = gapWidths(l)
-  const xs: number[] = []
-  let x = MARGIN
-  l.layers.forEach((_, i) => {
-    xs.push(x)
-    x += nodeW + (gaps[i] ?? 0)
-  })
-  const byId = new Map(d.nodes.map(n => [n.id, n]))
-  const slotX = new Map<string, number>()
-  const nodes: Placed[] = []
-  l.layers.forEach((slots, li) =>
-    slots.forEach((s, i) => {
-      slotX.set(s, xs[li]!)
-      const n = byId.get(s)
-      if (n) nodes.push({ id: n.id, label: n.label, kind: n.kind, x: xs[li]!, row: slotRow(i) })
-    }),
-  )
-  const tr = tracks(l)
-  const segs: Seg[] = []
-  const heads: Head[] = []
-  for (const h of hops(l)) {
-    const x0 = slotX.get(h.a)! + nodeW // first gap column
-    const x1 = slotX.get(h.b)! - 1 // last gap column, the head's
-    if (h.ra === h.rb) segs.push({ kind: 'h', row: h.ra, x0, x1 })
-    else {
-      const tx = x0 + 2 + tr[h.gap]!.get(h.a)!
-      segs.push({ kind: 'h', row: h.ra, x0, x1: tx }, { kind: 'v', x: tx, r0: h.ra, r1: h.rb }, { kind: 'h', row: h.rb, x0: tx, x1 })
-    }
-    if (isDummy(h.b)) segs.push({ kind: 'h', row: h.rb, x0: x1 + 1, x1: x1 + nodeW }) // through the dummy slot
-  }
-  for (const c of l.chains) {
-    const last = c.slots[c.slots.length - 1]!, first = c.slots[0]!
-    const lastHop = hops({ layers: l.layers, chains: [c] })
-    if (c.isReversed) heads.push({ x: slotX.get(first)! + nodeW, row: lastHop[0]!.ra, dir: '<' })
-    else heads.push({ x: slotX.get(last)! - 1, row: lastHop[lastHop.length - 1]!.rb, dir: '>' })
-  }
-  const slots = Math.max(...l.layers.map(s => s.length))
-  return { columns: layoutWidth(l.layers.length, nodeW, gaps), rows: layoutRows(slots), nodeW, nodes, segs, heads }
-}
-
-/** The edge cells as ASCII: `-` and `|` runs, `+` where they meet or bend, the heads on top. Key: row * columns + x. */
-export function edgeCells(g: Geometry): Map<number, string> {
-  const cells = new Map<number, string>()
-  const put = (x: number, row: number, ch: '-' | '|') => {
-    const k = row * g.columns + x
-    const was = cells.get(k)
-    cells.set(k, was === undefined || was === ch ? ch : '+')
-  }
-  for (const s of g.segs) {
-    if (s.kind === 'h') for (let x = Math.min(s.x0, s.x1); x <= Math.max(s.x0, s.x1); x++) put(x, s.row, '-')
-    else {
-      for (let r = Math.min(s.r0, s.r1); r <= Math.max(s.r0, s.r1); r++) put(s.x, r, '|')
-      cells.set(s.r0 * g.columns + s.x, '+')
-      cells.set(s.r1 * g.columns + s.x, '+')
-    }
-  }
-  for (const h of g.heads) cells.set(h.row * g.columns + h.x, h.dir)
-  return cells
 }

@@ -7,7 +7,7 @@ declare const setTimeout: (fn: (...a: never[]) => void, ms: number) => unknown
 
 export const START = { cwd: 'C:/proj' } as never
 export const DUMP = 'C:/tmp/diagram-dump.json'
-export const SPEC = { title: 'Refactor', nodes: [{ id: 'a', label: 'Read config', kind: 'step' }, { id: 'b', label: 'config.ts', kind: 'file' }, { id: 'c', label: 'Loader', kind: 'new' }], edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c', label: 'extract' }] }
+export const SPEC = { title: 'Refactor', nodes: [{ id: 'a', label: 'Read config', kind: 'step' }, { id: 'b', label: 'config.ts', kind: 'file' }, { id: 'c', label: 'Loader', kind: 'new' }], edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c', label: 'extract' }], now: 'c' }
 export const SPEC_JSON = JSON.stringify(SPEC)
 
 export const BIG_ROWS = [
