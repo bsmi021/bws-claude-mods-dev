@@ -23,3 +23,7 @@ Probes: 1 live run for T08 (budget 4 per task).
 Commits: see `git log` (T01-T07 931f362; the rest follow it).
 
 Remaining: Brian's manual checks (MANUAL-CHECKS.md). No Needs Brian items. No Chronicler consultation (not TMS work).
+
+Gate (T09): `python tools/mods-harness/harness.py gate` PASS at 6accf29 (2026-10-13 09:26:09 to 09:27:04, all plugins, kit
+and kit sync). Gate runs this session: 1 of 3. After it, only run-folder files changed.
+Note: headless `/remember` also calls `openPane` (the `ui_panes` line in the probe stream); the pane is not drawn headless.

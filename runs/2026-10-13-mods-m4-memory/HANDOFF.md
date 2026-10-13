@@ -79,3 +79,8 @@ checks are in MANUAL-CHECKS.md (15 checks; the worker only ran headless).
 ## Next step
 Brian runs MANUAL-CHECKS.md (checks 1 to 13 and 15 in Windows Terminal, 14 in Desktop). The next mod in the order is
 M5 (diagram pane, a new plugin, starts with its spike), then M6 (DreamPath, extends bws-memory).
+
+## Also note
+- `TOKEN_SHAPE` redaction (32+ chars of `[A-Za-z0-9_-]` with a digit, lower and upper case) can redact a long hyphenated
+  identifier that is not a secret. Accepted as the cost of catching unlabeled keys.
+- Headless `/remember` calls `openPane`; the probe stream's `ui_panes` line is that registration, not a drawn pane.

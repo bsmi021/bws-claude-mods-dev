@@ -1,5 +1,5 @@
 # M4 — Memory
-Status: IN_PROGRESS
+Status: DONE
 Session: 1
 
 ## Tasks
@@ -11,9 +11,9 @@ Session: 1
 - [x] T06 [FR-MEM-06] Implement, with tests: A -- label --> Behaviour after `/clear`, `/resume`, `/branch` is defined and tested: no work starts on `/clear`; the running-fork guard resets.
 - [x] T07 [FR-MEM-07] Implement, with tests: README, summary atom, `kit.json`, sync passes.
 - [x] T08 [AC-MEM-01] Verify, saving the receipt under the run folder's receipts/: `claude -p` probe: "remember that X" writes a file under a temp `memoryDir`; the receipt shows the file. (evidence: `receipts/m4-probe.json`)
-- [~] T09 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
+- [x] T09 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
 - [x] T10 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
-- [ ] T11 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
+- [x] T11 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
 
 ## Needs Brian
 
