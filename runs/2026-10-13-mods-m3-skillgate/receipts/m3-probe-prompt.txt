@@ -1,0 +1,1 @@
+Task: I need a bar chart of last month's sales, and afterwards I will run /simplify on the chart code. Do not do the task. Reply with exactly one line starting "AVAILABLE-SKILLS:" followed by the names of every skill you can invoke with the Skill tool, exactly as they are listed to you, comma-separated.

@@ -68,7 +68,9 @@ Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes. Automated
 listing parser and cut, picks parsing, `/name`, `topK`, later-prompt blocks, `/skillgate`, cache safety, every
 fail-open branch, explain and the summary shape). Type-check: tsc 5.8.3 strict through `tools/mods-gate.py`.
 
-Live, headless only: see `runs/2026-10-13-mods-m3-skillgate/receipts/` (the spike's three probes and `m3-probe.json`).
+Live, headless only (`claude -p`, haiku): with `mode: on` and `topK: 1`, a prompt about a sales chart that names
+`/simplify` made the model report exactly `dataviz, simplify`; with the gate off it reported all 15 listed skills
+(`runs/2026-10-13-mods-m3-skillgate/receipts/m3-probe.md`, plus the spike's three probes).
 Headless `claude -p` runs one turn, so the later-prompt block, `/skillgate` in a session, resume, and the cockpit chip
 are untested live. Interactive terminal and Desktop: untested. VS Code, mobile and cloud sessions show no mod UI; the
 gate itself does not need one.

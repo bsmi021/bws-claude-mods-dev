@@ -30,7 +30,7 @@ in `bws-skillgate/` (the last version is saved as `receipts/spike-register-v3.ts
 
 | Probe | What it did | Result |
 |---|---|---|
-| 1 `receipts/spike-probe-1.json`, log `spike-log.json` | Cut the listing to its first two entries. The prompt asked for the skill list, then a Bash call whose `tool.call` hook ran `$.ui.invalidate('prompt.attachment')` and switched the cut to the last two entries, then the list again. | `skill_listing` fired once, in the first request, `agentId` absent, origin `engine`, 7,017 characters, 16 skills. The model answered `SKILLS-1: mods-harness, dataviz` (the cut). After the invalidate, the second request of the same turn re-asked only `total_tokens_reminder`; `skill_listing` was not re-asked and the model again answered `SKILLS-2: mods-harness, dataviz`. Second request: 32,517 cache read, 336 created (normal prefix reuse). |
+| 1 `receipts/spike-probe-1.json`, log `spike-log.json` | Cut the listing to its first two entries. The prompt asked for the skill list, then a Bash call whose `tool.call` hook ran `$.ui.invalidate('prompt.attachment')` and switched the cut to the last two entries, then the list again. | `skill_listing` fired once, in the first request, `agentId` absent, origin `engine`, 7,017 characters, 15 skills. The model answered `SKILLS-1: mods-harness, dataviz` (the cut). After the invalidate, the second request of the same turn re-asked only `total_tokens_reminder`; `skill_listing` was not re-asked and the model again answered `SKILLS-2: mods-harness, dataviz`. Second request: 32,517 cache read, 336 created (normal prefix reuse). |
 | 2 `receipts/spike-probe-2.json`, log `spike-log-2.json` | Meant to test turn 2: on `turn.complete` invalidate, then `$.prompt.submit` a second prompt. | `num_turns: 1`: `claude -p` exits when the session goes idle, which is when a plugin's submit would run. Turn 2 is **not testable headless**. It did confirm the order: `prompt.submit` (…714) fires before `skill_listing` (…757) on the first prompt. |
 | 3 `receipts/spike-probe-3.json`, log `spike-log-3.json` | Cut the listing to two entries and added, from `prompt.submit`, a `context` block in the listing's format naming one more skill (`simplify`). | The model answered `SKILLS-1: mods-harness, dataviz, simplify`: a context block is read as more available skills. |
 
@@ -81,5 +81,5 @@ Answers:
 
 - Turn 2 and later in a real interactive session (the context block path), resume, and what an invalidate by another
   plugin does. Headless `claude -p` runs one turn only.
-- Headless probes load only project and local skills (16 here); the interactive listing is larger. The mechanism is the
+- Headless probes load only project and local skills (15 here); the interactive listing is larger. The mechanism is the
   same.

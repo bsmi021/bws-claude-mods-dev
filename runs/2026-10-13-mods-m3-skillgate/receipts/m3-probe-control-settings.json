@@ -1,0 +1,1 @@
+{ "pluginConfigs": { "bws-skillgate": { "options": { "mode": "off", "topK": 1 } } } }
