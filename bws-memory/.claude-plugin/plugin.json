@@ -1,0 +1,29 @@
+{
+  "name": "bws-memory",
+  "version": "0.1.0",
+  "description": "Memory: after a turn a small model decides whether the user said something worth remembering; if so a fork writes memory files in the background (redacted, de-duplicated) and a pane lists what changed. /remember <text>, /memories, /memory-undo.",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "memoryDir": {
+      "type": "string",
+      "title": "Memory folder",
+      "description": "Where memory files are written. Empty (default): <project>/.claude/bws-memory, a folder this mod owns so it never collides with the built-in memory. A relative path is under the project.",
+      "default": ""
+    },
+    "minWords": {
+      "type": "number",
+      "title": "Minimum words",
+      "description": "A turn whose user message has fewer words than this and used no tools is not looked at.",
+      "default": 8
+    },
+    "model": {
+      "type": "string",
+      "title": "Classifier model",
+      "description": "Model alias or id that decides whether a turn is worth remembering (haiku, sonnet, opus, or a full id).",
+      "default": "haiku"
+    }
+  }
+}
