@@ -108,3 +108,25 @@ by a letter or underscore stays one name. A placeholder naming an unsaved name r
   with `$.fs.read`/`$.fs.write` before the result returns.
 - Encodings scanned: the raw value, base64 and base64url (with and without padding), percent-encoding, hex (lower and
   upper case). Values shorter than 4 characters are not scanned for encodings (too many false hits); the raw value is.
+
+## D6. Waiting for the person inside `request_secret` (spike 2, during T03)
+A hook's budget is 10 s of its own time; the clock stops only while a `$` call (other than a `$.clock` wait) is in
+flight. `request_secret` has to wait for the person to type. Probe 2 (`receipts/spike-probe-2.json`, sonnet, 0.146 USD,
+settings allowing the two spike tools):
+- `wait_plain`, a hook awaiting a plain promise that a `$.clock.after(15 s)` callback resolves: the hook was dropped at
+  its budget; the model read "registered the tool wait_plain but no tool.call hook answered this call".
+- `wait_proc`, a hook looping on `$.process.run` of a ~1 s sleeper (`ping -n 2 127.0.0.1` on Windows, `sleep 1`
+  elsewhere): answered after 15,775 ms, 15 sleeps.
+
+Decision: the tool's hook waits by looping on a one-second sleeper process, checking for the person's answer between
+sleeps; it stops at the answer, at `next.signal` (the person interrupted), or after 10 minutes. A sleeper that fails to
+start ends the wait with a refusal (no answer), never a hang.
+
+## D7. The masked entry
+`Input` has no mask, and it draws what the person types until the hook redraws (an echo), and other plugins can match
+its `ui.input`. So the entry is a `Client` surface module (`hooks/entry.ts`, terminal and desktop): it keeps the typed
+characters in its own local state, draws one `•` per character, and on Enter posts the value once to this plugin's
+`ui.message` (only this plugin's hooks see it). A `Client` gets keys after a click on its region (types: "reached while
+a click has given it the focus"), so the pane says "click the box, type, press Enter". Surfaces without `Client`
+(mobile, VS Code) and headless runs get no pane: a name already saved is reused (`saved as NAME; ...`); otherwise the
+call is refused with a note that the person must run it in a terminal or desktop session.

@@ -1,0 +1,1 @@
+This is a test of a plugin. Call the tool mcp__bws-secrets-spike__wait_plain once, then call the tool mcp__bws-secrets-spike__wait_proc once (one after the other, not in parallel). Then reply with the exact text each tool returned (or the exact error), and nothing else.
