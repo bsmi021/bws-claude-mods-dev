@@ -195,7 +195,7 @@ export function statusText(mode: Mode, isSession: boolean, topK: number, model: 
 }
 
 export function explainText(last: LastPick | null): string {
-  if (last === null) return 'No prompt gated yet in this conversation. Turn the gate on with /skillgate on; it cuts the listing on the next conversation\'s first prompt.'
+  if (last === null) return "No prompt gated yet in this conversation. While the gate is on, it cuts the listing on a conversation's first prompt."
   if (last.failed !== null) return `The last prompt kept the full skill listing: ${last.failed}.`
   const list = (xs: readonly string[]) => (xs.length ? xs.join(', ') : 'none')
   return [
