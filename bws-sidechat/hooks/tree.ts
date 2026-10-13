@@ -180,6 +180,9 @@ export function decisionParagraph(t: DecisionTree, id = t.currentId): string | n
   }
   if (steps.length === 0) return null
   const last = path[path.length - 1] as TreeNode
+  // Exploring makes the new node current while it has found nothing, and the option button the focus ring sat on goes.
+  // A Decide offered then would catch the next Enter and send a choice that was only meant to be explored.
+  if (last.state === 'exploring') return null
   let text = `Decision from the /explain tree: ${steps.join('; ')}.`
   if (last.answer.trim() !== '') text += ` What exploring it found: ${clip(last.answer, 400)}`
   if (!/[.!?…]$/.test(text)) text += '.'

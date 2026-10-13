@@ -61,6 +61,23 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     expect(w.seen.sent[0]?.text).toContain('What exploring it found: It is built in.')
   })
 
+  test('Enter on an option only explores: while its fork runs there is no Decide, and nothing is sent', async ($, on) => {
+    const w = treeWorld(on, { children: [{ hold: true }] })
+    await run($, 'explain')
+    await press($, w.clock, 'opt-0')
+    const ui = await $.ui.mount(TREE_PANE())
+    expect(await ui.find({ key: 'decide' })).toBeUndefined() // the focus ring falls onto it once opt-0 goes, so a second Enter would have sent it
+    expect(await ui.find({ key: 'close' })).toBeDefined()
+    await ui.unmount()
+    expect((await run($, 'explain', 'decide')).text).toBe('Nothing to decide yet: explore an option first.')
+    await w.clock.advance(100)
+    expect(w.seen.sent).toEqual([])
+    expect(w.seen.closed).toEqual([]) // the tree and its fork are still there
+    await run($, 'explain', 'close') // ends the fork, so nothing writes after the test
+    w.releaseAll()
+    await settle(w.clock)
+  })
+
   test('nothing chosen yet: nothing is sent', async ($, on) => {
     const w = treeWorld(on)
     expect((await run($, 'explain', 'decide')).text).toBe('Nothing to decide yet: explore an option first.')
