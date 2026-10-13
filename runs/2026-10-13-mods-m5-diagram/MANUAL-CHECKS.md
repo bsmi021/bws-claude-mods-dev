@@ -71,7 +71,9 @@ Your own `CLAUDE_CODE_PLUGIN_DIRS` stays as it is, so bws-cockpit loads too (it 
 
 14. **An unasked open in a narrow terminal.** In a new session in a terminal under 144 columns that has never opened the
     pane, repeat check 2. Expected: no pane appears; a toast says `Diagram ready, pane not shown (...). /diagram show opens it.`
-    `/diagram show` opens it.
+    `/diagram show` opens it. Also: with the pane already open (from `/diagram show`) in a terminal under 110 columns,
+    a new pin or auto diagram re-opens the pane (close, then open); that unasked open may be refused, so the pane can
+    vanish with only the toast. `/diagram show` brings it back. Note whether this happens.
 
 15. **autoDiagram off.** Start with `--settings runs/2026-10-13-mods-m5-diagram/receipts/manual-off-settings.json` and
     repeat check 5. Expected: no chip, no diagram after the turn; check 2 still pins; `/diagram status` says

@@ -50,6 +50,10 @@ checks are in MANUAL-CHECKS.md (16 checks; the worker only ran headless).
   /resume, /branch".
 - FR-DG-06 / FR-ALL-04/05: README, version 0.1.0, `kit.json`, `python tools/sync-kit.py --check` passes; summary
   shape: `turn.test.ts` "summary atom shape".
+- FR-ALL-02 (does not intercept unrelated events): `mermaid.test.ts` "not pinned: a subagent's report, an aborted turn,
+  a reply without mermaid..." and `turn.test.ts` "no call at all: a chat turn with no tools, headless, a subagent, an
+  aborted turn". Known gap: no test closes another plugin's pane, because the test `$` has no `ui.close`; the
+  `ui.close` hook matches only `id === 'bws-diagram'` with a person origin.
 - AC-DG-01: `receipts/m5-probe.json`, `receipts/m5-probe-dump.json`, `receipts/m5-probe.md` (headless `claude -p`,
   a mermaid reply pinned; exit 0).
 
