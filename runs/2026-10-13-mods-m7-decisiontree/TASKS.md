@@ -12,7 +12,7 @@ Session: 1
 - [x] T06 [FR-DT-06] Implement, with tests: bws-sidechat README and version updated (minor); existing 58 tests untouched.
 - [x] T07 [AC-DT-01] Verify, saving the receipt under the run folder's receipts/: Probe: `/explain` over a fixture reply with three options opens the root node with three options (state dump). (evidence: `receipts/m7-probe.json`)
 - [ ] T08 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
-- [ ] T09 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
+- [x] T09 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
 - [ ] T10 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
 
 ## Needs Brian
