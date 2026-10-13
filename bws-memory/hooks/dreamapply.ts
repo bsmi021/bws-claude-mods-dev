@@ -10,7 +10,6 @@ import type { DreamView, View } from '../types'
 
 export const IDLE_DREAM: DreamView = { phase: 'idle', due: false, auto: false, actions: [], sessions: {}, bases: {}, skipped: 0, note: '', backup: '' }
 
-export const DREAM_PANE = 'bws-dream'
 export const BACKUP_DIR = '.dream-backup'
 export const RESTORED_MARK = 'restored.json'
 
@@ -161,3 +160,17 @@ export function actionSessions(a: DreamAction, sessions: Readonly<Record<string,
 }
 
 export const fromLine = (list: readonly string[]): string => `from: ${list.length === 0 ? 'unknown session' : list.join(', ')}`
+
+// ---------- the automatic trigger (FR-DP-03) ----------
+
+export const DEFAULT_EVERY_TURNS = 20
+
+// `dreamEveryTurns`: a whole number of turns; 0 turns the automatic triggers off; anything else is the default.
+export const parseEveryTurns = (v: unknown): number => {
+  const n = typeof v === 'number' ? v : Number.parseInt(String(v ?? ''), 10)
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : DEFAULT_EVERY_TURNS
+}
+
+// A compaction of the main conversation is a reason to dream first; `precompute` installs nothing (it computes ahead
+// of a compaction that may never come) and a subagent's or a fork's own transcript (agentId) is not the user's.
+export const dreamOnCompact = (trigger: string, agentId: string | undefined): boolean => agentId === undefined && (trigger === 'manual' || trigger === 'auto' || trigger === 'plugin')

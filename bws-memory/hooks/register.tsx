@@ -63,19 +63,22 @@ import {
   countsText,
   dreamChanges,
   dreamIndex,
-  DREAM_PANE,
+  dreamOnCompact,
   dreamSources,
   dreamStatusText,
   dreamUndoText,
   fromLine,
   IDLE_DREAM,
   latestBackup,
+  parseEveryTurns,
   RESTORED_MARK,
   SHOWN_ACTIONS,
   staleFiles,
 } from './dreamapply'
 
 const PANE = 'bws-memory'
+// A literal in this file: the validator reads a matcher's requestId from the source, not from an import.
+const DREAM_PANE = 'bws-dream'
 const view = atom({ plugin: 'bws-memory', key: 'view' } as const, IDLE_VIEW)
 const dream = atom({ plugin: 'bws-memory', key: 'dream' } as const, IDLE_DREAM)
 const summary = atom({ plugin: 'bws-memory', key: 'summary' } as const, null)
@@ -96,6 +99,8 @@ let dreamNow: DreamView = IDLE_DREAM
 // The automatic trigger (FR-DP-03): turns since the last one, and every how many (0 = off).
 let dreamEvery = 20
 let turnCount = 0
+// The trigger fired and the preview run has not started yet (a memory update was running, or it is about to start).
+let autoPending = false
 
 async function settle<T>(p: Promise<T>): Promise<T | undefined> {
   try {
@@ -153,6 +158,7 @@ async function resetWork($: EngineInterface) {
     await $.ui.close({ id: DREAM_PANE })
   }
   turnCount = 0
+  autoPending = false
 }
 
 async function syncSession($: EngineInterface) {
@@ -294,12 +300,50 @@ async function runMemory($: EngineInterface, o: { forced?: string; material?: st
 async function afterTurn($: EngineInterface, e: { answer: string; reason: string; agentId?: string }) {
   await syncSession($)
   const isHeadless = (await $.session.surfaces()).length === 0
+  // FR-DP-03: only the user's own answered turns on a screen count towards the next dream.
+  if (!isHeadless && e.agentId === undefined && e.reason === 'answer') await noteTurn($)
+  await memoryTurn($, e, isHeadless)
+  await maybeAutoDream($)
+}
+
+async function memoryTurn($: EngineInterface, e: { answer: string; reason: string; agentId?: string }, isHeadless: boolean) {
   const base = { isHeadless, agentId: e.agentId, reason: e.reason, isRunning: running, minWords, userWords: Number.MAX_SAFE_INTEGER, tools: 0 }
   if (skipReason(base) !== null) return
   const rows = (await $.session.messages()).map(m => ({ role: m.role, text: m.text ?? '', toolUses: m.toolUses.map(t => ({ tool: t.tool })) }))
   const ex = exchangeOf(rows, e.answer)
   if (skipReason({ ...base, isRunning: running, userWords: ex.userWords, tools: ex.tools }) !== null) return
   await runMemory($, { material: ex.material })
+}
+
+// FR-DP-03: the live memory files a dream could work on.
+async function liveFileCount($: EngineInterface): Promise<number> {
+  const { full } = await loadExisting($, await dirNow($))
+  return dreamFiles([...full].map(([file, text]) => ({ file, text }))).files.length
+}
+
+// The trigger fired (every `dreamEveryTurns` turns, or before a compaction): the dream is due, and a preview run will
+// start as soon as nothing else is writing. It never applies. Nothing happens with fewer than two files, with a plan
+// already waiting, or when the option is 0.
+async function markDue($: EngineInterface) {
+  turnCount = 0
+  if (dreamEvery <= 0) return
+  if (dreamNow.phase === 'preview' || dreamNow.phase === 'working') return
+  if ((await liveFileCount($)) < 2) return
+  await setDream($, { ...IDLE_DREAM, due: true })
+  autoPending = true
+}
+
+async function noteTurn($: EngineInterface) {
+  turnCount++
+  if (dreamEvery > 0 && turnCount >= dreamEvery) await markDue($)
+}
+
+// Starts the pending automatic preview when the memory folder is not busy. Called after every turn's own work, so a
+// trigger that found a memory update running starts once it has finished.
+async function maybeAutoDream($: EngineInterface) {
+  if (!autoPending || running || dreamNow.phase !== 'idle') return
+  autoPending = false
+  await runDream($, { apply: false, auto: true, headless: false })
 }
 
 async function remember($: EngineInterface, text: string): Promise<string> {
@@ -519,6 +563,8 @@ export const register: Register = (on, options) => {
   viewNow = IDLE_VIEW
   dreamNow = IDLE_DREAM
   turnCount = 0
+  autoPending = false
+  dreamEvery = parseEveryTurns(options.dreamEveryTurns)
 
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'remember', description: 'Save something to memory now (no classifier): /remember <text>', argumentHint: '<text>' })
@@ -550,6 +596,21 @@ export const register: Register = (on, options) => {
   // The one turn.complete hook. It returns at once; the work starts after it has, so the turn never waits.
   on('turn.complete', async ($, e, next) => {
     $.clock.after(10, () => void afterTurn($, e).catch(() => $.ui.log(failLine('turn', 'error'), { to: 'debug' })))
+    return next(e)
+  })
+
+  // FR-DP-03: before a compaction the memory is due a dream. The compaction is never held up: the hook returns at once
+  // and the preview starts behind it.
+  on('session.compact', async ($, e, next) => {
+    if (dreamOnCompact(e.trigger, e.agentId)) {
+      $.clock.after(10, () =>
+        void (async () => {
+          if ((await $.session.surfaces()).length === 0) return
+          await markDue($)
+          await maybeAutoDream($)
+        })().catch(() => $.ui.log(dreamFailLine('trigger', 'error'), { to: 'debug' })),
+      )
+    }
     return next(e)
   })
 

@@ -19,6 +19,12 @@
       "description": "A turn whose user message has fewer words than this and used no tools is not looked at.",
       "default": 8
     },
+    "dreamEveryTurns": {
+      "type": "number",
+      "title": "Dream every N turns",
+      "description": "Every N answered turns, and before a compaction, the memory is due a dream: a plan that merges duplicates, drops stale entries and rewrites for clarity, shown as a preview (never applied on its own). 0 turns the automatic dream off; /dream still works.",
+      "default": 20
+    },
     "model": {
       "type": "string",
       "title": "Classifier model",
