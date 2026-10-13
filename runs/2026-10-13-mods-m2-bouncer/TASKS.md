@@ -1,5 +1,5 @@
 # M2 — Prompt bouncer
-Status: IN_PROGRESS
+Status: DONE
 Session: 1
 
 ## Tasks
@@ -10,7 +10,7 @@ Session: 1
 - [x] T05 [FR-PB-05] Implement, with tests: Fails open (FR-ALL-03): classifier error or a 4 s timeout sends the prompt unchanged. Costs: at most two small-model calls per prompt; none when `off…
 - [x] T06 [FR-PB-06] Implement, with tests: bws-enhance README documents the mode; version bumped (minor).
 - [x] T07 [AC-PB-01] Verify, saving the receipt under the run folder's receipts/: `claude -p` probe: a vague prompt under `block` is refused with the reason; a clear one passes. (evidence: `receipts/m2-probe.json`)
-- [ ] T08 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
+- [x] T08 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
 - [x] T09 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
 - [x] T10 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
 

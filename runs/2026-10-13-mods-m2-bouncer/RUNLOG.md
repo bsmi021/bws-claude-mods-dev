@@ -42,7 +42,7 @@ the reversal is one line.
 - `m2-probe.json` (+ stdout), `m2-probe-clear.json` (+ stdout), `probe-block-settings.json`.
 
 **Outcomes.**
-- All ten tasks ticked (T08 after the harness gate; see below). bws-enhance 0.3.0. 47 plugin tests pass.
+- All ten tasks ticked; the harness gate passed (see Gate below). bws-enhance 0.3.0. 47 plugin tests pass.
 - AC-PB-01 is met headless: the vague prompt is refused with the reason; the clear prompt passes.
 - Existing tests unchanged (`git diff` of `tests/enhance.test.ts` is empty). Other plugins are untouched.
 - Summary atom published (FR-ALL-05). No cockpit chip by default (parked as #21).
@@ -54,4 +54,4 @@ These are MANUAL-CHECKS.md, which Brian runs.
 
 **Pending jobs.** None.
 
-**Gate.** See the entry below (filled after `python tools/mods-harness/harness.py gate`).
+**Gate.** `python tools/mods-harness/harness.py gate` on the committed tree (HEAD 661291f, run folder docs only after): PASS at 08:49, receipt `receipts/t08-harness-gate.txt`. The first attempt was refused because I had written the gate log into the repo (dirty tree); no gate ran. Status set to DONE.
