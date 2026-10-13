@@ -1,0 +1,103 @@
+[
+  {
+    "at": 1791895982714,
+    "submit": "Reply with one line starting \"SKILLS-1:\"",
+    "origin": {
+      "kind": "sdk"
+    },
+    "phase": "A"
+  },
+  {
+    "at": 1791895982757,
+    "turns": 0,
+    "type": "environment",
+    "agentId": null,
+    "length": 1571,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982757,
+    "turns": 0,
+    "type": "model",
+    "agentId": null,
+    "length": 126,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982757,
+    "turns": 0,
+    "type": "deferred_tools_delta",
+    "agentId": null,
+    "length": 409,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982757,
+    "turns": 0,
+    "type": "agent_listing_delta",
+    "agentId": null,
+    "length": 1636,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982757,
+    "turns": 0,
+    "type": "skill_listing",
+    "agentId": null,
+    "length": 7017,
+    "phase": "A",
+    "firstLine": "The following skills are available for use with the Skill tool:",
+    "sentNames": [
+      "- mods-harness",
+      "- dataviz"
+    ]
+  },
+  {
+    "at": 1791895982758,
+    "turns": 0,
+    "type": "total_tokens_reminder",
+    "agentId": null,
+    "length": 49,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982758,
+    "turns": 0,
+    "type": "instructions",
+    "agentId": null,
+    "length": 14377,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982758,
+    "turns": 0,
+    "type": "session_context",
+    "agentId": null,
+    "length": 1299,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982758,
+    "turns": 0,
+    "type": "date",
+    "agentId": null,
+    "length": 27,
+    "phase": "A"
+  },
+  {
+    "at": 1791895982758,
+    "turns": 0,
+    "type": "remote_session_change",
+    "agentId": null,
+    "length": 544,
+    "phase": "A"
+  },
+  {
+    "at": 1791895985276,
+    "turnComplete": 1
+  },
+  {
+    "at": 1791895985276,
+    "invalidated": true
+  }
+]

@@ -1,0 +1,76 @@
+// SPIKE ONLY (M3 T01) v3: a context block adds a skill beside the cut listing.: multi-turn. Records prompt.attachment firings and cuts skill_listing. Replaced in T02.
+import type { EngineInterface, Register } from 'claude-code'
+
+const LOG = 'runs/2026-10-13-mods-m3-skillgate/receipts/spike-log-3.json'
+const rows: unknown[] = []
+let phase = 'C'
+let turns = 0
+
+async function flush($: EngineInterface) {
+  await $.fs.write(LOG, JSON.stringify(rows, null, 2))
+}
+
+function entries(text: string): string[][] {
+  const out: string[][] = []
+  for (const l of text.split('\n')) {
+    if (l.startsWith('- ')) out.push([l])
+    else if (out.length > 0) out[out.length - 1]!.push(l)
+  }
+  return out
+}
+
+function cut(text: string, which: string): string {
+  const all = entries(text)
+  const head = text.split('\n- ')[0] ?? ''
+  const keep = all.slice(0, 2)
+  return [head, ...keep.map(x => x.join('\n'))].join('\n')
+}
+
+const TURN2 = 'Reply with one line starting "SKILLS-2:" followed by the names of every skill you can invoke with the Skill tool, as listed to you now, comma-separated.'
+const TURN3 = 'Reply with one line starting "SKILLS-3:" followed by the names of every skill you can invoke with the Skill tool, from every listing you have been given in this conversation, comma-separated.'
+
+export const register: Register = (on) => {
+  on('prompt.attachment', async ($, e, next) => {
+    const r = await next(e)
+    const row: Record<string, unknown> = { at: Date.now(), turns, type: e.type, agentId: e.agentId ?? null, length: e.text.length, phase }
+    if (e.type === 'skill_listing') {
+      const text = cut(r.text ?? e.text, phase)
+      row.firstLine = e.text.split('\n')[0]
+      row.sentNames = entries(text).map(x => (x[0] ?? '').split(':')[0])
+      rows.push(row)
+      await flush($)
+      return { text }
+    }
+    rows.push(row)
+    await flush($)
+    return r
+  })
+  on('prompt.submit', async ($, e, next) => {
+    rows.push({ at: Date.now(), submit: e.text.slice(0, 40), origin: e.origin, phase })
+    if (phase === 'C') {
+      const extra = 'More skills are available for use with the Skill tool:\n\n- simplify: Review the changed code for reuse, simplification, efficiency, and altitude cleanups, then apply the fixes.'
+      rows.push({ at: Date.now(), addedContext: true })
+      await flush($)
+      return next({ ...e, context: [...(e.context ?? []), extra] })
+    }
+    await flush($)
+    return next(e)
+  })
+  on('turn.complete', async ($, e, next) => {
+    const r = await next(e)
+    if (e.agentId) return r
+    turns += 1
+    rows.push({ at: Date.now(), turnComplete: turns })
+    if (turns === 1) {
+      phase = 'B'
+      $.ui.invalidate('prompt.attachment')
+      rows.push({ at: Date.now(), invalidated: true })
+      $.clock.after(50, () => { void $.prompt.submit({ text: TURN2 }) })
+    } else if (turns === 2) {
+      phase = 'C'
+      $.clock.after(50, () => { void $.prompt.submit({ text: TURN3 }) })
+    }
+    await flush($)
+    return r
+  })
+}
