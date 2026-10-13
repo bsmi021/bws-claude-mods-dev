@@ -1,0 +1,17 @@
+{
+  "name": "bws-secrets",
+  "version": "0.1.0",
+  "description": "Secret box: Claude asks for a secret with request_secret, you type it into a masked pane, it is saved outside the project, and Bash commands use it as {{secret:NAME}}. The value is read by the shell at run time and scrubbed from results, so it never reaches the transcript. /secrets lists and removes names.",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "secretsDir": {
+      "type": "string",
+      "title": "Secrets folder",
+      "description": "Folder for the saved values, one <project>.env file per working directory. Empty (default): ~/.claude/bws-secrets. Keep it outside your projects.",
+      "default": ""
+    }
+  }
+}

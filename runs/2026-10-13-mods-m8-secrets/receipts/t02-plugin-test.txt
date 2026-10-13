@@ -1,0 +1,8 @@
+(pass) FR-SB-01: names, values and the secrets file > values: one line, at least 4 characters [0.28ms]
+(pass) FR-SB-01: names, values and the secrets file > the folder: default under ~/.claude, the option, ~ expanded, forward slashes [0.27ms]
+(pass) FR-SB-01: names, values and the secrets file > the file: one per project, named like Claude Code names project folders [0.18ms]
+(pass) FR-SB-01: names, values and the secrets file > dotenv lines: read, set in place, removed, written with LF [0.51ms]
+
+ 12 pass
+ 0 fail
+Ran 12 tests across 1 file. [0.21s]
