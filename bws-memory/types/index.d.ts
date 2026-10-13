@@ -19,10 +19,27 @@ export type DreamAction = {
   body: string
 }
 
+// The dream in flight or waiting. idle: nothing; working: the fork is planning; preview: `actions` wait for Apply or Dismiss
+// (`bases` fingerprints the files they were planned from, `sessions` lists each touched file's sessions); applied: done,
+// `backup` names the folder copy; error: `note` says why. `due`: the trigger fired and no dream has been applied or dismissed
+// since. `auto`: this run was started by the trigger, not by /dream.
+export type DreamView = {
+  phase: 'idle' | 'working' | 'preview' | 'applied' | 'error'
+  due: boolean
+  auto: boolean
+  actions: DreamAction[]
+  sessions: Record<string, string[]>
+  bases: Record<string, string>
+  skipped: number
+  note: string
+  backup: string
+}
+
 declare module 'claude-code' {
   interface PluginState {
     'bws-memory': {
       view: View
+      dream: DreamView
       // The summary atom every mod publishes (FR-ALL-05); null draws no chip.
       summary: { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string } | null
     }

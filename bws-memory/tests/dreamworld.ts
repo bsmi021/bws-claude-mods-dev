@@ -38,6 +38,8 @@ export type World = {
   files?: Record<string, string>
   session?: string
   classify?: 'yes' | 'no' | 'throw'
+  // A write to a path containing this throws (a full disk).
+  failWrite?: string
 }
 
 export const norm = (p: string) => p.replace(/\\/g, '/')
@@ -70,6 +72,7 @@ export function world(on: On, w: World = {}) {
     return { value: t as never }
   })
   on('fs.write', ($, e) => {
+    if (w.failWrite !== undefined && norm(e.path).includes(w.failWrite)) throw new Error('disk full')
     files.set(norm(e.path), e.text)
     seen.writes.push(norm(e.path))
     return { value: undefined as never }

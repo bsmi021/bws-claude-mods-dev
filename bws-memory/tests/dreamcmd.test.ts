@@ -1,7 +1,10 @@
 import { test, expect, describe } from 'claude-code/testing'
-import { DIR, drain, folder, MERGE_AB, NEW, OLD, plan, run, TABS_A, TABS_B, turn, world } from './dreamworld'
+import type { On } from 'claude-code'
+import { DIR, drain, folder, MERGE_AB, NEW, OLD, plan, run, TABS_A, TABS_B, turn, world as screenWorld, type World } from './dreamworld'
 
 const TWO = folder(TABS_A, TABS_B)
+// /dream without a screen answers with its plan text, awaited.
+const world = (on: On, w: World = {}) => screenWorld(on, { surfaces: [], ...w })
 
 describe('FR-DP-01: /dream asks for a plan', () => {
   test('it reads every memory file and sources.json, forks once and prints the plan; nothing is written', async ($, on) => {
@@ -81,7 +84,7 @@ describe('FR-DP-01: /dream asks for a plan', () => {
   })
 
   test('refused while a memory update is running: no dream fork is started', async ($, on) => {
-    const w = world(on, { files: TWO, fork: 'defer', classify: 'yes' })
+    const w = world(on, { files: TWO, fork: 'defer', classify: 'yes', surfaces: ['terminal'] })
     await turn($)
     await drain(w.clock)
     expect(w.seen.fork.length).toBe(1) // the memory fork, still waiting
