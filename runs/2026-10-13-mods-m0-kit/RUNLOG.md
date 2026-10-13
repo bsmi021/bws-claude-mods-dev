@@ -6,3 +6,5 @@
 - T03 bws-cockpit 0.16.0: mod chips from `summary` atoms, `modSummaries` option, vendored `summary.ts`; 168/168 cockpit tests (162 untouched + 6).
 - Assumptions recorded: A1 no-op hooks module, A2 gate kit step, A3 summary shape, A4 KitModel adapter.
 - No Chronicler/Needs Brian items: none apply (no story content, no wide-path edits; `tools/` is not wide).
+- Gate: `python tools/mods-harness/harness.py gate` PASS at head f7dceae (36.6 s): 7 plugins + kit, kit sync, kit sync tests all ok (receipts/gate-log.txt, gate-receipt.json). Cockpit 168/168 (162 existing untouched: receipts/test-diff-additions-only.txt shows added lines only, 0 removed lines in any plugin's tests).
+- T04 receipt = the gate receipt above. T06 MANUAL-CHECKS.md, T07 HANDOFF.md written. Status set DONE.

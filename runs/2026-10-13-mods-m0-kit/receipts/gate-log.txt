@@ -1,0 +1,11 @@
+ok   bws-board
+ok   bws-cockpit
+ok   bws-design-picker
+ok   bws-enhance
+ok   bws-notify
+ok   bws-shell-lint
+ok   bws-sidechat
+ok   bws-kit
+ok   kit sync
+ok   kit sync tests
+7 plugin(s) + kit, 36s
