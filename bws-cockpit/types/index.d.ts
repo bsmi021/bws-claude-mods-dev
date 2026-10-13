@@ -114,6 +114,9 @@ export type DashView = {
 // The handoff nudge, once per session (keyed by its start): Handoff stays highlighted until it runs.
 export type HandoffNudge = { startedAt: number; isDone: boolean }
 
+// bws-kit/summary.ts: what a mod publishes under { plugin, key: 'summary' }; null or idle draws nothing.
+export type ModSummary = { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string }
+
 declare module 'claude-code' {
   // bws-board's band summary, read for the board chip (bws-board's own contract declares it the
   // same way; written here inline so cockpit type-checks and loads without bws-board).
@@ -123,6 +126,14 @@ declare module 'claude-code' {
       // the board as last read, drawn by the dashboard's Board tab
       lines: string[]
     }
+  }
+  // The video-derived mods' summary atoms (bws-kit/summary.ts), read for the bar's chips; each mod declares its own
+  // the same way. Written inline so cockpit type-checks and loads without them.
+  interface PluginState {
+    'bws-memory': { summary: ModSummary | null }
+    'bws-diagram': { summary: ModSummary | null }
+    'bws-skillgate': { summary: ModSummary | null }
+    'bws-secrets': { summary: ModSummary | null }
   }
   interface PluginState {
     'bws-cockpit': {

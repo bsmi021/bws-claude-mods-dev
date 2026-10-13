@@ -41,6 +41,8 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
+import { DEFAULT_MODS, modChips, parseMods } from './modchips'
+import type { KnownMod } from './modchips'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
 import {
@@ -91,6 +93,11 @@ const touched = atom({ plugin: 'bws-cockpit', key: 'touched' } as const, null)
 const boardSummary = atom({ plugin: 'bws-board', key: 'summary' } as const, null)
 // bws-board's lines for its board, drawn by the dashboard's Board tab.
 const boardLines = atom({ plugin: 'bws-board', key: 'lines' } as const, [])
+// The video-derived mods' summaries (bws-kit/summary.ts), drawn as chips when they are loaded and not idle.
+const memorySummary = atom({ plugin: 'bws-memory', key: 'summary' } as const, null)
+const diagramSummary = atom({ plugin: 'bws-diagram', key: 'summary' } as const, null)
+const skillgateSummary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
+const secretsSummary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
 
 // ---------- Dashboard: one pane with its own tabs (Assumptions, Shelf, Board, Loop while one is live) ----------
 
@@ -152,6 +159,7 @@ type Options = {
   pin: { model: string; types: string[] }
   isShelfNudge: boolean
   handoffNudgePercent: number
+  mods: KnownMod[]
 }
 
 // Module state: a probe cache shared by the band and the guards. A reload starts it over.
@@ -883,6 +891,7 @@ export const register: Register = (on, options) => {
     },
     isShelfNudge: options.shelfNudge !== false,
     handoffNudgePercent: Number(options.handoffNudgePercent ?? 70),
+    mods: parseMods(String(options.modSummaries ?? DEFAULT_MODS)),
   }
   shelfOption = String(options.shelfPath ?? '')
 
@@ -1571,6 +1580,19 @@ export const register: Register = (on, options) => {
     const sv = await read($, shelf)
     const bs = await read($, boardSummary)
     const isHandoffDue = await isNudged($)
+    // The scan wants a literal source at every read, so one read per mod, and only for the ones the option names.
+    const raw: Partial<Record<KnownMod, unknown>> = {
+      'bws-memory': o.mods.includes('bws-memory') ? await read($, memorySummary) : null,
+      'bws-diagram': o.mods.includes('bws-diagram') ? await read($, diagramSummary) : null,
+      'bws-skillgate': o.mods.includes('bws-skillgate') ? await read($, skillgateSummary) : null,
+      'bws-secrets': o.mods.includes('bws-secrets') ? await read($, secretsSummary) : null,
+    }
+    const modBoxes = modChips(o.mods, raw).map(c => (
+      <Box key={`chip-mod-${c.name}`} flexDirection="row">
+        <Text color={c.color} dimColor={c.isDim}>{'● '}</Text>
+        <Text dimColor={c.isDim}>{c.label}</Text>
+      </Box>
+    ))
 
     const runName = run ? run.folder.replace(/^runs\//, '').replace(/^\d{4}-\d{2}-\d{2}-/, '') : ''
     const runChip = run ? (
@@ -1657,6 +1679,7 @@ export const register: Register = (on, options) => {
           {deviceChips}
           {loopBox}
           {boardChip}
+          {modBoxes}
           {asmChip}
           {shelfChip}
           <Text dimColor>│</Text>

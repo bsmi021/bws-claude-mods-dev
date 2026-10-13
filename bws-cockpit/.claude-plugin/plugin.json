@@ -1,6 +1,6 @@
 {
   "name": "bws-cockpit",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "Brian"
@@ -137,6 +137,12 @@
       "title": "Tell Claude to shelve tangents",
       "description": "Add one line to the conversation's opening context with the open-idea count and the shelve_idea tool.",
       "default": true
+    },
+    "modSummaries": {
+      "type": "string",
+      "title": "Mod chips",
+      "description": "Mods whose summary shows as a chip in the action bar while loaded and not idle, comma-separated. Known: bws-memory, bws-diagram, bws-skillgate, bws-secrets.",
+      "default": "bws-memory,bws-diagram,bws-skillgate,bws-secrets"
     },
     "handoffNudgePercent": {
       "type": "number",

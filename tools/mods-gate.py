@@ -116,6 +116,12 @@ def main() -> int:
         print(f"{'ok  ' if ok else 'FAIL'} kit sync")
         if not ok:
             problems.append(f"kit sync failed\n{out[-1500:]}")
+        sync_tests = ROOT / "tools" / "test_sync_kit.py"
+        if sync_tests.exists():
+            ok, out = run([sys.executable, str(sync_tests)], ROOT)
+            print(f"{'ok  ' if ok else 'FAIL'} kit sync tests")
+            if not ok:
+                problems.append(f"kit sync tests failed\n{out[-1500:]}")
     print(f"{len(todo)} plugin(s){' + kit' if do_kit else ''}, {time.time() - t0:.0f}s")
     for pr in problems:
         print("\n---\n" + pr)

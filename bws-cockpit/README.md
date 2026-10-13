@@ -102,6 +102,11 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 - **Project list for home-folder sessions.** A session started in a home folder or a projects root gets the 40 newest projects in its first message.
 - **`/projects`** lists them; `/projects refresh` rebuilds the index.
 
+### Mod chips
+- **One chip per loaded, non-idle video-derived mod** in the action bar, after the board chip: `bws-memory`, `bws-diagram`, `bws-skillgate`, `bws-secrets`. Each mod publishes one `summary` state atom (`{ state: idle|busy|ok|warn|bad, label, detail? }`, defined in `bws-kit/summary.ts`). `idle`, `null`, a malformed value or a mod that is not loaded draws nothing.
+- **`modSummaries`** picks which of those four to show, and in what order. Atoms are typed per plugin, so the list is closed: other names are ignored.
+- cockpit reads the atoms (no dependency, like bws-board's) and vendors `summary.ts` from bws-kit (`kit.json`, `hooks/kit/`; `python tools/sync-kit.py` refreshes it).
+
 ### /handoff
 - **`/handoff [focus]`** writes a handoff for a fresh agent into this session's run folder as `HANDOFF.md`: the newest run folder this conversation's own tool calls wrote to, the same one the Finish-Line Guard holds it to. A folder a harness worker writes while this session supervises the loop never counts. With none, it goes in a new `runs/<date>-handoff/`.
   - It's written by the session's own model from this conversation (`$.model.fork`, served from the prompt cache).
@@ -179,6 +184,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `shelfPath` | (empty) | The idea shelf file; empty: `<CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json` |
 | `shelfNudge` | `true` | The shelf line in a conversation's opening context |
 | `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
+| `modSummaries` | `bws-memory,bws-diagram,bws-skillgate,bws-secrets` | Mods whose `summary` atom shows as a bar chip; others are ignored |
 
 ## Capabilities it uses
 
@@ -192,7 +198,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | Models | `$.model.fork` (or `$.model.complete` on a resumed session) for /handoff, on the session's own model |
 | Store | `$.store` key `bws-cockpit.projectIndex` (the project index) |
 | Tools | registers `find_project`, `record_assumption`, `shelve_idea`, `list_ideas`, `close_idea` |
-| State | reads bws-board's `summary` and `lines` (no dependency: absent, the Board tab says so) |
+| State | reads bws-board's `summary` and `lines` (no dependency: absent, the Board tab says so), and the `summary` atoms of the mods in `modSummaries` (absent: no chip) |
 
 It writes only the shelf file and HANDOFF.md.
 
@@ -202,6 +208,7 @@ Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 
 
 | Check | Result |
 |---|---|
+| 0.16.0 (2.1.296) | Mod chips: validate, tsc and tests in the gate receipt of `runs/2026-10-13-mods-m0-kit`. Tested with stubbed atoms on terminal and desktop only; no real mod publishes a summary yet, so no chip has been seen in a live bar |
 | 0.15.0 (2.1.296) | Dashboard pane, one-row bar, bws-assumptions and bws-shelf folded in. validate passed; tsc 5.8.3 clean; 162/162 tests (tabs and counts, raise vs a focused pane, closed from the bar, session-start open, the handoff nudge, a loop alert raising the Loop tab, the bar's idea/enhance/tab/dash buttons, the moved assumption and shelf tests). Live in a 170-column tmux terminal with Sonnet (`runs/2026-10-10-bws-dashboard/receipts/ui-*.txt`): the dashboard opened at start on Shelf; Claude's `record_assumption` calls switched it to Assumptions; an ask from another session switched it to Board; the handoff toast and highlight; in-pane tab keys, Right/Wrong/Instead/Send/Clear sent, the shelf scope, ✗ and ▶; `/board pane`; the bar's 2, a, s, b, i, e, h and 3. Then checked by Brian in his own session. Not tried live: bar `1` resume, `4` and the Loop tab with a real loop (tests only), ✓ in the Shelf tab (tests), the Desktop app |
 | 0.14.0 (2.1.296) | Session Bus removed (back to 0.11.0's hooks); board chip added. validate passed, with `bws-board.summary` listed as another plugin's state, so no dependency is needed. 122/122 tests, including the chip: hidden without bws-board and when alone, `board 3 · 2 open · 1 for you` in warning color in the tiles, `board 2 · 0 open` in the grid. tsc clean. A fresh `claude -p "/board"` with both plugins in `CLAUDE_CODE_PLUGIN_DIRS` loaded both, listed no `bus_*` tools, and printed the board. The chip has not been checked by eye in an interactive band yet |
 | `claude plugin validate` | passed |
