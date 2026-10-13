@@ -24,7 +24,7 @@ MANUAL-CHECKS.md (16 checks; the worker only ran headless).
     `sideArgs({ isFirst: true, mainId: parent.forkId ?? tree.mainId, sideId: new uuid })`; env `CLAUDE_CODE_PLUGIN_DIRS`
     empty. Timeout: `$.clock.after(exploreTimeoutSeconds)` + `killChild` (spawn has no signal). Failure: node `failed`
     with the reason, one `ui.log` debug line, never the prompt or reply.
-  - Decide: `$.clock.after(10, () => $.prompt.submit({ text, asUser: true }))`, then the tree is closed and cleared.
+  - Decide: the tree is closed and cleared first (ending a running fork can take seconds), then `$.clock.after(10, () => $.prompt.submit({ text, asUser: true }))`.
 - `types/index.d.ts`: `TreeOption`, `TreeNode`, `TreeEdge`, `DecisionTree`, `TreePane`; atoms `tree` and `summary` beside `chat`.
 - `kit.json` `{ "modules": ["summary"] }`; `hooks/kit/summary.ts` is generated (`python tools/sync-kit.py`). Never edit it.
 - Options (plugin.json): `exploreTimeoutSeconds` (180), `treeDumpFile` (empty; a path gets the tree JSON after every

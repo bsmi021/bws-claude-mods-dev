@@ -367,8 +367,9 @@ async function decide($: EngineInterface): Promise<string | null> {
   const st = await read($, treeState)
   const text = st.tree === null ? null : decisionParagraph(st.tree)
   if (text === null) return null
-  $.clock.after(10, () => void $.prompt.submit({ text, asUser: true }).catch(() => $.ui.log(failLine('decide', 'not sent'), { to: 'debug' })))
+  // Close first: ending a running fork can take seconds, and the send must not fire while the dispatch still waits.
   await closeTree($)
+  $.clock.after(10, () => void $.prompt.submit({ text, asUser: true }).catch(() => $.ui.log(failLine('decide', 'not sent'), { to: 'debug' })))
   return text
 }
 
