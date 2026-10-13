@@ -23,7 +23,7 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
   - Claude records an assumption → Assumptions.
   - An ask addressed to this session appears on bws-board → Board (cockpit watches bws-board's `summary` writes, so it comes at once).
   - A loop alert (needs you, stalled, driver dead, all done) → Loop, on that loop.
-  - Session start with unsent assumptions or open ideas for the project → the dashboard opens on that tab. Not after `/clear`, `/resume` or `/branch` (no `session.start` there).
+  - Session start with unsent assumptions or open ideas for the project → the dashboard opens on that tab; with nothing waiting it opens on Assumptions (`dashboardOnStart`, on by default; headless opens nothing). Not after `/clear`, `/resume` or `/branch` (no `session.start` there).
   - The dashboard is opened if closed, or switched to the tab if open, but only while you are not using it (pane not focused); then only the tab count changes. Opened without being asked, a pane is placed only from 144 terminal columns (110 for one you opened before).
   - Closed by you (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's chips still count. Any asked open clears that.
 - **Headless:** `claude -p "/dashboard"` prints every tab as text.
@@ -37,9 +37,10 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
 - The guard's last action shows on a row under the bar for ten minutes.
 - Refreshes every `refreshSeconds` and after each turn; `/cockpit` probes on demand.
 - Shares the slot: the band above the prompt holds one tree, so when another mod draws a band there too, bws-cockpit draws it under its own row instead of hiding it. Hidden (`3`), or while a survey shows, it hands the whole slot on. Both bands' digit hotkeys stay live, so two mods that bind the same digit will clash.
-- Known: Hide has no way back within the session, and the bar draws only once the first refresh has landed.
+- **Hide and show:** `3` hides the bar with a toast saying how to get it back; `/cockpit` (or `/cockpit show`) brings it back, `/cockpit hide` hides it.
+- Known: the bar draws only once the first refresh has landed.
 - **`/resume-run`** queues a prompt that resumes the newest run folder: it reads RUNLOG/PLAN/TASKS, restates the finish line and the next step, checks the receipts, then continues.
-- **`/cockpit`** gives the run, devices, loop and guard as text, for sessions where nothing draws.
+- **`/cockpit [show|hide]`** gives the run, devices, loop and guard as text, for sessions where nothing draws, and shows the bar again; `hide` hides it.
 - **First-message context.** Every new interactive conversation gets one short block naming the newest run folder, its next step and its open count, with a note to confirm before resuming it. `claude -p` and SDK sessions (no surface) skip it: harness workers get their run folder in their prompt.
 
 ### Assumptions (tab)
@@ -178,6 +179,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `workerAgentTypes` | `general-purpose,claude` | Subagent types the worker model applies to |
 | `shelfPath` | (empty) | The idea shelf file; empty: `<CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json` |
 | `shelfNudge` | `true` | The shelf line in a conversation's opening context |
+| `dashboardOnStart` | `true` | Open the dashboard at session start even with nothing waiting, on Assumptions. Needs 144 terminal columns or Desktop |
 | `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
 
 ## Capabilities it uses
@@ -202,6 +204,7 @@ Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 
 
 | Check | Result |
 |---|---|
+| 0.15.1 (2.1.296) | `/cockpit hide` and `/cockpit show` (the bar's hide is no longer one-way; the `3` button toasts the way back), `dashboardOnStart`. validate passed; tsc 5.8.3 clean; 165/165 tests (hide by the button, back with `/cockpit show`, hidden again with `/cockpit hide`; session start opens the dashboard on Assumptions with nothing waiting, nothing headless, nothing with the option off). Not checked by eye yet |
 | 0.15.0 (2.1.296) | Dashboard pane, one-row bar, bws-assumptions and bws-shelf folded in. validate passed; tsc 5.8.3 clean; 162/162 tests (tabs and counts, raise vs a focused pane, closed from the bar, session-start open, the handoff nudge, a loop alert raising the Loop tab, the bar's idea/enhance/tab/dash buttons, the moved assumption and shelf tests). Live in a 170-column tmux terminal with Sonnet (`runs/2026-10-10-bws-dashboard/receipts/ui-*.txt`): the dashboard opened at start on Shelf; Claude's `record_assumption` calls switched it to Assumptions; an ask from another session switched it to Board; the handoff toast and highlight; in-pane tab keys, Right/Wrong/Instead/Send/Clear sent, the shelf scope, ✗ and ▶; `/board pane`; the bar's 2, a, s, b, i, e, h and 3. Then checked by Brian in his own session. Not tried live: bar `1` resume, `4` and the Loop tab with a real loop (tests only), ✓ in the Shelf tab (tests), the Desktop app |
 | 0.14.0 (2.1.296) | Session Bus removed (back to 0.11.0's hooks); board chip added. validate passed, with `bws-board.summary` listed as another plugin's state, so no dependency is needed. 122/122 tests, including the chip: hidden without bws-board and when alone, `board 3 · 2 open · 1 for you` in warning color in the tiles, `board 2 · 0 open` in the grid. tsc clean. A fresh `claude -p "/board"` with both plugins in `CLAUDE_CODE_PLUGIN_DIRS` loaded both, listed no `bus_*` tools, and printed the board. The chip has not been checked by eye in an interactive band yet |
 | `claude plugin validate` | passed |

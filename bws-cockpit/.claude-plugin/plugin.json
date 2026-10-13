@@ -1,6 +1,6 @@
 {
   "name": "bws-cockpit",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "Brian"
@@ -136,6 +136,12 @@
       "type": "boolean",
       "title": "Tell Claude to shelve tangents",
       "description": "Add one line to the conversation's opening context with the open-idea count and the shelve_idea tool.",
+      "default": true
+    },
+    "dashboardOnStart": {
+      "type": "boolean",
+      "title": "Open the dashboard at session start",
+      "description": "Open the Dashboard pane (Assumptions, Shelf, Board, Loop tabs) when a session starts, on the first tab with something waiting. Needs a terminal 144 columns wide or Desktop.",
       "default": true
     },
     "handoffNudgePercent": {

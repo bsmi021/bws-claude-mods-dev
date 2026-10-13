@@ -545,8 +545,23 @@ describe('dashboard', () => {
     await ui.unmount()
   })
 
-  test('session start with nothing waiting opens nothing', async ($, on) => {
+  test('dashboardOnStart off: session start with nothing waiting opens nothing', { options: { dashboardOnStart: false } }, async ($, on) => {
     const { seen } = world(on)
+    await $.session.start({ cwd: ROOT } as never)
+    expect(seen.opened).toEqual([])
+  })
+
+  test('session start with nothing waiting still opens the dashboard, on Assumptions; headless opens nothing', async ($, on) => {
+    const { seen } = world(on)
+    await $.session.start({ cwd: ROOT } as never)
+    expect(seen.opened).toEqual([{ id: 'dashboard', focus: undefined }])
+    const ui = await $.ui.mount(PANE)
+    expect((await ui.find({ key: 'tab-assumptions' }))?.props?.variant).toBe('primary')
+    await ui.unmount()
+  })
+
+  test('session start headless opens no dashboard', async ($, on) => {
+    const { seen } = world(on, { surfaces: [] })
     await $.session.start({ cwd: ROOT } as never)
     expect(seen.opened).toEqual([])
   })

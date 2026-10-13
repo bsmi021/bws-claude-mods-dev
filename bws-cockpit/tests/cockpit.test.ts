@@ -495,6 +495,28 @@ describe('action bar', () => {
     await after.unmount()
   })
 
+  test('/cockpit brings a hidden bar back; /cockpit hide hides it again', async ($, on) => {
+    world(on, RUN_WORLD)
+    on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', children: ['other band'] }) as never)
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const first = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    await first.press({ key: 'hide' })
+    await first.unmount()
+    const hidden = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await hidden.find({ type: 'Text', text: /^bow-fix$/ })).toBeUndefined()
+    await hidden.unmount()
+    const shown = await $.command.run({ command: 'cockpit', args: 'show' } as never)
+    expect(String((shown as { text?: string }).text)).toContain('Cockpit bar shown.')
+    const back = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await back.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
+    await back.unmount()
+    const hid = await $.command.run({ command: 'cockpit', args: 'hide' } as never)
+    expect(String((hid as { text?: string }).text)).toContain('/cockpit show')
+    const gone = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect(await gone.find({ type: 'Text', text: /^bow-fix$/ })).toBeUndefined()
+    await gone.unmount()
+  })
+
   test('no other band: nothing is added under ours', async ($, on) => {
     world(on, RUN_WORLD)
     await $.command.run({ command: 'cockpit', args: '' } as never)
