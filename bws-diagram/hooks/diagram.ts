@@ -2,6 +2,7 @@
 // and the fork are asked, and the board (the list of diagrams) the pane shows. Pure: no `$`.
 import type { Board, Diagram, Entry } from '../types'
 import { makeSummary, type ModSummary } from './kit/summary'
+import { MAX_PINS_PER_REPLY, mermaidBlocks, parseMermaid } from './mermaid'
 import { MAX_NODES } from './spec'
 
 export const PLUGIN = 'bws-diagram'
@@ -111,16 +112,36 @@ export function boardSummary(b: Board): ModSummary | null {
   return makeSummary('ok', parts.join(', '))
 }
 
-/** `/diagram status`: the option, the list and what is shown. */
+/** `/diagram status`: the option, the drawn diagrams, then the pinned ones; `>` marks the one the pane shows. */
 export function statusText(b: Board, autoDiagram: boolean): string {
   const lines = [`Diagram: autoDiagram ${autoDiagram ? 'on' : 'off'}; ${count(b, false)} drawn, ${count(b, true)} pinned.`]
   if (b.phase === 'working') lines.push('A diagram is being drawn.')
   if (b.phase === 'error') lines.push(`Last attempt failed: ${b.note}`)
-  b.entries.forEach((e, i) => {
-    const what = e.diagram ? `${e.diagram.nodes.length} nodes, ${e.diagram.edges.length} edges` : 'source text (not drawable)'
-    lines.push(`${i === b.shown ? '>' : ' '} ${i + 1}. ${e.origin}: ${e.title} (${what})`)
-  })
+  const item = (e: Entry, i: number) => {
+    const what = e.diagram ? `${e.diagram.nodes.length} nodes, ${e.diagram.edges.length} edges` : 'source text, not drawable'
+    return `${i === b.shown ? '>' : ' '} ${i + 1}. ${e.origin === 'pinned' ? '' : `${e.origin}: `}${e.title} (${what})`
+  }
+  const drawn = b.entries.flatMap((e, i) => (e.origin === 'pinned' ? [] : [item(e, i)]))
+  const pinned = b.entries.flatMap((e, i) => (e.origin === 'pinned' ? [item(e, i)] : []))
+  if (drawn.length) lines.push('Diagrams:', ...drawn)
+  if (pinned.length) lines.push('Pinned diagrams:', ...pinned)
   return lines.join('\n')
+}
+
+const MAX_SOURCE = 4000
+
+/** The pins a reply adds: each fenced mermaid block (five at most) not already pinned, parsed or kept as source text. */
+export function pinsFrom(answer: string, at: number, existing: readonly Entry[]): Omit<Entry, 'id'>[] {
+  const known = new Set(existing.filter(e => e.origin === 'pinned').map(e => e.source))
+  const out: Omit<Entry, 'id'>[] = []
+  for (const block of mermaidBlocks(answer).slice(0, MAX_PINS_PER_REPLY)) {
+    const source = block.slice(0, MAX_SOURCE)
+    if (known.has(source)) continue
+    known.add(source)
+    const p = parseMermaid(block)
+    out.push(p.ok ? { origin: 'pinned', at, title: p.diagram.title, diagram: p.diagram, source } : { origin: 'pinned', at, title: `Pinned mermaid (${p.kind})`.slice(0, 40), diagram: null, source })
+  }
+  return out
 }
 
 /** The one debug line for a failure: the step and the reason, never the prompt or the model's text. */

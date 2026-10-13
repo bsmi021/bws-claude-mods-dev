@@ -14,6 +14,7 @@ import {
   diagramEntry,
   EMPTY_BOARD,
   failLine,
+  pinsFrom,
   FORK_TIMEOUT_MS,
   forkPrompt,
   shownEntry,
@@ -140,6 +141,17 @@ async function afterTurn($: EngineInterface, e: { answer: string; reason: string
   await draw($, 'turn', classifyMaterial(counts))
 }
 
+// Pins the reply's mermaid blocks. Pure work and one state write, so it runs inside turn.complete (headless too).
+async function pin($: EngineInterface, answer: string) {
+  if (!answer.includes('mermaid')) return
+  await syncSession($)
+  const b = await read($, board)
+  const pins = pinsFrom(answer, await $.clock.now(), b.entries)
+  if (pins.length === 0) return
+  await setBoard($, x => pins.reduce(addEntry, x))
+  await openPane($)
+}
+
 // /diagram: the whole session, no classifier. Headless the process may end once the command returns, so it is awaited.
 async function drawSession($: EngineInterface): Promise<string> {
   await syncSession($)
@@ -178,8 +190,9 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'diagram' }, async ($, e) => ({ text: await diagramCommand($, e.args).catch(() => 'No diagram. (error)') }))
 
-  // The one turn.complete hook. It returns at once; the classify-then-fork work starts after it has.
+  // The one turn.complete hook. Pins first (cheap, so the turn barely waits); the classify-then-fork work starts after it returns.
   on('turn.complete', async ($, e, next) => {
+    if (!e.agentId && e.reason === 'answer') await pin($, e.answer).catch(() => $.ui.log(failLine('pin', 'error'), { to: 'debug' }))
     $.clock.after(10, () => void afterTurn($, e).catch(() => $.ui.log(failLine('turn', 'error'), { to: 'debug' })))
     return next(e)
   })
