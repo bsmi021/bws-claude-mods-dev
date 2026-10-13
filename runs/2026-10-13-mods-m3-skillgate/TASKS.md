@@ -14,7 +14,8 @@ Session: 1
   - note: tests "FR-SG-04: fail open" (error, unparsable, unanswered, 4 s timeout, later-prompt failure, no entries).
 - [x] T06 [FR-SG-05] Implement, with tests: `/skillgate explain` and the summary atom show the last picks and the tokens the cut saved (estimate: characters / 4).
   - note: tests "FR-SG-05: explain shows the last picks and the tokens saved" and the pure "summary atom shape" test.
-- [~] T07 [FR-SG-06] Implement, with tests: README, version, `kit.json`, kit sync passes.
+- [x] T07 [FR-SG-06] Implement, with tests: README, version, `kit.json`, kit sync passes.
+  - note: bws-skillgate/README.md; version 0.1.0 (new plugin); kit.json lists classify-fork and summary; `python tools/sync-kit.py --check` passes.
 - [ ] T08 [AC-SG-01] Verify, saving the receipt under the run folder's receipts/: `claude -p` probe with `--plugin-dir ./bws-skillgate`: the model's reported available skills match the cut for a fixed prompt. (evidence: `receipts/m3-probe.json`)
 - [ ] T09 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
 - [ ] T10 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
