@@ -13,6 +13,11 @@ import {
   classifyMaterial,
   diagramEntry,
   EMPTY_BOARD,
+  heading,
+  keepBoard,
+  keptBoard,
+  LEGEND,
+  move,
   failLine,
   pinsFrom,
   FORK_TIMEOUT_MS,
@@ -25,7 +30,7 @@ import {
 } from './diagram'
 import { drawKind } from './draw'
 import { layered } from './layout'
-import { edgeLines, outline, rasterOf, svgOf } from './render'
+import { COLORS, edgeLines, outline, rasterOf, svgOf } from './render'
 import { parseDiagramReply } from './spec'
 
 const PANE = 'bws-diagram'
@@ -42,6 +47,10 @@ let dumpFile = ''
 let running = false
 let generation = 0
 let lastSession = ''
+// Set by session.end 'resume': the next session id seen is a resumed conversation, not a branch.
+let pendingResume = false
+
+const STORE_KEY = 'boards'
 
 // The adapter classify-fork runs on: the mods API calls and nothing else.
 function kitModel($: EngineInterface): KitModel {
@@ -55,30 +64,55 @@ function kitModel($: EngineInterface): KitModel {
   }
 }
 
-async function setBoard($: EngineInterface, f: (b: Board) => Board) {
+// Writes the board, its summary chip, the copy kept for this conversation and the diagnostic dump. `isKept` false
+// (after /clear) leaves the ended conversation's kept copy as it was.
+async function setBoard($: EngineInterface, f: (b: Board) => Board, isKept = true) {
   const b = await update($, board, f)
   await update($, summary, () => boardSummary(b))
+  if (isKept) {
+    const id = lastSession || (await $.session.id())
+    await $.store.set(STORE_KEY, keepBoard(await $.store.get(STORE_KEY), id, b, await $.clock.now()))
+  }
   if (dumpFile) await $.fs.write(dumpFile, JSON.stringify(b, null, 2)).catch(() => $.ui.log(failLine('dump', 'not written'), { to: 'debug' }))
 }
 
 // Opens the pane fresh: close first, so it is never mounted twice. An open the person did not ask for may not be placed.
 async function openPane($: EngineInterface) {
   await $.ui.close({ id: PANE })
-  const r = await $.ui.open({ id: PANE, title: 'Diagram', columns: 100 })
+  const r = await $.ui.open({ id: PANE, title: 'Diagram', columns: 100, closeOnEscape: true })
   if (!r.isPlaced) $.ui.toast(`Diagram ready, pane not shown (${r.reason}). /diagram show opens it.`)
 }
 
-// /clear, /resume, a new session id: work in flight is dropped and the guard released.
-async function resetWork($: EngineInterface) {
-  generation++
-  running = false
-  await setBoard($, b => ({ ...b, phase: 'idle', note: '' }))
+async function closePane($: EngineInterface) {
+  await $.ui.close({ id: PANE })
 }
 
+// The person closed the pane (Close, Esc, its mark): the diagrams stay listed; a failure note is acknowledged.
+async function acknowledge($: EngineInterface) {
+  const b = await read($, board)
+  if (b.phase === 'error') await setBoard($, x => ({ ...x, phase: 'idle', note: '' }))
+}
+
+// Work in flight belongs to a conversation that is gone: drop it and release the guard.
+function dropWork() {
+  generation++
+  running = false
+}
+
+// A changed session id is a new conversation. After /resume it gets the board it left (kept in the store); otherwise
+// (/branch copies the transcript, /clear already emptied the board) the board carries over to the new id.
 async function syncSession($: EngineInterface) {
   const id = await $.session.id()
-  if (lastSession !== '' && lastSession !== id) await resetWork($)
+  if (lastSession === '' || lastSession === id) {
+    lastSession = id
+    return
+  }
+  dropWork()
+  const isResume = pendingResume
+  pendingResume = false
   lastSession = id
+  const now = isResume ? keptBoard(await $.store.get(STORE_KEY), id) : { ...(await read($, board)), phase: 'idle' as const, note: '' }
+  await setBoard($, () => now)
 }
 
 async function rows($: EngineInterface): Promise<Row[]> {
@@ -165,9 +199,11 @@ async function drawSession($: EngineInterface): Promise<string> {
 
 async function diagramCommand($: EngineInterface, args: string): Promise<string> {
   const sub = args.trim().toLowerCase()
+  await syncSession($)
   if (sub === 'status') return statusText(await read($, board), autoDiagram)
   if (sub === 'show') {
-    const r = await $.ui.open({ id: PANE, title: 'Diagram', columns: 100, focus: true })
+    await $.ui.close({ id: PANE })
+    const r = await $.ui.open({ id: PANE, title: 'Diagram', columns: 100, focus: true, closeOnEscape: true })
     return r.isPlaced ? '' : `Pane not shown (${r.reason}).`
   }
   if (sub === '') return drawSession($)
@@ -180,11 +216,20 @@ export const register: Register = (on, options) => {
   dumpFile = typeof options.dumpFile === 'string' ? options.dumpFile.trim() : ''
   running = false
   lastSession = ''
+  pendingResume = false
 
+  // Runs at start and after a reload. The board atom outlives a reload as it is; a new process (claude --resume)
+  // starts with an empty atom, so it takes the board this conversation left in the store.
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'diagram', description: 'Diagram the whole session in the side pane: /diagram, /diagram status, /diagram show', argumentHint: '[status|show]' })
+    lastSession = await $.session.id()
     const b = await read($, board)
-    await update($, summary, () => boardSummary(b))
+    if (b.entries.length === 0) {
+      const kept = keptBoard(await $.store.get(STORE_KEY), lastSession)
+      if (kept.entries.length > 0) await update($, board, () => kept)
+    }
+    const now = await read($, board)
+    await update($, summary, () => boardSummary(now))
     return next(e)
   })
 
@@ -197,65 +242,104 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // /clear and /resume end the conversation: no work for it continues and the guard resets.
+  // /clear: the conversation's diagrams go with it (its kept copy stays for a later resume), the pane closes, no work
+  // for it continues. /resume: work stops and the pane closes; the next session id seen loads that conversation's board.
   on('session.end', async ($, e, next) => {
-    if (e.reason === 'clear' || e.reason === 'resume') await resetWork($).catch(() => undefined)
+    if (e.reason === 'clear' || e.reason === 'resume') {
+      dropWork()
+      await closePane($).catch(() => undefined)
+      if (e.reason === 'clear') await setBoard($, () => EMPTY_BOARD, false).catch(() => undefined)
+      else pendingResume = true
+    }
     return next(e)
   })
 
+  // The pane: heading, legend, the shown diagram drawn for this surface and width, the labelled edges, the pinned
+  // list, and Prev / Next / Close. Drawn again on every width change, so it is resize-safe.
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const b = await read($, board)
     const entry = shownEntry(b)
     const table = $.ui.resolve(e)
-    const { Box, Text } = table
-    if (!entry) return <Text dimColor>No diagrams yet.</Text>
+    const { Box, Button, Text } = table
+    if (!entry) return <Text dimColor>No diagrams yet. /diagram draws the session.</Text>
     const d: Diagram | null = entry.diagram
+    const legend = (
+      <Box key="legend" flexDirection="row">
+        {LEGEND.map(x => (
+          <Text key={`legend-${x.kind}`} color={COLORS[x.kind]}>
+            {x.text}{'  '}
+          </Text>
+        ))}
+      </Box>
+    )
+    let body
     if (!d) {
-      return (
-        <Box flexDirection="column">
-          <Text bold>{entry.title}</Text>
-          <Text>{entry.source}</Text>
+      body = (
+        <Box key="body" flexDirection="column">
+          <Text dimColor>Not a flowchart this pane can draw; the source:</Text>
+          {entry.source.split('\n').map((line, i) => <Text key={`src${i}`} wrap="truncate-end">{line}</Text>)}
         </Box>
       )
-    }
-    const l = layered(d)
-    const kind = drawKind(e.surface, { raster: 'Raster' in table, svg: 'Svg' in table })
-    const notes = edgeLines(d, false)
-    if (kind === 'raster' && 'Raster' in table) {
-      const { Raster } = table
-      const art = rasterOf(d, e.props.bodyColumns, l)
-      if (art) {
-        return (
-          <Box flexDirection="column">
-            <Text bold>{d.title}</Text>
+    } else {
+      const l = layered(d)
+      const kind = drawKind(e.surface, { raster: 'Raster' in table, svg: 'Svg' in table })
+      const notes = edgeLines(d, false).map((n, i) => <Text key={`note${i}`} dimColor wrap="truncate-end">{n}</Text>)
+      const art = kind === 'raster' ? rasterOf(d, e.props.bodyColumns, l) : null
+      if (art && 'Raster' in table) {
+        const { Raster } = table
+        body = (
+          <Box key="body" flexDirection="column">
             <Raster key="diagram" columns={art.columns} rows={art.rows} cells={art.cells} />
-            {notes.map((n, i) => <Text key={`n${i}`} dimColor wrap="truncate-end">{n}</Text>)}
+            {notes}
+          </Box>
+        )
+      } else if (kind === 'svg' && 'Svg' in table) {
+        const { Svg } = table
+        const svg = svgOf(d, l)
+        body = (
+          <Box key="body" flexDirection="column">
+            <Svg source={svg.source} alt={svg.alt} width={svg.width} />
+            {notes}
+          </Box>
+        )
+      } else {
+        body = (
+          <Box key="body" flexDirection="column">
+            {kind === 'raster' ? <Text dimColor>Too narrow to draw; widen the pane. The outline:</Text> : null}
+            {outline(d, l).map((line, i) => <Text key={`line${i}`} wrap="truncate-end">{line}</Text>)}
           </Box>
         )
       }
     }
-    if (kind === 'svg' && 'Svg' in table) {
-      const { Svg } = table
-      const art = svgOf(d, l)
-      return (
-        <Box flexDirection="column">
-          <Text bold>{d.title}</Text>
-          <Svg source={art.source} alt={art.alt} width={art.width} />
-          {notes.map((n, i) => <Text key={`n${i}`} dimColor>{n}</Text>)}
-        </Box>
-      )
-    }
+    const pinned = b.entries.flatMap((x, i) => (x.origin === 'pinned' ? [{ x, i }] : []))
+    const atStart = b.shown <= 0, atEnd = b.shown >= b.entries.length - 1
     return (
       <Box flexDirection="column">
-        <Text bold>{d.title}</Text>
-        {outline(d, l).map((line, i) => <Text key={`o${i}`} wrap="truncate-end">{line}</Text>)}
+        <Text bold wrap="truncate-end">{heading(b)}</Text>
+        {legend}
+        {body}
+        {pinned.length > 0 ? <Text key="pinned-head" dimColor>Pinned diagrams:</Text> : null}
+        {pinned.map(p => (
+          <Text key={`pin${p.x.id}`} wrap="truncate-end" bold={p.i === b.shown}>
+            {p.i === b.shown ? '> ' : '  '}
+            {p.i + 1}. {p.x.title}
+          </Text>
+        ))}
+        <Box key="nav" flexDirection="row">
+          <Button key="prev" label="< Prev" hotkey="p" dimColor={atStart} onPress={() => setBoard($, x => move(x, -1))} />
+          <Button key="next" label="Next >" hotkey="n" dimColor={atEnd} onPress={() => setBoard($, x => move(x, 1))} />
+          <Button key="close" label="Close" hotkey="c" onPress={async () => {
+              await acknowledge($)
+              await closePane($)
+            }} />
+        </Box>
       </Box>
     )
   })
 
+  // Closed by the person with Esc or the engine's mark.
   on('ui.close', async ($, e, next) => {
-    if (e.id === PANE && e.origin.kind === 'person') await setBoard($, b => (b.phase === 'error' ? { ...b, phase: 'idle', note: '' } : b))
+    if (e.id === PANE && e.origin.kind === 'person') await acknowledge($).catch(() => undefined)
     return next(e)
   })
-
 }

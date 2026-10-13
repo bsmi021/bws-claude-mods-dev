@@ -146,3 +146,46 @@ export function pinsFrom(answer: string, at: number, existing: readonly Entry[])
 
 /** The one debug line for a failure: the step and the reason, never the prompt or the model's text. */
 export const failLine = (step: string, reason: string) => `${PLUGIN}: ${step} failed (${reason}); continuing unchanged`
+
+// ---------- the pane ----------
+
+/** The legend: each kind's colour (render.ts's COLORS) and its shape. */
+export const LEGEND: readonly { kind: 'file' | 'new' | 'step' | 'decision'; text: string }[] = [
+  { kind: 'file', text: '[] file' },
+  { kind: 'new', text: '() new component' },
+  { kind: 'step', text: '[[]] step' },
+  { kind: 'decision', text: '<> decision' },
+]
+
+/** The pane's heading: the shown diagram's title, where it is in the list, and where it came from. */
+export function heading(b: Board): string {
+  const e = shownEntry(b)
+  if (!e) return 'No diagrams yet'
+  const from = e.origin === 'auto' ? 'last turn' : e.origin === 'session' ? 'session' : 'pinned'
+  return `${e.title}  ${Math.min(b.shown, b.entries.length - 1) + 1}/${b.entries.length}  (${from})`
+}
+
+// ---------- kept per conversation ($.store) ----------
+
+export const KEPT_SESSIONS = 10
+
+type Kept = Record<string, { at: number; entries: Entry[]; shown: number; nextId: number }>
+
+const keptOf = (v: unknown): Kept => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Kept) : {})
+
+/** The store's value with this conversation's board saved (entries only; the newest 10 conversations kept). */
+export function keepBoard(stored: unknown, session: string, b: Board, at: number): Kept {
+  const all: Kept = { ...keptOf(stored), [session]: { at, entries: b.entries, shown: b.shown, nextId: b.nextId } }
+  const newest = Object.entries(all).sort((x, y) => y[1].at - x[1].at).slice(0, KEPT_SESSIONS)
+  return Object.fromEntries(newest)
+}
+
+/** The board a conversation left, or the empty board; anything malformed is the empty board. */
+export function keptBoard(stored: unknown, session: string): Board {
+  const k = keptOf(stored)[session]
+  if (!k || !Array.isArray(k.entries)) return EMPTY_BOARD
+  const entries = k.entries.filter(e => typeof e === 'object' && e !== null && typeof e.title === 'string').slice(-MAX_ENTRIES)
+  const nextId = typeof k.nextId === 'number' ? k.nextId : entries.length + 1
+  const shown = typeof k.shown === 'number' ? Math.max(0, Math.min(entries.length - 1, k.shown)) : entries.length - 1
+  return { entries, shown: Math.max(0, shown), phase: 'idle', note: '', nextId }
+}
