@@ -1,0 +1,7 @@
+/explain There are three reasonable ways to store the cache.
+
+1. **SQLite** — one file, no server, good enough for a single process.
+2. **Postgres** — the team already runs it; more setup for local dev.
+3. **Plain JSON files** — simplest, but no concurrent writes.
+
+Which would you like me to go with?

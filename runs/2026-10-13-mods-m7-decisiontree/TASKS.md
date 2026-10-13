@@ -10,7 +10,7 @@ Session: 1
 - [x] T04 [FR-DT-04] Implement, with tests: Navigation: back to an earlier question and pick another option (branches kept); a Map view of the whole tree; Close. Keys and buttons follow bws-sid…
 - [x] T05 [FR-DT-05] Implement, with tests: Decide: sends a one-paragraph decision summary into the main session. Per AGENTS.md, `$.prompt.submit` inside a `command.run` hook deadlocks, so it i…
 - [x] T06 [FR-DT-06] Implement, with tests: bws-sidechat README and version updated (minor); existing 58 tests untouched.
-- [~] T07 [AC-DT-01] Verify, saving the receipt under the run folder's receipts/: Probe: `/explain` over a fixture reply with three options opens the root node with three options (state dump). (evidence: `receipts/m7-probe.json`)
+- [x] T07 [AC-DT-01] Verify, saving the receipt under the run folder's receipts/: Probe: `/explain` over a fixture reply with three options opens the root node with three options (state dump). (evidence: `receipts/m7-probe.json`)
 - [ ] T08 [GATE] With everything committed, `python tools/mods-harness/harness.py gate` passes. It runs `python tools/mods-gate.py` (validate, plugin test and tsc strict for ALL plugins, 35 s) and is this mod's one regression run; the harness reuses its receipt. During work, run `python tools/mods-gate.py --plugin <name>` as often as you like.
 - [ ] T09 [MANUAL] Write MANUAL-CHECKS.md in the run folder: numbered checks Brian must do in a real interactive session (panes, keys, live model output), each with the exact command to run and the expected result, and the Claude Code version and surfaces you tested. Do not wait for an answer; the loop does not pause on this.
 - [ ] T10 [HANDOFF] Final HANDOFF.md and RUNLOG.md written and committed.
