@@ -18,10 +18,11 @@ What was done:
 - T10: MANUAL-CHECKS.md (14 checks) and two settings files for them.
 - Assumptions recorded on the dashboard: A1 (later prompts only add), A2 (classify inside the attachment hook).
 
-Commits: effb245 (T01), 4454fe4 (T02), 73d8790 (T03-T06), c197ef4 (T07), 62f26c9 (T08), then T10/T11 and the gate
-(below).
+Commits: effb245 (T01), 4454fe4 (T02), 73d8790 (T03-T06), c197ef4 (T07), 62f26c9 (T08), 6b1a8d9 (T10-T11),
+4bb4b35 + 72c6d3a (`/skillgate explain` wording before the first gated prompt; 4bb4b35's own edit had not applied).
 
-Gate (T09): see the entry below once it has run.
+Gate (T09): `python tools/mods-harness/harness.py gate` PASS at 72c6d3a (2026-10-13 09:09:54 to 09:10:39, all plugins,
+kit and kit sync; log M3-wgate-0.log). Gate runs this session: 1 of 3. After it, only run-folder files changed.
 
 Cost: probes about $0.016 in all (haiku).
 
