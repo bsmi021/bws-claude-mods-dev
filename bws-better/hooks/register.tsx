@@ -363,7 +363,11 @@ export const register: Register = (on, options) => {
     if (verdict.kind === 'pass') return nxt(e)
     const original = e.text.trim()
     const attempt = await begin($, original)
-    const opened = await openPane($)
+    // A failed open leaves no pane waiting on a prompt the catch below sends as typed.
+    const opened = await openPane($).catch(async err => {
+      await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
+      throw err
+    })
     if (!opened.isPlaced) {
       stop.abort()
       await closePane($)

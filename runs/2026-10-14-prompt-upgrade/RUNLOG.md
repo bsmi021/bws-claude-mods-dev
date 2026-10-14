@@ -34,3 +34,9 @@ Build a Claude Code mod that upgrades a rough prompt before it is sent. It opens
 
 ## Next
 - Optional: open a real terminal, run `/better` at a narrow and a wide width and screenshot it.
+
+## State at end of session
+- Branch `feat/better`, pushed to `private` (bws-claude-mods-dev). Not merged to `main`. No PR opened yet.
+- The `publish` branch has not been refreshed, so the marketplace install line works only after that.
+- To use it today: `claude --plugin-dir C:/Projects/bws.mods.claude-code/bws-better`, or add that folder to `CLAUDE_CODE_PLUGIN_DIRS`.
+- Fix after review: a failed pane open in the auto path resets the flow, so the pane can't sit on "Reading" for a prompt that was already sent. Checks re-run: 34 pass, validate passed, tsc exit 0.
