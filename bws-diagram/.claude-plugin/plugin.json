@@ -1,6 +1,6 @@
 {
   "name": "bws-diagram",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Diagram pane: after a big turn a small model decides whether it is worth a diagram; if so a fork draws what happened (steps, files, new components, decisions) in a side pane with a legend. Mermaid blocks Claude writes are pinned there too. /diagram draws the whole session.",
   "author": {
     "name": "Brian"

@@ -1,5 +1,7 @@
 # bws-diagram
 
+0.2.1: pinning a mermaid diagram that is already pinned (the same nodes and edges, however it is written) replaces the earlier pin, so `/diagram status` counts it once.
+
 0.2.0: the pane draws box-drawing text rows top to bottom (it drew filled blocks left to right before), opens whenever a pin or a drawing lands, and writes the diagram into the transcript when the pane cannot be placed.
 
 After a big turn, a small model decides whether it is worth a diagram. If yes, a fork of the session draws what

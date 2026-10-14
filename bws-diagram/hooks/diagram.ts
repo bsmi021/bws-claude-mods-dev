@@ -89,6 +89,21 @@ export function addEntry(b: Board, e: Omit<Entry, 'id'>): Board {
   return { ...b, entries, shown: entries.length - 1, nextId: b.nextId + 1 }
 }
 
+/** What makes two pins the same diagram: the nodes (label and kind, in order) and the edges between them, whatever the ids, header or spacing; source text, whitespace squeezed, when there is no diagram. */
+export function pinKey(e: Pick<Entry, 'diagram' | 'source'>): string {
+  const d = e.diagram
+  if (d === null) return `source:${e.source.trim().replace(/\s+/g, ' ')}`
+  const at = new Map(d.nodes.map((n, i) => [n.id, i]))
+  return JSON.stringify([d.nodes.map(n => [n.label, n.kind]), d.edges.map(x => [at.get(x.from), at.get(x.to), x.label ?? ''])])
+}
+
+/** The board with the pin `e` added last and shown, replacing an earlier pin of the same diagram. */
+export function addPin(b: Board, e: Omit<Entry, 'id'>): Board {
+  const key = pinKey(e)
+  const kept = b.entries.filter(x => x.origin !== 'pinned' || pinKey(x) !== key)
+  return addEntry({ ...b, entries: kept }, e)
+}
+
 /** Previous (-1) or next (+1), clamped to the list. */
 export function move(b: Board, delta: number): Board {
   if (b.entries.length === 0) return { ...b, shown: 0 }
@@ -131,7 +146,7 @@ export function statusText(b: Board, autoDiagram: boolean): string {
 
 const MAX_SOURCE = 4000
 
-/** The pins a reply adds: each fenced mermaid block (five at most) not already pinned, parsed or kept as source text. */
+/** The pins a reply adds: each fenced mermaid block (five at most) whose exact text is not already pinned, parsed or kept as source text. The board replaces an earlier pin of the same diagram (`addPin`). */
 export function pinsFrom(answer: string, at: number, existing: readonly Entry[], turn?: number): Omit<Entry, 'id'>[] {
   const known = new Set(existing.filter(e => e.origin === 'pinned').map(e => e.source))
   const out: Omit<Entry, 'id'>[] = []

@@ -7,6 +7,7 @@ import { classifyGate, runFork } from './kit/classify-fork'
 import type { KitModel } from './kit/classify-fork'
 import {
   addEntry,
+  addPin,
   boardSummary,
   CLASSIFY_QUESTION,
   CLASSIFY_TIMEOUT_MS,
@@ -193,7 +194,7 @@ async function pin($: EngineInterface, answer: string) {
   const b = await read($, board)
   const pins = pinsFrom(answer, await $.clock.now(), b.entries, turnNumber(await rows($)))
   if (pins.length === 0) return
-  await setBoard($, x => pins.reduce(addEntry, x))
+  await setBoard($, x => pins.reduce(addPin, x))
   await openPane($, shownEntry(await read($, board)))
 }
 
