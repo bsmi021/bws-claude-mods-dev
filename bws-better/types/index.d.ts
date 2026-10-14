@@ -52,6 +52,8 @@ declare module 'claude-code' {
       history: { id: string; at: number; original: string; upgraded: string; added: string[] }[]
       // The one typed prompt that passes untouched after Edit put the upgrade in the box.
       armed: boolean
+      // The summary atom every mod publishes (FR-ALL-05); null draws no chip.
+      summary: { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string } | null
     }
   }
 }

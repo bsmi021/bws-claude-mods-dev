@@ -6,10 +6,12 @@ import type { EngineInterface, Register, RenderChildren, RenderSurface } from 'c
 import type { Answer, Entry, Flow } from '../types'
 import {
   addEntry,
+  betterSummary,
   AMBER,
   bigDigits,
   cardWidths,
   classify,
+  failLine,
   GOLD,
   GREEN,
   HAIR,
@@ -64,11 +66,26 @@ const flow = atom({ plugin: 'bws-better', key: 'flow' } as const, IDLE)
 const auto = atom({ plugin: 'bws-better', key: 'auto' } as const, false)
 const history = atom({ plugin: 'bws-better', key: 'history' } as const, [] as Entry[])
 const armed = atom({ plugin: 'bws-better', key: 'armed' } as const, false)
+// The summary atom (FR-ALL-05): bws-cockpit's bar draws a chip for it while the mod is loaded and not idle.
+const summary = atom({ plugin: 'bws-better', key: 'summary' } as const, null)
 
 // Copied in by register on every load.
 let model = 'haiku'
 // Stops the model call in flight; replaced for each call.
 let stop = new AbortController()
+
+async function publish($: EngineInterface) {
+  const v = await read($, flow)
+  const isOn = await read($, auto)
+  await update($, summary, () => betterSummary(v.step, v.note, isOn))
+}
+
+// Every change of the flow goes through here, so the chip never lags the pane.
+async function setFlow($: EngineInterface, change: (old: Flow) => Flow): Promise<Flow> {
+  const v = await update($, flow, change)
+  await publish($)
+  return v
+}
 
 function reason(err: unknown): string {
   const t = err instanceof Error ? err.message : String(err)
@@ -88,7 +105,7 @@ async function restore($: EngineInterface, original: string) {
 
 // The flow is idle before the pane closes, so the close is never read as the person's.
 async function closePane($: EngineInterface) {
-  await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
+  await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
   await $.ui.close({ id: PANE })
 }
 
@@ -113,7 +130,7 @@ async function begin($: EngineInterface, original: string): Promise<number> {
   stop.abort()
   await update($, armed, () => false)
   let attempt = 0
-  await update($, flow, (old): Flow => {
+  await setFlow($, (old): Flow => {
     attempt = old.attempt + 1
     return { ...IDLE, step: 'reading', original, attempt }
   })
@@ -121,7 +138,7 @@ async function begin($: EngineInterface, original: string): Promise<number> {
 }
 
 function later($: EngineInterface, work: () => Promise<void>) {
-  $.clock.after(10, () => void work().catch(err => $.ui.log(`Prompt Upgrade: ${reason(err)}`, { to: 'debug' })))
+  $.clock.after(10, () => void work().catch(() => $.ui.log(failLine('step', 'error'), { to: 'debug' })))
 }
 
 // A reply for this attempt and step, or nothing when the person moved on (cancel, retry, reload, a new prompt).
@@ -140,13 +157,14 @@ async function askQuestions($: EngineInterface, attempt: number) {
   )
   if (!(await current($, attempt, 'reading'))) return
   if (!r.isAnswered) {
-    await update($, flow, (old): Flow => ({ ...old, step: 'error', failed: 'questions', note: callNote(r) }))
+    $.ui.log(failLine('questions', r.reason), { to: 'debug' })
+    await setFlow($, (old): Flow => ({ ...old, step: 'error', failed: 'questions', note: callNote(r) }))
     return
   }
   // A reply that cannot be read is no reason to stop: go straight to the rewrite.
   const questions = parseQuestions(r.text) ?? []
   if (questions.length === 0) return startRewrite($)
-  await update($, flow, (old): Flow => ({ ...old, step: 'questions', questions, answers: questions.map(() => null), other: null }))
+  await setFlow($, (old): Flow => ({ ...old, step: 'questions', questions, answers: questions.map(() => null), other: null }))
 }
 
 function callNote(r: { reason: string; status?: number | null }): string {
@@ -159,7 +177,7 @@ function callNote(r: { reason: string; status?: number | null }): string {
 async function startRewrite($: EngineInterface) {
   stop.abort()
   let attempt = 0
-  await update($, flow, (old): Flow => {
+  await setFlow($, (old): Flow => {
     attempt = old.attempt + 1
     return { ...old, step: 'rewrite', attempt, other: null, failed: null, note: '' }
   })
@@ -176,24 +194,26 @@ async function doRewrite($: EngineInterface, attempt: number) {
   )
   if (!(await current($, attempt, 'rewrite'))) return
   if (!r.isAnswered) {
-    await update($, flow, (old): Flow => ({ ...old, step: 'error', failed: 'rewrite', note: callNote(r) }))
+    $.ui.log(failLine('rewrite', r.reason), { to: 'debug' })
+    await setFlow($, (old): Flow => ({ ...old, step: 'error', failed: 'rewrite', note: callNote(r) }))
     return
   }
   const out = parseRewrite(r.text)
   if (!out) {
-    await update($, flow, (old): Flow => ({ ...old, step: 'error', failed: 'rewrite', note: 'The reply could not be read.' }))
+    $.ui.log(failLine('rewrite', 'unreadable'), { to: 'debug' })
+    await setFlow($, (old): Flow => ({ ...old, step: 'error', failed: 'rewrite', note: 'The reply could not be read.' }))
     return
   }
   const at = await $.clock.now()
   const entry: Entry = { id: `${at}-${attempt}`, at, original: v.original, upgraded: out.prompt, added: out.added }
-  await update($, flow, (old): Flow => ({ ...old, step: 'review', upgraded: out.prompt, added: out.added, flash: '' }))
+  await setFlow($, (old): Flow => ({ ...old, step: 'review', upgraded: out.prompt, added: out.added, flash: '' }))
   const list = await update($, history, old => addEntry(old, entry))
   await $.store.set('history', list)
 }
 
 // Step 2: one answer. Once every question is answered or skipped the rewrite starts.
 async function answer($: EngineInterface, i: number, a: Answer) {
-  const v = await update($, flow, (old): Flow => {
+  const v = await setFlow($, (old): Flow => {
     if (old.step !== 'questions') return old
     const answers = old.answers.slice()
     answers[i] = a
@@ -203,7 +223,7 @@ async function answer($: EngineInterface, i: number, a: Answer) {
 }
 
 async function openOther($: EngineInterface, i: number) {
-  await update($, flow, (old): Flow => (old.step === 'questions' ? { ...old, other: old.other === i ? null : i } : old))
+  await setFlow($, (old): Flow => (old.step === 'questions' ? { ...old, other: old.other === i ? null : i } : old))
 }
 
 // Step 4: the buttons.
@@ -226,7 +246,7 @@ async function copy($: EngineInterface, surface: RenderSurface) {
   const v = await read($, flow)
   const r = await $.ui.copy({ text: v.upgraded, surface })
   const flash = r.isCopied ? 'Copied to the clipboard.' : `Could not copy (${r.reason}).`
-  await update($, flow, (old): Flow => ({ ...old, flash }))
+  await setFlow($, (old): Flow => ({ ...old, flash }))
 }
 
 async function cancel($: EngineInterface) {
@@ -251,7 +271,7 @@ async function retry($: EngineInterface) {
 }
 
 async function openEntry($: EngineInterface, entry: Entry) {
-  await update($, flow, (old): Flow => ({
+  await setFlow($, (old): Flow => ({
     ...IDLE,
     attempt: old.attempt + 1,
     step: 'review',
@@ -282,6 +302,7 @@ async function headless($: EngineInterface, original: string): Promise<{ text: s
 async function setAuto($: EngineInterface, isOn: boolean): Promise<string> {
   await update($, auto, () => isOn)
   await $.store.set('auto', isOn)
+  await publish($)
   return isOn
     ? 'Prompt Upgrade is on: prompts you type go to the pane first. Start one with > to send it as it is.'
     : 'Prompt Upgrade is off: prompts you type are sent as they are.'
@@ -305,7 +326,7 @@ async function resume($: EngineInterface) {
 export const register: Register = (on, options) => {
   model = String(options.model ?? '').trim() || 'haiku'
 
-  on('session.start', async ($, e, nxt) => {
+  on('session.start', async ($, e, next) => {
     await $.command.register({
       name: COMMAND,
       description: 'Upgrade a rough prompt before it is sent: on, off, history, or the prompt itself',
@@ -318,11 +339,12 @@ export const register: Register = (on, options) => {
       const saved = readHistory(await $.store.get('history'))
       await update($, auto, () => isOn)
       await update($, history, () => saved)
+      await publish($)
       await resume($)
     } catch (err) {
-      $.ui.log(`Prompt Upgrade: ${reason(err)}`, { to: 'debug' })
+      $.ui.log(failLine('start', reason(err)), { to: 'debug' })
     }
-    return nxt(e)
+    return next(e)
   })
 
   // Every answer is a plain sentence, failure included.
@@ -337,14 +359,14 @@ export const register: Register = (on, options) => {
         if (list.length === 0) return { text: 'No upgrades yet. Try /better followed by a rough prompt.' }
         if (isHeadless) return { text: list.map(x => `${x.original}\n→ ${x.upgraded}`).join('\n\n') }
         stop.abort()
-        await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'history' }))
+        await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'history' }))
         if (!(await openPane($)).isPlaced) return { text: await notPlaced($, '') }
         return { text: `Your last ${list.length} ${list.length === 1 ? 'upgrade is' : 'upgrades are'} in the Prompt Upgrade pane.` }
       }
       if (arg === '') {
         if (isHeadless) return { text: 'Usage: /better <rough prompt>, /better on, /better off, /better history.' }
         stop.abort()
-        await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'compose' }))
+        await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'compose' }))
         if (!(await openPane($)).isPlaced) return { text: await notPlaced($, '') }
         return { text: 'Type your rough prompt in the Prompt Upgrade pane.' }
       }
@@ -361,19 +383,19 @@ export const register: Register = (on, options) => {
   }).catch(() => ({ text: 'Prompt Upgrade could not start. Your prompt is safe; try again.' }))
 
   // Automatic mode. Only the person's own Enter is ever taken; anything that goes wrong sends the prompt as typed.
-  on('prompt.submit', async ($, e, nxt) => {
+  on('prompt.submit', async ($, e, next) => {
     const verdict = classify(e, { auto: await read($, auto), armed: await read($, armed) })
     if (verdict.kind === 'armed') {
       await update($, armed, () => false)
-      return nxt(e)
+      return next(e)
     }
-    if (verdict.kind === 'strip') return nxt({ ...e, text: verdict.text })
-    if (verdict.kind === 'pass') return nxt(e)
+    if (verdict.kind === 'strip') return next({ ...e, text: verdict.text })
+    if (verdict.kind === 'pass') return next(e)
     const original = e.text.trim()
     const attempt = await begin($, original)
     // A failed open leaves no pane waiting on a prompt the catch below sends as typed.
     const opened = await openPane($).catch(async err => {
-      await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
+      await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
       throw err
     })
     if (!opened.isPlaced) {
@@ -385,19 +407,19 @@ export const register: Register = (on, options) => {
     later($, () => askQuestions($, attempt))
     $.clock.after(10, () => void clearTaken($, original).catch(() => undefined))
     return { drop: TAKEN }
-  }).catch(($, e, nxt) => nxt(e))
+  }).catch(($, e, next) => next(e))
 
   // Closed by the person (Esc or its close mark) mid-upgrade: stop the call and put the words back.
-  on('ui.close', async ($, e, nxt) => {
+  on('ui.close', async ($, e, next) => {
     if (e.id === PANE && e.origin.kind === 'person') {
       const v = await read($, flow)
       if (v.step !== 'idle') {
         stop.abort()
-        await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
+        await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
         if (!v.fromHistory) $.clock.after(10, () => void restore($, v.original))
       }
     }
-    return nxt(e)
+    return next(e)
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {

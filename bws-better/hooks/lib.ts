@@ -1,6 +1,8 @@
 // bws-better: the pure parts. Which prompts are taken, the two model prompts and their replies, big digits,
 // rows sized to the pane, and the history list. Nothing here touches `$`.
 import type { Answer, Entry, Question, Step } from '../types'
+import { makeSummary } from './kit/summary'
+import type { ModSummary } from './kit/summary'
 
 export const GOLD = '#F2C46D'
 export const HAIR = '#262B33'
@@ -13,6 +15,17 @@ export const ON_GOLD = '#0D1117'
 
 export const TITLE = 'PROMPT UPGRADE'
 export const HISTORY_MAX = 20
+
+// The one debug line for a failed step: the step and the reason, never the prompt or the model's text (FR-ALL-03).
+export const failLine = (step: string, reason: string) => `bws-better: ${step} failed (${reason}); your prompt is safe`
+
+// The summary atom (FR-ALL-05): busy while a model call is out, warn with the reason on the error card, ok while
+// automatic mode is on, otherwise no chip.
+export function betterSummary(step: Step, note: string, isAuto: boolean): ModSummary | null {
+  if (step === 'reading' || step === 'rewrite') return makeSummary('busy', 'upgrading prompt')
+  if (step === 'error') return makeSummary('warn', 'upgrade failed', note)
+  return isAuto ? makeSummary('ok', 'better auto') : null
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Which typed prompts go to the pane.

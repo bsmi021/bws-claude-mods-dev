@@ -99,6 +99,7 @@ const memorySummary = atom({ plugin: 'bws-memory', key: 'summary' } as const, nu
 const diagramSummary = atom({ plugin: 'bws-diagram', key: 'summary' } as const, null)
 const skillgateSummary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
 const secretsSummary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
+const betterSummary = atom({ plugin: 'bws-better', key: 'summary' } as const, null)
 // The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
 const cacheClock = atom({ plugin: 'bws-cockpit', key: 'cacheClock' } as const, null)
 const cacheBar = atom({ plugin: 'bws-cockpit', key: 'cacheBar' } as const, null)
@@ -1664,6 +1665,7 @@ export const register: Register = (on, options) => {
       'bws-diagram': o.mods.includes('bws-diagram') ? await read($, diagramSummary) : null,
       'bws-skillgate': o.mods.includes('bws-skillgate') ? await read($, skillgateSummary) : null,
       'bws-secrets': o.mods.includes('bws-secrets') ? await read($, secretsSummary) : null,
+      'bws-better': o.mods.includes('bws-better') ? await read($, betterSummary) : null,
     }
     const modBoxes = modChips(o.mods, raw).map(c => (
       <Box key={`chip-mod-${c.name}`} flexDirection="row">

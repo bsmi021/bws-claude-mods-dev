@@ -134,6 +134,7 @@ declare module 'claude-code' {
     'bws-diagram': { summary: ModSummary | null }
     'bws-skillgate': { summary: ModSummary | null }
     'bws-secrets': { summary: ModSummary | null }
+    'bws-better': { summary: ModSummary | null }
   }
   interface PluginState {
     'bws-cockpit': {

@@ -67,3 +67,18 @@ Screens are in `screens/`. Narrow: 72 columns, main screen, inline pane. Wide: 1
 - New tests: the narrow `/better <prompt>`, the box cleared after a take with Cancel restoring it, and the box left alone when something else was typed. Run against the old code, the defect tests fail.
 - Checks: validate passed, 37 tests pass, tsc exit 0 (receipts `*-0.1.1.txt`). Marketplace 1.2.1.
 - Released: PR #11 merged (a6d2de1). Publish refreshed (file list and contents match), checks rerun there. Pushed to mods/main as 1a1400d. Release v1.2.1: https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.2.1
+
+## Suite fit, bws-mods 1.2.2 (2026-10-14)
+The 10 changes from the suite review, one branch (`feat/suite-fit`):
+1. bws-better publishes a `summary` atom (busy while a call is out, warn on the error card, ok while auto is on). The chip logic is `betterSummary` in `lib.ts`; the kit's `summary.ts` is vendored with `kit.json` and `tools/sync-kit.py`.
+2. bws-cockpit lists `bws-better` in `KNOWN_MODS`, the `modSummaries` default and known list, its state types, the bar read and the README. One new test.
+3. bws-enhance's `bounceCheck` returns early while `bws-better`'s `auto` is on (it reads that atom, declared in its types). The test fails without the change.
+4. bws-board's `isPerson` counts a plugin prompt sent `asUser`. The test fails without the change.
+5. Both READMEs now say how `/better` and `/enhance` differ.
+6. bws-better's hook argument `nxt` is renamed `next`.
+7. `failLine` in bws-better writes one debug line (no prompt text) when a model call fails.
+8. bws-better README sections follow bws-diagram's layout: Options, Summary atom, Capabilities used, After reload, Tested with the version.
+9. bws-better's compose, error-card and width tests run on the terminal and desktop surfaces (43 tests).
+10. `AGENTS.md` records the two lessons: await `$.ui.open` inside a `command.run` hook, and clear the box after a `{ drop }`.
+- Versions: bws-better 0.1.2, bws-cockpit 0.17.2, bws-enhance 0.3.1, bws-board 0.5.1. Marketplace 1.2.2. The other mods are untouched.
+- Gate (`python tools/mods-gate.py`): all 12 plugins, the kit and the kit sync pass. Receipt `receipts/gate-1.2.2.txt`.

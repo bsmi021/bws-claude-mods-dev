@@ -123,6 +123,8 @@ Local Doc: ./docs/mods.md
 - Both plugins load in every session through `CLAUDE_CODE_PLUGIN_DIRS`, so a broken `register.tsx` breaks every new session.
 - Validator rules: one unmatched hook per event, so merge into the existing `turn.complete` or `prompt.context` hook. Never name a local `next`.
 - `$.prompt.submit` inside a `command.run` hook deadlocks: defer it with `$.clock.after`.
+- A pane opened after a `command.run` hook has answered counts as unasked and opens only from 144 columns. Await `$.ui.open` inside the hook so it is the person's open (bws-better 0.1.1).
+- A `{ drop }` at `prompt.submit` leaves the typed text in the box. If a pane now owns the prompt, clear the box yourself and put the text back on Cancel (bws-better 0.1.1).
 - `$.model.fork` gives `nothing-to-fork` on a resumed session's first command: fall back to `$.session.messages()` + `$.model.complete`.
 - Wrapping the AskUserQuestion dialog in `ui.render`, the engine refuses `width` on any Box around it and more than 12 rows. It counts side-by-side siblings as stacked and the dialog itself as one row. Draw one Raster/Svg.
 - A render rewrite of AskUserQuestion may not change previews; strip them from the input in `tool.call` instead.

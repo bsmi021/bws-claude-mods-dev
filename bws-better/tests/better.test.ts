@@ -85,6 +85,7 @@ const pane = (surface: 'terminal' | 'desktop', bodyColumns = 100) =>
     props: { title: 'Prompt Upgrade', isFocused: true, bodyColumns, placement: 'inline', scroll: { offset: 0, bodyRows: 30 }, view: {} },
   }) as const
 
+const SURFACES = ['terminal', 'desktop'] as const
 const typed = (text: string, more: Record<string, unknown> = {}) => ({ text, origin: { kind: 'composer' }, wait: false, ...more }) as never
 
 describe('the full flow', () => {
@@ -197,13 +198,13 @@ describe('cancel and errors', () => {
     expect(box()).toBe(`something new\n\n${ROUGH}`)
   })
 
-  test('a failed call shows a calm card; Try again recovers, Send my original sends the words as typed', async ($, on) => {
+  for (const surface of SURFACES) test(`a failed call shows a calm card on ${surface}; Try again recovers, Send my original sends the words as typed`, async ($, on) => {
     const { seen, clock } = world(on, {
       replies: [{ isAnswered: false, reason: 'api-error', status: 529 }, { isAnswered: false, reason: 'api-error', status: 529 }],
     })
     await $.command.run({ command: 'better', args: ROUGH } as never)
     await clock.advance(50)
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await $.ui.mount(pane(surface))
     expect(await ui.find({ type: 'Text', text: /Your prompt is safe/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /\(529\)/ })).toBeDefined()
     await ui.press({ key: 'retry' })
@@ -316,11 +317,11 @@ describe('commands and widths', () => {
     expect(seen.closed).toContain('bws-better')
   })
 
-  test('/better alone opens a box to type one', async ($, on) => {
+  for (const surface of SURFACES) test(`/better alone opens a box to type one on ${surface}`, async ($, on) => {
     const { seen, clock } = world(on)
     const r = await $.command.run({ command: 'better', args: '' } as never)
     expect(r.text).toMatch(/Type your rough prompt/)
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await $.ui.mount(pane(surface))
     await ui.input({ key: 'compose', text: ROUGH })
     await ui.unmount()
     await clock.advance(50)
@@ -340,13 +341,13 @@ describe('commands and widths', () => {
     expect(r.text).toMatch(/No upgrades yet/)
   })
 
-  for (const cols of [40, 160]) {
-    test(`the review draws at ${cols} columns`, async ($, on) => {
+  for (const surface of SURFACES) for (const cols of [40, 160]) {
+    test(`the review draws at ${cols} columns on ${surface}`, async ($, on) => {
       const { clock } = world(on, { replies: [{ isAnswered: true, text: '{"questions":[]}' }, { isAnswered: true, text: REWRITE }] })
       await $.command.run({ command: 'better', args: ROUGH } as never)
       await clock.advance(50)
       await clock.advance(50)
-      const ui = await $.ui.mount(pane('terminal', cols))
+      const ui = await $.ui.mount(pane(surface, cols))
       expect(await ui.find({ key: 'run' })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: 'WORDS BEFORE' }))[cols < 60 ? 'toBeUndefined' : 'toBeDefined']()
       await ui.unmount()

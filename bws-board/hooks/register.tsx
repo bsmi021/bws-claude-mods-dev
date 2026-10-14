@@ -727,7 +727,10 @@ export const register: Register = (on, options) => {
 
   // The person's prompt says what this session works on; news for the model rides along.
   on('prompt.submit', async ($, e, next) => {
-    const isPerson = e.origin.kind === 'composer' || e.origin.kind === 'bridge' || e.origin.kind === 'sdk'
+    // A plugin that sends the person's own words (bws-better's Run, bws-enhance's Send) counts as the person; a plugin's
+    // own message does not.
+    const isPerson =
+      e.origin.kind === 'composer' || e.origin.kind === 'bridge' || e.origin.kind === 'sdk' || (e.origin.kind === 'plugin' && e.origin.asUser === true)
     const task = isPerson ? taskFrom(e.text) : undefined
     let b: Board | undefined
     const was = { status: '', task: '' }

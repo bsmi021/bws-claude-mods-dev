@@ -200,6 +200,17 @@ describe('bouncer', () => {
     await ui.unmount()
   })
 
+  test('bws-better automatic mode on: the bouncer stands aside, nothing is classified, the prompt is not held', { options: { bounce: 'block' } }, async ($, on) => {
+    const { seen } = world(on)
+    // bws-better owns this value; the test answers a read of it as that plugin would.
+    on('state.get', ($, e, next) => (e.plugin === 'bws-better' && e.key === 'auto' ? ({ value: { value: true, version: 1 } } as never) : next(e)))
+    const r = await $.prompt.submit({ text: PROMPT, origin: COMPOSER, wait: false } as never)
+    expect(r).toMatchObject({ text: PROMPT })
+    expect(seen.classify).toEqual([])
+    expect(seen.complete).toEqual([])
+    expect(seen.sent).toEqual([{ text: PROMPT, asUser: undefined }])
+  })
+
   test('a clear prompt passes: the classifier says no, the prompt is sent as typed, no reason call', { options: { bounce: 'block' } }, async ($, on) => {
     const { seen } = world(on, { verdict: 'no' })
     const text = 'Fix the null check in src/auth.ts line 42 and run npm test.'

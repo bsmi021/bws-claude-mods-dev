@@ -5,7 +5,7 @@ import { isShown, makeSummary, parseSummary } from '../hooks/kit/summary'
 
 describe('mod chip list', () => {
   test('the option names known mods in order; unknown names and repeats are dropped', () => {
-    expect(parseMods(DEFAULT_MODS)).toEqual(['bws-memory', 'bws-diagram', 'bws-skillgate', 'bws-secrets'])
+    expect(parseMods(DEFAULT_MODS)).toEqual(['bws-memory', 'bws-diagram', 'bws-skillgate', 'bws-secrets', 'bws-better'])
     expect(parseMods(' BWS-Secrets ; bws-memory, nope, bws-memory ')).toEqual(['bws-secrets', 'bws-memory'])
     expect(parseMods('')).toEqual([])
   })
@@ -18,6 +18,13 @@ describe('mod chip list', () => {
     expect(chips.map(c => c.label)).toEqual(['3 secrets', 'memory updating'])
     expect(chips.map(c => c.color)).toEqual(['success', undefined])
     expect(chips[1]?.isDim).toBe(true)
+  })
+  test('bws-better: its auto chip is green, a failed upgrade is amber with the reason', () => {
+    const chips = modChips(['bws-better'], { 'bws-better': makeSummary('ok', 'better auto') })
+    expect(chips.map(c => [c.label, c.color])).toEqual([['better auto', 'success']])
+    const failed = modChips(['bws-better'], { 'bws-better': makeSummary('warn', 'upgrade failed', 'The model took too long to answer.') })
+    expect(failed[0]?.color).toBe('warning')
+    expect(failed[0]?.detail).toBe('The model took too long to answer.')
   })
   test('warn and bad get their colours; detail rides along', () => {
     const chips = modChips(['bws-memory', 'bws-skillgate'], { 'bws-memory': makeSummary('warn', 'dream due', 'x'), 'bws-skillgate': makeSummary('bad', 'gate error') })

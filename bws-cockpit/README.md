@@ -104,7 +104,7 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 - **`/projects`** lists them; `/projects refresh` rebuilds the index.
 
 ### Mod chips
-- **One chip per loaded, non-idle video-derived mod** in the action bar, after the board chip: `bws-memory`, `bws-diagram`, `bws-skillgate`, `bws-secrets`. Each mod publishes one `summary` state atom (`{ state: idle|busy|ok|warn|bad, label, detail? }`, defined in `bws-kit/summary.ts`). `idle`, `null`, a malformed value or a mod that is not loaded draws nothing.
+- **One chip per loaded, non-idle video-derived mod** in the action bar, after the board chip: `bws-memory`, `bws-diagram`, `bws-skillgate`, `bws-secrets`, `bws-better`. Each mod publishes one `summary` state atom (`{ state: idle|busy|ok|warn|bad, label, detail? }`, defined in `bws-kit/summary.ts`). `idle`, `null`, a malformed value or a mod that is not loaded draws nothing.
 - **`modSummaries`** picks which of those four to show, and in what order. Atoms are typed per plugin, so the list is closed: other names are ignored.
 - cockpit reads the atoms (no dependency, like bws-board's) and vendors `summary.ts` from bws-kit (`kit.json`, `hooks/kit/`; `python tools/sync-kit.py` refreshes it).
 
@@ -192,7 +192,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `shelfNudge` | `true` | The shelf line in a conversation's opening context |
 | `dashboardOnStart` | `true` | Open the dashboard at session start even with nothing waiting, on Assumptions. Needs 144 terminal columns or Desktop |
 | `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
-| `modSummaries` | `bws-memory,bws-diagram,bws-skillgate,bws-secrets` | Mods whose `summary` atom shows as a bar chip; others are ignored |
+| `modSummaries` | `bws-memory,bws-diagram,bws-skillgate,bws-secrets,bws-better` | Mods whose `summary` atom shows as a bar chip; others are ignored |
 | `cacheTtlMinutes` | `60` | How long the main thread's prompt cache lasts after its last turn (sub-agents about 5; not counted here) |
 | `cacheLowMinutes` | `5` | The cache chip turns warning, and auto handoff fires, when under this many minutes are left |
 | `autoHandoff` | `true` | Write HANDOFF.md once per cache window when the cache runs low while idle (see Cache clock) |
@@ -219,6 +219,7 @@ Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 
 
 | Check | Result |
 |---|---|
+| 0.17.2 (2.1.300) | `bws-better` joins the bar's mod chips (the `modSummaries` known list and default). The gate (validate, tests, tsc) is the check; not looked at in a live bar |
 | 0.17.1 (2.1.296) | Merge of 0.15.1 (`/cockpit hide` and `/cockpit show`, `dashboardOnStart`) onto 0.17.0: the gate (validate, tests, tsc) is the check; the 0.15.1 line below is its own receipt. Not checked by eye in a live bar |
 | 0.17.0 (2.1.296) | Cache clock: validate, tsc and `claude plugin test` in the M1 receipts (`runs/2026-10-13-mods-m1-cacheclock/receipts/`), 199/199 tests: the pure clock (state boundaries, chip text, records, the auto-handoff decision table, `/cacheclock` text) and the bar (chip hidden before a turn, counts down a minute at a time, warning under 5 min, cold after the hour, hidden after a `/clear`, drawn on terminal and desktop); the auto handoff (fires once, not mid-turn, not without a new turn, a manual `/handoff` counts, a failed attempt is not retried, a new turn starts a new window, off when `autoHandoff` is false). Time is stubbed (mock clock), so no live cache was measured. The live probe is in the M1 receipts |
 | 0.16.0 (2.1.296) | Mod chips: validate, tsc and tests in the gate receipt of `runs/2026-10-13-mods-m0-kit`. Tested with stubbed atoms on terminal and desktop only; no real mod publishes a summary yet, so no chip has been seen in a live bar |

@@ -3,6 +3,11 @@
 Turns a vague prompt into a specific one Claude Code can act on, then lets you send it. Optionally, it also holds a vague
 prompt before it is sent and says what is missing (the prompt bouncer, below).
 
+It differs from `/better` (bws-better): `/enhance` asks nothing and grounds its rewrite in this project's instruction
+files, file tree, skills and the recent conversation, while `/better` asks you a few multiple-choice questions and
+needs no project context. While `/better on` (its automatic mode) is set, the bouncer stands aside, so only one of
+them takes a typed prompt.
+
 The rewrite is grounded in what this session actually has:
 - the instruction files the session loaded (user and project `CLAUDE.md`), plus the project's `AGENTS.md` / `CLAUDE.md` / `.claude/CLAUDE.md`
 - installed skills and slash commands (names + one-line descriptions), connected MCP servers
@@ -94,7 +99,7 @@ or add the folder's absolute path to `CLAUDE_CODE_PLUGIN_DIRS`.
 ## Tested
 
 Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes (receipt `runs/2026-10-13-mods-m2-bouncer/receipts/t06-validate.txt`).
-Automated: `claude plugin test`, 47 tests: the enhance tests, the bouncer's table tests (skips, glossary, reason cut,
+Automated: `claude plugin test`, 48 tests: the enhance tests, the bouncer's table tests (skips, glossary, reason cut,
 summary shape, status text) and its mod tests (block, warn, Send anyway, Enhance, the failure branches, the 4 s timeout,
 the headless cases, `/bounce`). Type-check: tsc 5.8.3 strict through the gate. Live: headless `claude -p` runs return
 grounded rewrites (0.2.x).
