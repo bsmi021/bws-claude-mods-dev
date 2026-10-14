@@ -1,0 +1,17 @@
+{
+  "name": "bws-better",
+  "version": "0.1.0",
+  "description": "/better <rough prompt>: asks up to three quick multiple-choice questions, rewrites the prompt with a clear goal, audience, format and finish line, and shows the original and the upgrade side by side. Nothing runs until you press Run. /better on turns typed prompts into upgrades automatically.",
+  "author": {
+    "name": "Brian"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Upgrade model",
+      "description": "Model alias or id that writes the questions and the rewrite (haiku, sonnet, opus, or a full id).",
+      "default": "haiku"
+    }
+  }
+}

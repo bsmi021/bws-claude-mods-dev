@@ -1,0 +1,42 @@
+
+tests\better.test.ts:
+(pass) the full flow > /better to Run: questions, answers, rewrite, review, Run sends the upgrade as the person [139.20ms]
+(pass) the full flow > no helpful question: straight to the rewrite [48.25ms]
+(pass) the full flow > Edit puts the upgrade in the box and the next Enter sends it untouched [52.28ms]
+(pass) cancel and errors > Cancel closes the pane and puts the original prompt back in the box [41.59ms]
+(pass) cancel and errors > Cancel keeps what was typed meanwhile [41.36ms]
+(pass) cancel and errors > a failed call shows a calm card; Try again recovers, Send my original sends the words as typed [45.74ms]
+(pass) automatic mode > on: a typed prompt goes to the pane instead of being sent; off: it is sent [50.05ms]
+(pass) automatic mode > pass-through: short replies, mid-turn, attachments, and ">" stripped [36.99ms]
+(pass) automatic mode > the upgrade the mod sends never comes back to the pane [53.88ms]
+(pass) automatic mode > too narrow: the words go back in the box and one line says so [39.33ms]
+(pass) reload > a reload mid-step sends the call again and the stale one is dropped [59.25ms]
+(pass) commands and widths > /better alone opens a box to type one [41.47ms]
+(pass) commands and widths > headless: /better prints the upgrade [33.01ms]
+(pass) commands and widths > /better history with nothing saved [33.17ms]
+(pass) commands and widths > the review draws at 40 columns [35.10ms]
+(pass) commands and widths > the review draws at 160 columns [41.44ms]
+
+tests\lib.test.ts:
+(pass) which prompts are taken > a typed prompt is taken while auto is on [2.05ms]
+(pass) which prompts are taken > with auto off nothing is touched, ">" included [0.44ms]
+(pass) which prompts are taken > slash commands, attachments, mid-turn prompts and hidden prompts pass [0.57ms]
+(pass) which prompts are taken > short replies pass [0.73ms]
+(pass) which prompts are taken > ">" sends the rest as it is [0.34ms]
+(pass) which prompts are taken > the mod's own submit, and anything not typed, is never taken (no loop) [0.52ms]
+(pass) which prompts are taken > after Edit the next typed prompt passes once, even mid-turn or with auto off [0.27ms]
+(pass) reading the questions > fenced JSON, chatter around it, options clipped and deduped, at most three [0.58ms]
+(pass) reading the questions > none needed, and unreadable [0.32ms]
+(pass) reading the rewrite > JSON with the added list [0.30ms]
+(pass) reading the rewrite > plain text is taken as the prompt; empty or broken JSON is not [0.37ms]
+(pass) reading the rewrite > answers given are used, skipped ones left out [0.48ms]
+(pass) drawing > big digits are three rows of heavy lines, equal widths [0.35ms]
+(pass) drawing > every row fits 40 columns [5.86ms]
+(pass) drawing > every row fits 160 columns [0.64ms]
+(pass) drawing > narrow falls back: plain stats, stacked cards, marks-only tracker [0.53ms]
+(pass) history and restore > newest first, one per id, twenty at most [0.79ms]
+(pass) history and restore > the original goes back without losing what was typed [0.49ms]
+
+ 34 pass
+ 0 fail
+Ran 34 tests across 2 files. [1.17s]

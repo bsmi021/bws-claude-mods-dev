@@ -1,0 +1,16 @@
+Validating plugin manifest: C:\Projects\bws.mods.claude-code\bws-better\.claude-plugin\plugin.json
+
+  ❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
+  ❯ types ./types/index.d.ts declares state: bws-better.flow, bws-better.auto, bws-better.history, bws-better.armed
+
+Validating hooks: C:\Projects\bws.mods.claude-code\bws-better\hooks\hooks.json
+
+  ❯ ./register.tsx hooks: session.start, command.run{command=better}, prompt.submit, ui.close, ui.render{component=Pane, requestId=bws-better}
+  ❯ ./register.tsx gating hook with .catch: command.run{command=better}
+  ❯ ./register.tsx gating hook with .catch: prompt.submit
+  ❯ ./register.tsx gating hook without .catch: ui.close
+  ❯ ./register.tsx calls: $.clock.after, $.clock.now (via doRewrite), $.command.register, $.model.complete (via askQuestions, doRewrite, headless), $.prompt.fill (via edit, restore), $.prompt.read (via restore), $.prompt.submit (via run, sendOriginal), $.session.surfaces, $.state.get, $.state.set, $.store.get, $.store.set (via doRewrite, setAuto), $.ui.close (via closePane), $.ui.copy (via copy), $.ui.log, $.ui.open (via openPane), $.ui.resolve
+  ❯ ./register.tsx state writes: bws-better.armed, bws-better.auto, bws-better.flow, bws-better.history
+  ❯ ./register.tsx state reads: bws-better.armed, bws-better.auto, bws-better.flow, bws-better.history
+
+✔ Validation passed
