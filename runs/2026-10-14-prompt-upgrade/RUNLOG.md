@@ -66,3 +66,4 @@ Screens are in `screens/`. Narrow: 72 columns, main screen, inline pane. Wide: 1
 - After automatic mode takes a prompt, `clearTaken` empties the box 10 ms later if it still holds that prompt. Cancel restores it.
 - New tests: the narrow `/better <prompt>`, the box cleared after a take with Cancel restoring it, and the box left alone when something else was typed. Run against the old code, the defect tests fail.
 - Checks: validate passed, 37 tests pass, tsc exit 0 (receipts `*-0.1.1.txt`). Marketplace 1.2.1.
+- Released: PR #11 merged (a6d2de1). Publish refreshed (file list and contents match), checks rerun there. Pushed to mods/main as 1a1400d. Release v1.2.1: https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.2.1
