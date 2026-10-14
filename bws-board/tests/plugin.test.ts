@@ -345,6 +345,23 @@ describe('board: two sessions', () => {
   })
 })
 
+describe("board: the task follows the person's words", () => {
+  test("a plugin sending the person's own words (asUser) sets the card task; a plugin's own message does not", async ($, on) => {
+    const w = world(on, { roles: { [A]: 'api' } })
+    await $.session.start({ cwd: CWD } as never)
+    await $.prompt.submit({ text: 'make a landing page for my game', wait: false, origin: { kind: 'composer' } } as never)
+    expect(cardOf(w.files, A)?.task).toBe('make a landing page for my game')
+
+    // bws-better's Run: the upgrade goes in as the person's words.
+    await $.prompt.submit({ text: 'Write a one-screen landing page for [game name] in plain HTML.', wait: false, origin: { kind: 'plugin', name: 'bws-better', asUser: true } } as never)
+    expect(cardOf(w.files, A)?.task).toBe('Write a one-screen landing page for [game name] in plain HTML.')
+
+    // A plugin's own message is not the person's.
+    await $.prompt.submit({ text: 'A reminder from some plugin', wait: false, origin: { kind: 'plugin', name: 'other' } } as never)
+    expect(cardOf(w.files, A)?.task).toBe('Write a one-screen landing page for [game name] in plain HTML.')
+  })
+})
+
 describe('board: history and digest', () => {
   test('a team run is logged per session, and /board digest draws it', async ($, on) => {
     const w = world(on, { roles: { [A]: 'api', [B]: 'tests' } })

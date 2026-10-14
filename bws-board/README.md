@@ -11,7 +11,7 @@ They work as peers: no lead session, no subagents.
 
 ## What it does
 - **Cards.** Every session in the repository has a card: its session id, an optional role (`api`, `tests`, `ui`, ...),
-  its task (the first line of your latest prompt, with secrets redacted), busy or idle, its run folder (`runs/<date>-<slug>/`
+  its task (the first line of your latest prompt, with secrets redacted; a prompt another mod sends as your own words, such as bws-better's Run, counts as yours), busy or idle, its run folder (`runs/<date>-<slug>/`
   once it writes there), and the files it claimed.
 - **Claims.** Editing a file with Edit, Write or NotebookEdit claims it. So does a Bash or PowerShell command that plainly
   writes a file inside the repository: a redirect, `tee`, `sed -i`, `cp`/`mv`, or the PowerShell write cmdlets

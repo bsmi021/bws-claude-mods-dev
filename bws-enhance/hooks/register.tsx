@@ -46,6 +46,8 @@ const view = atom({ plugin: 'bws-enhance', key: 'view' } as const, IDLE)
 // What /bounce set for this session: mode null leaves the bounce option in charge; warned is the text held once in warn mode.
 const setting = atom({ plugin: 'bws-enhance', key: 'setting' } as const, { mode: null, warned: null } as Setting)
 const summary = atom({ plugin: 'bws-enhance', key: 'summary' } as const, null)
+// bws-better's switch, read-only: while its automatic mode is on it takes the typed prompt, so the bouncer stands aside.
+const betterAuto = atom({ plugin: 'bws-better', key: 'auto' } as const, false)
 // The options, copied in by register on every load.
 let bounceOption: BounceMode = 'off'
 let bounceModel = 'haiku'
@@ -290,6 +292,8 @@ async function showHeld($: EngineInterface, text: string, reason: string) {
 // prompt unchanged, with one debug line that carries no prompt text (FR-PB-05).
 async function bounceCheck($: EngineInterface, e: PromptSubmitInput): Promise<{ drop: string } | null> {
   try {
+    // One mod takes a typed prompt, not two: with bws-better's automatic mode on, its pane is the review.
+    if (await read($, betterAuto)) return null
     const set = await read($, setting)
     const mode = set.mode ?? bounceOption
     if (mode === 'off') return null

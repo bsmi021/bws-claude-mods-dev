@@ -2,6 +2,8 @@ import { test, expect, describe } from 'claude-code/testing'
 import {
   addEntry,
   answerLines,
+  betterSummary,
+  failLine,
   bigDigits,
   cardWidths,
   classify,
@@ -171,5 +173,24 @@ describe('history and restore', () => {
     expect(restoreFill('', 'my prompt')).toEqual({ text: 'my prompt', mode: 'replace' })
     expect(restoreFill('my prompt', 'my prompt')).toBeNull()
     expect(restoreFill('new words', 'my prompt')).toEqual({ text: '\n\nmy prompt', mode: 'append' })
+  })
+})
+
+describe('the cockpit chip and the debug line', () => {
+  test('summary atom shape: busy while a call is out, warn with the reason, ok while auto is on, none otherwise', () => {
+    expect(betterSummary('idle', '', false)).toBeNull()
+    expect(betterSummary('review', '', false)).toBeNull()
+    expect(betterSummary('idle', '', true)).toEqual({ state: 'ok', label: 'better auto' })
+    expect(betterSummary('reading', '', true)).toEqual({ state: 'busy', label: 'upgrading prompt' })
+    expect(betterSummary('rewrite', '', false)).toEqual({ state: 'busy', label: 'upgrading prompt' })
+    expect(betterSummary('error', 'The model took too long to answer.', true)).toEqual({
+      state: 'warn',
+      label: 'upgrade failed',
+      detail: 'The model took too long to answer.',
+    })
+  })
+
+  test('the debug line names the step and the reason, never a prompt', () => {
+    expect(failLine('rewrite', 'api-error')).toBe('bws-better: rewrite failed (api-error); your prompt is safe')
   })
 })

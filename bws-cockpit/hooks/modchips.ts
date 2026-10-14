@@ -1,11 +1,11 @@
-// The action bar's chips for the video-derived mods (bws-memory, bws-diagram, bws-skillgate, bws-secrets): each
+// The action bar's chips for the video-derived mods (bws-memory, bws-diagram, bws-skillgate, bws-secrets, bws-better): each
 // publishes a `summary` atom; a loaded, non-idle mod gets one chip. Pure: no `$`, so tests call it directly.
 
 import { isShown, parseSummary } from './kit/summary'
 import type { SummaryState } from './kit/summary'
 
-// Atoms are typed per plugin, so the list the option can name is closed: these four.
-export const KNOWN_MODS = ['bws-memory', 'bws-diagram', 'bws-skillgate', 'bws-secrets'] as const
+// Atoms are typed per plugin, so the list the option can name is closed: these five.
+export const KNOWN_MODS = ['bws-memory', 'bws-diagram', 'bws-skillgate', 'bws-secrets', 'bws-better'] as const
 export type KnownMod = (typeof KNOWN_MODS)[number]
 
 export const DEFAULT_MODS = KNOWN_MODS.join(',')
