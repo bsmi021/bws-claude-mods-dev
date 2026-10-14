@@ -43,3 +43,9 @@ Build a Claude Code mod that upgrades a rough prompt before it is sent. It opens
 
 ## Assumption review (2026-10-14)
 - You confirmed all ten assumptions (A1 to A10). No changes were needed.
+
+## Release (2026-10-14)
+- PR #10 merged into main (51d1214).
+- The `publish` branch was refreshed with git restore from 51d1214. The file list and contents match main. The README lists bws-better, now twelve mods.
+- Checks in the publish copy: validate passed, 34 tests pass, tsc exit 0. Pushed to mods/main as 9e8e854.
+- Release bws-mods 1.2.0, tag v1.2.0: https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.2.0
