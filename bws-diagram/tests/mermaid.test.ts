@@ -111,4 +111,21 @@ describe('FR-DG-04: pinned from the reply when the turn ends', () => {
     await drain(w.clock)
     expect(await run($, 'diagram', 'status')).toContain('0 drawn, 1 pinned')
   })
+
+  test('the same diagram written differently replaces its earlier pin: status says 1 pinned, the newer one, and the pane opens again', async ($, on) => {
+    const w = world(on, { rows: [] })
+    await $.session.start(START)
+    const first = ['graph TD', '  A[Boil water] --> B[Warm the pot]', '  B --> C[Add leaves]'].join('\n')
+    const again = ['flowchart TD', 'x1[Boil water]-->x2[Warm the pot];', 'x2 --> x3[Add leaves]'].join('\n') // other header, ids, spacing
+    const other = ['graph TD', '  A[Boil water] --> B[Warm the pot]', '  B --> C[Add milk]'].join('\n')
+    await turn($, { answer: reply(first) })
+    await turn($, { answer: reply(again) })
+    await drain(w.clock)
+    const status = await run($, 'diagram', 'status')
+    expect(status).toContain('0 drawn, 1 pinned')
+    expect(status).toContain('Pinned diagrams:\n> 1. Pinned: Boil water (3 nodes, 2 edges)')
+    expect(w.seen.opened.length).toBe(2)
+    await turn($, { answer: reply(other) }) // one label differs: a different diagram
+    expect(await run($, 'diagram', 'status')).toContain('0 drawn, 2 pinned')
+  })
 })
