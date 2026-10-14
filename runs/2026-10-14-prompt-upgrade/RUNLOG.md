@@ -60,3 +60,9 @@ Screens are in `screens/`. Narrow: 72 columns, main screen, inline pane. Wide: 1
 - **Defect 2:** after a drop the engine keeps the typed text in the box. The pane then gets no keyboard focus, and Enter in the box would take the same prompt again. Fix: empty the box once the pane has the prompt (Cancel already puts it back).
 - **Note:** the inline pane is about 10 rows tall in a 38-row window, so questions 2 and 3 need a scroll. The `rows: 30` request is capped by the layout.
 - The first attempt sent `C:/Program Files/Git/better ...` (Git Bash path conversion when typing through the driver). The driven Opus only replied in text; I stopped it. No files changed.
+
+## 0.1.1 fixes (2026-10-14)
+- The `/better` command hook (prompt, alone, history) now awaits `openPane`. A pane that is not placed answers the command with the narrow line and puts the words back.
+- After automatic mode takes a prompt, `clearTaken` empties the box 10 ms later if it still holds that prompt. Cancel restores it.
+- New tests: the narrow `/better <prompt>`, the box cleared after a take with Cancel restoring it, and the box left alone when something else was typed. Run against the old code, the defect tests fail.
+- Checks: validate passed, 37 tests pass, tsc exit 0 (receipts `*-0.1.1.txt`). Marketplace 1.2.1.

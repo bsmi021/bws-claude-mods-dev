@@ -55,7 +55,9 @@ function world(on: On, w: World = {}) {
     seen.sent.push({ text: e.text, asUser: o.asUser, kind: o.kind })
     return { text: e.text } as never
   })
-  on('ui.open', ($, e) => {
+  on('ui.open', async ($, e) => {
+    // Settles a few ticks late, as a real open does, so a caller that does not wait for it answers first.
+    for (let i = 0; i < 5; i++) await Promise.resolve()
     seen.opened.push(e.id)
     return { value: w.isPlaced === false ? { isPlaced: false, reason: 'narrow' } : { isPlaced: true } } as never
   })
@@ -254,6 +256,28 @@ describe('automatic mode', () => {
     expect(seen.opened).toEqual([])
   })
 
+  test('taking a prompt empties the box the engine left it in; Cancel puts it back', async ($, on) => {
+    const { clock, box, setBox } = world(on)
+    await $.command.run({ command: 'better', args: 'on' } as never)
+    setBox(ROUGH) // the engine keeps a held prompt's text in the box
+    await $.prompt.submit(typed(ROUGH))
+    await clock.advance(50)
+    expect(box()).toBe('')
+    const ui = await $.ui.mount(pane('terminal'))
+    await ui.press({ key: 'cancel' })
+    await ui.unmount()
+    expect(box()).toBe(ROUGH)
+  })
+
+  test('the box is left alone when something else was typed in it meanwhile', async ($, on) => {
+    const { clock, box, setBox } = world(on)
+    await $.command.run({ command: 'better', args: 'on' } as never)
+    await $.prompt.submit(typed(ROUGH))
+    setBox('a different draft')
+    await clock.advance(50)
+    expect(box()).toBe('a different draft')
+  })
+
   test('too narrow: the words go back in the box and one line says so', async ($, on) => {
     const { seen, clock, box } = world(on, { isPlaced: false })
     await $.command.run({ command: 'better', args: 'on' } as never)
@@ -282,6 +306,16 @@ describe('reload', () => {
 })
 
 describe('commands and widths', () => {
+  test('/better <prompt> in a window too narrow for the pane: the answer says so and the words go back', async ($, on) => {
+    const { seen, clock, box } = world(on, { isPlaced: false })
+    const r = await $.command.run({ command: 'better', args: ROUGH } as never)
+    expect(r.text).toMatch(/too narrow/)
+    expect(box()).toBe(ROUGH)
+    await clock.advance(50)
+    expect(seen.asks).toEqual([])
+    expect(seen.closed).toContain('bws-better')
+  })
+
   test('/better alone opens a box to type one', async ($, on) => {
     const { seen, clock } = world(on)
     const r = await $.command.run({ command: 'better', args: '' } as never)
