@@ -82,3 +82,4 @@ The 10 changes from the suite review, one branch (`feat/suite-fit`):
 10. `AGENTS.md` records the two lessons: await `$.ui.open` inside a `command.run` hook, and clear the box after a `{ drop }`.
 - Versions: bws-better 0.1.2, bws-cockpit 0.17.2, bws-enhance 0.3.1, bws-board 0.5.1. Marketplace 1.2.2. The other mods are untouched.
 - Gate (`python tools/mods-gate.py`): all 12 plugins, the kit and the kit sync pass. Receipt `receipts/gate-1.2.2.txt`.
+- Released: PR #12 merged (6ee2e3c). Publish refreshed from it (file list and contents match); validate, tests and tsc rerun there for the four changed mods. Pushed to mods/main as 48ca477. Release v1.2.2: https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.2.2
