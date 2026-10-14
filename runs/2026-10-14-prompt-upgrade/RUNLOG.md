@@ -40,3 +40,6 @@ Build a Claude Code mod that upgrades a rough prompt before it is sent. It opens
 - The `publish` branch has not been refreshed, so the marketplace install line works only after that.
 - To use it today: `claude --plugin-dir C:/Projects/bws.mods.claude-code/bws-better`, or add that folder to `CLAUDE_CODE_PLUGIN_DIRS`.
 - Fix after review: a failed pane open in the auto path resets the flow, so the pane can't sit on "Reading" for a prompt that was already sent. Checks re-run: 34 pass, validate passed, tsc exit 0.
+
+## Assumption review (2026-10-14)
+- You confirmed all ten assumptions (A1 to A10). No changes were needed.
