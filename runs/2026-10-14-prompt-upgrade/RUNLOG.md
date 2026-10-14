@@ -49,3 +49,14 @@ Build a Claude Code mod that upgrades a rough prompt before it is sent. It opens
 - The `publish` branch was refreshed with git restore from 51d1214. The file list and contents match main. The README lists bws-better, now twelve mods.
 - Checks in the publish copy: validate passed, 34 tests pass, tsc exit 0. Pushed to mods/main as 9e8e854.
 - Release bws-mods 1.2.0, tag v1.2.0: https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.2.0
+
+## Visual check (2026-10-14, drive-screen, Claude Code 2.1.300)
+Screens are in `screens/`. Narrow: 72 columns, main screen, inline pane. Wide: 160 columns, fullscreen, pane docked beside the cockpit Dashboard.
+- **Look, at both widths:** title and gold rule, tracker colours, gold badges turning to green checks, slate chips, the gold primary chip, muted Cancel, 3-row digits in rounded tiles, the "+" list, and the gold-outlined upgrade card all render as specified.
+  - Narrow: the cards sit side by side.
+  - Wide, docked at about 58 columns: the cards stack.
+- **Works live:** automatic mode takes a typed prompt; clicks on chips; Enter on the focused chip; auto-advance to the rewrite; Cancel and the close mark put the prompt back without duplicating it.
+- **Defect 1:** `/better <prompt>` at 72 columns fell back to "too narrow". The open is not awaited inside the `command.run` hook, so the engine treats it as unasked (144-column floor). The automatic path awaits the open inside its hook and was placed at 72 columns. Fix: await `openPane` in the command hook.
+- **Defect 2:** after a drop the engine keeps the typed text in the box. The pane then gets no keyboard focus, and Enter in the box would take the same prompt again. Fix: empty the box once the pane has the prompt (Cancel already puts it back).
+- **Note:** the inline pane is about 10 rows tall in a 38-row window, so questions 2 and 3 need a scroll. The `rows: 30` request is capped by the layout.
+- The first attempt sent `C:/Program Files/Git/better ...` (Git Bash path conversion when typing through the driver). The driven Opus only replied in text; I stopped it. No files changed.
