@@ -92,12 +92,17 @@ async function closePane($: EngineInterface) {
   await $.ui.close({ id: PANE })
 }
 
-// The pane could not be placed: close it, put the words back, say so in one line.
-async function notPlaced($: EngineInterface, original: string) {
+// The pane could not be placed: close it, put the words back, and answer with the one line that says so.
+async function notPlaced($: EngineInterface, original: string): Promise<string> {
   stop.abort()
   await closePane($)
   await restore($, original)
-  $.ui.log(original.trim() === '' ? NARROW_PANE : NARROW)
+  return original.trim() === '' ? NARROW_PANE : NARROW
+}
+
+// The engine keeps a held prompt's text in the box; the pane has it now, and Cancel puts it back.
+async function clearTaken($: EngineInterface, original: string) {
+  if ((await $.prompt.read()).text.trim() === original) await $.prompt.fill({ text: '' })
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -333,19 +338,22 @@ export const register: Register = (on, options) => {
         if (isHeadless) return { text: list.map(x => `${x.original}\n→ ${x.upgraded}`).join('\n\n') }
         stop.abort()
         await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'history' }))
-        void openPane($).then(r => (r.isPlaced ? undefined : notPlaced($, '')))
+        if (!(await openPane($)).isPlaced) return { text: await notPlaced($, '') }
         return { text: `Your last ${list.length} ${list.length === 1 ? 'upgrade is' : 'upgrades are'} in the Prompt Upgrade pane.` }
       }
       if (arg === '') {
         if (isHeadless) return { text: 'Usage: /better <rough prompt>, /better on, /better off, /better history.' }
         stop.abort()
         await update($, flow, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'compose' }))
-        void openPane($).then(r => (r.isPlaced ? undefined : notPlaced($, '')))
+        if (!(await openPane($)).isPlaced) return { text: await notPlaced($, '') }
         return { text: 'Type your rough prompt in the Prompt Upgrade pane.' }
       }
       if (isHeadless) return await headless($, arg)
       const attempt = await begin($, arg)
-      void openPane($).then(r => (r.isPlaced ? later($, () => askQuestions($, attempt)) : notPlaced($, arg)))
+      // Awaited inside the hook: an open behind the person's command is placed at any width; one made after the
+      // hook has answered counts as unasked and waits below 144 columns. The model call still goes out later.
+      if (!(await openPane($)).isPlaced) return { text: await notPlaced($, arg) }
+      later($, () => askQuestions($, attempt))
       return { text: 'Upgrading your prompt in the Prompt Upgrade pane. Nothing runs until you press Run.' }
     } catch (err) {
       return { text: `Prompt Upgrade could not start: ${reason(err)}` }
@@ -375,6 +383,7 @@ export const register: Register = (on, options) => {
       return { drop: NARROW }
     }
     later($, () => askQuestions($, attempt))
+    $.clock.after(10, () => void clearTaken($, original).catch(() => undefined))
     return { drop: TAKEN }
   }).catch(($, e, nxt) => nxt(e))
 

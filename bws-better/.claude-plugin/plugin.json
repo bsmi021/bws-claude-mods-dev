@@ -1,6 +1,6 @@
 {
   "name": "bws-better",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "/better <rough prompt>: asks up to three quick multiple-choice questions, rewrites the prompt with a clear goal, audience, format and finish line, and shows the original and the upgrade side by side. Nothing runs until you press Run. /better on turns typed prompts into upgrades automatically.",
   "author": {
     "name": "Brian"

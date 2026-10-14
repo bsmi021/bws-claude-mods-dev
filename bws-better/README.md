@@ -62,8 +62,17 @@ Or install it from the marketplace, at the prompt of a terminal session:
 
 ## Tested
 
-- Claude Code 2.1.299, `claude plugin validate`, `claude plugin test` (34 tests) and tsc 5.8.3 (strict).
-- Live: headless `claude -p "/better ..."` on Windows.
-- The pane was checked through the test kit on the terminal and desktop surfaces at 40 and 160 columns.
-  - It has not been looked at in a real terminal window.
-  - Closing it by hand (Esc or its close mark) mid-upgrade is not covered by a test: the test engine cannot raise that close.
+- Claude Code 2.1.299 and 2.1.300 on Windows: `claude plugin validate`, `claude plugin test` (37 tests) and tsc 5.8.3 (strict).
+- Live headless: `claude -p "/better ..."`.
+- Live in Windows Terminal, at 72 columns (pane inline above the prompt) and 160 columns (fullscreen, pane docked):
+  - questions, chips, answering by click and by Enter, the rewrite, the review tiles and cards;
+  - automatic mode taking a typed prompt;
+  - Cancel and the pane's close mark putting the prompt back.
+- Not pressed live: Run it, Edit and Copy. The tests cover them.
+- In a short window the inline pane is about 10 rows tall, so later questions and the cards need a scroll.
+
+## Changes
+
+- 0.1.1:
+  - `/better <prompt>` now opens its pane at any width; it no longer falls back to "too narrow" below 144 columns.
+  - A prompt taken by automatic mode is cleared from the box, so the box is free and Enter cannot send the same prompt to the pane again. Cancel still puts it back.
