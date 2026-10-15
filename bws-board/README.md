@@ -71,7 +71,7 @@ They work as peers: no lead session, no subagents.
   `anyone` never wake anybody.
 - **`/board`** prints the board: sessions, roles, tasks, claims, and asks open, taken or settled in the last hour.
   - `/board role <name>` sets this session's role; `/board role clear` removes it.
-  - `/board pane` opens the Board tab of [bws-cockpit](../bws-cockpit/README.md)'s dashboard, redrawn on every heartbeat, from the `lines` and `summary` this mod keeps. Without bws-cockpit it prints the board as `/board` does. (Before 0.5.0 bws-board drew its own pane.)
+  - `/board pane` opens the Board tab of [bws-cockpit](../bws-cockpit/README.md)'s dashboard, redrawn on every heartbeat, from the `pane` (0.6.0: the board as cards), `lines` and `summary` this mod keeps. Without bws-cockpit it prints the board as `/board` does. (Before 0.5.0 bws-board drew its own pane.)
   - `/board digest [days]` writes the team digest page (below) and prints its path.
 - `board_status { task? }` gives Claude the same listing, and can set the task line.
 - `board_release { paths? }` gives up claims, all of them and the git lease when no paths are given.
@@ -221,3 +221,8 @@ In the live run, cockpit's Session Bus was switched off, and its text was absent
 - Static validation passed, tsc clean, 83 automated tests (+1: the redirect and the fallback).
 - **Live:** in an interactive session with the dashboard, `/board pane` opened its Board tab, and an ask from another
   session raised that tab with `1 for you`.
+
+0.6.0, the Board tab as cards (`runs/2026-10-15-board-cards/`), Claude Code 2.1.296 on Windows 11:
+- New state key `pane`: the board pre-worded for bws-cockpit 0.18.0's card layout (one card per session, one per ask). `lines` is kept for older cockpits and headless text.
+- Static validation passed, tsc clean, 86 automated tests (+2: the pane view, and an empty board).
+- **Live** (Claude Code 2.1.301, Windows Terminal, `receipts/02-board-cards.png`): an interactive `api` session with a live headless `tests` peer and an urgent ask; `/dashboard board` drew three bordered cards (this session orange, busy peer green, urgent ask red with 🔥), emoji aligned inside the borders.

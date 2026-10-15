@@ -1,6 +1,6 @@
 {
   "name": "bws-board",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Blackboard for a team of Claude Code sessions in one repository: each posts what it works on and its role, sees the others, claims the files it edits so no one clips them, and asks the others for help (ask, take, done) with an optional urgent wake; lets one session at a time run git add/commit/push in a working tree refuses a commit that would sweep up a peer's claimed files, and refuses git commands (stash, reset --hard, checkout ., restore, clean, rm) that would overwrite a peer's changed files; keeps a history of who held, asked and woke what, and /board digest turns it into a team timeline page.",
   "author": {
     "name": "Brian"

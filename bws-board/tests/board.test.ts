@@ -20,6 +20,7 @@ import {
   nextAskId,
   normFile,
   normRole,
+  paneView,
   parseCard,
   cardText,
   readBoard,
@@ -373,5 +374,42 @@ describe('asks', () => {
     const b = board(card(A, { role: 'api', asks: [ask('aaaaaaaa-1', 'role:tests'), ask('aaaaaaaa-2', 'role:ui', { state: 'done' })] }), card(B, { role: 'tests' }))
     expect(summary(b, tests, NOW, STALE_MS)).toEqual({ agents: 2, openAsks: 1, askedOfMe: 1 })
     expect(summary(b, api, NOW, STALE_MS)).toEqual({ agents: 2, openAsks: 1, askedOfMe: 0 })
+  })
+})
+
+describe('pane cards', () => {
+  test('this session first, then live peers, then shown asks, all worded', () => {
+    const lim = { ...LIM, leaseMs: 120_000 }
+    const a = card(A, {
+      role: 'api',
+      status: 'busy',
+      task: 'fixing the bow',
+      run: '2026-10-15-bow',
+      claims: Array.from({ length: 8 }, (_, i) => ({ path: `c:/proj/src/f${i}.ts`, since: NOW - 1000, at: NOW - 1000 })),
+      git: { since: NOW - 5000, at: NOW - 3000, verb: 'commit', tree: 'c:/proj' },
+      asks: [ask('aaaaaaaa-1', 'role:tests', { urgent: true }), ask('aaaaaaaa-2', 'anyone', { state: 'withdrawn' })],
+    })
+    const b = card(B, { role: 'tests', seenAt: NOW - 12_000, acts: [{ askId: 'aaaaaaaa-1', kind: 'take', at: NOW - 100 }] })
+    const gone = card(C, { role: 'ui', seenAt: NOW - STALE_MS - 1 })
+    const v = paneView(board(a, b, gone), { id: A, role: 'api' }, NOW, lim)
+    expect(v.self).toEqual({
+      id: 'aaaaaaaa',
+      who: 'api',
+      status: 'busy',
+      task: 'fixing the bow',
+      run: '2026-10-15-bow',
+      seen: '0s ago',
+      claims: ['src/f2.ts', 'src/f3.ts', 'src/f4.ts', 'src/f5.ts', 'src/f6.ts', 'src/f7.ts'],
+      claimsMore: 2,
+      lease: 'git commit 3s ago',
+    })
+    expect(v.peers.map(p => [p.who, p.status, p.seen, p.lease])).toEqual([['tests', 'idle', '12s ago', null]])
+    expect(v.asks[0]).toEqual({ id: 'aaaaaaaa-1', view: 'taken', urgent: true, from: 'api (aaaaaaaa)', to: 'tests', text: 'do aaaaaaaa-1', actor: 'tests (bbbbbbbb)', note: null })
+    expect(v.asks.map(x => x.view)).toEqual(['taken', 'withdrawn'])
+  })
+
+  test('a session not yet on the board gets an empty card of its own', () => {
+    const v = paneView(board(), { id: A, role: null }, NOW, LIM)
+    expect([v.self.who, v.self.task, v.self.claims, v.peers, v.asks]).toEqual(['no role', '', [], [], []])
   })
 })

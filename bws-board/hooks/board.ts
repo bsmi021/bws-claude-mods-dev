@@ -565,6 +565,58 @@ export const askLine = (v: AskView, b: Board) =>
 export const shownAsks = (views: readonly AskView[], now: number) =>
   views.filter(v => v.view === 'open' || v.view === 'taken' || v.view === 'declined' || now - v.at < OUTBOX_MS)
 
+// The pane's cards, every field already worded, so the dashboard only lays them out.
+export type SessionCard = {
+  id: string
+  who: string
+  status: 'busy' | 'idle'
+  task: string
+  run: string | null
+  seen: string
+  claims: string[]
+  claimsMore: number
+  lease: string | null
+}
+export type AskCard = { id: string; view: ViewState; urgent: boolean; from: string; to: string; text: string; actor: string | null; note: string | null }
+export type PaneView = { self: SessionCard; peers: SessionCard[]; asks: AskCard[] }
+
+const CARD_CLAIMS = 6
+
+function sessionCard(b: Board, c: Card, now: number, lim: Limits): SessionCard {
+  const claims = liveClaims(c.claims, now, lim.claimMs)
+  const lease = lim.leaseMs === undefined ? undefined : liveLease(c, now, lim.leaseMs)
+  return {
+    id: shortId(c.sessionId),
+    who: c.role ?? 'no role',
+    status: c.status,
+    task: c.task,
+    run: c.run,
+    seen: agoText(now - c.seenAt),
+    claims: claims.slice(-CARD_CLAIMS).map(cl => relTo(cl.path, b.folder)),
+    claimsMore: Math.max(0, claims.length - CARD_CLAIMS),
+    lease: lease ? `git ${lease.verb} ${agoText(now - lease.at)}${lease.tree === normFile(b.folder, '') ? '' : ` in ${lease.tree}`}` : null,
+  }
+}
+
+export function paneView(b: Board, self: Self, now: number, lim: Limits): PaneView {
+  const me = b.cards[self.id] ?? newCard(self.id, b.folder, now, self.role)
+  const actorOf = (v: AskView) => (v.view === 'taken' && v.taker ? who(b.cards[v.taker], v.taker) : v.view === 'done' && v.by ? who(b.cards[v.by], v.by) : null)
+  return {
+    self: { ...sessionCard(b, me, now, lim), who: self.role ?? 'no role' },
+    peers: livePeers(b, self.id, now, lim.staleMs).map(c => sessionCard(b, c, now, lim)),
+    asks: shownAsks(askViews(b, now, lim.staleMs), now).map(v => ({
+      id: v.id,
+      view: v.view,
+      urgent: v.urgent,
+      from: who(b.cards[v.from], v.from),
+      to: toText(v.to, b),
+      text: shorten(v.text, 240),
+      actor: actorOf(v),
+      note: v.note ? shorten(v.note, 160) : null,
+    })),
+  }
+}
+
 const HOWTO =
   `Board tools: ${TOOL_PREFIX}board_status (peers, claims, asks, unread messages; pass "task" to say what you work on), ` +
   `${TOOL_PREFIX}board_ask (to: a role, a session id or "anyone"; urgent wakes a named idle session), ` +

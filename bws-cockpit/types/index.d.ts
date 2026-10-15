@@ -115,6 +115,30 @@ export type DashView = {
 export type HandoffNudge = { startedAt: number; isDone: boolean }
 
 // bws-kit/summary.ts: what a mod publishes under { plugin, key: 'summary' }; null or idle draws nothing.
+// bws-board's Board tab cards (bws-board/types BoardPane), written out so cockpit loads without bws-board.
+export type BoardSessionCard = {
+  id: string
+  who: string
+  status: 'busy' | 'idle'
+  task: string
+  run: string | null
+  seen: string
+  claims: string[]
+  claimsMore: number
+  lease: string | null
+}
+export type BoardAskCard = {
+  id: string
+  view: 'open' | 'taken' | 'done' | 'declined' | 'withdrawn'
+  urgent: boolean
+  from: string
+  to: string
+  text: string
+  actor: string | null
+  note: string | null
+}
+export type BoardPane = { self: BoardSessionCard; peers: BoardSessionCard[]; asks: BoardAskCard[] }
+
 export type ModSummary = { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string }
 
 declare module 'claude-code' {
@@ -123,8 +147,10 @@ declare module 'claude-code' {
   interface PluginState {
     'bws-board': {
       summary: { agents: number; openAsks: number; askedOfMe: number } | null
-      // the board as last read, drawn by the dashboard's Board tab
+      // the board as last read, drawn by the dashboard's Board tab when pane is absent (bws-board before 0.6.0)
       lines: string[]
+      // the board as cards (bws-board 0.6.0+)
+      pane: BoardPane | null
     }
   }
   // The video-derived mods' summary atoms (bws-kit/summary.ts), read for the bar's chips; each mod declares its own

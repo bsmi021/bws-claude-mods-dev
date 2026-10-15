@@ -38,6 +38,30 @@ export type BoardOwn = {
 
 export type BoardSummary = { agents: number; openAsks: number; askedOfMe: number }
 
+// hooks/board.ts's PaneView: the dashboard's cards, already worded.
+export type BoardSessionCard = {
+  id: string
+  who: string
+  status: 'busy' | 'idle'
+  task: string
+  run: string | null
+  seen: string
+  claims: string[]
+  claimsMore: number
+  lease: string | null
+}
+export type BoardAskCard = {
+  id: string
+  view: 'open' | 'taken' | 'done' | 'declined' | 'withdrawn'
+  urgent: boolean
+  from: string
+  to: string
+  text: string
+  actor: string | null
+  note: string | null
+}
+export type BoardPane = { self: BoardSessionCard; peers: BoardSessionCard[]; asks: BoardAskCard[] }
+
 declare module 'claude-code' {
   // The board tools' inputs, here because the generated MCP types list only the tools the engine saw
   // at its last interactive load, and a test run regenerates them.
@@ -62,6 +86,8 @@ declare module 'claude-code' {
       summary: BoardSummary | null
       // the board as last read, for the pane
       lines: string[]
+      // the same board as cards, for the dashboard's Board tab
+      pane: BoardPane | null
     }
   }
 }
