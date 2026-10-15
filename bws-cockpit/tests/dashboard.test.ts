@@ -476,7 +476,10 @@ describe('dashboard', () => {
     const pane: BoardPane = {
       self: { ...sess, id: 'aaaaaaaa', who: 'api', status: 'busy', task: 'fixing the bow', seen: '0s ago', run: '2026-10-15-bow', lease: 'git commit 3s ago' },
       peers: [{ ...sess, id: 'bbbbbbbb', who: 'tests', status: 'idle', task: '', seen: '12s ago', claims: ['src/a.ts', 'src/b.ts'], claimsMore: 3 }],
-      asks: [{ id: 'aaaaaaaa-1', view: 'open', urgent: true, from: 'api (aaaaaaaa)', to: 'role tests', text: 'run the suite', actor: null, note: null }],
+      asks: [
+        { id: 'aaaaaaaa-1', view: 'open', urgent: true, from: 'api (aaaaaaaa)', to: 'role tests', text: 'run the suite', actor: null, note: null },
+        { id: 'aaaaaaaa-2', view: 'withdrawn', urgent: false, from: 'api (aaaaaaaa)', to: 'anyone', text: 'never mind', actor: null, note: null },
+      ],
     }
     const { clock } = world(on, { board: { summary: { agents: 2, openAsks: 1, askedOfMe: 0 }, lines: ['old text line'], pane } })
     await $.session.start({ cwd: ROOT } as never)
@@ -495,6 +498,8 @@ describe('dashboard', () => {
     expect(await ui.find({ type: 'Text', text: /^📝 no task recorded$/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /^🔥 aaaaaaaa-1 · open/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /^api \(aaaaaaaa\) → role tests$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^🔙 aaaaaaaa-2 · withdrawn$/ })).toBeDefined()
+    expect((await ui.find({ key: 'board-a-aaaaaaaa-2' }))?.props?.borderColor).toBe('subtle')
     expect(await ui.find({ type: 'Text', text: /old text line/ })).toBeUndefined()
     await ui.unmount()
   })
