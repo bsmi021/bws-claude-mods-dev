@@ -13,3 +13,7 @@
 
 ## Next
 - Brian eyeballs `/dashboard board`; retune glyphs/colours if wanted. Release (marketplace bump, publish branch) is a separate step.
+
+## Release
+- Released as bws-mods 1.4.0 (bws-board 0.6.0, bws-cockpit 0.18.0). The marketplace went from 1.3.1 to 1.4.0 (c33d546). feat/board-cards merged into main with --no-ff (caf2688), which also brought in release/1.3.1. Gate on main: tsc clean, validate passed, tests 86/0 and 204/0. Pushed to private main.
+- Publish: the scratch worktree was restored from main for bws-board, bws-cockpit and marketplace.json. File lists and content matched main. The root README's cockpit row now says the Board tab is cards. Scan of the added lines: clean (only generic `c:/proj` test fixtures). The gate passed again in the worktree. Commit 32a9d59 pushed `publish -> mods main`, tag v1.4.0.
