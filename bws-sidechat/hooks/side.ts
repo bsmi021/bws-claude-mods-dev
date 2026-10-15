@@ -134,16 +134,18 @@ export function wrapLines(text: string, width: number): string[] {
   return out
 }
 
-export type Row = { text: string; kind: 'you' | 'claude' | 'body' | 'tool' | 'note' }
+export type Row = { text: string; kind: 'you' | 'claude' | 'body' | 'tool' | 'note' | 'send'; msgIndex?: number }
 
 // The whole transcript as rows the pane can window, the streaming answer last. Every row is at most `width` cells,
-// so the pane never wraps one itself and the row count is exact.
-export function transcriptRows(msgs: readonly SideMsg[], live: string, width: number): Row[] {
+// so the pane never wraps one itself and the row count is exact. With `isSendable`, each answer ends with a row the pane
+// draws as its Send to main button (`msgIndex` is the answer's place in `msgs`).
+export function transcriptRows(msgs: readonly SideMsg[], live: string, width: number, isSendable = false): Row[] {
   const rows: Row[] = []
-  for (const m of msgs) {
+  for (const [i, m] of msgs.entries()) {
     if (m.role === 'user' || m.role === 'assistant') {
       rows.push({ text: ROLE_PREFIX[m.role], kind: m.role === 'user' ? 'you' : 'claude' })
       for (const t of wrapLines(m.text, width)) rows.push({ text: t, kind: 'body' })
+      if (isSendable && m.role === 'assistant') rows.push({ text: '↩ Send to main', kind: 'send', msgIndex: i })
     } else {
       for (const t of wrapLines(`${ROLE_PREFIX[m.role]} ${m.text}`, width)) rows.push({ text: t, kind: m.role })
     }
@@ -159,7 +161,7 @@ export function transcriptRows(msgs: readonly SideMsg[], live: string, width: nu
 // Ask box (which may wrap to a second row), with one to spare.
 export const CHROME_ROWS = 7
 
-export const roomOf = (bodyRows: number) => Math.max(3, Math.floor(bodyRows) - CHROME_ROWS)
+export const roomOf = (bodyRows: number, chromeRows = CHROME_ROWS) => Math.max(3, Math.floor(bodyRows) - chromeRows)
 
 // A scroll step of half the room (at least 3 rows).
 export const scrollStep = (room: number) => Math.max(3, Math.floor(room / 2))
@@ -198,14 +200,69 @@ export function nativeArgs(args: string): string | null {
   return m === null ? null : (m[1] ?? '').trim()
 }
 
-export type SideCommand = { kind: 'open' } | { kind: 'new'; message: string } | { kind: 'close' } | { kind: 'send'; message: string }
+export type SideCommand =
+  | { kind: 'open' }
+  | { kind: 'new'; message: string }
+  | { kind: 'close' }
+  | { kind: 'model'; name: string } // '' = report the current one
+  | { kind: 'refresh' }
+  | { kind: 'pull'; message: string }
+  | { kind: 'send-back' }
+  | { kind: 'send'; message: string }
 
-// `/side [new [msg] | close | msg]`
+// `/side [new [msg] | close | model [name] | refresh | pull [question] | send-back | msg]`. The subcommands match whole,
+// so a message that merely starts with one of the words is still a message.
 export function parseSide(args: string): SideCommand {
   const t = args.trim()
   if (t === '') return { kind: 'open' }
   if (/^close$/i.test(t)) return { kind: 'close' }
+  if (/^refresh$/i.test(t)) return { kind: 'refresh' }
+  if (/^send-back$/i.test(t)) return { kind: 'send-back' }
+  const model = /^model(?:\s+(\S+))?$/i.exec(t)
+  if (model !== null) return { kind: 'model', name: model[1] ?? '' }
+  const pull = /^pull(?:\s+([\s\S]*))?$/i.exec(t)
+  if (pull !== null) return { kind: 'pull', message: (pull[1] ?? '').trim() }
   const m = /^new(?:\s+([\s\S]*))?$/i.exec(t)
   if (m !== null) return { kind: 'new', message: (m[1] ?? '').trim() }
   return { kind: 'send', message: t }
+}
+
+// ---------- the model ----------
+
+// The aliases the pane offers beside "default"; any other id is typed as `/side model <id>`.
+export const MODEL_CHOICES = ['opus', 'sonnet', 'haiku'] as const
+
+// A model alias or id as `claude --model` takes it (`opus`, `claude-opus-5-5`, `sonnet[1m]`): no spaces, and no leading
+// dash, so it can never read as another flag.
+export const isModelName = (name: string) => /^[A-Za-z0-9][A-Za-z0-9._:[\]-]*$/.test(name)
+
+// The model a side turn runs on: the open chat's override, else the sideModel setting ('' = the session's).
+export const modelOf = (override: string, setting: string) => (override.trim() !== '' ? override.trim() : setting.trim())
+
+// ---------- refresh ----------
+
+const clip = (text: string, n: number) => {
+  const t = text.replace(/\s+/g, ' ').trim()
+  return t.length > n ? `${t.slice(0, n - 1)}…` : t
+}
+
+// What a re-forked side chat is told first: the earlier questions and answers of the chat it replaces (the last six,
+// shortened), since the new fork only knows the main conversation. '' when nothing was asked yet.
+export function replayPrefix(msgs: readonly SideMsg[]): string {
+  const pairs: string[] = []
+  let q = ''
+  for (const m of msgs) {
+    if (m.role === 'user') q = m.text
+    else if (m.role === 'assistant' && q !== '') {
+      pairs.push(`Q: ${clip(q, 240)}\nA: ${clip(m.text, 240)}`)
+      q = ''
+    }
+  }
+  if (pairs.length === 0) return ''
+  return [
+    'This side session was re-forked from the main conversation as it stands now. In the side session it replaces, the person asked and you answered (oldest first, shortened):',
+    ...pairs.slice(-6),
+    'Their next message follows.',
+    '',
+  ].join('\n\n')
 }

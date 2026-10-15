@@ -1,0 +1,50 @@
+   u                                                                                                                                         │ Dashboard   Side chat                                  ✕ 
+ ▐▛███▛█   Claude Code v2.1.300                                                                                                              │Side chat forked from 20800197 New fork Refresh Pull Close
+▝▜██████▀  Sonnet 5.5 with high effort · Claude Max                                                                                          │model default opus sonnet ● haiku · main: 1 ahead         
+ ▝▝   ▝▝   C:\Projects\bws.mods.claude-code                                                                                                  │You                                                       
+                                                                                                                                             │what is 2 plus 2? answer in one short line                
+                                                                                                                                             │Claude                                            e       
+d Reply with exactly the word: ok                                                                                                            │4                                                         
+                                                                                                                                             │↩ Send to main                                            
+● ok                                                                                                                                         │You                                                       
+                                                                                                                                             │Pulled main's latest reply (9 characters). which word     
+❯ /side                                                                                                                                      │did main just say? answer with that word only             
+  ⎿  bws-sidechat: Side chat model: haiku, from the next message.                                                                            │Claude                                                    
+                                                                                                                                             │pineapple                                                 
+✻ Sautéed for 7s · done 7:48 AM                                                                                                              │↩ Send to main                                            
+                                                                                                                                             │Ask › : ask in the side chat, Enter sends ⏎ send          
+❯ Reply with exactly the word: pineapple                                                                                                     │                                                          
+                                                                                                                                             │                                                          
+● pineapple                                                                                                                                  │                                                          
+                                                                                                                                             │                                                          
+✻ Cooked for 2s · done 7:48 AM                                                                                                               │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+                                                                                                                                             │                                                          
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯                                                                                                                                                                                                       
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Sonnet 5.5] | bws.mods.claude-code | main ±11 | [----------] 7% | v2.1.300                                                                                                         ✦ enhance ◨ side  
+  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents                                                                                                                                                   

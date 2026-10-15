@@ -1,0 +1,53 @@
+[<u[>5u[>4;2m[>0q[>4m[<u[<u[>5u[>4;2m[<u[>5u[>4;2m
+ ▐▛███▛█   Claude Code v2.1.300
+▝▜██████▀  Sonnet 5.5 with high effort · Claude Max
+ ▝▝   ▝▝   C:\Projects\bws.mods.claude-code
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+● high · /effort  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────❯ Try "fix typecheck errors"
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents[>0q[Sonnet 5.5] | bws.mods.claude-code | main ±11 | [----------] 0% | v2.1.300✦ enhance◨ side│                                                        ✕ │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          │                                                          ● high · /effort│                                                          1: Assumptions[ Shelf 1 ]3: Board💡 1 open idea · bws.mods.claude-code▶✓✗#11bws-cockpit:Hide(3)onthebarhasnowaybackinthesession;/cockpitor/dashboardcouldunhideit(Claude,5d)[ All projects ]Reply with exactly the word:ok❯ Reply with exactly the word: ok✽Pontificating… ❯  · ← for agents(running UserPromptSubmit hook · 0s)o✻P✶*✢·✢*✶✻✽✻✶*✢·Tomfoolering…  ●ok✻Churned for 3s · done 7:38 AM ❯ 7/sidemodelhaiku❯ /side model haiku*Puttering… 
+  ⎿  Tip: You have 3 plugins you haven't used lately. Disable them with /plugin to free up context and speed up startup.❯  · ← for agentsDashboard Side chat         
+                                                                                  
+  ⎿  bws-sidechat:Sidechatmodel:haiku,fromthenextmessage. 
+❯ ││Side chatnot forked yetNew forkRefreshPullClose│modeldefaultopussonnet●haiku│A copy of this conversation. Ask anything below; the main │conversation is not touched. /fork starts a fresh copy.│Ask › : ask in the side chat, Enter sends ⏎ send│││││││││││││││││││││││││││││││││││││││Advisor Tool (experimental) is on and may use more tokens · /advisor[<u[>5u[>4;2m/side what is 2 plus 2? answer in one ⏎ sendshortlineask in the side chat, Enter sends ⏎ send             frked from f971c6fe New fok Refresh PullCloseYou                                                       /side what is 2 plus 2? answer in one short line       thinking… StopAsk › : wait for the answer… ⏎ sendClaude       bws-sidechat: The side chat needs aterminalorDesktopwindowtodrawin.↩ Send to mainthinking…StopAsk›:wait for the answer…· main: in syncAsk › : ask in the side chat, Enter sends ⏎ send     

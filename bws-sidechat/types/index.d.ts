@@ -11,6 +11,11 @@ export type SideChat = {
   back: number // rows scrolled up from the newest
   asks: number // messages sent; the Ask box's key, so a send clears it
   isClosedByPerson: boolean
+  model: string // the open side chat's model override; '' = the sideModel setting
+  mainTurns: number // main turns completed since the mod loaded
+  forkTurns: number // mainTurns when the fork was taken; the gap is how far main is ahead
+  isMainBusy: boolean // the main conversation is in a turn
+  pendingReplay: boolean // a refresh re-forked: the next first turn carries the earlier questions
 }
 
 // ---------- the decision tree (/explain) ----------
