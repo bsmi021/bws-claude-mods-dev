@@ -35,6 +35,7 @@ import {
   nextAskId,
   normFile,
   normRole,
+  paneView,
   peerLines,
   readBoard,
   redact,
@@ -68,6 +69,7 @@ const roleAtom = atom({ plugin: 'bws-board', key: 'role' } as const, null)
 const ownAtom = atom({ plugin: 'bws-board', key: 'own' } as const, {})
 const summaryAtom = atom({ plugin: 'bws-board', key: 'summary' } as const, null)
 const linesAtom = atom({ plugin: 'bws-board', key: 'lines' } as const, [])
+const paneAtom = atom({ plugin: 'bws-board', key: 'pane' } as const, null)
 
 const PENDING_MAX = 20
 const OWN_MAX = 4 // sessions' own cards kept in state: this one and the few before it in this process
@@ -201,6 +203,7 @@ async function sync(
   const self = { id: ctx.selfId, role }
   await update($, summaryAtom, () => summary(board, self, now, lim.staleMs))
   await update($, linesAtom, () => paneLines(board, self, now, lim))
+  await update($, paneAtom, () => paneView(board, self, now, lim))
   return { own, board, now }
 }
 

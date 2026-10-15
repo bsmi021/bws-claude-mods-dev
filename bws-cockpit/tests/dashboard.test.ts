@@ -2,7 +2,7 @@ import { test, expect, mock, describe } from 'claude-code/testing'
 import type { On } from 'claude-code'
 import { add, listText, markSent, setCorrection, setVerdict, summary, verdictPrompt } from '../hooks/assumptions'
 import { addIdea, age, contextLine, EMPTY, isAllScope, listText as ideasText, openIdeas, parseShelf, serializeShelf, setStatus, shelfPath } from '../hooks/shelf'
-import type { Assumption } from '../types'
+import type { Assumption, BoardPane } from '../types'
 
 const TOOL = 'mcp__bws-cockpit__record_assumption'
 const HOME = 'C:/Users/me'
@@ -21,7 +21,7 @@ type World = {
   isPlaced?: boolean
   percent?: number
   startedAt?: number
-  board?: { summary: { agents: number; openAsks: number; askedOfMe: number } | null; lines: string[] }
+  board?: { summary: { agents: number; openAsks: number; askedOfMe: number } | null; lines: string[]; pane?: BoardPane }
   commands?: string[]
 }
 
@@ -110,7 +110,7 @@ function world(on: On, w: World = {}) {
     on('state.get', ($, e, next) => {
       const ref = e as unknown as { plugin?: string; key?: string }
       if (ref.plugin !== 'bws-board') return next(e)
-      return { value: { value: ref.key === 'summary' ? b.summary : b.lines, version: 1 } } as never
+      return { value: { value: ref.key === 'summary' ? b.summary : ref.key === 'pane' ? (b.pane ?? null) : b.lines, version: 1 } } as never
     })
   }
   const shelf = () => parseShelf(files[FILE])
@@ -468,6 +468,34 @@ describe('dashboard', () => {
     expect(await ui.find({ type: 'Text', text: /^Board · 2 agents · 1 open ask · 1 for you$/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /fixing the bow/ })).toBeDefined()
     expect((await ui.find({ type: 'Text', text: /claims src/ }))?.props?.dimColor).toBe(true)
+    await ui.unmount()
+  })
+
+  test('Board tab draws a card per session and per ask from the pane view', async ($, on) => {
+    const sess = { claims: [], claimsMore: 0, run: null, lease: null }
+    const pane: BoardPane = {
+      self: { ...sess, id: 'aaaaaaaa', who: 'api', status: 'busy', task: 'fixing the bow', seen: '0s ago', run: '2026-10-15-bow', lease: 'git commit 3s ago' },
+      peers: [{ ...sess, id: 'bbbbbbbb', who: 'tests', status: 'idle', task: '', seen: '12s ago', claims: ['src/a.ts', 'src/b.ts'], claimsMore: 3 }],
+      asks: [{ id: 'aaaaaaaa-1', view: 'open', urgent: true, from: 'api (aaaaaaaa)', to: 'role tests', text: 'run the suite', actor: null, note: null }],
+    }
+    const { clock } = world(on, { board: { summary: { agents: 2, openAsks: 1, askedOfMe: 0 }, lines: ['old text line'], pane } })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.command.run({ command: 'dashboard', args: 'board' } as never)
+    await clock.advance(50)
+    const ui = await $.ui.mount(PANE)
+    const self = await ui.find({ key: 'board-s-aaaaaaaa' })
+    expect(self?.props?.borderStyle).toBe('round')
+    expect(self?.props?.borderColor).toBe('claude')
+    expect((await ui.find({ key: 'board-s-bbbbbbbb' }))?.props?.borderColor).toBe('subtle')
+    expect((await ui.find({ key: 'board-a-aaaaaaaa-1' }))?.props?.borderColor).toBe('error')
+    expect(await ui.find({ type: 'Text', text: /^📝 fixing the bow$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^📂 2026-10-15-bow$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^🔑 holds the git lease: git commit 3s ago$/ })).toBeDefined()
+    expect((await ui.find({ type: 'Text', text: /^🔒 src\/a\.ts, src\/b\.ts \(\+3 more\)$/ }))?.props?.dimColor).toBe(true)
+    expect(await ui.find({ type: 'Text', text: /^📝 no task recorded$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^🔥 aaaaaaaa-1 · open/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^api \(aaaaaaaa\) → role tests$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /old text line/ })).toBeUndefined()
     await ui.unmount()
   })
 

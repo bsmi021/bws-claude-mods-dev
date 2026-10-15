@@ -16,6 +16,7 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
 ### Dashboard
 - **One pane, `Dashboard`**, docked right of the transcript in fullscreen from 110 columns, else inline above the prompt. Its own tab strip:
   - `Assumptions` (count: unsent), `Shelf` (count: this project's open ideas), `Board` (count: asks waiting on this session), and `Loop` while a harness loop is live or you picked it with `/loop-watch`.
+  - `Board` draws a bordered card per session (this one first, accent border; 🟢 busy / ⚪ idle, 📝 task, 📂 run, 🔒 claims, 🔑 git lease) and one per ask (❓ open, 🙋 taken, ✅ done, 🚫 declined, ↩ withdrawn, 🔥 urgent) from bws-board 0.6.0's `pane`; with an older bws-board it prints its text lines.
   - The picked tab is drawn as the primary button. With the pane focused, `1`–`4` switch tabs; each tab keeps its own keys.
   - With nothing picked, it shows the first tab with something waiting.
 - **Opening it:** `/dashboard [assumptions|shelf|board|loop]`, `/assumptions`, `/shelf [all]`, `/loop-watch`, `/board pane` (bws-board), or the bar. Opened over an empty prompt box it takes the keys; `Esc` hands them back, the pane stays.

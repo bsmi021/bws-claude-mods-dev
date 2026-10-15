@@ -71,7 +71,7 @@ They work as peers: no lead session, no subagents.
   `anyone` never wake anybody.
 - **`/board`** prints the board: sessions, roles, tasks, claims, and asks open, taken or settled in the last hour.
   - `/board role <name>` sets this session's role; `/board role clear` removes it.
-  - `/board pane` opens the Board tab of [bws-cockpit](../bws-cockpit/README.md)'s dashboard, redrawn on every heartbeat, from the `lines` and `summary` this mod keeps. Without bws-cockpit it prints the board as `/board` does. (Before 0.5.0 bws-board drew its own pane.)
+  - `/board pane` opens the Board tab of [bws-cockpit](../bws-cockpit/README.md)'s dashboard, redrawn on every heartbeat, from the `pane` (0.6.0: the board as cards), `lines` and `summary` this mod keeps. Without bws-cockpit it prints the board as `/board` does. (Before 0.5.0 bws-board drew its own pane.)
   - `/board digest [days]` writes the team digest page (below) and prints its path.
 - `board_status { task? }` gives Claude the same listing, and can set the task line.
 - `board_release { paths? }` gives up claims, all of them and the git lease when no paths are given.

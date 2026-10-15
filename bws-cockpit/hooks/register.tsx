@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
+import type { Color, EngineInterface, Register } from 'claude-code'
 
-import type { CockpitChip, CockpitDevices, CockpitRun, CockpitState } from '../types'
+import type { BoardAskCard, BoardSessionCard, CockpitChip, CockpitDevices, CockpitRun, CockpitState } from '../types'
 import {
   LOW_VRAM_CVARS,
   countOpen,
@@ -94,6 +94,7 @@ const touched = atom({ plugin: 'bws-cockpit', key: 'touched' } as const, null)
 const boardSummary = atom({ plugin: 'bws-board', key: 'summary' } as const, null)
 // bws-board's lines for its board, drawn by the dashboard's Board tab.
 const boardLines = atom({ plugin: 'bws-board', key: 'lines' } as const, [])
+const boardPane = atom({ plugin: 'bws-board', key: 'pane' } as const, null)
 // The video-derived mods' summaries (bws-kit/summary.ts), drawn as chips when they are loaded and not idle.
 const memorySummary = atom({ plugin: 'bws-memory', key: 'summary' } as const, null)
 const diagramSummary = atom({ plugin: 'bws-diagram', key: 'summary' } as const, null)
@@ -813,6 +814,12 @@ async function clearSent($: EngineInterface) {
 
 // ---------- Dashboard ----------
 
+// The Board tab's card glyphs and border colours.
+const STATUS_GLYPH: Record<BoardSessionCard['status'], string> = { busy: '🟢', idle: '⚪' }
+const ASK_GLYPH: Record<BoardAskCard['view'], string> = { open: '❓', taken: '🙋', done: '✅', declined: '🚫', withdrawn: '↩' }
+const askColor = (a: BoardAskCard): Color =>
+  a.view === 'done' ? 'success' : a.view === 'taken' ? 'suggestion' : a.view === 'withdrawn' ? 'subtle' : a.urgent ? 'error' : 'warning'
+
 const isLoopLive = (lp: LoopView | null, now: number) =>
   lp !== null && (lp.driver.status === 'RUNNING' || lp.driver.status === 'PAUSED' || now - lp.stateMtime < RECENT_MS)
 
@@ -1385,6 +1392,7 @@ export const register: Register = (on, options) => {
     const sv = await read($, shelf)
     const bs = await read($, boardSummary)
     const lines = await read($, boardLines)
+    const pane = await read($, boardPane)
     const counts: Record<DashTab, number> = { assumptions: active(list).length, shelf: sv.count, board: bs?.askedOfMe ?? 0, loop: loopCount(lp) }
     // Loop: while any loop is live, or the person picked the tab (/loop-watch) for a quiet one.
     const hasLoop = lp !== null && (all.some(l => isLoopLive(l, now)) || d.tab === 'loop')
@@ -1484,6 +1492,42 @@ export const register: Register = (on, options) => {
     }
 
     if (tab === 'board') {
+      // One bordered card per session (this one first, in the accent colour), then one per ask. Each glyph opens its
+      // line: a wide emoji mid-line can push a round border out of line.
+      const sessionCard = (c: BoardSessionCard, isSelf: boolean) => (
+        <Box
+          key={`board-s-${c.id}`}
+          flexDirection="column"
+          width={width}
+          borderStyle="round"
+          borderColor={isSelf ? 'claude' : c.status === 'busy' ? 'success' : 'subtle'}
+          paddingX={1}
+        >
+          <Text bold wrap="truncate-end">
+            {`${STATUS_GLYPH[c.status]} ${c.who} · ${c.status}`}
+            <Text dimColor bold={false}>{` · ${c.id}${isSelf ? ' · this session' : ` · seen ${c.seen}`}`}</Text>
+          </Text>
+          <Text wrap="wrap" dimColor={c.task === ''}>{`📝 ${c.task || 'no task recorded'}`}</Text>
+          {c.run !== null && <Text wrap="wrap">{`📂 ${c.run}`}</Text>}
+          {c.claims.length > 0 && (
+            <Text wrap="wrap" dimColor>
+              {`🔒 ${c.claims.join(', ')}${c.claimsMore > 0 ? ` (+${c.claimsMore} more)` : ''}`}
+            </Text>
+          )}
+          {c.lease !== null && <Text wrap="wrap" color="warning">{`🔑 holds the git lease: ${c.lease}`}</Text>}
+        </Box>
+      )
+      const askCard = (a: BoardAskCard) => (
+        <Box key={`board-a-${a.id}`} flexDirection="column" width={width} borderStyle="round" borderColor={askColor(a)} paddingX={1}>
+          <Text bold wrap="truncate-end">
+            {`${a.urgent && (a.view === 'open' || a.view === 'declined') ? '🔥' : ASK_GLYPH[a.view]} ${a.id} · ${a.view}${a.actor ? ` by ${a.actor}` : ''}`}
+            {a.urgent && <Text color="error">{' · urgent'}</Text>}
+          </Text>
+          <Text dimColor wrap="wrap">{`${a.from} → ${a.to}`}</Text>
+          <Text wrap="wrap">{a.text}</Text>
+          {a.note !== null && <Text dimColor wrap="wrap">{`💬 ${a.note}`}</Text>}
+        </Box>
+      )
       return (
         <Box flexDirection="column">
           {strip}
@@ -1495,11 +1539,22 @@ export const register: Register = (on, options) => {
               {bs && bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}
             </Text>
           )}
-          {lines.map((l, i) => (
-            <Text key={`board-${i}`} wrap="wrap" dimColor={l.startsWith('  claims')}>
-              {l}
-            </Text>
-          ))}
+          {pane === null ? (
+            lines.map((l, i) => (
+              <Text key={`board-${i}`} wrap="wrap" dimColor={l.startsWith('  claims')}>
+                {l}
+              </Text>
+            ))
+          ) : (
+            <Box flexDirection="column">
+              {sessionCard(pane.self, true)}
+              {pane.peers.map(c => sessionCard(c, false))}
+              {pane.peers.length === 0 && <Text dimColor>No other live session.</Text>}
+              <Text bold>Asks</Text>
+              {pane.asks.map(askCard)}
+              {pane.asks.length === 0 && <Text dimColor>No asks on the board.</Text>}
+            </Box>
+          )}
         </Box>
       )
     }
