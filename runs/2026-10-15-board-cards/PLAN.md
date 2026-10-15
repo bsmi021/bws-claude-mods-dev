@@ -8,7 +8,7 @@
 ## Design
 - bws-board: pure `paneView(b, self, now, lim)` in board.ts, pre-stringified. New state key `pane`, written beside `lines` in `sync`.
 - bws-cockpit: reads `pane`; renders `Box borderStyle="round"` cards. Emoji only at line starts.
-- Glyphs: 🟢 busy · ⚪ idle · 📝 task · 📂 run · 👀 seen · 🔒 claims · 🔑 git lease · asks ❓ open / 🙋 taken / ✅ done / 🚫 declined / ↩ withdrawn · 🔥 urgent.
+- Glyphs: 🟢 busy · ⚪ idle · 📝 task · 📂 run · 👀 seen · 🔒 claims · 🔑 git lease · asks ❓ open / 🙋 taken / ✅ done / 🚫 declined / 🔙 withdrawn (0.18.1; was ↩, one column narrow) · 🔥 urgent.
 
 ## Out of scope
 statusText / board_status text, band chip, marketplace version.

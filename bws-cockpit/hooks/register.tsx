@@ -816,7 +816,7 @@ async function clearSent($: EngineInterface) {
 
 // The Board tab's card glyphs and border colours.
 const STATUS_GLYPH: Record<BoardSessionCard['status'], string> = { busy: '🟢', idle: '⚪' }
-const ASK_GLYPH: Record<BoardAskCard['view'], string> = { open: '❓', taken: '🙋', done: '✅', declined: '🚫', withdrawn: '↩' }
+const ASK_GLYPH: Record<BoardAskCard['view'], string> = { open: '❓', taken: '🙋', done: '✅', declined: '🚫', withdrawn: '🔙' }
 const askColor = (a: BoardAskCard): Color =>
   a.view === 'done' ? 'success' : a.view === 'taken' ? 'suggestion' : a.view === 'withdrawn' ? 'subtle' : a.urgent ? 'error' : 'warning'
 
