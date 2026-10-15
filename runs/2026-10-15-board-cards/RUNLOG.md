@@ -7,7 +7,7 @@
 - bws-cockpit 0.18.0: Board tab draws round-bordered cards per session (self first, `claude` border; busy `success`, idle `subtle`) and per ask (open `warning`, urgent `error`, taken `suggestion`, done `success`, withdrawn `subtle`). Emoji only at line starts. Falls back to `lines` when `pane` is null.
 - Glyphs and scope recorded as assumptions A1, A2.
 - Checks: tsc 5.8.3 clean (both); `claude plugin validate` passed (both); `claude plugin test` bws-board 86/0, bws-cockpit 204/0 (one new test each side).
-- Not done: interactive look in a real terminal (dev mods hot-reload, so `/dashboard board` in a live session shows it).
+- Not done: interactive look in a real terminal. Screen driving needs Brian's handover; left to him (`/dashboard board`, mods hot-reload).
 
 ## Next
 - Brian eyeballs `/dashboard board`; retune glyphs/colours if wanted. Release (marketplace bump, publish branch) is a separate step.

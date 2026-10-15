@@ -221,3 +221,8 @@ In the live run, cockpit's Session Bus was switched off, and its text was absent
 - Static validation passed, tsc clean, 83 automated tests (+1: the redirect and the fallback).
 - **Live:** in an interactive session with the dashboard, `/board pane` opened its Board tab, and an ask from another
   session raised that tab with `1 for you`.
+
+0.6.0, the Board tab as cards (`runs/2026-10-15-board-cards/`), Claude Code 2.1.296 on Windows 11:
+- New state key `pane`: the board pre-worded for bws-cockpit 0.18.0's card layout (one card per session, one per ask). `lines` is kept for older cockpits and headless text.
+- Static validation passed, tsc clean, 86 automated tests (+2: the pane view, and an empty board).
+- **Not yet verified live:** how the bordered cards look in a real terminal.
