@@ -1,0 +1,12 @@
+# RUNLOG: sidechat model + links
+- 2026-10-15: read README, side.ts, register.tsx, kit.json, tests; interviewed (8 questions); wrote PLAN.md. Next: implement.
+- Implemented 0.3.0: SideChat state (model, mainTurns, forkTurns, isMainBusy, pendingReplay); side.ts (modelOf, isModelName, replayPrefix, parseSide kinds model/refresh/pull/send-back, send rows, roomOf chrome arg); register.tsx (model resolved at spawn in send + explore, header model row + main status + Refresh/Pull, Send to main per answer, /side subcommands, one turn.start + one turn.complete observe-only hook); plugin.json 0.3.0; README.
+- Header kept to two rows that fit 60 columns so CHROME_ROWS (pinned by an existing scroll test) is unchanged.
+- Checks: tsc 5.8.3 clean; `claude plugin validate` passed; `claude plugin test` 119 pass / 0 fail (no tests added, none approved).
+- Live (scripts/live.py, pywinpty, 200x50): receipts/live2 (model + send-back), receipts/live3 (status + refresh). Side session rows after the ask: model claude-haiku-5-5; main rows gained only /side local_command echoes until send-back, then one user message "4".
+- First live try (receipts/live1) typed `/side ...` into the focused pane's Ask box (harness error, not a mod bug); fixed in live.py.
+- Not checked live: Pull button and /side pull, Send to main button press, model button clicks, narrow widths, desktop.
+- Left uncommitted on main. Test sessions from the live runs exist in the claude project dir (4 main + side forks).
+- Side note, existing behavior: the child in a live run loaded bws-sidechat from user settings despite CLAUDE_CODE_PLUGIN_DIRS='' (only visible when a slash command is typed into the pane). Not changed.
+- Extended scripts/live.py: PULL=1 (/side pull) and BUTTON=1 (a mouse click, SGR escape, on the pane's "Send to main" button; its cell found on a pyte-rendered screen). Needs pywinpty and pyte (pyte installed with `python3 -m pip install --user pyte`). receipts/live4: pull row reached the fork and the fork answered "pineapple" on haiku; the click put "pineapple" into main as one user message; main rows unchanged 61 -> 61 across the pull. No visible windows were opened, so /drive-screen was not used. Model-step main row delta (34 -> 44) is the first turn's late bookkeeping plus /side echoes; no side-chat content.
+- Still not checked live: Pull button press, model button clicks, narrow widths, desktop.

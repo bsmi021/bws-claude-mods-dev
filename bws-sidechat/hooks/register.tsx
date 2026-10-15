@@ -4,14 +4,29 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { DecisionTree, SideChat, SideMsg, TreePane } from '../types'
 import { MAX_FORKS, crumbOf, explorePrompt, failLine, lastReply, mapPaneRows, nodeRows, parseOptions, parseReply, treeText } from './explain'
 import type { PaneRow } from './explain'
-import { askKey, clampBack, exitNote, killArgv, nativeArgs, parseSide, reduceLine, roomOf, scrollStep, sideArgs, splitLines, transcriptRows, windowRows } from './side'
+import { MODEL_CHOICES, askKey, clampBack, exitNote, isModelName, killArgv, modelOf, nativeArgs, parseSide, reduceLine, replayPrefix, roomOf, scrollStep, sideArgs, splitLines, transcriptRows, windowRows } from './side'
 import type { Draft, SideConfig } from './side'
 import { MAX_NODES, addOption, branch, childVia, currentOf, decisionParagraph, fillNode, goBack, goTo, mapText, newTree, nodeOf, treeSummary } from './tree'
 
 const PANE = 'sidechat'
 const TITLE = 'Side chat'
 
-const EMPTY: SideChat = { mainId: null, sideId: null, msgs: [], live: '', isForked: false, isBusy: false, back: 0, asks: 0, isClosedByPerson: false }
+const EMPTY: SideChat = {
+  mainId: null,
+  sideId: null,
+  msgs: [],
+  live: '',
+  isForked: false,
+  isBusy: false,
+  back: 0,
+  asks: 0,
+  isClosedByPerson: false,
+  model: '',
+  mainTurns: 0,
+  forkTurns: 0,
+  isMainBusy: false,
+  pendingReplay: false,
+}
 const chat = atom({ plugin: 'bws-sidechat', key: 'chat' } as const, EMPTY)
 
 // Module variables: the running child's identity and whether the person pressed Stop. A new fork or a close
@@ -76,12 +91,77 @@ async function killChild($: EngineInterface, sideId: string | null) {
 }
 
 // Throws away the current side chat (its child is killed) and forks the conversation as it is now, on the first message.
+// The model choice and what is known of the main conversation's turns stay.
 async function newFork($: EngineInterface) {
   runNo++
   const old = await read($, chat)
   if (old.isBusy) await killChild($, old.sideId)
   const mainId = await $.session.id()
-  await update($, chat, () => ({ ...EMPTY, mainId, sideId: crypto.randomUUID() }))
+  await update($, chat, c => ({ ...EMPTY, mainId, sideId: crypto.randomUUID(), model: c.model, mainTurns: c.mainTurns, forkTurns: c.mainTurns, isMainBusy: c.isMainBusy }))
+}
+
+// Re-forks from the main conversation as it stands now. The transcript stays on screen; the earlier questions ride on the
+// next message (replayPrefix), since the new fork only knows main. No model call here.
+async function refresh($: EngineInterface) {
+  const c = await read($, chat)
+  if (!c.isForked) return void $.ui.toast('Side chat: nothing to refresh yet; the first message forks main as it is.')
+  runNo++
+  if (c.isBusy) await killChild($, c.sideId)
+  await update($, chat, old => ({
+    ...old,
+    sideId: crypto.randomUUID(),
+    isForked: false,
+    isBusy: false,
+    live: '',
+    back: 0,
+    forkTurns: old.mainTurns,
+    pendingReplay: true,
+    msgs: [...old.msgs, { role: 'note', text: 'Refreshed from main: the next message forks it as it is now.' } as SideMsg],
+  }))
+  void settle(focusAsk($))
+}
+
+// The label of the model a side turn would run on.
+function modelLabel(override: string, setting: string): string {
+  const name = modelOf(override, setting)
+  return name === '' ? "main's model" : name
+}
+
+// `/side model <name>` and the header buttons: the open side chat's own model, from the next message. `default` clears it
+// (back to the sideModel setting). Returns the sentence to answer with, or null when the name was refused.
+async function setModel($: EngineInterface, name: string, setting: string): Promise<string | null> {
+  const clean = name.trim()
+  if (clean === '') return `Side chat model: ${modelLabel((await read($, chat)).model, setting)}.`
+  const isDefault = /^default$/i.test(clean)
+  if (!isDefault && !isModelName(clean)) {
+    $.ui.toast(`Side chat: "${clean}" is not a model name (an alias such as opus, or an id).`)
+    return null
+  }
+  const next = await update($, chat, c => ({ ...c, model: isDefault ? '' : clean }))
+  return `Side chat model: ${modelLabel(next.model, setting)}, from the next message.`
+}
+
+// Sends an answer of the side chat into the main conversation, as you. `$.prompt.submit` inside a command's dispatch
+// deadlocks (AGENTS.md), and the engine runs a plugin's prompt once main is idle, so it goes just after.
+async function sendBack($: EngineInterface, index?: number): Promise<string | null> {
+  const c = await read($, chat)
+  const m = index === undefined ? [...c.msgs].reverse().find(x => x.role === 'assistant') : c.msgs[index]
+  const text = m !== undefined && m.role === 'assistant' ? m.text.trim() : ''
+  if (text === '') return null
+  $.ui.toast(c.isMainBusy ? 'Side chat: main is busy; the answer goes in when it finishes.' : 'Side chat: answer sent to main.')
+  $.clock.after(10, () => void $.prompt.submit({ text, asUser: true }).catch(() => $.ui.toast('Side chat: the answer could not be sent to main.')))
+  return text
+}
+
+const PULL_LIMIT = 12000 // a command line is at most about 32k on Windows
+
+// Adds main's latest reply to the side chat as a message, so it can be asked about (it may be newer than the fork).
+async function pull($: EngineInterface, question: string, cfg: SideConfig & { exe: string }) {
+  const reply = lastReply(await $.session.messages()).trim()
+  if (reply === '') return void $.ui.toast("Side chat: main has no reply to pull yet.")
+  const ask = question !== '' ? question : 'Say in two lines what matters in it; I will ask follow-ups.'
+  const body = reply.length > PULL_LIMIT ? `${reply.slice(0, PULL_LIMIT)}\n[shortened]` : reply
+  await send($, `The main conversation's latest reply (it may be newer than this side session):\n\n${body}\n\n${ask}`, cfg, `Pulled main's latest reply (${reply.length} characters). ${ask}`)
 }
 
 async function closePane($: EngineInterface) {
@@ -103,7 +183,7 @@ function configOf(options: Record<string, unknown>): SideConfig & { exe: string 
 
 // One side turn: the message goes to a headless `claude -p` that forks (first turn) or resumes (later ones) the side
 // session. The main conversation is never written to.
-async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: string }) {
+async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: string }, typed?: string) {
   const message = text.trim()
   if (message === '') return
   let c = await read($, chat)
@@ -118,15 +198,18 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
   isStopped = false
   isInitSeen = false
   const isFirst = !c.isForked
-  let draft: Draft = { msgs: [...c.msgs, { role: 'user', text: message }], live: '' }
-  await update($, chat, old => ({ ...old, ...draft, isBusy: true, back: 0, asks: old.asks + 1 }))
+  // A first turn after a refresh is told what the replaced side chat covered; the pane still shows only what was typed.
+  const sent = isFirst && c.pendingReplay ? replayPrefix(c.msgs) + message : message
+  const sideCfg = { ...cfg, model: modelOf(c.model, cfg.model) }
+  let draft: Draft = { msgs: [...c.msgs, { role: 'user', text: typed ?? message }], live: '' }
+  await update($, chat, old => ({ ...old, ...draft, isBusy: true, back: 0, asks: old.asks + 1, forkTurns: isFirst ? old.mainTurns : old.forkTurns }))
   void settle(focusAsk($))
 
   let pending = ''
   let stderr = ''
   let code: number | null = 0
   const stream = $.process.spawn({
-    argv: [cfg.exe, ...sideArgs({ message, mainId, sideId, isFirst }, cfg)],
+    argv: [cfg.exe, ...sideArgs({ message: sent, mainId, sideId, isFirst }, sideCfg)],
     // No mods in the child: it starts faster, and cannot open a side chat of its own.
     env: { CLAUDE_CODE_PLUGIN_DIRS: '' },
   })
@@ -162,13 +245,10 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
   const note = isStopped ? 'Stopped.' : exitNote(code, stderr)
   const extra: SideMsg[] = note === null ? [] : [{ role: 'note', text: note }]
   const shown = draft.live.trim() === '' || isStopped ? [] : [{ role: 'assistant', text: draft.live.trim() } as SideMsg]
-  await update($, chat, old => ({
-    ...old,
-    msgs: [...draft.msgs, ...shown, ...extra],
-    live: '',
-    isBusy: false,
-    isForked: old.isForked || isInitSeen || code === 0,
-  }))
+  await update($, chat, old => {
+    const isForked = old.isForked || isInitSeen || code === 0
+    return { ...old, msgs: [...draft.msgs, ...shown, ...extra], live: '', isBusy: false, isForked, pendingReplay: isForked ? false : old.pendingReplay }
+  })
 }
 
 async function stop($: EngineInterface) {
@@ -182,6 +262,7 @@ async function stop($: EngineInterface) {
     live: '',
     isBusy: false,
     isForked: old.isForked || isInitSeen,
+    pendingReplay: old.isForked || isInitSeen ? false : old.pendingReplay,
   }))
   refocusSoon($) // before the kill, which takes seconds: the Ask box has the keyboard at once
   await killChild($, c.sideId)
@@ -295,6 +376,7 @@ async function explore($: EngineInterface, nodeId: string, option: number, cfg: 
   const mine = treeNo
   exploring.set(childId, sideId)
   const message = explorePrompt(t, node, o)
+  const exploreCfg = { ...cfg, model: modelOf((await read($, chat)).model, cfg.model) }
   await saveTree($, p => ({ ...p, tree: fillNode(r.tree, childId, { state: 'exploring', note: '' }), view: 'node', back: 0 }))
 
   let isTimedOut = false
@@ -308,7 +390,7 @@ async function explore($: EngineInterface, nodeId: string, option: number, cfg: 
   let code: number | null = 0
   try {
     const stream = $.process.spawn({
-      argv: [cfg.exe, ...sideArgs({ message, mainId: base, sideId, isFirst: true }, cfg)],
+      argv: [cfg.exe, ...sideArgs({ message, mainId: base, sideId, isFirst: true }, exploreCfg)],
       env: { CLAUDE_CODE_PLUGIN_DIRS: '' }, // no mods in the fork, as the side chat
     })
     try {
@@ -386,7 +468,7 @@ export const register: Register = (on, options) => {
     await $.command.register({
       name: 'side',
       description: 'Side chat in the right-hand pane, forked from this conversation',
-      argumentHint: '[new [message] | close | message]',
+      argumentHint: '[new [message] | close | model [name] | refresh | pull [question] | send-back | message]',
       immediate: true,
     })
     await $.command.register({
@@ -433,9 +515,32 @@ export const register: Register = (on, options) => {
       if (cmd.message !== '') $.clock.after(60, () => void send($, cmd.message, cfg))
       return {}
     }
+    if (cmd.kind === 'model') {
+      const text = await setModel($, cmd.name, cfg.model)
+      if (text !== null && cmd.name.trim() === '') return { text }
+      await openPane($)
+      return text === null ? {} : { text }
+    }
+    if (cmd.kind === 'send-back') {
+      const text = await sendBack($)
+      return text === null ? { text: 'No answer in the side chat to send back yet.' } : {}
+    }
     await openPane($)
+    if (cmd.kind === 'refresh') await refresh($)
+    if (cmd.kind === 'pull') $.clock.after(60, () => void pull($, cmd.message, cfg))
     if (cmd.kind === 'send') $.clock.after(60, () => void send($, cmd.message, cfg))
     return {}
+  })
+
+  // The main conversation's state, for the pane's status line: observed only, never changed. A subagent's own turn
+  // is not main's.
+  on('turn.start', async ($, e, next) => {
+    await settle(update($, chat, c => ({ ...c, isMainBusy: true })))
+    return next(e)
+  })
+  on('turn.complete', async ($, e, next) => {
+    if (!e.agentId) await settle(update($, chat, c => ({ ...c, isMainBusy: false, mainTurns: c.mainTurns + 1 })))
+    return next(e)
   })
 
   // /fork and /branch: a fresh fork of the conversation as it stands, in the pane. `/fork native` runs the built-in.
@@ -489,12 +594,18 @@ export const register: Register = (on, options) => {
     const width = Math.max(20, (e.props.bodyColumns ?? 80) - 2)
     // The transcript is drawn as rows no wider than the pane, so the rows are counted exactly and the header, the
     // scroll buttons, Stop and the Ask box always keep the rows roomOf leaves them, however long an answer is.
+    // The header is two rows (buttons; model and main status), the second in the row CHROME_ROWS keeps spare, so both are
+    // kept short enough for a 60-column pane.
     const room = roomOf(e.props.scroll?.bodyRows ?? 24)
-    const rows = transcriptRows(c.msgs, c.live, width)
+    const rows = transcriptRows(c.msgs, c.live, width, true)
     const back = clampBack(c.back, rows.length, room)
     const win = windowRows(rows.length, room, back)
     const step = scrollStep(room)
     const from = c.mainId === null ? 'not forked yet' : `forked from ${c.mainId.slice(0, 8)}`
+    const ahead = c.isForked ? Math.max(0, c.mainTurns - c.forkTurns) : 0
+    const mainState = [c.isMainBusy ? 'busy' : '', c.isForked ? (ahead > 0 ? `${ahead} ahead` : 'in sync') : ''].filter(t => t !== '').join(', ')
+    const choices = ['default', ...MODEL_CHOICES]
+    const isCustom = c.model !== '' && !(MODEL_CHOICES as readonly string[]).includes(c.model)
 
     return (
       <Box flexDirection="column">
@@ -502,7 +613,26 @@ export const register: Register = (on, options) => {
           <Text bold>Side chat</Text>
           <Text dimColor>{from}</Text>
           <Button key="new" label="New fork" plain dimColor onPress={() => void newFork($)} />
+          <Button key="refresh" label="Refresh" plain dimColor onPress={() => void refresh($)} />
+          <Button key="pull" label="Pull" plain dimColor onPress={() => void pull($, '', cfg)} />
           <Button key="close" label="Close" plain dimColor onPress={() => void closePane($)} />
+        </Box>
+        <Box flexDirection="row" columnGap={1} flexWrap="wrap">
+          <Text dimColor>model</Text>
+          {choices.map(name => {
+            const isActive = name === 'default' ? c.model === '' : c.model === name
+            return (
+              <Button
+                key={`model-${name}`}
+                label={isActive ? `● ${name}` : name}
+                plain
+                dimColor={!isActive}
+                onPress={() => void setModel($, name, cfg.model)}
+              />
+            )
+          })}
+          {isCustom && <Text>{`● ${c.model}`}</Text>}
+          {mainState !== '' && <Text dimColor>{`· main: ${mainState}`}</Text>}
         </Box>
         {rows.length === 0 && !c.isBusy && (
           <Text dimColor wrap="wrap">
@@ -512,17 +642,21 @@ export const register: Register = (on, options) => {
         {win.above > 0 && (
           <Button key="older" label={`↑ ${win.above} rows above`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: clampBack(back + step, rows.length, room) }))} />
         )}
-        {rows.slice(win.from, win.to).map((r, i) => (
-          <Text
-            key={`r-${win.from + i}`}
-            wrap="truncate-end"
-            bold={r.kind === 'you' || r.kind === 'claude'}
-            dimColor={r.kind === 'tool' || r.kind === 'note'}
-            color={r.kind === 'you' ? 'success' : r.kind === 'note' ? 'warning' : undefined}
-          >
-            {r.text === '' ? ' ' : r.text}
-          </Text>
-        ))}
+        {rows.slice(win.from, win.to).map((r, i) => {
+          const at = r.msgIndex
+          if (r.kind === 'send' && at !== undefined) return <Button key={`send-${at}`} label={r.text} plain dimColor onPress={() => void sendBack($, at)} />
+          return (
+            <Text
+              key={`r-${win.from + i}`}
+              wrap="truncate-end"
+              bold={r.kind === 'you' || r.kind === 'claude'}
+              dimColor={r.kind === 'tool' || r.kind === 'note'}
+              color={r.kind === 'you' ? 'success' : r.kind === 'note' ? 'warning' : undefined}
+            >
+              {r.text === '' ? ' ' : r.text}
+            </Text>
+          )
+        })}
         {win.below > 0 && (
           <Button key="newer" label={`↓ ${win.below} rows below`} plain dimColor onPress={() => update($, chat, old => ({ ...old, back: clampBack(back - step, rows.length, room) }))} />
         )}

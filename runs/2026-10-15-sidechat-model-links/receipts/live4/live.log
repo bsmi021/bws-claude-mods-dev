@@ -1,0 +1,29 @@
+waiting for the prompt
+ready=True
+main answered: True
+new session files: ['20800197-633e-4a34-a3c3-b814b7adbd4b']
+main session 20800197-633e-4a34-a3c3-b814b7adbd4b: 34 rows
+model command answered: True
+side answered: True
+side session files: ['84d4e1a2-0bbd-4c26-9831-e888e6cd62a3']
+side 84d4e1a2-0bbd-4c26-9831-e888e6cd62a3: 57 rows, assistant models written after the ask: ['claude-haiku-5-5']
+main rows before=34 after=44
+  main extra: type=assistant {"model": "claude-sonnet-5-5", "id": "msg_011Cg3yE7j3XiRPDwJoaxLLn", "type": "message", "role": "assistant", "content": [{"type": "text", "text": "ok"}], "conta
+  main extra: type=attachment {"parentUuid": "34ca968f-f09a-467d-83c1-953eee9e5537", "isSidechain": false, "attachment": {"type": "prompt_snapshot", "systemPrompt": ["\nYou are an agent work
+  main extra: type=system {"parentUuid": "cafe85b7-d987-4a79-a559-ec299fc22d28", "isSidechain": false, "type": "system", "subtype": "local_command", "content": "<command-name>/side</comm
+  main extra: type=system {"parentUuid": "8fd4992a-5c47-4be4-9b59-ef8bacc9f338", "isSidechain": false, "type": "system", "subtype": "local_command", "content": "<local-command-stdout>bws
+  main extra: type=system {"parentUuid": "ae6b70ec-1cfe-4af3-aae4-f20549ac79ab", "isSidechain": false, "type": "system", "subtype": "turn_duration", "durationMs": 7341, "messageCount": 2
+  main extra: type=last-prompt {"type": "last-prompt", "lastPrompt": "Reply with exactly the word: ok", "leafUuid": "143bbe83-dfca-4fbc-921d-a1bcb194ad3d", "sessionId": "20800197-633e-4a34-a3
+  main extra: type=ai-title {"type": "ai-title", "aiTitle": "Exact word reply", "sessionId": "20800197-633e-4a34-a3c3-b814b7adbd4b"}
+  main extra: type=mode {"type": "mode", "mode": "normal", "sessionId": "20800197-633e-4a34-a3c3-b814b7adbd4b"}
+  main extra: type=permission-mode {"type": "permission-mode", "permissionMode": "auto", "sessionId": "20800197-633e-4a34-a3c3-b814b7adbd4b"}
+  main extra: type=atis-latch {"type": "atis-latch", "atis": "2bb01393fe0c7041", "sessionId": "20800197-633e-4a34-a3c3-b814b7adbd4b"}
+main said the word: True
+pull: the side session received main reply as a message: True
+  user row starts: The main conversation's latest reply (it may be newer than this side session):  pineapple  which word did main
+pull: the side chat answered with the word: True; side models: ['claude-haiku-5-5']
+pull: main rows before=61 after=61 (a /side echo or two is expected)
+Send to main button on the rendered screen at (row, col) = (14, 145)
+button: main received the answer as a user message: True
+  main user row: pineapple
+button: main rows before click=61 after=73

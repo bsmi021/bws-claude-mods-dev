@@ -1,0 +1,12 @@
+waiting for the prompt
+ready=True
+main answered: True
+new session files: ['f971c6fe-2dcc-45b4-930c-3ed76972aaa6']
+main session f971c6fe-2dcc-45b4-930c-3ed76972aaa6: 42 rows
+model command answered: False
+side answered: True
+side session files: ['f1d1904c-ddb3-4a7e-8dc7-e3b2707c4395']
+side f1d1904c-ddb3-4a7e-8dc7-e3b2707c4395: 37 rows, assistant models: ['claude-sonnet-5-5']
+main rows before=42 after=44
+  main extra: type=system {"parentUuid": "a47a55e2-e3cb-4bf9-abec-a1f0a1acc5f3", "isSidechain": false, "type": "system", "subtype": "local_command", "content": "<command-name>/side</comm
+  main extra: type=system {"parentUuid": "87641bd3-5e26-401e-abe9-5b1c5f5865c5", "isSidechain": false, "type": "system", "subtype": "local_command", "content": "<local-command-stdout>bws

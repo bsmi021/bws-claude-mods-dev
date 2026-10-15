@@ -1,0 +1,22 @@
+waiting for the prompt
+ready=True
+main answered: True
+new session files: ['b7cb868e-a7cd-426b-ac86-b7d63dd66af4']
+main session b7cb868e-a7cd-426b-ac86-b7d63dd66af4: 42 rows
+model command answered: True
+side answered: True
+side session files: ['ef6a8e91-daf9-423d-b5d2-067e445997c6']
+side ef6a8e91-daf9-423d-b5d2-067e445997c6: 56 rows, assistant models written after the ask: ['claude-haiku-5-5']
+main rows before=42 after=44
+  main extra: type=system {"parentUuid": "9aa857e2-b36a-487a-a974-73118b466fb7", "isSidechain": false, "type": "system", "subtype": "local_command", "content": "<command-name>/side</comm
+  main extra: type=system {"parentUuid": "13961681-9da8-4f98-92a0-e8dac73091d7", "isSidechain": false, "type": "system", "subtype": "local_command", "content": "<local-command-stdout>bws
+after send-back main rows: 53
+  main extra: type=queue-operation {"type": "queue-operation", "operation": "enqueue", "timestamp": "2026-10-15T11:40:12.668Z", "sessionId": "b7cb868e-a7cd-426b-ac86-b7d63dd66af4"}
+  main extra: type=queue-operation {"type": "queue-operation", "operation": "dequeue", "timestamp": "2026-10-15T11:40:12.673Z", "sessionId": "b7cb868e-a7cd-426b-ac86-b7d63dd66af4"}
+  main extra: type=file-history-snapshot {"type": "file-history-snapshot", "messageId": "c2997ee4-999e-480b-99f4-347e639be507", "snapshot": {"messageId": "c2997ee4-999e-480b-99f4-347e639be507", "trackedFileBackups": {}, "timestamp": "2026-10
+  main extra: type=user {"role": "user", "content": "4"}
+  main extra: type=api-request-blob {"role": "user", "content": [{"type": "text", "text": "<command-name>/side</command-name>\n            <command-message>side</command-message>\n            <command-args></command-args>\n"}, {"type": 
+  main extra: type=api-request {"type": "api-request", "sessionId": "b7cb868e-a7cd-426b-ac86-b7d63dd66af4", "id": "b6654c0a-0d8f-434b-86f7-c02ed528d2de", "timestamp": "2026-10-15T11:40:13.045Z", "version": "2.1.300", "querySource":
+  main extra: type=assistant {"model": "claude-sonnet-5-5", "id": "msg_011Cg3xbva5dcDzbsLb5UUsU", "type": "message", "role": "assistant", "content": [{"type": "thinking", "thinking": "", "signature": "CAQS5gYKEAgSGAI4AUIIdGhpbmtp
+  main extra: type=assistant {"model": "claude-sonnet-5-5", "id": "msg_011Cg3xbva5dcDzbsLb5UUsU", "type": "message", "role": "assistant", "content": [{"type": "text", "text": "\"4\" on its own doesn't tell me what you want. If it
+  main extra: type=system {"parentUuid": "e117d58a-4904-4afd-bc03-f113a48abbf5", "isSidechain": false, "type": "system", "subtype": "turn_duration", "durationMs": 3480, "messageCount": 25, "timestamp": "2026-10-15T11:40:16.154
