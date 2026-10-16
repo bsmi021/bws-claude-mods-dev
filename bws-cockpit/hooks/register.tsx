@@ -23,7 +23,7 @@ import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
 import type { LoopView } from '../types'
-import { actionable, decide, openItems, openSummary, writtenRunFolders } from './finish'
+import { actionable, decide, missingRunlogIn, openItems, openSummary, writtenRunFolders } from './finish'
 import {
   SCAN_DEPTH,
   findProjects,
@@ -160,7 +160,7 @@ type Options = {
   refreshSeconds: number
   isBackgroundProbe: boolean
   loop: LoopLimits
-  finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; isHeadless: boolean; owner: string }
+  finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; runlogCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
   pin: { model: string; types: string[] }
   isShelfNudge: boolean
@@ -426,6 +426,22 @@ async function sessionFinishLine($: EngineInterface, owner: string): Promise<{ f
   const r = await sessionRunFolder($)
   if (!r) return null
   return { folder: r.folder, open: actionable([...openItems(r.plan), ...openItems(r.tasks)], owner) }
+}
+
+// A run folder this session's own tool calls wrote that has no RUNLOG.md ("runs/<name>"), or null.
+// Harness report folders (-harness, -sessions) are exempt; a folder that no longer exists is skipped.
+async function missingRunlogFolder($: EngineInterface): Promise<string | null> {
+  const t = await read($, touched)
+  const { startedAt } = await $.session.usage()
+  if (t === null || t.startedAt !== startedAt || t.folders.length === 0) return null
+  const runsDir = joinPath(await $.session.cwd(), 'runs')
+  const files: Record<string, string[] | null> = {}
+  for (const name of t.folders) {
+    const list = await settle($.fs.list(joinPath(runsDir, name)))
+    files[name] = list ? list.filter(f => f.kind === 'file').map(f => f.name) : null
+  }
+  const name = missingRunlogIn(files)
+  return name === null ? null : `runs/${name}`
 }
 
 async function refresh($: EngineInterface, o: Options, maxAgeMs: number) {
@@ -939,6 +955,7 @@ export const register: Register = (on, options) => {
       isOn: options.finishLine !== false,
       maxContinues: Math.max(0, Number(options.finishLineMaxContinues ?? 2)),
       evidenceCheck: options.evidenceCheck === true,
+      runlogCheck: options.finishLineRunlog !== false,
       isHeadless: options.finishLineHeadless === true,
       owner: String(options.ownerName ?? 'the user'),
     },
@@ -1048,10 +1065,12 @@ export const register: Register = (on, options) => {
     if (!o.finish.isOn) return next(e)
     if (!o.finish.isHeadless && (await $.session.surfaces()).length === 0) return next(e)
     const fl = await sessionFinishLine($, o.finish.owner)
-    if (fl === null) return next(e) // no run folder touched this session: nothing to hold to
+    const missing = o.finish.runlogCheck ? await missingRunlogFolder($) : null
+    if (fl === null && missing === null) return next(e) // no run folder touched this session: nothing to hold to
     const decision = decide({
-      open: fl.open,
-      folder: fl.folder,
+      open: fl?.open ?? [],
+      folder: fl?.folder ?? missing,
+      missingRunlog: missing,
       message: e.last_assistant_message ?? '',
       continuesUsed,
       maxContinues: o.finish.maxContinues,
@@ -1062,7 +1081,11 @@ export const register: Register = (on, options) => {
     if (decision === null) return next(e)
     continuesUsed += 1
     $.ui.toast(
-      decision.kind === 'open' ? `finish line: ${fl.open.length} open, keeping Claude going` : 'finish line: asked Claude for evidence',
+      decision.kind === 'open'
+        ? `finish line: ${fl?.open.length ?? 0} open, keeping Claude going`
+        : decision.kind === 'runlog'
+          ? `finish line: ${missing} has no RUNLOG.md`
+          : 'finish line: asked Claude for evidence',
       { timeoutMs: 6000 },
     )
     return { block: decision.block }

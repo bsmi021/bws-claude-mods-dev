@@ -89,6 +89,7 @@ Keeps Claude from stopping while this session's checklist still has work. This s
 - **Never blocked:**
   - a reply that hands back: it ends with a question, or says "your call", "want me to", "should I" or "let me know", or asks you to act: "tell me when…", "say go", "when you say…", "when you next ask". An offer such as "say if you want a different order" is not a hand-back
   - a turn with background tasks or scheduled wake-ups pending
+- **RUNLOG check (on by default).** When a run folder this session wrote has no `RUNLOG.md`, the stop is blocked and Claude is told to write one (brief, steps, outcomes with receipts, next step) so the next session can continue. Harness report folders (`runs/<date>-harness`, `-sessions`) are exempt. `finishLineRunlog: false` turns it off. Added in 0.19.0 after a week where seven task folders were left without one.
 - **Evidence check (off by default).** With `evidenceCheck` on, when nothing is open but the reply claims "done", "complete", "all tests pass", ✅ and so on without citing evidence, the stop is blocked once. Evidence is test counts, receipt or log paths, "exit 0", a commit hash or a URL. Off since 0.10.0: in a week of sessions all 13 of its blocks hit status replies ("holding for master", "nothing committed yet").
 - **Bounded.** At most `finishLineMaxContinues` blocks (default 2) per prompt you send, so it can never loop.
 - **Visible.** When a turn ends with open items anyway, a line under the answer shows `⚑ finish line: N open · …`.
@@ -182,6 +183,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `loopDriverStaleMinutes` | `3` | Alert when a RUNNING driver's heartbeat stops |
 | `finishLine` | `true` | The Finish-Line Guard |
 | `finishLineMaxContinues` | `2` | Stops the guard may block per prompt you send |
+| `finishLineRunlog` | `true` | Block a stop while a run folder this session wrote has no RUNLOG.md |
 | `evidenceCheck` | `false` | Block once when a done claim cites no evidence |
 | `finishLineHeadless` | `false` | Also guard `claude -p` and SDK sessions |
 | `ownerName` | `the user` | What the guard calls you when it asks Claude to mark an item that needs you |
