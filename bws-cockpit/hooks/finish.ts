@@ -9,9 +9,23 @@ export type FinishInput = {
   isWaiting: boolean // background tasks or session crons still pending
   evidenceCheck: boolean
   owner?: string // what the block message calls the person ("the user" unless configured)
+  missingRunlog?: string | null // a run folder this session wrote that has no RUNLOG.md
 }
 
-export type FinishDecision = { block: string; kind: 'open' | 'evidence' } | null
+export type FinishDecision = { block: string; kind: 'open' | 'runlog' | 'evidence' } | null
+
+// Report folders the harness writes by itself (runs/<date>-harness, runs/<date>-sessions) never need a RUNLOG.
+export const isReportFolder = (name: string) => /-(harness|sessions)$/i.test(name.replace(/[\\/]+$/, ''))
+
+// The first run folder (newest name first) whose files include no RUNLOG.md; `files` maps folder -> file names.
+export const missingRunlogIn = (files: Record<string, string[] | null>): string | null => {
+  for (const name of Object.keys(files).sort().reverse()) {
+    const list = files[name]
+    if (list === null || list === undefined || isReportFolder(name)) continue
+    if (!list.some(f => f.toLowerCase() === 'runlog.md')) return name
+  }
+  return null
+}
 
 const clean = (s: string) => s.replace(/\*\*/g, '').replace(/`/g, '').replace(/\s+/g, ' ').trim()
 
@@ -119,6 +133,14 @@ export const decide = (x: FinishInput): FinishDecision => {
         `bws-cockpit finish line: ${x.folder ?? 'the run folder'} still has ${x.open.length} open item${x.open.length === 1 ? '' : 's'}: ` +
         `${openSummary(x.open)}. Keep going on them. If one is blocked or needs ${owner}, say so plainly in your reply and mark it in the ` +
         `checklist (e.g. "- [ ] item (blocked: reason)" or "(needs ${owner}: question)"); the guard then lets you stop.`,
+    }
+  }
+  if (x.missingRunlog) {
+    return {
+      kind: 'runlog',
+      block:
+        `bws-cockpit finish line: runs/${x.missingRunlog.replace(/^runs[\\/]+/, '')} has no RUNLOG.md. Write one before stopping: the brief, ` +
+        'what you did, the outcomes with their receipts, and the next step or blockers, so the next session can continue from it.',
     }
   }
   if (x.evidenceCheck && claimsDone(x.message) && !hasEvidence(x.message)) {

@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { actionable, claimsDone, decide, hasEvidence, isHandBack, isParked, openItems, writtenRunFolders } from '../hooks/finish'
+import { actionable, claimsDone, decide, hasEvidence, isHandBack, isParked, isReportFolder, missingRunlogIn, openItems, writtenRunFolders } from '../hooks/finish'
 
 const CWD = 'C:/proj'
 const STARTED = 1_000_000
@@ -20,7 +20,16 @@ const PLAN = `# PLAN
 - [ ] Desktop app check (parked)
 `
 
-type World = { plan?: string; tasks?: string; mtime?: number; surfaces?: string[]; noRuns?: boolean; owned?: boolean }
+type World = {
+  plan?: string
+  tasks?: string
+  mtime?: number
+  surfaces?: string[]
+  noRuns?: boolean
+  owned?: boolean
+  runlog?: string | null
+  extra?: Record<string, string[]> // more run folders: name -> file names
+}
 
 type Started = { at: number }
 
@@ -40,9 +49,12 @@ async function world($: { tool: { call: (input: never) => Promise<unknown> } }, 
   const run = `${CWD}/runs/2026-10-02-band-row`
   const files: Record<string, string> = { [`${run}/PLAN.md`]: w.plan ?? PLAN }
   if (w.tasks !== undefined) files[`${run}/TASKS.md`] = w.tasks
+  if (w.runlog !== null) files[`${run}/RUNLOG.md`] = w.runlog ?? '# RUNLOG\n' // runlog: null = a folder without one
   on('fs.list', ($, e) => {
     const p = norm(e.path)
     if (p === `${CWD}/runs` && !w.noRuns) return { value: [{ name: '2026-10-02-band-row', kind: 'dir', size: 0, mtimeMs: 0, isLink: false }] }
+    const extra = Object.entries(w.extra ?? {}).find(([name]) => p === `${CWD}/runs/${name}`)
+    if (extra) return { value: extra[1].map(name => ({ name, kind: 'file' as const, size: 1, mtimeMs: STARTED + 2_000, isLink: false })) }
     if (p === run) {
       return {
         value: Object.keys(files).map(f => ({ name: f.slice(run.length + 1), kind: 'file' as const, size: 1, mtimeMs: w.mtime ?? STARTED + 2_000, isLink: false })),
@@ -136,10 +148,23 @@ describe('finish-line rules', () => {
     expect(decide({ ...base, open: [], message: 'All done.' })?.kind).toBe('evidence')
     expect(decide({ ...base, open: [], message: 'All done: 48/48 tests pass.' })).toBeNull()
     expect(decide({ ...base, open: [], message: 'All done.', evidenceCheck: false })).toBeNull()
+    expect(decide({ ...base, open: [], missingRunlog: 'runs/2026-10-03-x', message: 'Done: 3 pass.' })?.kind).toBe('runlog')
+    expect(decide({ ...base, missingRunlog: 'runs/2026-10-03-x' })?.kind).toBe('open')
+    expect(decide({ ...base, open: [], missingRunlog: 'runs/2026-10-03-x', message: 'Done. Want me to push?' })).toBeNull()
   })
 })
 
 // ---------- hooks ----------
+
+describe('RUNLOG rules', () => {
+  test('report folders are exempt; the newest folder without RUNLOG.md is named', () => {
+    expect(isReportFolder('2026-10-03-harness')).toBe(true)
+    expect(isReportFolder('2026-10-03-sessions/')).toBe(true)
+    expect(isReportFolder('2026-10-03-ui-pass')).toBe(false)
+    expect(missingRunlogIn({ '2026-10-01-a': ['PLAN.md'], '2026-10-02-b': ['probe.py'], '2026-10-03-harness': ['report.html'] })).toBe('2026-10-02-b')
+    expect(missingRunlogIn({ '2026-10-01-a': ['runlog.md'], '2026-10-02-gone': null })).toBeNull()
+  })
+})
 
 describe('finish-line guard', () => {
   test('blocks a stop while the session run folder has open items, and names them', async ($, on) => {
@@ -245,6 +270,40 @@ describe('finish-line guard', () => {
   test('finishLine: false passes everything through', { options: { finishLine: false } }, async ($, on) => {
     await world($, on, {})
     expect((await $.classic.Stop(stop('The parser is in.'))).block).toBeUndefined()
+  })
+
+  test('RUNLOG check: a run folder this session wrote without RUNLOG.md blocks the stop, then passes once it exists', async ($, on) => {
+    const w = await world($, on, { plan: '## Tasks\n- [x] a\n', runlog: null })
+    const r = await $.classic.Stop(stop('Finished a: 3 pass.'))
+    expect(r.block).toContain('runs/2026-10-02-band-row has no RUNLOG.md')
+    expect(w.toasts.some(t => /has no RUNLOG\.md/.test(t))).toBe(true)
+  })
+
+  test('RUNLOG check: open items still come first', async ($, on) => {
+    await world($, on, { runlog: null })
+    expect((await $.classic.Stop(stop('The parser is in.'))).block).toContain('2 open items')
+  })
+
+  test('RUNLOG check: a hand-back is never blocked', async ($, on) => {
+    await world($, on, { plan: '## Tasks\n- [x] a\n', runlog: null })
+    expect((await $.classic.Stop(stop('Finished a. Which palette do you want next?'))).block).toBeUndefined()
+  })
+
+  test('RUNLOG check: finishLineRunlog: false turns it off', { options: { finishLineRunlog: false } }, async ($, on) => {
+    await world($, on, { plan: '## Tasks\n- [x] a\n', runlog: null })
+    expect((await $.classic.Stop(stop('Finished a: 3 pass.'))).block).toBeUndefined()
+  })
+
+  test('RUNLOG check: a folder with no checklist files at all still counts', async ($, on) => {
+    await world($, on, { plan: '## Tasks\n- [x] a\n', extra: { '2026-10-03-scratch': ['probe.py'] } })
+    await $.tool.call({ tool: 'Write', file_path: `${CWD}/runs/2026-10-03-scratch/probe.py`, content: '' } as never)
+    expect((await $.classic.Stop(stop('Probe written: 1 pass.'))).block).toContain('runs/2026-10-03-scratch has no RUNLOG.md')
+  })
+
+  test('RUNLOG check: harness report folders are exempt', async ($, on) => {
+    await world($, on, { plan: '## Tasks\n- [x] a\n', extra: { '2026-10-03-harness': ['report.html'] } })
+    await $.tool.call({ tool: 'Bash', command: 'echo x > runs/2026-10-03-harness/note.txt' })
+    expect((await $.classic.Stop(stop('Ran the tier: 231/231 pass.'))).block).toBeUndefined()
   })
 
   test('a turn that ends with open items shows the line under the answer', async ($, on) => {

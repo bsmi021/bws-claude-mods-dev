@@ -1,6 +1,6 @@
 {
   "name": "bws-cockpit",
-  "version": "0.18.1",
+  "version": "0.19.0",
   "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "Brian"
@@ -83,6 +83,12 @@
       "title": "Finish line: continues per prompt",
       "description": "How many times the guard may block a stop before your next prompt.",
       "default": 2
+    },
+    "finishLineRunlog": {
+      "type": "boolean",
+      "title": "Finish line: RUNLOG check",
+      "description": "Block a stop while a run folder this session wrote has no RUNLOG.md (harness report folders ending -harness or -sessions are exempt).",
+      "default": true
     },
     "evidenceCheck": {
       "type": "boolean",
