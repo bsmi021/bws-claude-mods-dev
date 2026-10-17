@@ -1,0 +1,13 @@
+# RUNLOG: bws-sidechat on Desktop
+- 2026-10-17: Brian asked for "a side chat mod like the CLI one"; chose "Fix sidechat on desktop" (no new mod). PLAN.md pinned.
+- Evidence hunt: `claude` resolves to C:/Users/bsmi0/.local/bin/claude.exe (no .cmd shim risk). No sidechat lines in Desktop logs (%APPDATA%/Claude/logs) or ~/.claude/debug. bws-sidechat 0.3.0 is installed and enabled at user scope, so it loads in Desktop sessions.
+- Code read: the pane uses only Box/Text/Button/Input (all in the desktop table); footer hotkey is terminal-gated by design.
+- Added test `desktop > /btw draws the side chat on the desktop` (desktop surface: tree validates, answer shown, Ask box sends a follow-up to the resumed fork, Send to main submits). 120 pass / 0 fail. validate passed, tsc 5.8.3 clean.
+- Live check blocked for the agent: computer-use cannot control the Claude app itself. Pending: Brian runs `/side what is 2+2` in a Desktop session; agent then checks the fork session file and the pane.
+- Brian ran `/side what is 2+2` in the Desktop session c0d3f40d and saw a side chat pane answer.
+- Session-file check (~/.claude/projects/C--Projects-bws-game-tms):
+  - Two new forks, 31f842a1 (16:28:00) and c02d505c (16:28:27, answered "4."). Both have entrypoint `claude-desktop` and start with the Desktop app's own "The user forked this session" reminder. That is the Desktop app's built-in fork / side chat, not bws-sidechat.
+  - A bws-sidechat child is `claude -p --resume <main> --fork-session --session-id <uuid>` and would log entrypoint `sdk-cli`. No `sdk-cli` session exists in this project since 12:15.
+  - The main transcript c0d3f40d holds no "what is 2+2". The `/side` text never reached this session's engine as a command.
+- Conclusion: in the Desktop app, `/side` is taken by the app's native side chat before the mod's command.run can see it. bws-sidechat's pane and its fork did not run. README unchanged (desktop stays "not checked").
+- Next: find out whether the Desktop composer lists mod commands at all (try `/explain`, a name the app doesn't own). If it does, give the mod a command name the app doesn't take, or drop the duplicate on desktop since the app already has a native side chat.
