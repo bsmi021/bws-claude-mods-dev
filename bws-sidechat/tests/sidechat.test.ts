@@ -492,3 +492,34 @@ describe('failures', () => {
     await ui.unmount()
   })
 })
+
+describe('desktop', () => {
+  const DESK = { ...PANE, surface: 'desktop' } as const
+
+  test('/btw draws the side chat on the desktop: answer, Ask box, follow-up, send to main', async ($, on) => {
+    const { seen, clock } = world(on, { surfaces: ['desktop'] })
+    const sent: string[] = []
+    on('prompt.submit', ($, e) => {
+      sent.push(e.text)
+      return { text: e.text } as never
+    })
+    await run($, 'btw', 'what mod is this?')
+    await clock.advance(100)
+    expect(seen.spawns).toHaveLength(1)
+    const ui = await $.ui.mount(DESK)
+    await ui.drawn() // rejects if the desktop table refuses the tree
+    expect(await ui.find({ type: 'Text', text: 'It is the side chat mod.' })).toBeDefined()
+    const ask = await ui.find({ type: 'Input' })
+    expect(ask).toBeDefined()
+    await ui.input({ key: String(ask?.key), text: 'and then?' })
+    await clock.advance(100)
+    expect(seen.spawns).toHaveLength(2)
+    expect((seen.spawns[1]?.argv ?? []).join(' ')).toContain('and then?')
+    const back = (await ui.findAll({ type: 'Button' })).filter(b => String(b.key).startsWith('send-'))
+    expect(back.length).toBeGreaterThan(0)
+    await ui.press({ key: String(back[0]?.key) })
+    await clock.advance(100)
+    expect(sent).toEqual(['It is the side chat mod.'])
+    await ui.unmount()
+  })
+})
