@@ -1763,7 +1763,7 @@ export const register: Register = (on, options) => {
     const runName = run ? run.folder.replace(/^runs\//, '').replace(/^\d{4}-\d{2}-\d{2}-/, '') : ''
     const runChip = run ? (
       <Box key="chip-run" flexDirection="row">
-        <Text bold>{fit(runName, Math.max(8, Math.min(28, width - 60)))}</Text>
+        <Text bold>{fit(runName, Math.max(12, Math.min(28, width - 30)))}</Text>
         <Text color={run.open > 0 ? 'warning' : 'success'}>{run.open > 0 ? ` ${run.open} open` : ' done'}</Text>
       </Box>
     ) : (
@@ -1803,23 +1803,19 @@ export const register: Register = (on, options) => {
     const asmChip =
       active(list).length > 0 ? (
         <Text key="chip-assumptions" color={toReview > 0 ? 'warning' : undefined} dimColor={toReview === 0}>
-          {`⚑ ${active(list).length}`}
+          {`⚑ ${active(list).length} assumptions`}
         </Text>
       ) : null
     const shelfChip =
       sv.count > 0 ? (
         <Text key="chip-shelf" dimColor>
-          {`💡 ${sv.count}`}
+          {`💡 ${sv.count} ${sv.count === 1 ? 'idea' : 'ideas'}`}
         </Text>
       ) : null
 
-    const buttons = [
+    // Actions in three groups, each led by a dim word: do (act on this session), open (a dashboard tab), and hide.
+    const doButtons = [
       run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null,
-      <Button key="dash" plain dimColor label="dash" hotkey="2" onPress={() => void toggleDash($)} />,
-      <Button key="tab-assumptions" plain dimColor label="asm" hotkey="a" onPress={() => void showTab($, 'assumptions')} />,
-      <Button key="tab-shelf" plain dimColor label="shelf" hotkey="s" onPress={() => void showTab($, 'shelf')} />,
-      bs !== null ? <Button key="tab-board" plain dimColor label="board" hotkey="b" onPress={() => void showTab($, 'board')} /> : null,
-      lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void showTab($, 'loop')} /> : null,
       isHandoffDue ? (
         <Button key="handoff" variant="primary" label="handoff" hotkey="h" onPress={() => void pressHandoff($)} />
       ) : (
@@ -1827,8 +1823,15 @@ export const register: Register = (on, options) => {
       ),
       <Button key="idea" plain dimColor label="idea" hotkey="i" onPress={() => void pressIdea($)} />,
       <Button key="enhance" plain dimColor label="enhance" hotkey="e" onPress={() => void pressEnhance($)} />,
-      <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => void hideBar($)} />,
     ]
+    const openButtons = [
+      <Button key="dash" plain dimColor label="dash" hotkey="2" onPress={() => void toggleDash($)} />,
+      <Button key="tab-assumptions" plain dimColor label="asm" hotkey="a" onPress={() => void showTab($, 'assumptions')} />,
+      <Button key="tab-shelf" plain dimColor label="shelf" hotkey="s" onPress={() => void showTab($, 'shelf')} />,
+      bs !== null ? <Button key="tab-board" plain dimColor label="board" hotkey="b" onPress={() => void showTab($, 'board')} /> : null,
+      lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void showTab($, 'loop')} /> : null,
+    ]
+    const hasSignals = boardChip !== null || modBoxes.length > 0 || asmChip !== null || shelfChip !== null
     const guardRow = showGuard ? (
       <Box flexDirection="row">
         <Text color="warning">{'⚑ '}</Text>
@@ -1845,12 +1848,22 @@ export const register: Register = (on, options) => {
           {deviceChips}
           {loopBox}
           {cacheBox}
-          {boardChip}
-          {modBoxes}
-          {asmChip}
-          {shelfChip}
-          <Text dimColor>│</Text>
-          {buttons}
+        </Box>
+        {hasSignals ? (
+          <Box key="signals" flexDirection="row" columnGap={2} flexWrap="wrap">
+            {boardChip}
+            {modBoxes}
+            {asmChip}
+            {shelfChip}
+          </Box>
+        ) : null}
+        <Box key="actions" flexDirection="row" columnGap={1} flexWrap="wrap">
+          <Text dimColor>do</Text>
+          {doButtons}
+          <Text dimColor>{'  open'}</Text>
+          {openButtons}
+          <Text dimColor>{'  '}</Text>
+          <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => void hideBar($)} />
         </Box>
         {guardRow}
         {belowBox}

@@ -1,6 +1,6 @@
 # bws-cockpit
 
-A Claude Code mod. It puts a dashboard pane beside the transcript (Assumptions, Shelf, Board and Loop tabs), a one-row action bar above the prompt with the active run and live editor/device state, and guards calls to Unreal, Unity and adb.
+A Claude Code mod. It puts a dashboard pane beside the transcript (Assumptions, Shelf, Board and Loop tabs), a three-row action bar above the prompt with the active run and live editor/device state, and guards calls to Unreal, Unity and adb.
 
 0.15.0 folds in what were two separate mods, bws-assumptions and bws-shelf: their tools, commands and state now live here, and those plugins are retired.
 
@@ -30,9 +30,10 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
 - **Headless:** `claude -p "/dashboard"` prints every tab as text.
 
 ### Action bar (above the prompt, terminal and Desktop)
-- One row that wraps when narrow:
-  - **Chips:** the run folder name with its open count (`- [ ]` in PLAN.md and TASKS.md), devices that are up or in trouble (UE and its unreal-mcp port, Unity, Blender, adb, VRAM used/total, warning on `pressure`), the loop state while a loop is live, the cache clock (`cache 42m`, see Cache clock), the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), `⚑ N` unsent assumptions (warning while any are unreviewed), `💡 N` open ideas.
-  - **Buttons:** `1` resume run, `2` dashboard open/close, `a` Assumptions, `s` Shelf, `b` Board (with bws-board loaded), `4` Loop (with a loop), `h` handoff, `i` idea, `e` enhance, `3` hide.
+- Three rows, each wrapping when narrow:
+  - **Status:** the run folder name with its open count (`- [ ]` in PLAN.md and TASKS.md), devices that are up or in trouble (UE and its unreal-mcp port, Unity, Blender, adb, VRAM used/total, warning on `pressure`), the loop state while a loop is live, the cache clock (`cache 42m`, see Cache clock).
+  - **Signals** (only when there is one): the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), mod chips, `⚑ N assumptions` unsent (warning while any are unreviewed), `💡 N ideas` open.
+  - **Actions,** grouped: `do` → `1` resume run, `h` handoff, `i` idea, `e` enhance; `open` → `2` dashboard open/close, `a` Assumptions, `s` Shelf, `b` Board (with bws-board loaded), `4` Loop (with a loop); then `3` hide.
 - Digits answer from an empty prompt box; letters need the bar focused (`ctrl+x tab`; it moves the keys bar → pane → prompt).
 - **`i` idea** shelves the prompt box's draft and clears the box. **`e` enhance** runs bws-enhance's `/enhance` on the draft (mid-turn it queues until the turn ends); without bws-enhance it says so. **`h` handoff** writes HANDOFF.md as `/handoff` does, and is highlighted after the handoff nudge.
 - The guard's last action shows on a row under the bar for ten minutes.

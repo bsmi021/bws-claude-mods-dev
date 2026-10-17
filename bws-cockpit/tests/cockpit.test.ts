@@ -456,14 +456,19 @@ describe('action bar', () => {
     }
   })
 
-  test('one row that wraps when narrow, on desktop too', async ($, on) => {
+  test('status row, then the actions grouped do / open / hide; rows wrap when narrow, on desktop too', async ($, on) => {
     world(on, { ...RUN_WORLD, procs: '' })
     await $.command.run({ command: 'cockpit', args: '' } as never)
     const ui = await $.ui.mount({ ...BAND, surface: 'desktop', props: { ...BAND.props, bodyColumns: 60 } })
-    const bar = await ui.find({ key: 'bar' })
-    expect(bar?.props?.flexDirection).toBe('row')
-    expect(bar?.props?.flexWrap).toBe('wrap')
+    for (const key of ['bar', 'actions']) {
+      const row = await ui.find({ key })
+      expect(row?.props?.flexDirection).toBe('row')
+      expect(row?.props?.flexWrap).toBe('wrap')
+    }
+    expect(await ui.find({ key: 'signals' })).toBeUndefined() // nothing to signal here
     expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
+    const actions = await ui.find({ key: 'actions' })
+    expect(actions?.text).toMatch(/^do.*resume.*handoff.*idea.*enhance.*open.*dash.*asm.*shelf.*hide$/)
     await ui.unmount()
   })
 
