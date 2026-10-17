@@ -56,6 +56,9 @@ claude plugin install bws-sidechat@bws-mods
 ## Options (`/plugin` config)
 `takeOverFork`, `takeOverBtw` (off = built-in command), `sideTools`, `sideModel`, `loadMcpServers`, `claudePath`, `chordAction`. Decision tree: `exploreTimeoutSeconds` (default 180: an exploration that has not answered by then is ended and its node marked failed), `treeDumpFile` (default empty; a path: the tree is written there as JSON after every change, for checks and probes). Explorations use `sideModel`, `sideTools`, `loadMcpServers` and `claudePath` like the side chat.
 
+## Claude Code Desktop
+Desktop has its own native side chat: `/side` there opens the app's built-in fork beside the conversation, and the mod's command never runs (2026-10-17, Desktop Code tab: the fork was a `claude-desktop` session; no `claude -p` child was started). This mod targets the terminal; it is not supported on Desktop.
+
 ## Notes
 - The fork sees the main session as last written to disk, so a turn still in flight is seen up to its last saved message.
 - Each fork is a real session file (`claude --resume <id>` opens it). It may also appear on the session board.

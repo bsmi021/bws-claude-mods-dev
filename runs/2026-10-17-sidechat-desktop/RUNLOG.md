@@ -11,3 +11,5 @@
   - The main transcript c0d3f40d holds no "what is 2+2". The `/side` text never reached this session's engine as a command.
 - Conclusion: in the Desktop app, `/side` is taken by the app's native side chat before the mod's command.run can see it. bws-sidechat's pane and its fork did not run. README unchanged (desktop stays "not checked").
 - Next: find out whether the Desktop composer lists mod commands at all (try `/explain`, a name the app doesn't own). If it does, give the mod a command name the app doesn't take, or drop the duplicate on desktop since the app already has a native side chat.
+- Brian: skip desktop (Desktop's native side chat covers it). README gets a "Claude Code Desktop" section saying so. The desktop-surface test (7a6d03d) stays as cheap coverage of the pane tree.
+- CLOSED 2026-10-17. Finish line changed by Brian from "works on desktop" to "documented as not supported; Desktop uses its native side chat". No version bump: no code changed.
