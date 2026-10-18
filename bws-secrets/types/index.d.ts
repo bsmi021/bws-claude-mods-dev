@@ -7,6 +7,8 @@ declare module 'claude-code' {
       entry: { name: string; purpose: string; hasSaved: boolean; note: string } | null
       // The summary atom every mod publishes (FR-ALL-05); null draws no chip.
       summary: { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string } | null
+      // The dashboard tab bws-cockpit draws (bws-kit/tab.ts ModTab): names only, read there as unknown and checked.
+      tab: unknown
     }
   }
 }

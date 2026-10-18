@@ -1,6 +1,6 @@
 # bws-cockpit
 
-A Claude Code mod. It puts a dashboard pane beside the transcript (Assumptions, Shelf, Board and Loop tabs), a three-row action bar above the prompt with the active run and live editor/device state, and guards calls to Unreal, Unity and adb.
+A Claude Code mod. It puts a dashboard pane beside the transcript (Assumptions, Shelf, Board and Loop tabs, then one tab per loaded mod), a three-row action bar above the prompt with the active run and live editor/device state, and guards calls to Unreal, Unity and adb.
 
 0.15.0 folds in what were two separate mods, bws-assumptions and bws-shelf: their tools, commands and state now live here, and those plugins are retired.
 
@@ -19,20 +19,20 @@ Built from a 30-day review of one developer's Claude Code sessions across Unreal
   - `Board` draws a bordered card per session (this one first, accent border; 🟢 busy / ⚪ idle, 📝 task, 📂 run, 🔒 claims, 🔑 git lease) and one per ask (❓ open, 🙋 taken, ✅ done, 🚫 declined, 🔙 withdrawn, 🔥 urgent) from bws-board 0.6.0's `pane`; with an older bws-board it prints its text lines.
   - The picked tab is drawn as the primary button. With the pane focused, `1`–`4` switch tabs; each tab keeps its own keys.
   - With nothing picked, it shows the first tab with something waiting.
-- **Opening it:** `/dashboard [assumptions|shelf|board|loop]`, `/assumptions`, `/shelf [all]`, `/loop-watch`, `/board pane` (bws-board), or the bar. Opened over an empty prompt box it takes the keys; `Esc` hands them back, the pane stays.
+- **Opening it:** `/dashboard [assumptions|shelf|board|loop|<mod>]` (a mod by its tab title or plugin name: `notify`, `shell`, `bws-skillgate`), `/assumptions`, `/shelf [all]`, `/loop-watch`, `/board pane` (bws-board), or the bar. Opened over an empty prompt box it takes the keys; `Esc` hands them back, the pane stays.
 - **Proactive:** news for you brings its tab up:
   - Claude records an assumption → Assumptions.
   - An ask addressed to this session appears on bws-board → Board (cockpit watches bws-board's `summary` writes, so it comes at once).
   - A loop alert (needs you, stalled, driver dead, all done) → Loop, on that loop.
   - Session start with unsent assumptions or open ideas for the project → the dashboard opens on that tab; with nothing waiting it opens on Assumptions (`dashboardOnStart`, on by default; headless opens nothing). Not after `/clear`, `/resume` or `/branch` (no `session.start` there).
   - The dashboard is opened if closed, or switched to the tab if open, but only while you are not using it (pane not focused); then only the tab count changes. Opened without being asked, a pane is placed only from 144 terminal columns (110 for one you opened before).
-  - Closed by you (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's chips still count. Any asked open clears that.
+  - Closed by you (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's counts still show. Any asked open clears that.
 - **Headless:** `claude -p "/dashboard"` prints every tab as text.
 
 ### Action bar (above the prompt, terminal and Desktop)
 - Three rows, each wrapping when narrow:
   - **Status:** the run folder name with its open count (`- [ ]` in PLAN.md and TASKS.md), devices that are up or in trouble (UE and its unreal-mcp port, Unity, Blender, adb, VRAM used/total, warning on `pressure`), the loop state while a loop is live, the cache clock (`cache 42m`, see Cache clock).
-  - **Signals** (only when there is one): the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), mod chips, `⚑ N assumptions` unsent (warning while any are unreviewed), `💡 N ideas` open.
+  - **Signals** (only when there is one): the bws-board chip (`board 3 · 2 open · 1 for you`, hidden when alone with nothing open or when bws-board is not loaded), `⚑ N assumptions` unsent (warning while any are unreviewed), `💡 N ideas` open.
   - **Actions,** grouped: `do` → `1` resume run, `h` handoff, `i` idea, `e` enhance; `open` → `2` dashboard open/close, `a` Assumptions, `s` Shelf, `b` Board (with bws-board loaded), `4` Loop (with a loop); then `3` hide.
 - Digits answer from an empty prompt box; letters need the bar focused (`ctrl+x tab`; it moves the keys bar → pane → prompt).
 - **`i` idea** shelves the prompt box's draft and clears the box. **`e` enhance** runs bws-enhance's `/enhance` on the draft (mid-turn it queues until the turn ends); without bws-enhance it says so. **`h` handoff** writes HANDOFF.md as `/handoff` does, and is highlighted after the handoff nudge.
@@ -106,10 +106,12 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 - **Project list for home-folder sessions.** A session started in a home folder or a projects root gets the 40 newest projects in its first message.
 - **`/projects`** lists them; `/projects refresh` rebuilds the index.
 
-### Mod chips
-- **One chip per loaded, non-idle video-derived mod** in the action bar, after the board chip: `bws-memory`, `bws-diagram`, `bws-skillgate`, `bws-secrets`, `bws-better`. Each mod publishes one `summary` state atom (`{ state: idle|busy|ok|warn|bad, label, detail? }`, defined in `bws-kit/summary.ts`). `idle`, `null`, a malformed value or a mod that is not loaded draws nothing.
-- **`modSummaries`** picks which of those four to show, and in what order. Atoms are typed per plugin, so the list is closed: other names are ignored.
-- cockpit reads the atoms (no dependency, like bws-board's) and vendors `summary.ts` from bws-kit (`kit.json`, `hooks/kit/`; `python tools/sync-kit.py` refreshes it).
+### Mod tabs
+- **Every loaded mod is a dashboard tab**, after Assumptions, Shelf, Board and Loop, in `modSummaries` order: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint. Digits `1`-`9` reach the first nine tabs; the rest by Tab and Enter. They replace the bar's per-mod chips (0.21.0).
+- **What a tab is:** each mod publishes a `tab` state atom (`bws-kit/tab.ts`): a title, a short badge, a tone, and a body of plain nodes (text, buttons, an input, a picture, bordered cards). Cockpit draws those nodes and knows nothing mod-specific. A mod that publishes only a `summary` (`bws-kit/summary.ts`) gets a small tab from it. A malformed atom draws nothing; a mod that is not loaded has no tab.
+- **Presses go back to the mod:** a button press or a submitted input is written to cockpit's own `tabEvent` atom (`{ seq, plugin, id, value? }`); the mod acts on it from a `state.set` hook filtered to its plugin. Typed input stays in cockpit until Enter.
+- **News:** a mod counts `raise` up to bring its tab up (same rule as a board ask: not while you are using the pane, not after you closed it). A mod that must show the dashboard at once can call `$.ui.open({ id: 'dashboard' })` from its own hook: pane drawing matches by id across plugins, so cockpit draws it.
+- **Headless:** `claude -p "/dashboard"` prints each mod tab as text after the built-in ones.
 
 ### /handoff
 - **`/handoff [focus]`** writes a handoff for a fresh agent into this session's run folder as `HANDOFF.md`: the newest run folder this conversation's own tool calls wrote to, the same one the Finish-Line Guard holds it to. A folder a harness worker writes while this session supervises the loop never counts. With none, it goes in a new `runs/<date>-handoff/`.
@@ -196,7 +198,7 @@ Run `/config`, or set `pluginConfigs["bws-cockpit"].options` in settings:
 | `shelfNudge` | `true` | The shelf line in a conversation's opening context |
 | `dashboardOnStart` | `true` | Open the dashboard at session start even with nothing waiting, on Assumptions. Needs 144 terminal columns or Desktop |
 | `handoffNudgePercent` | `70` | Context percentage for the handoff nudge; `0` turns it off |
-| `modSummaries` | `bws-memory,bws-diagram,bws-skillgate,bws-secrets,bws-better` | Mods whose `summary` atom shows as a bar chip; others are ignored |
+| `modSummaries` | every known mod (see Mod tabs) | Mods that get a dashboard tab while loaded, in this order; other names are ignored |
 | `cacheTtlMinutes` | `60` | How long the main thread's prompt cache lasts after its last turn (sub-agents about 5; not counted here) |
 | `cacheLowMinutes` | `5` | The cache chip turns warning, and auto handoff fires, when under this many minutes are left |
 | `autoHandoff` | `true` | Write HANDOFF.md once per cache window when the cache runs low while idle (see Cache clock) |
@@ -223,6 +225,7 @@ Claude Code 2.1.287 through 2.1.296 (0.10.0), Windows 11, Git Bash + PowerShell 
 
 | Check | Result |
 |---|---|
+| 0.21.0 (2.1.302) | Mod tabs (`runs/2026-10-18-dashboard-tabs/`): validate, tsc, `claude plugin test` 211/211 (strip order and hotkeys, a summary-only tab, a malformed tab skipped, nodes drawn, a press and a submitted input sent as `tabEvent`, headless text; the bar draws no mod chips). Live in a 170-column tmux terminal with every mod loaded from source: the strip showed Better, Skillgate, Notify and Shell lint after the built-ins; pressing Skillgate's "Turn on" switched the gate on and redrew its tab (receipts `m1-live-*.txt`). A probe showed another plugin can open the `dashboard` pane id and cockpit draws it. Not tried: Desktop, mobile |
 | 0.17.2 (2.1.300) | `bws-better` joins the bar's mod chips (the `modSummaries` known list and default). The gate (validate, tests, tsc) is the check; not looked at in a live bar |
 | 0.17.1 (2.1.296) | Merge of 0.15.1 (`/cockpit hide` and `/cockpit show`, `dashboardOnStart`) onto 0.17.0: the gate (validate, tests, tsc) is the check; the 0.15.1 line below is its own receipt. Not checked by eye in a live bar |
 | 0.17.0 (2.1.296) | Cache clock: validate, tsc and `claude plugin test` in the M1 receipts (`runs/2026-10-13-mods-m1-cacheclock/receipts/`), 199/199 tests: the pure clock (state boundaries, chip text, records, the auto-handoff decision table, `/cacheclock` text) and the bar (chip hidden before a turn, counts down a minute at a time, warning under 5 min, cold after the hour, hidden after a `/clear`, drawn on terminal and desktop); the auto handoff (fires once, not mid-turn, not without a new turn, a manual `/handoff` counts, a failed attempt is not retried, a new turn starts a new window, off when `autoHandoff` is false). Time is stubbed (mock clock), so no live cache was measured. The live probe is in the M1 receipts |

@@ -4,6 +4,8 @@
 
 import { makeSummary } from './kit/summary'
 import type { ModSummary } from './kit/summary'
+import { buttons, card, makeTab, text } from './kit/tab'
+import type { ModTab } from './kit/tab'
 
 export const PLUGIN = 'bws-skillgate'
 export const TIMEOUT_MS = 4000
@@ -204,6 +206,22 @@ export function explainText(last: LastPick | null): string {
     last.step === 'listing' ? `The listing was cut to: ${list(last.added)}.` : `Added for this prompt: ${list(last.added)}.`,
     `Shown to the model: ${last.shown} of ${plural(last.total, 'skill')}. Tokens saved: about ${last.savedTokens} (characters / 4).`,
   ].join('\n')
+}
+
+// The dashboard tab (bws-kit/tab.ts): the status and the last picks, with the on/off switch for this session.
+export function gateTab(mode: Mode, isSession: boolean, topK: number, model: string, last: LastPick | null): ModTab {
+  const isWarn = mode === 'on' && last !== null && last.failed !== null
+  return makeTab(
+    'Skillgate',
+    [
+      ...statusText(mode, isSession, topK, model, last)
+        .split('\n')
+        .map((l, i) => text(l, i === 0 ? { isBold: true } : { isDim: true })),
+      card('Last prompt', explainText(last).split('\n').map(l => text(l)), isWarn ? 'warn' : undefined),
+      mode === 'on' ? buttons({ id: 'off', label: 'Turn off for this session' }) : buttons({ id: 'on', label: 'Turn on for this session', isPrimary: true }),
+    ],
+    { badge: mode, tone: mode === 'off' ? 'idle' : isWarn ? 'warn' : 'ok' },
+  )
 }
 
 // The summary atom (FR-ALL-05): nothing when off; the share shown and the saving while on; warn after a fail-open.

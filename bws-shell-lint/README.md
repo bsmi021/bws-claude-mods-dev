@@ -6,6 +6,8 @@ It never rewrites a command. A command it does not recognise runs as usual.
 
 A 30-day replay of about 66k real Bash calls found that the rules catch 239 of 300 quoting/parse failures (80%). None of the 64.6k commands that worked would have been refused. The length limit and the backslash halving are behaviour measured on one Windows machine (Git Bash under Claude Code 2.1.287), so re-measure on yours.
 
+- **Dashboard tab** (0.3.0): with bws-cockpit 0.21.0+, a Shell lint tab lists the active rules and the last five commands it refused this session.
+
 ## Load it
 
 ```

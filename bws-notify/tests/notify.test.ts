@@ -1,6 +1,6 @@
 import { test, expect, mock } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { duration, encode, firstLine, isReport, needsInput, project, subagentDone, turnDone } from '../hooks/text'
+import { duration, encode, firstLine, isReport, needsInput, notifyTab, project, subagentDone, turnDone } from '../hooks/text'
 
 const CWD = 'C:/Projects/my-game'
 
@@ -128,3 +128,28 @@ test('prompt-suggestion forks are not subagent reports', async ($, on) => {
   await $.classic.SubagentStop({ cwd: CWD, agent_type: '', last_assistant_message: '[{"label":"Go","prompt":"go"}]' } as never)
   expect(w.launches.length).toBe(0)
 })
+
+test('the dashboard tab: which events toast, then the last toasts, newest first', () => {
+  const all = { needsInput: true, turnDone: true, subagentDone: false, errors: true }
+  const t = notifyTab(all, 20, [], 0)
+  expect([t.title, t.badge, t.tone]).toEqual(['Notify', '', 'idle'])
+  expect(t.body[0]).toEqual({ kind: 'text', text: 'Windows toasts for when Claude needs you, finished turns, errors.', isBold: true })
+  expect(t.body[2]).toEqual({ kind: 'card', title: 'Last toasts', body: [{ kind: 'text', text: 'None yet in this session.', isDim: true }] })
+  const at = new Date(2026, 9, 18, 9, 5).getTime()
+  const two = notifyTab(all, 20, [{ at, title: 'game · done', body: 'first' }, { at: at + 60_000, title: 'game · needs you', body: 'second' }], 7)
+  expect([two.badge, two.tone]).toEqual(['7', 'ok'])
+  expect(two.body[2]).toEqual({ kind: 'card', title: 'Last toasts', body: [{ kind: 'text', text: '09:06  game · needs you: second' }, { kind: 'text', text: '09:05  game · done: first' }] })
+  expect(notifyTab({ needsInput: false, turnDone: false, subagentDone: false, errors: false }, 20, [], 0).body[0]).toEqual({ kind: 'text', text: 'Every toast is switched off in the plugin options.', isBold: true })
+})
+
+test('each toast sent updates the tab', async ($, on) => {
+  world(on)
+  const tabs: { badge?: string }[] = []
+  on('state.set', { plugin: 'bws-notify', key: 'tab' }, ($, e, next) => {
+    tabs.push(e.value as { badge?: string })
+    return next(e)
+  })
+  await $.classic.Notification({ cwd: CWD, message: 'Claude needs your permission to use Edit', notification_type: 'permission_prompt' } as never)
+  expect(tabs.map(t => t.badge)).toEqual(['1'])
+})
+

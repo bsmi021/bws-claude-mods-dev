@@ -6,6 +6,8 @@ ever sees a placeholder, `{{secret:NAME}}`. A Bash command that uses the placeho
 time, and the command's output is scrubbed before Claude Code stores it. The value never reaches the transcript or the
 model.
 
+- **Dashboard tab** (0.2.0): with bws-cockpit 0.21.0+, a Secrets tab lists the saved names and their placeholders (never a value). The masked entry keeps its own pane.
+
 ## Load
 
     claude --plugin-dir ./bws-secrets
