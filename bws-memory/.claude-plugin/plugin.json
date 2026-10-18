@@ -1,6 +1,6 @@
 {
   "name": "bws-memory",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Memory: after a turn a small model decides whether the user said something worth remembering; if so a fork writes memory files in the background (redacted, de-duplicated) and a pane lists what changed. /remember <text>, /memories, /memory-undo. DreamPath: /dream merges duplicates, drops stale entries and rewrites for clarity (preview first, backup, undo), every 20 turns and before a compaction.",
   "author": {
     "name": "Brian"

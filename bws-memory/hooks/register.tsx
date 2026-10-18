@@ -6,6 +6,8 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { DreamView, View, Written } from '../types'
 import { bound, classifyThenFork, failLine as kitFailLine, runFork } from './kit/classify-fork'
 import type { KitModel } from './kit/classify-fork'
+import { parseEvent } from './kit/tab'
+import { memoryTab } from './tab'
 import {
   addSources,
   CLASSIFY_QUESTION,
@@ -76,12 +78,13 @@ import {
   staleFiles,
 } from './dreamapply'
 
-const PANE = 'bws-memory'
-// A literal in this file: the validator reads a matcher's requestId from the source, not from an import.
-const DREAM_PANE = 'bws-dream'
 const view = atom({ plugin: 'bws-memory', key: 'view' } as const, IDLE_VIEW)
 const dream = atom({ plugin: 'bws-memory', key: 'dream' } as const, IDLE_DREAM)
 const summary = atom({ plugin: 'bws-memory', key: 'summary' } as const, null)
+// The Memory tab bws-cockpit draws in its dashboard (bws-kit/tab.ts): memory updates and the dream, as two cards.
+const tab = atom({ plugin: 'bws-memory', key: 'tab' } as const, null as unknown)
+// Counts up to bring the tab up: a memory write, a dream plan or result.
+let raiseCount = 0
 
 // The options, copied in by register on every load.
 let dirOption = ''
@@ -122,41 +125,41 @@ function kitModel($: EngineInterface): KitModel {
   }
 }
 
+async function publishTab($: EngineInterface) {
+  await update($, tab, () => memoryTab(viewNow, dreamNow, { raise: raiseCount }))
+}
+
 async function setView($: EngineInterface, v: View) {
   viewNow = v
   await update($, view, () => v)
   await update($, summary, () => combinedSummary(v, dreamNow))
+  await publishTab($)
 }
 
 async function setDream($: EngineInterface, d: DreamView) {
   dreamNow = d
   await update($, dream, () => d)
   await update($, summary, () => combinedSummary(viewNow, d))
+  await publishTab($)
 }
 
-async function closePane($: EngineInterface) {
-  await setView($, IDLE_VIEW)
-  await $.ui.close({ id: PANE })
+// News for the Memory tab: bws-cockpit brings it up (its rule: not while the person uses the dashboard, not after
+// they closed it). Without bws-cockpit (no /dashboard command) a toast says where to look.
+async function announce($: EngineInterface, fallback: string) {
+  if ((await $.command.list()).some(c => c.name === 'dashboard')) {
+    raiseCount += 1
+    await publishTab($)
+  } else $.ui.toast(fallback)
 }
 
-// Opens the pane fresh: close first, so it is never mounted twice.
-async function openPane($: EngineInterface) {
-  await $.ui.close({ id: PANE })
-  const r = await $.ui.open({ id: PANE, title: 'Memory' })
-  if (!r.isPlaced) $.ui.toast(`Memory: pane not shown (${r.reason}). /memories lists the writes.`)
-}
-
-// /clear, /resume, a new session id: drop the guard and the pane; work in flight is left to finish and is dropped.
+// /clear, /resume, a new session id: drop the guard and the view; work in flight is left to finish and is dropped.
 async function resetWork($: EngineInterface) {
   generation++
   running = false
-  await closePane($)
-  // A dream that was planning is dropped; a plan on screen belongs to the folder, not the conversation, but the pane closes
-  // with it: the trigger stays due so the chip says so.
-  if (dreamNow.phase !== 'idle') {
-    await setDream($, { ...IDLE_DREAM, due: dreamNow.due })
-    await $.ui.close({ id: DREAM_PANE })
-  }
+  await setView($, IDLE_VIEW)
+  // A dream that was planning is dropped; a plan on screen belongs to the folder, not the conversation, but it goes
+  // with it: the trigger stays due so the tab says so.
+  if (dreamNow.phase !== 'idle') await setDream($, { ...IDLE_DREAM, due: dreamNow.due })
   turnCount = 0
   autoPending = false
 }
@@ -286,7 +289,7 @@ async function runMemory($: EngineInterface, o: { forced?: string; material?: st
     }
     if (gen === generation) {
       await setView($, { phase: 'done', written, note: '' })
-      await openPane($)
+      await announce($, `Memory updated: ${written.length} file${written.length === 1 ? '' : 's'}. /memories lists the writes.`)
     }
     return { text: resultText(written, 0), changed: true }
   } catch (err) {
@@ -354,7 +357,7 @@ async function remember($: EngineInterface, text: string): Promise<string> {
   if (isHeadless) return (await runMemory($, { forced: text })).text
   running = true
   $.clock.after(10, () => void runMemory($, { forced: text }).catch(() => undefined))
-  return 'Remembering... the pane lists what changed.'
+  return 'Remembering... the Memory tab lists what changed.'
 }
 
 type Planned =
@@ -415,20 +418,17 @@ async function applyDream($: EngineInterface, actions: readonly DreamAction[], b
   return { ok: true, backup }
 }
 
-// Opens the dream pane fresh (closed first, so it is never mounted twice).
+// A dream plan, result or failure for the person: the Memory tab shows it.
 async function openDreamPane($: EngineInterface) {
-  await $.ui.close({ id: DREAM_PANE })
-  const r = await $.ui.open({ id: DREAM_PANE, title: 'Dream' })
-  if (!r.isPlaced) $.ui.toast(`Dream: pane not shown (${r.reason}). /dream status says what is waiting.`)
+  await announce($, 'Dream: /dream status says what is waiting; /dream apply applies a plan.')
 }
 
 // Dismiss, or Close after a result: nothing waits any more, so the trigger is satisfied too.
 async function dismissDream($: EngineInterface) {
   await setDream($, IDLE_DREAM)
-  await $.ui.close({ id: DREAM_PANE })
 }
 
-// Apply the plan the pane shows (the button, or `/dream apply` while a preview waits). Returns the text for the command.
+// Apply the plan the Dream card shows (the button, or `/dream apply` while a preview waits). Returns the text for the command.
 async function applyShown($: EngineInterface): Promise<string> {
   const v = dreamNow
   if (v.phase !== 'preview' || v.actions.length === 0) return 'No dream plan is waiting. Run /dream first.'
@@ -460,7 +460,7 @@ async function applyShown($: EngineInterface): Promise<string> {
 type DreamOptions = { apply: boolean; auto: boolean; headless: boolean }
 
 // One dream run: plan, then show it (preview) or apply it. `running` is held by the caller's start and released here.
-// Never throws. Automatic runs (auto) only preview and stay quiet when they fail; /dream opens the pane on a failure.
+// Never throws. Automatic runs (auto) only preview and stay quiet when they fail; /dream brings up the Memory tab on a failure.
 async function runDream($: EngineInterface, o: DreamOptions): Promise<string> {
   const gen = generation
   running = true
@@ -492,12 +492,25 @@ async function runDream($: EngineInterface, o: DreamOptions): Promise<string> {
     }
     await setDream($, { ...IDLE_DREAM, phase: 'preview', due, auto: o.auto, actions: plan.actions, sessions: plan.sessions, bases: plan.bases, skipped: plan.skipped })
     if (!o.headless) await openDreamPane($)
-    return `${planText(plan.actions, plan.skipped)}\n(A preview: nothing changed. /dream apply applies it${o.headless ? ' in one command' : ', or Apply in the pane'}.)`
+    return `${planText(plan.actions, plan.skipped)}\n(A preview: nothing changed. /dream apply applies it${o.headless ? ' in one command' : ', or Apply in the Memory tab'}.)`
   } catch (err) {
     return await fail('run', err instanceof Error ? err.message.slice(0, 80) : 'error')
   } finally {
     if (gen === generation) running = false
   }
+}
+
+// A button in the Memory tab. What the commands would print goes to a toast.
+async function tabPress($: EngineInterface, id: string) {
+  if (id === 'memory-ok') {
+    if (viewNow.phase !== 'working') await setView($, IDLE_VIEW)
+  } else if (id === 'memory-undo') {
+    $.ui.toast(await undo($))
+    if (viewNow.phase !== 'working') await setView($, IDLE_VIEW)
+  }
+  else if (id === 'dream-plan') $.ui.toast(await dreamCommand($, ''))
+  else if (id === 'dream-apply') $.ui.toast(await applyShown($))
+  else if (id === 'dream-dismiss') await dreamCommand($, 'dismiss')
 }
 
 // /dream [apply | undo | status]. `apply` with a preview waiting applies that preview; otherwise it plans and applies in
@@ -507,7 +520,13 @@ async function dreamCommand($: EngineInterface, args: string): Promise<string> {
   const a = args.trim().toLowerCase().replace(/^--?/, '')
   if (a === 'status') return dreamStatusText(dreamNow, dreamEvery, turnCount)
   if (a === 'undo') return await undoDream($)
-  if (a !== '' && a !== 'apply') return 'Usage: /dream [apply | undo | status]'
+  if (a === 'dismiss') {
+    if (dreamNow.phase === 'working') return 'A dream is being planned; dismiss it once it shows.'
+    if (dreamNow.phase === 'idle') return 'No dream plan is waiting.'
+    await dismissDream($)
+    return 'Dream dismissed. Nothing changed.'
+  }
+  if (a !== '' && a !== 'apply') return 'Usage: /dream [apply | dismiss | undo | status]'
   if (a === 'apply' && dreamNow.phase === 'preview') return await applyShown($)
   if (running) return 'A memory update is already running; try again in a moment.'
   const isHeadless = (await $.session.surfaces()).length === 0
@@ -515,7 +534,7 @@ async function dreamCommand($: EngineInterface, args: string): Promise<string> {
   if (isHeadless) return await runDream($, o)
   running = true
   $.clock.after(10, () => void runDream($, o).catch(() => undefined))
-  return `Dreaming... the pane shows the ${o.apply ? 'result' : 'plan'}.`
+  return `Dreaming... the Memory tab shows the ${o.apply ? 'result' : 'plan'}.`
 }
 
 // FR-DP-02: puts back the newest .dream-backup folder, once.
@@ -569,12 +588,13 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'remember', description: 'Save something to memory now (no classifier): /remember <text>', argumentHint: '<text>' })
     await $.command.register({ name: 'memories', description: 'List the last 20 memory writes and the session each came from', immediate: true })
-    await $.command.register({ name: 'dream', description: 'Consolidate the memory: merge duplicates, drop stale entries, rewrite for clarity: /dream [apply | undo | status]', argumentHint: '[apply | undo | status]' })
+    await $.command.register({ name: 'dream', description: 'Consolidate the memory: merge duplicates, drop stale entries, rewrite for clarity: /dream [apply | dismiss | undo | status]', argumentHint: '[apply | dismiss | undo | status]' })
     await $.command.register({ name: 'memory-undo', description: 'Restore the files the last memory write changed (one level)', immediate: true })
     dreamNow = await read($, dream)
     // A dream that was planning when the mod reloaded is gone: a waiting plan stays, a lost one is not shown as running.
     if (dreamNow.phase === 'working') await setDream($, { ...IDLE_DREAM, due: dreamNow.due })
     await update($, summary, () => combinedSummary(IDLE_VIEW, dreamNow))
+    await publishTab($)
     return next(e)
   })
 
@@ -614,109 +634,16 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // /clear and /resume end the conversation: no work for it continues, the guard resets and the pane closes.
+  // /clear and /resume end the conversation: no work for it continues and the guard resets.
   on('session.end', async ($, e, next) => {
     if (e.reason === 'clear' || e.reason === 'resume') await resetWork($).catch(() => undefined)
     return next(e)
   })
 
-  // Closed by the person (Esc, its mark): the update is acknowledged.
-  on('ui.close', async ($, e, next) => {
-    if (e.id === PANE && e.origin.kind === 'person') {
-      const v = await read($, view)
-      if (v.phase !== 'working') await setView($, IDLE_VIEW)
-    }
-    // The dream pane closed by the person is a Dismiss (a plan being made is left to finish).
-    if (e.id === DREAM_PANE && e.origin.kind === 'person') {
-      const d = await read($, dream)
-      if (d.phase !== 'working') await setDream($, IDLE_DREAM)
-    }
+  // A press in the Memory tab (bws-cockpit writes it): acknowledge or undo a memory write; plan, apply or dismiss a dream.
+  on('state.set', { plugin: 'bws-cockpit', key: 'tabEvent' }, async ($, e, next) => {
+    const ev = parseEvent(e.value)
+    if (ev?.plugin === 'bws-memory') await tabPress($, ev.id).catch(() => $.ui.log(failLine('tab', 'error'), { to: 'debug' }))
     return next(e)
-  })
-
-  // FR-DP-02: the plan with Apply and Dismiss; after Apply the result; a failure with Close. FR-DP-04: each action's sessions.
-  on('ui.render', { component: 'Pane', requestId: DREAM_PANE }, async ($, e) => {
-    const d = await read($, dream)
-    const { Box, Button, Text } = $.ui.resolve(e)
-    if (d.phase === 'working') return <Text color="cyan">dreaming...</Text>
-    if (d.phase === 'error') {
-      return (
-        <Box flexDirection="column">
-          <Text color="yellow">Dream: {d.note}</Text>
-          <Button key="close" label="Close" hotkey="c" onPress={() => dismissDream($)} />
-        </Box>
-      )
-    }
-    if (d.phase === 'idle') return <Text dimColor>No dream plan.</Text>
-    const shown = d.actions.slice(0, SHOWN_ACTIONS)
-    const rows = shown.map(a => (
-      <Box key={`${a.action}-${a.into}`} flexDirection="column">
-        <Text wrap="truncate-end">{actionLine(a)}</Text>
-        <Text dimColor wrap="truncate-end">
-          {'  '}
-          {a.reason}
-        </Text>
-        <Text dimColor wrap="truncate-end">
-          {'  '}
-          {fromLine(actionSessions(a, d.sessions))}
-        </Text>
-      </Box>
-    ))
-    const more = d.actions.length - shown.length
-    if (d.phase === 'applied') {
-      return (
-        <Box flexDirection="column">
-          <Text color="green">Dream applied: {countsText(counts(d.actions))}</Text>
-          <Text dimColor wrap="truncate-end">
-            Backup: {BACKUP_DIR}/{d.backup}/ (/dream undo restores it)
-          </Text>
-          {rows}
-          {more > 0 ? <Text dimColor>+{more} more</Text> : null}
-          <Button key="close" label="Close" hotkey="c" onPress={() => dismissDream($)} />
-        </Box>
-      )
-    }
-    return (
-      <Box flexDirection="column">
-        <Text color="cyan">
-          Dream plan: {d.actions.length} action{d.actions.length === 1 ? '' : 's'}
-          {d.due ? ' (due)' : ''}
-        </Text>
-        <Box flexDirection="row">
-          <Button key="apply" label="Apply" hotkey="a" onPress={() => void applyShown($)} />
-          <Button key="dismiss" label="Dismiss" hotkey="d" onPress={() => dismissDream($)} />
-        </Box>
-        {rows}
-        {more > 0 ? <Text dimColor>+{more} more (all are applied)</Text> : null}
-      </Box>
-    )
-  })
-
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const v = await read($, view)
-    const { Box, Button, Text } = $.ui.resolve(e)
-    if (v.phase === 'working') return <Text color="cyan">memory updating...</Text>
-    if (v.phase === 'error') {
-      return (
-        <Box flexDirection="column">
-          <Text color="yellow">Memory not saved: {v.note}</Text>
-          <Button key="close" label="Close" hotkey="c" onPress={() => closePane($)} />
-        </Box>
-      )
-    }
-    if (v.phase === 'idle') return <Text dimColor>No memory changes.</Text>
-    return (
-      <Box flexDirection="column">
-        <Text color="green">
-          Memory updated: {v.written.length} file{v.written.length === 1 ? '' : 's'}
-        </Text>
-        {v.written.map(w => (
-          <Text key={w.file} wrap="truncate-end">
-            {w.kind === 'new' ? 'new ' : 'edit'} {w.file} +{w.added} -{w.removed}
-          </Text>
-        ))}
-        <Button key="close" label="Close" hotkey="c" onPress={() => closePane($)} />
-      </Box>
-    )
   })
 }

@@ -378,7 +378,7 @@ export function resultText(written: readonly Written[], duplicates: number): str
   return `Memory updated: ${written.map(writtenLine).join('; ')}.`
 }
 
-// The summary atom (FR-ALL-05): the chip while working, the file count while the pane is open, a warning after a failure.
+// The summary atom (FR-ALL-05): the chip while working, the file count until OK in the tab, a warning after a failure.
 export function memorySummary(v: View): ModSummary | null {
   if (v.phase === 'working') return makeSummary('busy', 'memory updating')
   if (v.phase === 'done') return makeSummary('ok', `memory: ${v.written.length} file${v.written.length === 1 ? '' : 's'}`, v.written.map(writtenLine).join('; '))

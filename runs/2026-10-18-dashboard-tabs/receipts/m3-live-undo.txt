@@ -1,0 +1,7 @@
+  ⎿  bws-memory:Remembering...thepanelistswhatchanged.
+│ 1: Assumptions 2: Shelf 3: Board [ Memory 1 ]                                                                                                                          │
+│ Memory · 1   │
+│ │ Last memory update                                                                                                                                                │  │
+│ │ Memory updated: 1 file                                                                                                                                            │  │
+│ │ [ OK ] [ Undo it ]                                                                                                                                                │  │
+bws-memory:Undidthelastmemorywrite:0filesrestored,1newfileemptied(amodcannotdeletefiles;itsindexlineisgone).

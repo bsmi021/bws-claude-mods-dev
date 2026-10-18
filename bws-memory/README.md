@@ -33,8 +33,10 @@ never waits for it.
 - **Redaction.** Before anything is written, keys, tokens, passwords, bearer tokens, private-key blocks, JWTs,
   `user:password@` URLs and long mixed-case key-shaped strings are replaced with `[redacted]`. A reply that is half or
   more secret characters (or has a body that is only redaction) is dropped whole.
-- **What you see.** While the run is going the summary atom reads `memory updating` (bws-cockpit draws it as a chip).
-  When files changed, a closable pane lists each file with `+added -removed` lines; closing it clears the chip. A failed
+- **What you see** (0.3.0: a dashboard tab, no panes of its own). With bws-cockpit 0.21.0+ the dashboard has a Memory
+  tab with two cards. "Last memory update" reads `memory updating…` while a run goes; when files changed it lists each
+  file with `+added -removed` lines and the tab is brought up, with OK (clears it) and Undo it (`/memory-undo`). Without
+  bws-cockpit a toast says what changed. A failed
   run shows `memory not saved` with the step that failed; nothing is written. Failures write one debug-log line that
   never carries your text.
 - **Fail open.** A classifier error, a fork error or timeout (90 s), an unreadable reply or a write error leaves the
@@ -45,7 +47,7 @@ never waits for it.
 
 | Command | What it does |
 | --- | --- |
-| `/remember <text>` | Forces an entry from `<text>` (no classifier). With a screen it runs behind and opens the pane; headless it runs before the command returns. With no conversation to fork (a first command, or right after `/clear`) it asks a model with the text alone. |
+| `/remember <text>` | Forces an entry from `<text>` (no classifier). With a screen it runs behind and brings up the Memory tab; headless it runs before the command returns. With no conversation to fork (a first command, or right after `/clear`) it asks a model with the text alone. |
 | `/memories` | The last 20 writes, newest first, each with the session it came from (kept in `sources.json` beside the files). |
 | `/dream` | Consolidates the memory (see DreamPath below): shows a plan first. `/dream apply` plans and applies in one command (or applies the plan that is waiting), `/dream undo` restores the latest backup, `/dream status` says what waits and how many turns are counted. |
 | `/memory-undo` | Restores the previous version of the files the last write changed, plus `MEMORY.md` and `sources.json`. One level deep. A file the write created is emptied, not deleted (a mod has no delete); its index line is gone. |
@@ -61,8 +63,8 @@ dropped, and entries are rewritten for clarity. Nothing changes until you press 
   in two actions, or removes more than 40% of the files. A merge is not counted as a removal. Only non-empty `.md`
   files up to 4,000 characters are shown to the fork (at most 40); longer ones are left alone. Secrets in the rewritten
   text are `[redacted]`.
-- **Preview first.** On a screen a pane ("Dream") lists each action with its reason and the sessions its files came from,
-  with Apply and Dismiss. Headless, `/dream` prints the plan and changes nothing; `/dream apply` (also `--apply`) plans
+- **Preview first.** On a screen the Memory tab's Dream card lists each action with its reason and the sessions its
+  files came from, with Apply and Dismiss (`/dream apply`, `/dream dismiss`); while idle it offers Plan a dream. Headless, `/dream` prints the plan and changes nothing; `/dream apply` (also `--apply`) plans
   and applies in one awaited command.
 - **Apply.** The whole folder (every `.md`, `MEMORY.md`, `sources.json`) is first copied to
   `<memoryDir>/.dream-backup/<UTC timestamp>/`, then the changes are written. A mod has no delete, so a removed or
@@ -70,14 +72,14 @@ dropped, and entries are rewritten for clarity. Nothing changes until you press 
   preview. `/dream undo` puts back the newest backup (once; run it again for "already restored"). A dream also clears
   `/memory-undo`'s record, which would undo into a folder that is gone.
 - **Sources.** A file's sessions are its rows in `sources.json`. The plan prompt lists them, a merge moves the
-  merged-away files' rows to the surviving file (so it carries the union), and the pane shows them per action
+  merged-away files' rows to the surviving file (so it carries the union), and the Dream card shows them per action
   (`from: aaaa1111, bbbb2222`).
 - **Automatic.** After every `dreamEveryTurns` answered turns of yours (default 20; headless runs, subagents and
   interrupted turns do not count) and before a compaction (`session.compact`, `manual`, `auto` or `plugin` triggers of
   the main conversation; `precompute` is ignored), the dream is due: the summary atom reads `dream due` and a
-  **preview** starts in the background and opens the pane. It never applies on its own, and it waits if a memory update
+  **preview** starts in the background and brings up the Memory tab. It never applies on its own, and it waits if a memory update
   is running. Nothing is started with fewer than two memory files or with a plan already waiting. A failed automatic
-  dream stays quiet (no pane, one debug line) and leaves `dream due`. `dreamEveryTurns` 0 turns both triggers off. The
+  dream stays quiet (no tab raise, one debug line) and leaves `dream due`. `dreamEveryTurns` 0 turns both triggers off. The
   turn counter is temporary: it resets on a reload, `/clear`, `/resume` and `/branch`.
 - **After `/clear`, `/resume`, `/branch`.** A dream that was planning is dropped (its reply is never applied), a plan
   on screen is closed, and a dream that was `due` (from the trigger) stays due until you apply or dismiss one.
@@ -85,7 +87,7 @@ dropped, and entries are rewritten for clarity. Nothing changes until you press 
 ## After `/clear`, `/resume`, `/branch` (remembering)
 
 - `/clear` and `/resume` (the `session.end` reasons `clear` and `resume`) start no work. They reset the running-fork
-  guard, clear the view and close the pane. A fork that was still running is not cancelled (it cannot be) but its reply
+  guard and clear the view. A fork that was still running is not cancelled (it cannot be) but its reply
   is dropped: nothing from a conversation that is gone is written.
 - `/branch` has no event of its own. The mod notices a changed session id on the next turn or command and resets the
   same way.
@@ -102,7 +104,7 @@ dropped, and entries are rewritten for clarity. Nothing changes until you press 
 ## Summary atom
 
 `{ plugin: 'bws-memory', key: 'summary' }`: nothing when idle, `memory updating` (busy) while a run is going,
-`memory: N files` (ok) while the pane is open, `memory not saved` (warn) after a failed run. DreamPath adds `dreaming` (busy), `dream due` (ok: the trigger fired, or its
+`memory: N files` (ok) until you press OK, `memory not saved` (warn) after a failed run. DreamPath adds `dreaming` (busy), `dream due` (ok: the trigger fired, or its
 plan is waiting), `dream preview` (ok: a plan from `/dream` is waiting), `dream applied` and `dream failed` (warn); the
 memory chips come first. bws-cockpit lists
 `bws-memory` in its default `modSummaries`.
@@ -110,7 +112,7 @@ memory chips come first. bws-cockpit lists
 ## Capabilities used
 
 `turn.complete` (returns at once; the work starts after it through `$.clock.after`), `session.compact` (observe only; returns `next(e)` at once), `session.end`, `command.run`
-(`/remember`, `/memories`, `/dream`, `/memory-undo`), `ui.render` and `ui.close` for the pane, `$.model.classify`,
+(`/remember`, `/memories`, `/dream`, `/memory-undo`), `state.set` on bws-cockpit's `tabEvent` (its tab's buttons), `$.model.classify`,
 `$.model.fork`, `$.model.complete` (only as the fork's fallback), `$.session.*` (id, cwd, messages, surfaces, model),
 `$.fs.read`, `$.fs.write` and `$.fs.list` on the memory folder only (and its `.dream-backup/`), `$.state`, `$.ui.log` (debug only). It makes no
 network calls of its own, runs no processes and never touches `~/.claude`.

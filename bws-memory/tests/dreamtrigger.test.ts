@@ -1,6 +1,6 @@
 import { test, expect, describe } from 'claude-code/testing'
 import { dreamOnCompact, parseEveryTurns } from '../hooks/dreamapply'
-import { DIR, drain, folder, MERGE_AB, PANE, plan, run, SESSION_END, TABS_A, TABS_B, turn, world } from './dreamworld'
+import { DIR, drain, folder, MERGE_AB, plan, run, SESSION_END, TABS_A, TABS_B, turn, world } from './dreamworld'
 
 const TWO = folder(TABS_A, TABS_B)
 const COMPACT = { trigger: 'manual', messages: [{ role: 'user', text: 'hello there', toolUses: [] }] }
@@ -29,13 +29,13 @@ describe('FR-DP-03: every N turns', () => {
     const before = new Map(w.files)
     await turns($ as never, w, 2)
     expect(w.seen.fork.length).toBe(0)
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
     await turns($ as never, w, 1)
     expect(w.seen.fork.length).toBe(1)
     expect(w.seen.fork[0]).toContain('=== tabs-a.md')
-    expect(w.seen.opened).toEqual(['bws-dream'])
+    expect(w.raised()).toBe(1)
     expect(w.files).toEqual(before) // an automatic dream only previews
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /Dream plan: 1 action \(due\)/ })).toBeDefined()
     expect(await ui.find({ key: 'apply' })).toBeDefined()
     await ui.unmount()
@@ -59,7 +59,7 @@ describe('FR-DP-03: every N turns', () => {
     const w = world(on, { files: TWO })
     await turns($ as never, w, 6)
     expect(w.seen.fork.length).toBe(1)
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     await ui.press({ key: 'dismiss' } as never)
     await ui.unmount()
     await turns($ as never, w, 2)
@@ -82,7 +82,7 @@ describe('FR-DP-03: every N turns', () => {
     const w = world(on, { files: TWO, surfaces: [] })
     await turns($ as never, w, 6)
     expect(w.seen.fork.length).toBe(0)
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
   })
 
   test('dreamEveryTurns 0 turns it off, for turns and for compactions', { options: { dreamEveryTurns: 0 } }, async ($, on) => {
@@ -98,13 +98,13 @@ describe('FR-DP-03: every N turns', () => {
     const w = world(on, { files: folder(TABS_A) })
     await turns($ as never, w, 6)
     expect(w.seen.fork.length).toBe(0)
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
   })
 
   test('an automatic dream that fails stays quiet (no pane), logs one line, and leaves the dream due', EVERY3, async ($, on) => {
     const w = world(on, { files: TWO, fork: 'throw' })
     await turns($ as never, w, 3)
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
     expect(w.seen.logs.filter(l => l.text.startsWith('bws-memory: dream')).map(l => l.text)).toEqual(['bws-memory: dream fork failed (error); nothing changed'])
     expect(await run($, 'dream', 'status')).toContain('due: run /dream')
     expect(w.seen.writes).toEqual([])
@@ -152,9 +152,9 @@ describe('FR-DP-03: before a compaction', () => {
     expect(w.seen.fork.length).toBe(1) // the fork is still planning; the compaction already returned
     w.release(plan(MERGE_AB))
     await drain(w.clock)
-    expect(w.seen.opened).toEqual(['bws-dream'])
+    expect(w.raised()).toBe(1)
     expect(w.seen.writes).toEqual([])
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /Dream plan: 1 action \(due\)/ })).toBeDefined()
     await ui.unmount()
   })
