@@ -1,0 +1,22 @@
+
+tests\qa.test.ts:
+(pass) a round, parsed > questions, options, answers, notes and the interview tag [4.19ms]
+(pass) a round, parsed > nothing answered and no free text: not kept; free text alone is kept; AFK is flagged [1.10ms]
+(pass) a round, parsed > the record keeps the newest rounds and replaces a repeated id [0.83ms]
+(pass) a round, parsed > project key folds case and slashes [0.46ms]
+(pass) the digest Claude reads > each question with its answer and note, oldest first, under a header [1.08ms]
+(pass) the digest Claude reads > over the limit the oldest rounds go and the header says so [1.01ms]
+(pass) the digest Claude reads > scopes: session, all, last N; bad words are refused [1.17ms]
+(pass) the tab and /qa text > empty record: a hint; otherwise the shown round as cards with paging and send buttons [1.34ms]
+(pass) the tab and /qa text > /qa lists the newest rounds with their numbers [0.53ms]
+(pass) hooks: record, page, send > an answered round is kept in the store, shown in the tab, and the dialog result passes through [115.83ms]
+(pass) hooks: record, page, send > a denied or unanswered round is not kept [70.68ms]
+(pass) hooks: record, page, send > /qa send submits this session's digest after the command returns; send all includes other sessions [113.50ms]
+(pass) hooks: record, page, send > paging: older and newer move through rounds; send-round sends the shown one; show opens the dashboard [122.68ms]
+(pass) hooks: record, page, send > qa_history gives the digest to Claude, for the project or this session [64.72ms]
+(pass) hooks: record, page, send > pinDigest off: nothing added to the context [76.90ms]
+(pass) hooks: record, page, send > pinDigest on: this session's answers ride in the context [57.50ms]
+
+ 16 pass
+ 0 fail
+Ran 16 tests across 1 file. [1.05s]

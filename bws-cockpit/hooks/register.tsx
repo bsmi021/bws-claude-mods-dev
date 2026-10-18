@@ -118,6 +118,7 @@ const secretsTab = atom({ plugin: 'bws-secrets', key: 'tab' } as const, null as 
 const skillgateTab = atom({ plugin: 'bws-skillgate', key: 'tab' } as const, null as unknown)
 const notifyTab = atom({ plugin: 'bws-notify', key: 'tab' } as const, null as unknown)
 const shellLintTab = atom({ plugin: 'bws-shell-lint', key: 'tab' } as const, null as unknown)
+const interviewTab = atom({ plugin: 'bws-interview', key: 'tab' } as const, null as unknown)
 // A press or submitted input in a mod's tab, for that mod to act on (it watches this with a state.set hook).
 const tabEvent = atom({ plugin: 'bws-cockpit', key: 'tabEvent' } as const, null)
 // The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
@@ -891,6 +892,7 @@ async function readModTabs($: EngineInterface, names: readonly KnownMod[]): Prom
     'bws-skillgate': has('bws-skillgate') ? await read($, skillgateTab) : null,
     'bws-notify': has('bws-notify') ? await read($, notifyTab) : null,
     'bws-shell-lint': has('bws-shell-lint') ? await read($, shellLintTab) : null,
+    'bws-interview': has('bws-interview') ? await read($, interviewTab) : null,
   }
   const summaries: Partial<Record<KnownMod, unknown>> = {
     'bws-memory': has('bws-memory') ? await read($, memorySummary) : null,
@@ -1524,6 +1526,10 @@ export const register: Register = (on, options) => {
   })
   on('state.set', { plugin: 'bws-shell-lint', key: 'tab' }, async ($, e, next) => {
     void noteModTab($, o, 'bws-shell-lint', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-interview', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-interview', e.value).catch(() => undefined)
     return next(e)
   })
 

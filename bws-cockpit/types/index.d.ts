@@ -166,6 +166,7 @@ declare module 'claude-code' {
     'bws-skillgate': { summary: ModSummary | null; tab: unknown }
     'bws-notify': { summary: ModSummary | null; tab: unknown }
     'bws-shell-lint': { summary: ModSummary | null; tab: unknown }
+    'bws-interview': { tab: unknown }
   }
   interface PluginState {
     'bws-cockpit': {

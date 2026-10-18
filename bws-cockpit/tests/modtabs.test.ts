@@ -16,6 +16,7 @@ describe('mod tabs', () => {
       'bws-skillgate',
       'bws-notify',
       'bws-shell-lint',
+      'bws-interview',
     ])
     expect(parseMods(' BWS-Secrets ; bws-memory, nope, bws-memory ')).toEqual(['bws-secrets', 'bws-memory'])
     expect(parseMods('')).toEqual([])

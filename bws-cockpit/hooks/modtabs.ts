@@ -18,6 +18,7 @@ export const KNOWN_MODS = [
   'bws-skillgate',
   'bws-notify',
   'bws-shell-lint',
+  'bws-interview',
 ] as const
 export type KnownMod = (typeof KNOWN_MODS)[number]
 
@@ -34,6 +35,7 @@ export const MOD_TITLE: Record<KnownMod, string> = {
   'bws-skillgate': 'Skillgate',
   'bws-notify': 'Notify',
   'bws-shell-lint': 'Shell lint',
+  'bws-interview': 'Interview',
 }
 
 // `modSummaries` option (the mods that get a tab): names separated by , or ;. Unknown names and repeats are dropped.
