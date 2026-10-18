@@ -1,0 +1,50 @@
+  Context: the folder currently holds a.txt and a .claude/bws-memory/ directory. Look at a.txt and the contents of .claude/bws-memory/ first so the README describes what
+  is actually there. Do not add content about TMS or Chronicler publication rules unless those files show this folder is part of that work.
+
+  Scope: write only the README. Do not modify, move or rename a.txt or anything under .claude/. Keep it short: a title, a one-paragraph purpose, and a list of the files
+  and folders with one line each. If the purpose is unclear from the files, state a brief assumption in the README and say so in your reply.
+
+  Done when: README.md exists in the folder, every listed item matches a real file or folder there, and you have listed the directory afterward to confirm the file is
+  /enhance list the files here
+
+  Searched for 1 pattern, read 5 files (ctrl+o to expand)
+
+● Write(README.md)
+  ⎿  Wrote 14 lines to README.md
+       1 # boardtest
+       2
+       3 A small scratch folder, apparently used as a test workspace for the `bws-memory` memory store (the files under `.claude/bws-memory/`). Its purpose is infe
+         git repository with one commit.
+       4
+       5 ## Contents
+       6
+       8 - `.claude/` — Claude Code project folder.
+       9   - `bws-memory/` — memory store.
+      10     - `MEMORY.md` — memory index (currently empty).
+     … +6 lines (ctrl+o to expand)
+
+  Listed 1 directory (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ 1: Assumptions 2: Shelf 3: Board [ Enhance ✦ ]                                                                                                                         │
+│ Enhance · ✦                  │
+│ ✦ The enhanced promptisinthe box.                                    │
+│s send · r revert · d dismiss (with the dashboard focused) · Esc to edit in the box│
+│ [ Send ] [ Revert ] [ Dismiss ]                                                                                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run  ● UE ×2  ● VRAM 6.9/8.0 GB  cache 59m[-]
+do h: handoff i: idea e: enhance   open 2: dash a: asm s: shelf    3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Listeveryfileandfolderintheprojectroot,
+  C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest. Include hidden items and go two
+levels deep, including the contents of.claude/bws-memory/.Thisisread-only:donotcreate,modify,moveorrenameanything.
+
+  Use a directory listing command (for example `ls -laR`) or the Glob tool. Show the output as a list of paths relative to the project root, and note whether README.md
+  exists yet, since the earlier project tree may be out of date.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ auto mode on (shift+tab to cycle)                                                                                                         ✦ enhance
+
+

@@ -18,7 +18,8 @@ export const TAB_TONES: readonly TabTone[] = ['idle', 'busy', 'ok', 'warn', 'bad
 export type TabColor = 'ok' | 'warn' | 'bad' | 'accent'
 const COLORS: readonly TabColor[] = ['ok', 'warn', 'bad', 'accent']
 
-export type TabButton = { id: string; label: string; isPrimary?: boolean }
+// `hotkey`: one letter a-z that presses it while the dashboard has the keyboard (digits pick tabs).
+export type TabButton = { id: string; label: string; isPrimary?: boolean; hotkey?: string }
 
 export type TabNode =
   | { kind: 'text'; text: string; color?: TabColor; isDim?: boolean; isBold?: boolean; isClipped?: boolean }
@@ -110,7 +111,10 @@ function parseNode(n: unknown, budget: { nodes: number; cells: number }, depth: 
     const items: TabButton[] = []
     for (const b of n.items.slice(0, 12)) {
       if (!isObj(b) || !id(b.id) || !line(b.label, 40)) continue
-      items.push(b.isPrimary === true ? { id: id(b.id), label: line(b.label, 40), isPrimary: true } : { id: id(b.id), label: line(b.label, 40) })
+      const item: TabButton = { id: id(b.id), label: line(b.label, 40) }
+      if (b.isPrimary === true) item.isPrimary = true
+      if (typeof b.hotkey === 'string' && /^[a-z]$/.test(b.hotkey)) item.hotkey = b.hotkey
+      items.push(item)
     }
     return items.length > 0 ? { kind: 'buttons', items } : null
   }

@@ -38,6 +38,11 @@ describe('tab', () => {
     expect(parseTab({ title: 'X', show: 'many' })?.show).toBeUndefined()
   })
 
+  test('a button hotkey is one letter; anything else is dropped', () => {
+    const t = parseTab({ title: 'X', body: [{ kind: 'buttons', items: [{ id: 'a', label: 'A', hotkey: 's' }, { id: 'b', label: 'B', hotkey: '1' }, { id: 'c', label: 'C', hotkey: 'Enter' }] }] })
+    expect(t?.body).toEqual([{ kind: 'buttons', items: [{ id: 'a', label: 'A', hotkey: 's' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C' }] }])
+  })
+
   test('events: a press and a submit; junk is null', () => {
     expect(parseEvent({ seq: 1, plugin: 'bws-diagram', id: 'redraw' })).toEqual({ seq: 1, plugin: 'bws-diagram', id: 'redraw' })
     expect(parseEvent({ seq: 2, plugin: 'bws-sidechat', id: 'ask', value: 'hi' })).toEqual({ seq: 2, plugin: 'bws-sidechat', id: 'ask', value: 'hi' })

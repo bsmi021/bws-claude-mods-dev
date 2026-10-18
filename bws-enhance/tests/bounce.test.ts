@@ -1,4 +1,5 @@
 import { test, expect, mock, describe } from 'claude-code/testing'
+import { lastTab, mountTab, recordTabs } from './tabview'
 import type { On } from 'claude-code'
 import {
   bounceSummary,
@@ -33,6 +34,7 @@ type World = {
 // Stubs every outside call the bouncer makes and records what reached the engine.
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: 1_000_000 })
+  recordTabs(on)
   const seen = {
     classify: [] as { text: string; labels: readonly string[]; options?: unknown }[],
     complete: [] as { model: string; system: string; prompt: string }[],
@@ -73,7 +75,11 @@ function world(on: On, w: World = {}) {
     seen.sent.push({ text: e.text, asUser: (e.origin as { asUser?: boolean } | undefined)?.asUser })
     return { text: e.text } as never
   })
+  // The panes this plugin opened: the dashboard holds the keys when it was opened with focus.
+  const panes = new Map<string, boolean>()
+  on('ui.panes', () => ({ value: [...panes].map(([id, isFocused]) => ({ id, title: 'Dashboard', isShown: true, isFocused, isPlaced: true })) as never }))
   on('ui.open', ($, e) => {
+    panes.set(e.id, e.focus === true || (panes.get(e.id) ?? false))
     seen.opened.push({ id: e.id, title: e.title })
     return { value: { isPlaced: true } }
   })
@@ -85,12 +91,6 @@ function world(on: On, w: World = {}) {
   return { seen, clock }
 }
 
-const PANE = {
-  plugin: 'bws-enhance',
-  component: 'Pane',
-  requestId: 'bws-enhance',
-  props: { title: 'Prompt held', isFocused: false, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 8 }, view: {} },
-} as const
 
 const drop = (r: unknown) => (r as { drop?: string }).drop
 
@@ -191,8 +191,9 @@ describe('bouncer', () => {
     expect(seen.classify.length + seen.complete.length).toBe(2) // at most two small-model calls per prompt
     await clock.advance(10)
     expect(seen.fills).toEqual([PROMPT])
-    expect(seen.opened).toEqual([{ id: 'bws-enhance', title: 'Prompt held' }])
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(seen.opened).toEqual([{ id: 'dashboard', title: 'Dashboard' }])
+    expect(lastTab()?.badge).toBe('held')
+    const ui = await mountTab($ as never)
     expect(await ui.find({ type: 'Text', text: /Held as vague/ })).toBeDefined()
     expect(await ui.find({ key: 'sendanyway' })).toBeDefined()
     expect(await ui.find({ key: 'enhance' })).toBeDefined()
@@ -224,7 +225,7 @@ describe('bouncer', () => {
     const { seen, clock } = world(on)
     await $.prompt.submit({ text: PROMPT, origin: COMPOSER, wait: false } as never)
     await clock.advance(10)
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await mountTab($ as never)
     await ui.press({ key: 'sendanyway' })
     await ui.unmount()
     await clock.advance(10)
@@ -337,7 +338,7 @@ describe('bouncer', () => {
     const { seen, clock } = world(on)
     await $.prompt.submit({ text: PROMPT, origin: COMPOSER, wait: false } as never)
     await clock.advance(10)
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await mountTab($ as never)
     await ui.press({ key: 'enhance' })
     await ui.unmount()
     await clock.advance(50)

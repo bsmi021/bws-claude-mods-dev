@@ -22,15 +22,19 @@ The rewrite is grounded in what this session actually has:
 | --- | --- |
 | Enhance a rough prompt | `/enhance <rough prompt>` (works while Claude is busy) |
 | Enhance the draft already in the box | `ctrl+x ctrl+p` (needs the keybinding below) |
-| Send the enhanced prompt | `s` or `Enter` while the pane has the keys, `Enter` in the box, or click **Send** |
-| Revert to your rough prompt | `r`, or click **Revert** |
-| Dismiss / cancel | `d` / `c`, click **Dismiss** / **Cancel**, or `ctrl+x x` on the pane |
+| Send the enhanced prompt | `s` or `Enter` while the dashboard has the keys, `Enter` in the box, click **Send**, or `/enhance --send` |
+| Revert to your rough prompt | `r`, click **Revert**, or `/enhance --revert` |
+| Dismiss / cancel | `d` / `c`, click **Dismiss** / **Cancel**, or `/enhance --dismiss` |
 
-The enhanced prompt replaces the prompt box; edit it there and press `Enter` to send it as your own words. A small pane
-shows **Send / Revert / Dismiss**. **Send** sends the box as it is, edits included. If you typed something else while it was
-working, the box is left alone and the pane offers **Put in box**. When the rewrite lands, the pane is closed and reopened with keyboard
-focus (the engine grants focus only to a fresh open over an empty box), so `s` / `r` / `d` act at once and `Esc` hands the keys
-back to the box for editing.
+The enhanced prompt replaces the prompt box; edit it there and press `Enter` to send it as your own words. Since 0.4.0
+the buttons live in the **Enhance tab** of bws-cockpit's dashboard (0.21.0+), not a pane of their own: **Send / Revert /
+Dismiss**. **Send** sends the box as it is, edits included. If you typed something else while it was working, the box is
+left alone and the tab offers **Put in box**. `/enhance` opens the dashboard on the Enhance tab and asks for keyboard
+focus (the engine grants it only to a fresh open over an empty box); when the rewrite lands without it, the dashboard is
+reopened asking again. With the keys, `s` / `r` / `d` act at once and `Esc` hands them back to the box. Live in tmux
+(2.1.302) the engine granted neither request, so the keys needed the dashboard focused first; `Enter` in the box, the
+tab's buttons and the commands work regardless. Every button has a command twin, `/enhance --<id>` (`send`,
+`revert`, `put`, `dismiss`, `cancel`, `sendanyway`, `enhance`, `edit`).
 
 Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output.
 
@@ -42,7 +46,7 @@ Holds a prompt you type when it is too vague for Claude Code to act on without a
 | --- | --- |
 | `off` (default) | Sent as typed. Nothing is checked and no model is called. |
 | `warn` | Held with the reason; the draft stays in the box. Enter again sends it as it is. |
-| `block` | Not sent; the draft stays in the box. The pane offers **Send anyway** (`s`), **Enhance** (`e`, the enhance pipeline on the held text) and **Edit** (`x`, closes the pane). A headless `claude -p` prompt is refused, and the reason is its output. |
+| `block` | Not sent; the draft stays in the box. The Enhance tab offers **Send anyway** (`s`), **Enhance** (`e`, the enhance pipeline on the held text) and **Edit** (`x`, back to the box). A headless `claude -p` prompt is refused, and the reason is its output. |
 
 How it decides: one small-model call answers vague or clear for the prompt (4 s timeout). A vague prompt gets a second call
 that writes one sentence, at most 40 words, on what is missing, with the glossary. At most two small-model calls per prompt.
@@ -50,7 +54,7 @@ that writes one sentence, at most 40 words, on what is missing, with the glossar
 What is checked: prompts you type (Enter), prompts from the Remote Control bridge, and prompts from the SDK host (`claude -p`).
 What is not: slash commands; short answers (under 4 words such as yes, no, continue, ok, a number or an option letter);
 prompts with an attachment or a leftover paste placeholder; and anything a plugin, another session, a schedule or a task
-sends, including the bouncer's own **Send anyway**. In `warn` mode a headless run is not checked, because it has no pane
+sends, including the bouncer's own **Send anyway**. In `warn` mode a headless run is not checked, because it has no dashboard
 to send anyway from.
 
 Pastes arrive expanded, so the paste skip only sees leftover placeholders. A long pasted log is checked as ordinary text.

@@ -1591,6 +1591,7 @@ export const register: Register = (on, options) => {
                   key={`${k}-${b.id}`}
                   label={b.label}
                   {...(b.isPrimary ? { variant: 'primary' as const } : {})}
+                  {...(b.hotkey ? { hotkey: b.hotkey } : {})}
                   onPress={() => void sendTabEvent($, name, b.id)}
                 />
               ))}
