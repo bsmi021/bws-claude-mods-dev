@@ -1,5 +1,6 @@
 import { test, expect, mock, describe } from 'claude-code/testing'
 import type { On } from 'claude-code'
+import { cardView, recordTabs } from './tabview'
 import { memoryFile, type Entry } from '../hooks/memory'
 
 declare const setTimeout: (fn: (...a: never[]) => void, ms: number) => unknown
@@ -103,15 +104,11 @@ function world(on: On, w: World = {}) {
   })
   on('turn.complete', () => ({ text: '' }) as never)
   on('session.end', ($, e) => ({ sessionId: e.sessionId }))
-  return { seen, clock, files, who, release: (text: string) => release(text) }
+  const tab = recordTabs(on)
+  const mount = ($: { command: { run: (i: never) => Promise<unknown> } }) => cardView(tab.last, 'Last memory update', (command, args) => run($, command, args))
+  return { seen, clock, files, who, last: tab.last, raised: tab.raised, mount, release: (text: string) => release(text) }
 }
 
-const PANE = {
-  plugin: 'bws-memory',
-  component: 'Pane',
-  requestId: 'bws-memory',
-  props: { title: 'Memory', isFocused: false, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 8 }, view: {} },
-} as const
 
 // Lets the deferred work and the awaits behind it run.
 async function drain(clock: { advance: (ms: number) => Promise<unknown> }) {
@@ -302,7 +299,7 @@ describe('FR-MEM-02: files, MEMORY.md, update and duplicate', () => {
     await turn($)
     await drain(w.clock)
     expect(w.seen.writes).toEqual([])
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
   })
 
   test('a name that matches an existing file under another file name updates that file', async ($, on) => {
@@ -350,30 +347,25 @@ describe('FR-MEM-04: chip and pane', () => {
     const w = world(on, { fork: 'defer' })
     await turn($)
     await drain(w.clock)
-    const working = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const working = await w.mount($ as never)
     expect(await working.find({ type: 'Text', text: /memory updating/ })).toBeDefined()
     await working.unmount()
     w.release(reply(TABS_JSON))
     await drain(w.clock)
-    expect(w.seen.opened).toEqual(['bws-memory'])
-    expect(w.seen.closed.length).toBeGreaterThanOrEqual(1) // closed before it was opened: never mounted twice
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(w.raised()).toBe(1)
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /Memory updated: 1 file/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /new\s+prefers-tabs\.md \+9 -0/ })).toBeDefined()
-    expect(await ui.find({ key: 'close' })).toBeDefined()
-    await ui.press({ key: 'close' } as never)
+    expect(await ui.find({ key: 'close' })).toBeDefined() // the tab's OK (acknowledged in bws-cockpit; checked live)
+    expect(await ui.find({ key: 'undo' })).toBeDefined()
     await ui.unmount()
-    expect(w.seen.closed[w.seen.closed.length - 1]).toBe('bws-memory')
-    const after = await $.ui.mount({ ...PANE, surface: 'terminal' })
-    expect(await after.find({ type: 'Text', text: /No memory changes/ })).toBeDefined()
-    await after.unmount()
   })
 
   test('a failed run shows a closable warning in the pane view', async ($, on) => {
     const w = world(on, { fork: 'nonsense' })
     await turn($)
     await drain(w.clock)
-    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /Memory not saved: parse: unreadable reply/ })).toBeDefined()
     await ui.unmount()
   })
@@ -388,13 +380,13 @@ describe('FR-MEM-05: /remember, /memories, /memory-undo', () => {
 
   test('/remember <text>: no classifier; the fork gets the text; a file is written (interactive: behind the command)', async ($, on) => {
     const w = world(on)
-    expect(await run($, 'remember', 'use tabs')).toBe('Remembering... the pane lists what changed.')
+    expect(await run($, 'remember', 'use tabs')).toBe('Remembering... the Memory tab lists what changed.')
     expect(w.files.size).toBe(0)
     await drain(w.clock)
     expect(w.seen.classify.length).toBe(0)
     expect(w.seen.fork[0]).toContain('<remember>use tabs</remember>')
     expect(w.files.has(`${DIR}/prefers-tabs.md`)).toBe(true)
-    expect(w.seen.opened).toEqual(['bws-memory'])
+    expect(w.raised()).toBe(1)
   })
 
   test('/remember headless: awaited inline; with nothing to fork it asks the model with the text alone', async ($, on) => {
@@ -446,17 +438,16 @@ describe('FR-MEM-05: /remember, /memories, /memory-undo', () => {
 })
 
 describe('FR-MEM-06: /clear, /resume, /branch', () => {
-  test('/clear while a fork runs: the guard resets, the pane closes, the late reply writes nothing', async ($, on) => {
+  test('/clear while a fork runs: the guard resets, the tab goes idle, the late reply writes nothing', async ($, on) => {
     const w = world(on, { fork: 'defer' })
     await turn($)
     await drain(w.clock)
     await $.session.end(SESSION_END('clear'))
-    const closedBefore = w.seen.closed.length
-    expect(closedBefore).toBeGreaterThanOrEqual(1)
+    expect(await (await w.mount($ as never)).find({ type: 'Text', text: /memory updating/ })).toBeUndefined()
     w.release(reply(TABS_JSON))
     await drain(w.clock)
     expect(w.files.size).toBe(0) // the reply belonged to the cleared conversation
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
     await turn($) // the guard reset: the next turn is looked at again
     await drain(w.clock)
     expect(w.seen.classify.length).toBe(2)
@@ -477,7 +468,6 @@ describe('FR-MEM-06: /clear, /resume, /branch', () => {
     await $.session.end(SESSION_END('prompt_input_exit'))
     expect(w.seen.closed).toEqual([])
     await $.session.end(SESSION_END('resume'))
-    expect(w.seen.closed.length).toBeGreaterThanOrEqual(1)
     await turn($)
     await drain(w.clock)
     expect(w.seen.classify.length).toBe(2)

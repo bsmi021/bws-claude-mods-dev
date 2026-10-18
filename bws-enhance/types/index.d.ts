@@ -28,6 +28,10 @@ declare module 'claude-code' {
       setting: Setting
       // The summary atom every mod publishes (FR-ALL-05); null draws no chip.
       summary: { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string } | null
+      // The Enhance tab bws-cockpit draws (bws-kit/tab.ts ModTab), read there as unknown and checked.
+      tab: unknown
     }
+    // bws-cockpit's last press in a mod tab (bws-kit/tab.ts TabEvent), watched for this plugin's own.
+    'bws-cockpit': { tabEvent: { seq: number; plugin: string; id: string; value?: string } | null }
   }
 }

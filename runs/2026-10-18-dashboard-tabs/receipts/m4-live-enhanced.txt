@@ -1,0 +1,50 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\m4.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ 1: Assumptions 2: Shelf 3: Board [ Enhance ✦ ]                                                                                                                         │
+│ Enhance · ✦                                                                                                                                           │
+│ ✦ The enhanced prompt is in the box.                                                                                                                                   │
+│ s send · r revert · d dismiss (with the dashboard focused) · Esc to edit in the box                                                                                    │
+│ [ Send ] [ Revert ] [ Dismiss ]                                                                                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run  ● UE ×2  ● VRAM 7.2/8.0 GB                    [-]
+do h: handoff i: idea e: enhance   open 2: dash a: asm s: shelf    3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Create aREADME.md inthe project root,
+C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest,whichcurrentlycontainsonly
+a.txt and a.claude/ folder.
+
+Context:Beforewriting,listthefolderandreada.txtsotheREADMEdescribeswhatisactuallythere.Donotinventfeaturesorpurposesbeyondwhatthosefiles
+show. If thefolder's purpose is still unclear from itscontents, stateyour assumption in theREADME and inyour reply tome.
+
+Scope:OnlyaddREADME.md.Donotmodifya.txtoranythingunder.claude/.TheREADMEshouldgiveashortdescriptionofthefolder,alistofitsfilesandwhateach
+is for, and how to use or run anything it contains, if that can be determined fromthefiles. Keep it brief.
+
+  Constraints: This is a scratch folder and the README is not a published design artifact, so it does not need to go through The Chronicler. It is also not TMS story
+content, so no narrative consultationisneeded.
+
+Donewhen:README.mdexistsintheboardtestfolder,everystatementinitmatchesthefolder'sactualcontents,andyouhaveprintedthefile'scontentstoconfirm
+itwaswrittencorrectly.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⏵⏵automodeon (shift+tabtocycle)✦ enhance
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

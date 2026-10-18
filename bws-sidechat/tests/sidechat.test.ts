@@ -1,5 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
+import { ROOM, STEP } from '../hooks/tab'
+import { mountChat, recordTabs } from './tabview'
 
 const NOW = Date.parse('2026-10-12T10:00:00')
 const NL = String.fromCharCode(10)
@@ -40,6 +42,7 @@ const LONG = [
 
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: NOW })
+  recordTabs(on)
   const seen = {
     opened: [] as { id: string; focus?: boolean }[],
     closed: [] as string[],
@@ -62,7 +65,7 @@ function world(on: On, w: World = {}) {
     if (e.focus === true && w.grantsFocus !== false) isFocused = true
     return { value: { isPlaced: true } }
   })
-  on('ui.panes', () => ({ value: (seen.opened.length === 0 ? [] : [{ id: 'sidechat', title: 'Side chat', isShown: true, isFocused: isFocused || w.alwaysFocused === true, isPlaced: true }]) as never }))
+  on('ui.panes', () => ({ value: (seen.opened.length === 0 ? [] : [{ id: 'dashboard', title: 'Dashboard', isShown: true, isFocused: isFocused || w.alwaysFocused === true, isPlaced: true }]) as never }))
   on('ui.focus', ($, e) => {
     seen.focused.push(String(e.element))
     return {}
@@ -102,13 +105,13 @@ describe('/btw', () => {
     const r = await run($, 'btw', 'what mod is this?')
     expect(r.text ?? '').toBe('')
     await clock.advance(100)
-    // opened inside the command (counts as asked, so it is placed at any width), then focus asked for once the box is clear
-    expect(seen.opened).toEqual([{ id: 'sidechat', focus: undefined }, { id: 'sidechat', focus: true }])
+    // opened inside the command, asking for the keys at once over the empty box (counts as asked: any width, and granted)
+    expect(seen.opened).toEqual([{ id: 'dashboard', focus: true }])
     expect(seen.spawns).toHaveLength(1)
     const argv = (seen.spawns[0]?.argv ?? []).join(' ')
     expect(argv).toContain('claude -p what mod is this? --resume main-session-id --fork-session --session-id ')
     expect(seen.spawns[0]?.env).toEqual({ CLAUDE_CODE_PLUGIN_DIRS: '' })
-    const ui = await $.ui.mount(PANE)
+    const ui = await mountChat($ as never)
     expect(await ui.find({ type: 'Text', text: 'what mod is this?' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'It is the side chat mod.' })).toBeDefined()
     await ui.unmount()
@@ -133,7 +136,7 @@ describe('/btw', () => {
     const { seen, clock } = world(on)
     await run($, 'btw', '')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(2)
+    expect(seen.opened).toHaveLength(1)
     expect(seen.spawns).toHaveLength(0)
   })
 
@@ -162,9 +165,9 @@ describe('/fork and /side', () => {
     const { seen, clock } = world(on)
     await run($, 'fork')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(2)
+    expect(seen.opened).toHaveLength(1)
     expect(seen.spawns).toHaveLength(0)
-    const ui = await $.ui.mount(PANE)
+    const ui = await mountChat($ as never)
     expect(await ui.find({ type: 'Text', text: /forked from main-ses/ })).toBeDefined()
     await ui.unmount()
   })
@@ -173,7 +176,7 @@ describe('/fork and /side', () => {
     const { seen, clock } = world(on)
     await run($, 'branch')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(2)
+    expect(seen.opened).toHaveLength(1)
   })
 
   test('/fork native hands the command back to the built-in with the rest of the arguments', async ($, on) => {
@@ -198,10 +201,10 @@ describe('/fork and /side', () => {
     expect((seen.spawns[0]?.argv ?? []).join(' ')).toContain('why is it slow --resume main-session-id --fork-session')
   })
 
-  test('/side close closes the pane', async ($, on) => {
+  test('/side close ends the side chat; the dashboard stays open for its other tabs', async ($, on) => {
     const { seen } = world(on)
     await run($, 'side', 'close')
-    expect(seen.closed).toEqual(['sidechat'])
+    expect(seen.closed).toEqual([])
   })
 })
 
@@ -226,16 +229,16 @@ describe('keyboard focus', () => {
     const { seen, clock } = world(on, { grantsFocus: false })
     await run($, 'fork')
     await clock.advance(1000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(3)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(4) // the open itself, then 10, 250 and 800 ms
     await clock.advance(5000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(3) // and then stops
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(4) // and then stops
   })
 
-  test('a person already typing in the prompt keeps the keys', async ($, on) => {
-    const { seen, clock } = world(on, { box: 'half a thought' })
+  test('a command asks for the keys once (its text is still in the box while it runs); the retries leave a typed box alone', async ($, on) => {
+    const { seen, clock } = world(on, { box: 'half a thought', grantsFocus: false })
     await run($, 'fork')
     await clock.advance(1000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(0)
+    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
   })
 })
 
@@ -244,23 +247,21 @@ describe('a long answer', () => {
     const { clock } = world(on, { lines: LONG })
     await run($, 'btw', 'write an essay')
     await clock.advance(200)
-    for (const rows of [12, 20, 30]) {
-      const ui = await $.ui.mount(pane(rows))
-      expect(await ui.find({ type: 'Input' })).toBeDefined()
-      expect(await ui.find({ key: 'older' })).toBeDefined()
-      expect(await ui.find({ key: 'newer' })).toBeUndefined()
-      // header (2) + the rows left for the transcript: nothing else draws as text
-      const texts = await ui.findAll({ type: 'Text' })
-      expect(texts.length).toBeLessThanOrEqual(rows - 3)
-      await ui.unmount()
-    }
+    const ui = await mountChat($ as never)
+    expect(await ui.find({ type: 'Input' })).toBeDefined()
+    expect(await ui.find({ key: 'older' })).toBeDefined()
+    expect(await ui.find({ key: 'newer' })).toBeUndefined()
+    // the header line and the model line, then at most ROOM transcript rows: nothing else draws as text
+    const texts = await ui.findAll({ type: 'Text' })
+    expect(texts.length).toBeLessThanOrEqual(ROOM + 2)
+    await ui.unmount()
   })
 
   test('the newest rows show first', async ($, on) => {
     const { clock } = world(on, { lines: LONG })
     await run($, 'btw', 'write an essay')
     await clock.advance(200)
-    const ui = await $.ui.mount(pane(20))
+    const ui = await mountChat($ as never)
     expect(await ui.find({ type: 'Text', text: /Paragraph 40/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /Paragraph 1:/ })).toBeUndefined()
     await ui.unmount()
@@ -272,15 +273,15 @@ describe('scroll buttons', () => {
     const { clock } = world(on, { lines: LONG })
     await run($, 'btw', 'write an essay')
     await clock.advance(200)
-    const ui = await $.ui.mount(pane(20))
+    const ui = await mountChat($ as never)
     const above = async () => Number(/(\d+) rows above/.exec(String((await ui.find({ key: 'older' }))?.props?.label))?.[1])
     const first = await above()
     expect(first).toBeGreaterThan(0)
     await ui.press({ key: 'older' })
     const second = await above()
-    // roomOf(20) = 13 rows, half of it = 6 rows a press: a small, even step and not a whole message
-    expect(first - second).toBe(6)
-    expect(String((await ui.find({ key: 'newer' }))?.props?.label)).toContain('6 rows below')
+    // half the window a press: a small, even step and not a whole message
+    expect(first - second).toBe(STEP)
+    expect(String((await ui.find({ key: 'newer' }))?.props?.label)).toContain(`${STEP} rows below`)
     await ui.press({ key: 'newer' })
     expect(await ui.find({ key: 'newer' })).toBeUndefined()
     expect(await above()).toBe(first)
@@ -291,7 +292,7 @@ describe('scroll buttons', () => {
     const { clock } = world(on, { lines: LONG })
     await run($, 'btw', 'write an essay')
     await clock.advance(200)
-    const ui = await $.ui.mount(pane(20))
+    const ui = await mountChat($ as never)
     for (let i = 0; i < 60 && (await ui.find({ key: 'older' })) !== undefined; i++) await ui.press({ key: 'older' })
     expect(await ui.find({ key: 'older' })).toBeUndefined()
     expect(await ui.find({ type: 'Text', text: 'You' })).toBeDefined()
@@ -306,7 +307,7 @@ describe('Stop', () => {
     await clock.advance(200)
     const sideId = sideIdOf(seen.spawns[0]?.argv ?? [])
     expect(sideId).toBeDefined()
-    const ui = await $.ui.mount(pane(20))
+    const ui = await mountChat($ as never)
     expect(await ui.find({ key: 'stop' })).toBeDefined()
     await ui.press({ key: 'stop' })
     expect(seen.kills).toHaveLength(1)
@@ -325,20 +326,20 @@ describe('Stop', () => {
     await run($, 'btw', 'think hard')
     await clock.advance(200)
     const asked = () => seen.opened.filter(o => o.focus === true).length
-    expect(asked()).toBe(0) // the pane said it was focused, so the open path asked for nothing
-    const ui = await $.ui.mount(pane(20))
+    expect(asked()).toBe(1) // the open's own request; the pane then said it was focused, so nothing more
+    const ui = await mountChat($ as never)
     await ui.press({ key: 'stop' })
     await ui.unmount()
-    expect(asked()).toBe(1) // Stop's own request, with no clock time passed
+    expect(asked()).toBe(2) // Stop's own request, with no clock time passed
     await clock.advance(1000)
-    expect(asked()).toBe(4) // and again at 10, 250 and 800 ms
+    expect(asked()).toBe(5) // and again at 10, 250 and 800 ms
   })
 
   test('after Stop the next message resumes the same fork (it exists once the child said hello)', async ($, on) => {
     const { seen, clock } = world(on, { hold: true })
     await run($, 'btw', 'first')
     await clock.advance(200)
-    const ui = await $.ui.mount(pane(20))
+    const ui = await mountChat($ as never)
     await ui.press({ key: 'stop' })
     await clock.advance(200)
     await ui.unmount()
@@ -364,14 +365,13 @@ describe('Stop', () => {
     await clock.advance(200)
     await run($, 'side', 'close')
     expect(seen.kills).toHaveLength(1)
-    expect(seen.closed).toEqual(['sidechat'])
   })
 
   test('Stop with nothing running does nothing', async ($, on) => {
     const { seen, clock } = world(on)
     await run($, 'btw', 'quick')
     await clock.advance(200)
-    const ui = await $.ui.mount(pane(20))
+    const ui = await mountChat($ as never)
     expect(await ui.find({ key: 'stop' })).toBeUndefined()
     await ui.unmount()
     expect(seen.kills).toEqual([])
@@ -408,7 +408,7 @@ describe('hotkey', () => {
     const ui = await $.ui.mount(footer())
     expect(seen.opened).toEqual([])
     await ui.press({ key: 'side' })
-    expect(seen.opened[0]).toEqual({ id: 'sidechat', focus: undefined })
+    expect(seen.opened[0]).toEqual({ id: 'dashboard', focus: true })
     await clock.advance(100)
     expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
     expect(seen.spawns).toEqual([]) // nothing is asked of the model by opening it
@@ -424,7 +424,7 @@ describe('hotkey', () => {
     await ui.press({ key: 'side' })
     await clock.advance(100)
     await ui.unmount()
-    const pane1 = await $.ui.mount(PANE)
+    const pane1 = await mountChat($ as never)
     expect(await pane1.find({ type: 'Text', text: 'first question' })).toBeDefined()
     await pane1.unmount()
     expect(seen.spawns).toHaveLength(1)
@@ -435,7 +435,7 @@ describe('hotkey', () => {
     const ui = await $.ui.mount(footer())
     await ui.press({ key: 'side' })
     await clock.advance(1000)
-    expect(seen.opened).toEqual([{ id: 'sidechat', focus: undefined }])
+    expect(seen.opened).toEqual([{ id: 'dashboard', focus: undefined }])
     await ui.unmount()
   })
 
@@ -487,7 +487,7 @@ describe('failures', () => {
     const { clock } = world(on, { lines: [], exit: 1 })
     await run($, 'btw', 'q')
     await clock.advance(100)
-    const ui = await $.ui.mount(PANE)
+    const ui = await mountChat($ as never)
     expect(await ui.find({ type: 'Text', text: /side chat process ended \(exit 1\)/ })).toBeDefined()
     await ui.unmount()
   })
@@ -506,7 +506,7 @@ describe('desktop', () => {
     await run($, 'btw', 'what mod is this?')
     await clock.advance(100)
     expect(seen.spawns).toHaveLength(1)
-    const ui = await $.ui.mount(DESK)
+    const ui = await mountChat($ as never)
     await ui.drawn() // rejects if the desktop table refuses the tree
     expect(await ui.find({ type: 'Text', text: 'It is the side chat mod.' })).toBeDefined()
     const ask = await ui.find({ type: 'Input' })

@@ -1,5 +1,6 @@
 // Pure pieces of request_secret (no `$`): its arguments, its texts, and the wait for the person (DECISIONS.md D6).
 import { makeSummary, type ModSummary } from './kit/summary'
+import { card, makeTab, text, type ModTab } from './kit/tab'
 import { nameError } from './secrets'
 
 export const WAIT_LIMIT_MS = 10 * 60_000
@@ -119,3 +120,16 @@ export function secretsSummary(count: number, asking: string | null): ModSummary
   if (count === 0) return null
   return makeSummary('ok', `secrets ${count}`, `${count} saved name${count === 1 ? '' : 's'} for this project`)
 }
+
+// The dashboard tab (bws-kit/tab.ts): the saved names and how to use them, never a value. The masked entry keeps its
+// own pane, which takes the keyboard while it asks.
+export function secretsTab(names: readonly string[], asking: string | null): ModTab {
+  const body = [
+    text(names.length === 0 ? 'No secrets saved for this project.' : `${names.length} secret${names.length === 1 ? '' : 's'} saved for this project (values never shown).`, { isBold: true }),
+    ...(asking !== null ? [text(`Asking you for ${asking} in its own pane.`, { color: 'warn' as const })] : []),
+    ...(names.length > 0 ? [card('Saved names', names.map(n => text(`${n}  ->  {{secret:${n}}}`)))] : []),
+    text('Claude asks for a new one with request_secret; /secrets remove NAME deletes one.', { isDim: true }),
+  ]
+  return makeTab('Secrets', body, { badge: asking !== null ? '…' : names.length > 0 ? String(names.length) : '', tone: asking !== null ? 'busy' : names.length > 0 ? 'ok' : 'idle' })
+}
+

@@ -59,19 +59,19 @@ describe('FR-DG-03: classify big, fork once, show', () => {
     expect(w.seen.classify[0]?.text.includes('refactor the config')).toBe(false) // counts only, never the prompt
     expect(w.seen.fork.length).toBe(1)
     expect(w.seen.fork[0]).toContain('the last turn')
-    expect(w.seen.opened.map(o => o.id)).toEqual(['bws-diagram'])
-    expect(w.seen.closed).toEqual(['bws-diagram']) // closed before it is opened
+    expect(w.raised()).toBe(1) // the Diagram tab is brought up; no pane of its own
+    expect(w.seen.opened.length).toBe(0)
     expect(await run($, 'diagram', 'status')).toContain('1. auto: Refactor (3 nodes, 2 edges)')
   })
 
-  test('the classifier says no: no fork, no diagram, no pane', async ($, on) => {
+  test('the classifier says no: no fork, no diagram, the tab is not raised', async ($, on) => {
     const w = world(on, { classify: 'no' })
     await $.session.start(START)
     await turn($)
     await drain(w.clock)
     expect(w.seen.classify.length).toBe(1)
     expect(w.seen.fork.length).toBe(0)
-    expect(w.seen.opened.length).toBe(0)
+    expect(w.raised()).toBe(0)
   })
 
   test('no call at all: a chat turn with no tools, headless, a subagent, an aborted turn', async ($, on) => {
@@ -141,18 +141,18 @@ describe('FR-DG-03: classify big, fork once, show', () => {
     expect(await run($, 'diagram', 'status')).toContain('1. session: Refactor')
   })
 
-  test('an unasked open that is not placed toasts where to find it', async ($, on) => {
+  test('/diagram show switches the dashboard to the Diagram tab and opens it as the person\'s own', async ($, on) => {
     const w = world(on, { placed: false })
     await $.session.start(START)
     await turn($)
     await drain(w.clock)
-    expect(w.seen.toasts[0]).toContain('/diagram show')
-    expect(await run($, 'diagram', 'show')).toBe('Pane not shown (too narrow).')
-    expect(w.seen.opened[w.seen.opened.length - 1]?.focus).toBe(true)
+    expect(await run($, 'diagram', 'show')).toBe('Dashboard not shown (too narrow).')
+    expect(w.seen.opened[w.seen.opened.length - 1]).toEqual({ id: 'dashboard', columns: undefined, focus: true })
+    expect(w.last()?.show).toBe(1)
   })
 
-  test('a pin whose pane is not placed is written into the transcript, drawn, so it is seen anyway', async ($, on) => {
-    const w = world(on, { placed: false, surfaces: [] })
+  test('without bws-cockpit a diagram is written into the transcript, drawn, and /diagram show prints it', async ($, on) => {
+    const w = world(on, { cockpit: false, surfaces: [] })
     await $.session.start(START)
     await turn($, { answer: 'Here:\n\n```mermaid\ngraph LR\n  A[Parse request] --> B{Valid?}\n  B -- yes --> C[Write file]\n```\n' })
     await drain(w.clock)
@@ -161,8 +161,9 @@ describe('FR-DG-03: classify big, fork once, show', () => {
     expect(log!.text).toContain('Pinned: Parse request')
     expect(log!.text).toContain('┌ file   ╭ component   ╔ step   ╱ decision')
     expect(log!.text).toContain('pinned at turn 1')
-    expect(log!.text).toContain('/diagram show opens it')
-    expect(w.seen.toasts[0]).toContain('/diagram show')
+    expect(log!.text).toContain('bws-cockpit is not loaded')
+    expect(await run($, 'diagram', 'show')).toContain('▼ yes')
+    expect(w.raised()).toBe(0)
   })
 
   test('the dumpFile option writes the board after each change', { options: { dumpFile: DUMP } }, async ($, on) => {
@@ -190,7 +191,7 @@ describe('FR-ALL-03: fails open', () => {
       expect(lines[0]?.to).toBe('debug')
       expect(lines[0]?.text.startsWith(`bws-diagram: ${step} failed`)).toBe(true)
       expect(lines[0]?.text.includes('refactor')).toBe(false)
-      expect(w.seen.opened.length).toBe(0)
+      expect(w.raised()).toBe(0)
       expect(await run($, 'diagram', 'status')).toContain(`Last attempt failed: ${step}`)
     })
   failing('a classifier error', { classify: 'throw' }, 'classify')

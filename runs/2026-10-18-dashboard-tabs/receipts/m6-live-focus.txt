@@ -1,0 +1,50 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\m6.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+
+❯ say hi in two words
+
+● Hi there!
+
+✻ Worked for 1s · done 9:19 AM
+
+❯ reply with the word blue
+
+● Blue
+
+✻ Sautéed for 1s · done 9:20 AM
+
+● bws-sidechat: reloaded (6 hooks: session.start, command.run, turn.start, turn.complete, ui.render, state.set)
+
+❯ reply with the word green
+
+● Green
+
+✻ Brewed for 1s · done 9:22 AM
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ Side chat · forked from c588ebf7                                                                                                                              │
+│ [ New fork ] [ Refresh ] [ Pull ][ Close ]                               │
+│[ ● default ] [ opus ] [ sonnet ] [ haiku ]│
+│ model: default · main: 2 ahead                                                                                                                                         │
+│ You                                                                                                                                                                │
+│ one word: are you there?                                                                                                                             │
+│ Claude                                                                                                                                                                 │
+│ Yes.                                                                                                                                       │
+│ [ ↩ Send to main ]                                                                                                                                                     │
+│ You                                                                                                                                                                    │
+│ one word: are you there?                                          │
+│Claude│
+│ Yes.                                                                                                                                                     │
+│ [ ↩ Send to main ]                                                                                                                                                     │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run  ● UE ×2  ● VRAM 6.8/8.0 GB  cache 59m                             [-]
+doh: handoffi: ideae: enhance  open2: dasha: asms: shelf  3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ reply with the word red
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⏵⏵automodeon (shift+tabtocycle)◨side
+

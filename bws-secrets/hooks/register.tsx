@@ -18,6 +18,7 @@ import {
   savedText,
   SECRETS_USAGE,
   secretsSummary,
+  secretsTab,
   sleeperArgv,
   waitFor,
   waitText,
@@ -49,6 +50,8 @@ const WITHHELD = 'bws-secrets: the output could not be checked for secrets, so i
 
 const entry = atom({ plugin: 'bws-secrets', key: 'entry' } as const, null as EntryView | null)
 const summary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
+// The dashboard tab bws-cockpit draws (bws-kit/tab.ts): names only.
+const tab = atom({ plugin: 'bws-secrets', key: 'tab' } as const, null as unknown)
 
 // The options, copied in by register on every load.
 let dirOption = ''
@@ -81,8 +84,9 @@ async function loadSecrets($: EngineInterface, file: string): Promise<Secret[]> 
 // FR-SB-06: the summary atom: how many names are saved for this project, or the request being asked.
 async function publish($: EngineInterface) {
   const { file } = await paths($)
-  const count = (await loadSecrets($, file)).length
-  await update($, summary, () => secretsSummary(count, pending?.name ?? null))
+  const names = (await loadSecrets($, file)).map(s => s.name)
+  await update($, summary, () => secretsSummary(names.length, pending?.name ?? null))
+  await update($, tab, () => secretsTab(names, pending?.name ?? null))
 }
 
 async function endRequest($: EngineInterface) {

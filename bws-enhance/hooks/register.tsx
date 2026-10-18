@@ -1,11 +1,13 @@
 // bws-enhance: rewrites a rough prompt into a specific one, grounded in this session's instructions and skills,
-// puts it in the prompt box, and opens a small pane with Send / Revert.
+// puts it in the prompt box, and shows Send / Revert in its bws-cockpit dashboard tab.
 // Triggers: /enhance <rough prompt>, or the chord bound to the footer button's action on the draft in the box.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, PromptSubmitInput, Register } from 'claude-code'
 import type { Setting, View } from '../types'
 import { bound, classifyGate } from './kit/classify-fork'
 import type { KitModel } from './kit/classify-fork'
+import { DASHBOARD, parseEvent } from './kit/tab'
+import { actionOf, enhanceTab, type Action } from './tab'
 import {
   BOUNCE_TIMEOUT_MS,
   bounceSummary,
@@ -40,12 +42,15 @@ import {
 
 const COMMAND = 'enhance'
 const BOUNCE = 'bounce'
-const PANE = 'bws-enhance'
 const IDLE: View = { phase: 'idle', original: '', enhanced: '', isFilled: false, note: '' }
 const view = atom({ plugin: 'bws-enhance', key: 'view' } as const, IDLE)
 // What /bounce set for this session: mode null leaves the bounce option in charge; warned is the text held once in warn mode.
 const setting = atom({ plugin: 'bws-enhance', key: 'setting' } as const, { mode: null, warned: null } as Setting)
 const summary = atom({ plugin: 'bws-enhance', key: 'summary' } as const, null)
+// The Enhance tab bws-cockpit draws in its dashboard (bws-kit/tab.ts).
+const tab = atom({ plugin: 'bws-enhance', key: 'tab' } as const, null as unknown)
+// Counts up when the tab must be shown: an enhance started or done, a prompt held.
+let showCount = 0
 // bws-better's switch, read-only: while its automatic mode is on it takes the typed prompt, so the bouncer stands aside.
 const betterAuto = atom({ plugin: 'bws-better', key: 'auto' } as const, false)
 // The options, copied in by register on every load.
@@ -127,48 +132,66 @@ async function finish($: EngineInterface, rough: string, model: string) {
   const r = await enhance($, rough, model, mine.signal)
   if (mine.signal.aborted) return
   if (!r.ok) {
-    await update($, view, () => ({ ...IDLE, phase: 'error', original: rough, note: r.note }))
+    await setView($, () => ({ ...IDLE, phase: 'error', original: rough, note: r.note }))
     return
   }
   // The box still holds nothing or the rough draft: replace it. Anything else was typed meanwhile: keep it.
   const box = (await $.prompt.read()).text.trim()
   if (box !== '' && box !== rough) {
-    await update($, view, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: false }))
+    await setView($, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: false }))
     return
   }
-  await update($, view, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: true }))
-  // The pane gets the keys only when opened fresh over an empty composer (re-opening an open id only retitles it),
-  // so: clear the box, close and reopen with focus (s / r / d, Enter on Send), then fill.
-  if (box !== '') await $.prompt.fill({ text: '' })
-  await $.ui.close({ id: PANE })
-  await placed($, await $.ui.open({ id: PANE, title: 'Enhanced prompt', focus: true }))
+  await setView($, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: true }))
+  // Still holding the keys from start (the person's open): the tab just changes. Otherwise ask for them again, which
+  // the engine grants only to a fresh open over an empty composer: clear the box, show the tab with focus, then fill.
+  const pane = (await $.ui.panes()).find(p => p.id === DASHBOARD)
+  if (pane?.isFocused) await publish($)
+  else {
+    if (box !== '') await $.prompt.fill({ text: '' })
+    await showTab($, true)
+  }
   const isFilled = (await $.prompt.fill({ text: r.text })).isFilled
-  if (!isFilled) await update($, view, old => ({ ...old, isFilled: false }))
+  if (!isFilled) await setView($, old => ({ ...old, isFilled: false }))
 }
 
-// A pane that waits undrawn (a narrow terminal) would hide Send: say so; Enter in the box still sends.
+// A dashboard that waits undrawn (a narrow terminal) would hide Send: say so; Enter in the box still sends.
 async function placed($: EngineInterface, r: { isPlaced: true } | { isPlaced: false; reason: string }) {
-  if (!r.isPlaced) $.ui.toast(`Enhance: pane not shown (${r.reason}). Enter in the box sends.`)
+  if (!r.isPlaced) $.ui.toast(`Enhance: dashboard not shown (${r.reason}). Enter in the box sends.`)
 }
 
 async function start($: EngineInterface, rough: string, model: string) {
   stop.abort()
-  await update($, view, () => ({ ...IDLE, phase: 'working', original: rough }))
-  await placed($, await $.ui.open({ id: PANE, title: 'Enhance' }))
-  $.clock.after(10, () => void finish($, rough, model).catch(err => update($, view, () => ({ ...IDLE, phase: 'error', original: rough, note: String(err) }))))
+  await setView($, () => ({ ...IDLE, phase: 'working', original: rough }))
+  // Called from the person's command or press, so this open is theirs: over an empty box it takes the keys now, and
+  // keeps them when the rewrite lands (c cancels meanwhile; s / r / d after).
+  await showTab($, (await $.prompt.read()).text.trim() === '')
+  $.clock.after(10, () => void finish($, rough, model).catch(err => setView($, () => ({ ...IDLE, phase: 'error', original: rough, note: String(err) }))))
 }
 
 async function closeAll($: EngineInterface) {
-  await update($, view, () => IDLE)
-  await $.ui.close({ id: PANE })
-  await publish($)
+  await setView($, () => IDLE)
 }
 
-// The summary atom (FR-ALL-05): the bounce mode, or the held prompt's reason while one is held.
+// The summary atom (FR-ALL-05): the bounce mode, or the held prompt's reason while one is held; and the tab.
 async function publish($: EngineInterface) {
   const set = await read($, setting)
   const v = await read($, view)
   await update($, summary, () => bounceSummary(set.mode ?? bounceOption, v.phase === 'bounced' ? v.note : null))
+  await update($, tab, () => enhanceTab(v, set.mode ?? bounceOption, { show: showCount }))
+}
+
+async function setView($: EngineInterface, f: (old: View) => View) {
+  await update($, view, f)
+  await publish($)
+}
+
+// Shows the Enhance tab: cockpit switches the dashboard to it, and the dashboard is opened from here. `focus` gives it
+// the keys (s / r / d), which the engine grants only to a fresh open over an empty box, so an open dashboard is closed first.
+async function showTab($: EngineInterface, focus: boolean) {
+  showCount += 1
+  await publish($)
+  if (focus) await $.ui.close({ id: DASHBOARD })
+  await placed($, await $.ui.open(focus ? { id: DASHBOARD, title: 'Dashboard', focus: true } : { id: DASHBOARD, title: 'Dashboard' }))
 }
 
 async function send($: EngineInterface) {
@@ -185,7 +208,7 @@ async function send($: EngineInterface) {
 async function putInBox($: EngineInterface) {
   const v = await read($, view)
   const filled = await $.prompt.fill({ text: v.enhanced })
-  await update($, view, old => ({ ...old, isFilled: filled.isFilled }))
+  await setView($, old => ({ ...old, isFilled: filled.isFilled }))
 }
 
 async function revert($: EngineInterface) {
@@ -280,12 +303,11 @@ async function vagueReason($: EngineInterface, km: KitModel, text: string, gloss
   return reason
 }
 
-// Runs after the hook has answered, so the box is free: the draft goes back in if the engine cleared it, and the pane shows the reason.
+// Runs after the hook has answered, so the box is free: the draft goes back in if the engine cleared it, and the tab shows the reason.
 async function showHeld($: EngineInterface, text: string, reason: string) {
-  await update($, view, () => ({ ...IDLE, phase: 'bounced', original: text, note: reason }))
+  await setView($, () => ({ ...IDLE, phase: 'bounced', original: text, note: reason }))
   if ((await $.prompt.read()).text.trim() === '') await $.prompt.fill({ text })
-  await placed($, await $.ui.open({ id: PANE, title: 'Prompt held' }))
-  await publish($)
+  await showTab($, false)
 }
 
 // The prompt bouncer. null sends the prompt; { drop } holds it, the reason shown to the person. Every failure sends the
@@ -316,7 +338,7 @@ async function bounceCheck($: EngineInterface, e: PromptSubmitInput): Promise<{ 
     if (reason === null) return null
     if (mode === 'warn') await update($, setting, old => ({ ...old, warned: e.text }))
     $.clock.after(10, () => void showHeld($, e.text, reason).catch(() => $.ui.log(failLine('show', 'error'), { to: 'debug' })))
-    const hint = headless ? 'Edit it and send it again.' : mode === 'warn' ? 'Press Enter again to send it as it is.' : 'Edit it, or use Send anyway in the bws-enhance pane.'
+    const hint = headless ? 'Edit it and send it again.' : mode === 'warn' ? 'Press Enter again to send it as it is.' : 'Edit it, or use Send anyway in the Enhance tab.'
     return { drop: `Held by bws-enhance: ${reason} ${hint}` }
   } catch {
     $.ui.log(failLine('check', 'error'), { to: 'debug' })
@@ -343,10 +365,21 @@ async function enhanceHeld($: EngineInterface, model: string) {
   await start($, v.original, model)
 }
 
-// Edit: the draft stays in the box for editing; the pane closes.
+// Edit: the draft stays in the box for editing; the tab goes idle.
 async function editHeld($: EngineInterface) {
   await update($, setting, old => ({ ...old, warned: null }))
   await closeAll($)
+}
+
+// A button in the Enhance tab, or `/enhance --<action>`: the same actions the pane's buttons ran.
+async function act($: EngineInterface, a: Action, model: string) {
+  if (a === 'send') await send($)
+  else if (a === 'revert') await revert($)
+  else if (a === 'put') await putInBox($)
+  else if (a === 'dismiss' || a === 'cancel') await cancel($)
+  else if (a === 'sendanyway') await sendAnyway($)
+  else if (a === 'enhance') await enhanceHeld($, model)
+  else await editHeld($)
 }
 
 export const register: Register = (on, options) => {
@@ -375,6 +408,12 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: COMMAND }, async ($, e) => {
     const rough = e.args.trim()
+    // `/enhance --send` and the like: what a button in the Enhance tab does.
+    const a = rough.startsWith('--') ? actionOf(rough) : null
+    if (a !== null) {
+      await act($, a, model)
+      return {}
+    }
     if (rough === '') return { text: 'Usage: /enhance <rough prompt>. The rewrite replaces the prompt box; Send (or Enter) submits it.' }
     // Headless (claude -p): no box and no pane, so answer with the rewrite itself.
     if ((await $.session.surfaces()).length === 0) {
@@ -400,7 +439,7 @@ export const register: Register = (on, options) => {
     return { text: statusText(mode, true) }
   })
 
-  // The bouncer may hold a prompt the person typed. Then the person sent the box themselves: the pane has done its job.
+  // The bouncer may hold a prompt the person typed. Then the person sent the box themselves: the tab has done its job.
   on('prompt.submit', async ($, e, next) => {
     const held = await bounceCheck($, e)
     if (held) return held
@@ -409,16 +448,6 @@ export const register: Register = (on, options) => {
       if (e.origin.kind === 'composer' && (v.phase === 'ready' || v.phase === 'error' || v.phase === 'bounced')) await closeAll($)
     } catch {
       // never hold up a prompt over the pane
-    }
-    return next(e)
-  })
-
-  // Closed by the person (Esc, ctrl+x x, its mark) while working: stop the call.
-  on('ui.close', async ($, e, next) => {
-    if (e.id === PANE && e.origin.kind === 'person') {
-      stop.abort()
-      await update($, view, () => IDLE)
-      await publish($)
     }
     return next(e)
   })
@@ -439,63 +468,11 @@ export const register: Register = (on, options) => {
     )
   })
 
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const v = await read($, view)
-    const { Box, Button, Text } = $.ui.resolve(e)
-
-    if (v.phase === 'working') {
-      return (
-        <Box flexDirection="column">
-          <Text color="cyan">✦ Enhancing…</Text>
-          <Text dimColor wrap="truncate-end">{v.original}</Text>
-          <Button key="cancel" label="Cancel" hotkey="c" onPress={() => cancel($)} />
-        </Box>
-      )
-    }
-
-    if (v.phase === 'error') {
-      return (
-        <Box flexDirection="column">
-          <Text color="red">✦ Enhance failed: {v.note}</Text>
-          <Button key="dismiss" label="Dismiss" hotkey="d" onPress={() => cancel($)} />
-        </Box>
-      )
-    }
-
-    if (v.phase === 'bounced') {
-      const mode = (await read($, setting)).mode ?? bounceOption
-      return (
-        <Box flexDirection="column">
-          <Text color="yellow">✦ Held as vague: {v.note}</Text>
-          {mode === 'warn' && <Text dimColor>Enter in the box sends it as it is.</Text>}
-          <Box flexDirection="row" gap={1}>
-            <Button key="sendanyway" label="Send anyway" hotkey="s" variant="primary" autoFocus onPress={() => sendAnyway($)} />
-            <Button key="enhance" label="Enhance" hotkey="e" onPress={() => enhanceHeld($, model)} />
-            <Button key="edit" label="Edit" hotkey="x" onPress={() => editHeld($)} />
-          </Box>
-        </Box>
-      )
-    }
-
-    if (v.phase === 'idle') return <Text dimColor>Nothing to enhance. Run /enhance &lt;rough prompt&gt;.</Text>
-
-    return (
-      <Box flexDirection="column">
-        <Text>
-          {v.isFilled ? '✦ The enhanced prompt is in the box.' : '✦ Enhanced prompt ready. The box had other text, so it was left alone.'}
-        </Text>
-        {e.props.isFocused && <Text dimColor>s send · r revert · d dismiss · Esc to edit in the box</Text>}
-        {!v.isFilled && <Text dimColor>{v.enhanced}</Text>}
-        <Box flexDirection="row" gap={1}>
-          <Button key="send" label="Send" hotkey="s" variant="primary" autoFocus onPress={() => send($)} />
-          {v.isFilled ? (
-            <Button key="revert" label="Revert" hotkey="r" onPress={() => revert($)} />
-          ) : (
-            <Button key="put" label="Put in box" hotkey="p" onPress={() => putInBox($)} />
-          )}
-          <Button key="dismiss" label="Dismiss" hotkey="d" onPress={() => cancel($)} />
-        </Box>
-      </Box>
-    )
+  // A press in the Enhance tab (bws-cockpit writes it).
+  on('state.set', { plugin: 'bws-cockpit', key: 'tabEvent' }, async ($, e, next) => {
+    const ev = parseEvent(e.value)
+    const a = ev?.plugin === 'bws-enhance' ? actionOf(ev.id) : null
+    if (a !== null) await act($, a, model).catch(() => $.ui.log(failLine('tab', 'error'), { to: 'debug' }))
+    return next(e)
   })
 }

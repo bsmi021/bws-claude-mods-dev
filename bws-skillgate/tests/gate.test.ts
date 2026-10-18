@@ -5,6 +5,7 @@ import {
   classifyPrompt,
   cutListing,
   explainText,
+  gateTab,
   failLine,
   gateSummary,
   hashText,
@@ -182,5 +183,22 @@ describe('FR-SG-04: the debug line', () => {
   test('says what failed and what stayed, never the prompt', () => {
     expect(failLine('listing', 'timeout')).toBe('bws-skillgate: listing gate failed (timeout); the full skill listing stays')
     expect(failLine('prompt', 'error')).toBe('bws-skillgate: prompt gate failed (error); nothing was added')
+  })
+})
+
+describe('dashboard tab', () => {
+  test('off: the switch turns it on; the status and an empty last prompt show', () => {
+    const t = gateTab('off', false, 5, 'haiku', null)
+    expect([t.title, t.badge, t.tone]).toEqual(['Skillgate', 'off', 'idle'])
+    expect(t.body[0]).toEqual({ kind: 'text', text: 'Skill gate: off (from the plugin option). Top 5, model haiku.', isBold: true })
+    expect(t.body.at(-1)).toEqual({ kind: 'buttons', items: [{ id: 'on', label: 'Turn on for this session', isPrimary: true }] })
+  })
+
+  test('on after a fail-open: warn tone and card, the switch turns it off', () => {
+    const last = { step: 'listing' as const, picks: [], named: [], added: [], shown: 5, total: 5, savedTokens: 0, failed: 'timeout' }
+    const t = gateTab('on', true, 5, 'haiku', last)
+    expect([t.badge, t.tone]).toEqual(['on', 'warn'])
+    expect(t.body.find(n => n.kind === 'card')).toEqual({ kind: 'card', title: 'Last prompt', color: 'warn', body: [{ kind: 'text', text: 'The last prompt kept the full skill listing: timeout.' }] })
+    expect(t.body.at(-1)).toEqual({ kind: 'buttons', items: [{ id: 'off', label: 'Turn off for this session' }] })
   })
 })

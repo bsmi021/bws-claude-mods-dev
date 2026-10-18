@@ -1,100 +1,64 @@
 import { test, expect, describe } from 'claude-code/testing'
-import { EMPTY_BOARD, addEntry, heading, keepBoard, keptBoard, KEPT_SESSIONS } from '../hooks/diagram'
-import { DUMP, drain, PANE, run, SESSION_END, SPEC, START, turn, world } from './world'
+import { EMPTY_BOARD, addEntry, heading, keepBoard, keptBoard, KEPT_SESSIONS, move } from '../hooks/diagram'
+import { diagramTab } from '../hooks/tab'
+import { DUMP, drain, run, SESSION_END, SPEC, START, turn, world } from './world'
 
 const block = (src: string) => 'Here:\n\n```mermaid\n' + src + '\n```\n'
 const FLOW = 'graph LR\n  A[Parse request] --> B{Valid?}\n  B -- yes --> C[Write file]'
 const SEQ = 'sequenceDiagram\n  Alice->>Bob: hi'
-const mount = ($: { ui: { mount: (i: never) => Promise<unknown> } }, surface: string, bodyColumns = 80) =>
-  $.ui.mount({ ...PANE, surface, props: { ...PANE.props, bodyColumns } } as never) as Promise<{
-    find: (q: object) => Promise<{ text?: string; props?: Record<string, unknown> } | undefined>
-    findAll: (q: object) => Promise<unknown[]>
-    press: (t: object) => Promise<unknown>
-    unmount: () => Promise<void>
-  }>
 
-describe('FR-DG-05: the pane', () => {
-  test('heading, legend, the drawn boxes, footer, pinned list, Prev / Next / Close', async ($, on) => {
+describe('FR-DG-05: the Diagram tab (bws-cockpit dashboard)', () => {
+  test('heading, legend, the drawn boxes clipped at the edge, footer, pinned list, Prev and Draw', { options: { dumpFile: DUMP } }, async ($, on) => {
     const w = world(on)
     await $.session.start(START)
     await turn($, { answer: block(FLOW) })
     await drain(w.clock) // the big turn's fork adds a drawn diagram after the pin
-    const ui = await mount($, 'terminal')
-    expect((await ui.find({ type: 'Text', text: /^Refactor {2}2\/2 {2}\(last turn\)$/ }))).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '┌ file   ╭ component   ╔ step   ╱ decision   ▶ now' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /║ Read config ║/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /▼ extract/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /▶ Loader/ })).toBeDefined() // the fork's `now` node
-    expect(await ui.find({ type: 'Text', text: 'map drawn at turn 1' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'Pinned diagrams:' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /1\. Pinned: Parse request/ })).toBeDefined()
-    await ui.press({ key: 'prev' })
-    expect(await ui.find({ type: 'Text', text: /^Pinned: Parse request {2}1\/2 {2}\(pinned\)$/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /▼ yes/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'pinned at turn 1' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '┌ file   ╭ component   ╔ step   ╱ decision' })).toBeDefined() // no `now`, no head in the legend
-    await ui.press({ key: 'prev' }) // already first: stays
-    expect(await ui.find({ type: 'Text', text: /1\/2/ })).toBeDefined()
-    await ui.press({ key: 'next' })
-    expect(await ui.find({ type: 'Text', text: /2\/2/ })).toBeDefined()
-    const closes = w.seen.closed.length
-    await ui.press({ key: 'close' })
-    expect(w.seen.closed.length).toBe(closes + 1)
-    await ui.unmount()
+    const lines = w.lines()
+    expect(lines[0]).toMatch(/^Refactor {2}2\/2 {2}\(last turn\)$/)
+    expect(lines).toContain('┌ file   ╭ component   ╔ step   ╱ decision   ▶ now')
+    expect(lines.some(l => /║ Read config ║/.test(l))).toBe(true)
+    expect(lines.some(l => /▼ extract/.test(l))).toBe(true)
+    expect(lines.some(l => /▶ Loader/.test(l))).toBe(true) // the fork's `now` node
+    expect(lines).toContain('map drawn at turn 1')
+    expect(lines).toContain('Pinned diagrams:')
+    expect(lines).toContain('  1. Pinned: Parse request')
+    expect(lines.slice(-2)).toEqual(['[< Prev]', '[Draw the session]'])
+    const rows = (w.last()?.body ?? []).filter(n => n.kind === 'text' && /║ Read config ║/.test(n.text))
+    expect(rows.every(n => n.kind === 'text' && n.isClipped === true)).toBe(true)
+    expect([w.last()?.title, w.last()?.badge, w.last()?.tone]).toEqual(['Diagram', '2', 'ok'])
+    // Prev on the published board: the pin, with Next and no Prev.
+    const prev = diagramTab(move(w.dump() as never, -1), { raise: 0, show: 0 })
+    const texts = prev.body.flatMap(n => (n.kind === 'text' ? [n.text] : n.kind === 'buttons' ? n.items.map(b => b.id) : []))
+    expect(texts[0]).toMatch(/^Pinned: Parse request {2}1\/2 {2}\(pinned\)$/)
+    expect(texts.some(t => /▼ yes/.test(t))).toBe(true)
+    expect(texts).toContain('pinned at turn 1')
+    expect(texts).toContain('┌ file   ╭ component   ╔ step   ╱ decision') // no `now` in the legend
+    expect(texts.slice(-2)).toEqual(['next', 'draw'])
   })
 
-  test('resize-safe: drawn from the body width each time; too narrow still draws and says how wide it wants', async ($, on) => {
+  test('an unsupported pin shows its source', async ($, on) => {
     const w = world(on, { surfaces: [] })
     await $.session.start(START)
-    await turn($, { answer: block(FLOW) })
-    const wide = await mount($, 'terminal', 80)
-    expect(await wide.find({ type: 'Text', text: /▼ yes/ })).toBeDefined()
-    expect(await wide.find({ type: 'Text', text: /widen the pane/ })).toBe(undefined)
-    await wide.unmount()
-    const narrow = await mount($, 'terminal', 6)
-    expect(await narrow.find({ type: 'Text', text: /▼/ })).toBeDefined()
-    expect(await narrow.find({ type: 'Text', text: /^pinned at turn 1; widen the pane to \d+ columns to see it all$/ })).toBeDefined()
-    await narrow.unmount()
-    void w
-  })
-
-  test('Desktop draws the same text rows; an unsupported pin shows its source', async ($, on) => {
-    const w = world(on, { surfaces: [] })
-    await $.session.start(START)
-    await turn($, { answer: block(FLOW) })
-    const desk = await mount($, 'desktop')
-    expect(await desk.find({ type: 'Text', text: /▼ yes/ })).toBeDefined()
-    expect(await desk.find({ type: 'Svg' })).toBe(undefined)
-    await desk.unmount()
     await turn($, { answer: block(SEQ) })
-    const ui = await mount($, 'terminal')
-    expect(await ui.find({ type: 'Text', text: /Not a flowchart this pane can draw/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '  Alice->>Bob: hi' })).toBeDefined()
-    await ui.unmount()
-    void w
+    expect(w.lines()).toContain('Not a flowchart this tab can draw; the source:')
+    expect(w.lines()).toContain('  Alice->>Bob: hi')
   })
 
-  test('closed by the person: the diagrams stay; a failure note is acknowledged', async ($, on) => {
+  test('a failure shows in the tab with Dismiss; the diagrams stay', async ($, on) => {
     const w = world(on, { fork: 'throw' })
     await $.session.start(START)
     await turn($)
     await drain(w.clock)
-    expect(await run($, 'diagram', 'status')).toContain('Last attempt failed')
-    await turn($, { answer: block(FLOW) })
-    const ui = await mount($, 'terminal')
-    await ui.press({ key: 'close' })
-    await ui.unmount()
-    const status = await run($, 'diagram', 'status')
-    expect(status).not.toContain('Last attempt failed')
-    expect(status).toContain('1 pinned')
+    expect(w.lines().some(l => l.startsWith('Last attempt failed: fork'))).toBe(true)
+    expect(w.lines()).toContain('[Dismiss the failure]')
+    expect([w.last()?.badge, w.last()?.tone]).toEqual(['!', 'warn'])
   })
 
-  test('heading and the empty pane', async ($, on) => {
-    world(on)
+  test('the empty tab at start, with Draw; heading of an empty board', async ($, on) => {
+    const w = world(on)
     await $.session.start(START)
-    const ui = await mount($, 'terminal')
-    expect(await ui.find({ type: 'Text', text: /No diagrams yet/ })).toBeDefined()
-    await ui.unmount()
+    expect(w.lines()).toEqual(['No diagrams yet. /diagram draws the session.', '[Draw the session]'])
+    expect([w.last()?.badge, w.last()?.tone]).toEqual(['', 'idle'])
     expect(heading(EMPTY_BOARD)).toBe('No diagrams yet')
   })
 })
@@ -127,30 +91,28 @@ describe('FR-DG-05: state across reload, /clear, /resume, /branch', () => {
     expect(await run($, 'diagram', 'status')).toContain('Pinned: old')
   })
 
-  test('/clear: the diagrams go, the pane closes, a fork in flight is dropped; the cleared conversation stays kept', { options: { dumpFile: DUMP } }, async ($, on) => {
+  test('/clear: the diagrams go, a fork in flight is dropped; the cleared conversation stays kept', { options: { dumpFile: DUMP } }, async ($, on) => {
     const w = world(on, { fork: 'defer' })
     await $.session.start(START)
     await turn($, { answer: block(FLOW) })
     await drain(w.clock)
     expect(w.seen.fork.length).toBe(1)
     await $.session.end(SESSION_END('clear'))
-    expect(w.seen.closed[w.seen.closed.length - 1]).toBe('bws-diagram')
     w.who.session = 'session-bbbb-2222'
     w.release(JSON.stringify(SPEC))
     await drain(w.clock)
     expect(await run($, 'diagram', 'status')).toContain('0 drawn, 0 pinned')
     expect(keptBoard(w.store.get('boards'), 'session-aaaa-1111').entries.length).toBe(1)
-    expect(w.seen.opened.length).toBe(1) // the pin's open only: the dropped fork opened nothing
+    expect(w.raised()).toBe(1) // the pin's raise only: the dropped fork raised nothing
     expect(w.dump()?.entries.length).toBe(0)
   })
 
-  test('/resume: work stops, the pane closes; the resumed conversation\'s board comes back, and the first one\'s on return', async ($, on) => {
+  test('/resume: work stops; the resumed conversation\'s board comes back, and the first one\'s on return', async ($, on) => {
     const other = keepBoard({}, 'session-bbbb-2222', addEntry(EMPTY_BOARD, { origin: 'pinned', at: 1, title: 'Pinned: other', diagram: null, source: 'graph' }), 1)
     const w = world(on, { store: { boards: other } })
     await $.session.start(START)
     await turn($, { answer: block(FLOW) })
     await $.session.end(SESSION_END('resume'))
-    expect(w.seen.closed[w.seen.closed.length - 1]).toBe('bws-diagram')
     w.who.session = 'session-bbbb-2222'
     const status = await run($, 'diagram', 'status')
     expect(status).toContain('Pinned: other')

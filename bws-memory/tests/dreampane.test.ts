@@ -1,6 +1,6 @@
 import { test, expect, describe } from 'claude-code/testing'
 import { memoryFile } from '../hooks/memory'
-import { DIR, drain, folder, MERGE_AB, NEW, OLD, PANE, plan, PNPM, run, TABS_A, TABS_B, world } from './dreamworld'
+import { DIR, drain, folder, MERGE_AB, NEW, OLD, plan, PNPM, run, TABS_A, TABS_B, world } from './dreamworld'
 
 // The clock moves 10 ms while the preview's deferred work runs.
 const BK = `${DIR}/.dream-backup/20231114-221320-010`
@@ -16,7 +16,7 @@ const surfaceOf = { terminal: 'terminal', desktop: 'desktop' } as const
 
 // Runs /dream on a screen and lets the preview open.
 async function preview($: never, w: ReturnType<typeof world>) {
-  expect(await run($, 'dream')).toBe('Dreaming... the pane shows the plan.')
+  expect(await run($, 'dream')).toBe('Dreaming... the Memory tab shows the plan.')
   await drain(w.clock)
 }
 
@@ -25,9 +25,9 @@ describe('FR-DP-02: preview first', () => {
     const w = world(on, { files: TWO })
     const before = new Map(w.files)
     await preview($ as never, w)
-    expect(w.seen.opened).toEqual(['bws-dream'])
+    expect(w.raised()).toBe(1)
     expect(w.files).toEqual(before)
-    const ui = await $.ui.mount({ ...PANE, surface: surfaceOf.terminal })
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /Dream plan: 1 action/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /merge tabs-a\.md \+ tabs-b\.md -> tabs-a\.md/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /near-duplicates/ })).toBeDefined()
@@ -40,24 +40,23 @@ describe('FR-DP-02: preview first', () => {
     const w = world(on, { files: TWO, fork: 'defer' })
     await run($, 'dream')
     await drain(w.clock)
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /dreaming/ })).toBeDefined()
     await ui.unmount()
     w.release(plan(MERGE_AB))
     await drain(w.clock)
-    expect(w.seen.opened).toEqual(['bws-dream'])
+    expect(w.raised()).toBe(1)
   })
 
   test('Dismiss: nothing is written, the pane closes, no plan is left', async ($, on) => {
     const w = world(on, { files: TWO })
     await preview($ as never, w)
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     await ui.press({ key: 'dismiss' } as never)
     await ui.unmount()
     expect(w.seen.writes).toEqual([])
-    expect(w.seen.closed[w.seen.closed.length - 1]).toBe('bws-dream')
-    const after = await $.ui.mount({ ...PANE, surface: 'terminal' })
-    expect(await after.find({ type: 'Text', text: /No dream plan/ })).toBeDefined()
+    const after = await w.mount($ as never)
+    expect(await after.find({ type: 'Text', text: /Merge duplicates/ })).toBeDefined()
     await after.unmount()
   })
 
@@ -67,7 +66,7 @@ describe('FR-DP-02: preview first', () => {
     for (let i = 0; i < 12; i++) files[`${DIR}/f${i}.md`] = memoryFile({ file: `f${i}.md`, name: `f${i}`, description: `d${i}`, type: 'user', body: `b${i}` })
     const w = world(on, { files, fork: plan(...many) })
     await preview($ as never, w)
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /\+2 more/ })).toBeDefined()
     await ui.unmount()
   })
@@ -78,7 +77,7 @@ describe('FR-DP-02: Apply writes the changes after a backup', () => {
     const w = world(on, { files: TWO })
     const before = new Map(w.files)
     await preview($ as never, w)
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     await ui.press({ key: 'apply' } as never)
     await ui.unmount()
     await drain(w.clock)
@@ -93,7 +92,7 @@ describe('FR-DP-02: Apply writes the changes after a backup', () => {
     expect(w.files.get(`${DIR}/MEMORY.md`)).toBe('- [tabs-a](tabs-a.md) — Indent with tabs, never spaces\n')
     const sources = JSON.parse(w.files.get(`${DIR}/sources.json`) ?? '{}') as { writes: { file: string; session: string }[] }
     expect(sources.writes.map(x => `${x.file}:${x.session}`)).toEqual(['tabs-a.md:aaaa1111-x', 'tabs-a.md:bbbb2222-y'])
-    const done = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const done = await w.mount($ as never)
     expect(await done.find({ type: 'Text', text: /Dream applied: 1 merged, 0 removed, 0 rewritten/ })).toBeDefined()
     expect(await done.find({ type: 'Text', text: /\.dream-backup\/20231114-221320-010/ })).toBeDefined()
     expect(await done.find({ key: 'close' })).toBeDefined()
@@ -106,7 +105,7 @@ describe('FR-DP-02: Apply writes the changes after a backup', () => {
       files: { ...folder(OLD, NEW, PNPM, TABS_A, TABS_B), [`${DIR}/MEMORY.md`]: '- [old-port](old-port.md) — 3000\n- [uses-pnpm](uses-pnpm.md) — pnpm\n' },
       fork: plan({ action: 'remove', file: 'old-port.md', reason: 'contradicted by new-port.md' }, { action: 'rewrite', file: 'uses-pnpm.md', description: 'pnpm is the package manager', body: 'Use pnpm, never npm.', reason: 'clearer' }),
     })
-    expect(await run($, 'dream', 'apply')).toBe('Dreaming... the pane shows the result.')
+    expect(await run($, 'dream', 'apply')).toBe('Dreaming... the Memory tab shows the result.')
     await drain(w.clock)
     expect(w.files.get(`${DIR}/old-port.md`)).toBe('')
     expect(w.files.get(`${DIR}/uses-pnpm.md`)).toBe(memoryFile({ file: 'uses-pnpm.md', name: 'uses-pnpm', description: 'pnpm is the package manager', type: 'project', body: 'Use pnpm, never npm.' }))
@@ -119,12 +118,12 @@ describe('FR-DP-02: Apply writes the changes after a backup', () => {
     await preview($ as never, w)
     w.files.set(`${DIR}/tabs-b.md`, `${w.files.get(`${DIR}/tabs-b.md`)}\nAnd a new line.\n`)
     w.seen.writes.length = 0
-    const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const ui = await w.mount($ as never)
     await ui.press({ key: 'apply' } as never)
     await ui.unmount()
     await drain(w.clock)
     expect(w.seen.writes).toEqual([])
-    const err = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    const err = await w.mount($ as never)
     expect(await err.find({ type: 'Text', text: /memory changed since the preview \(tabs-b\.md\)/ })).toBeDefined()
     await err.unmount()
     expect(w.seen.logs.some(l => l.text.startsWith('bws-memory: dream apply failed'))).toBe(true)
@@ -145,7 +144,7 @@ describe('FR-DP-02: Apply writes the changes after a backup', () => {
     const text = await run($, 'dream', '--apply')
     expect(text).toContain('Dream applied: 1 merged, 0 removed, 0 rewritten.')
     expect(w.files.get(`${DIR}/tabs-b.md`)).toBe('')
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
   })
 
   test('/dream headless without apply: the plan as text and a note that nothing changed', async ($, on) => {
@@ -154,15 +153,15 @@ describe('FR-DP-02: Apply writes the changes after a backup', () => {
     expect(text).toContain('Dream plan: 1 action.')
     expect(text).toContain('nothing changed')
     expect(w.seen.writes).toEqual([])
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
   })
 
   test('a failed /dream on a screen opens the pane with the reason and a Close button', async ($, on) => {
     const w = world(on, { files: TWO, fork: 'throw' })
     await run($, 'dream')
     await drain(w.clock)
-    expect(w.seen.opened).toEqual(['bws-dream'])
-    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    expect(w.raised()).toBe(1)
+    const ui = await w.mount($ as never)
     expect(await ui.find({ type: 'Text', text: /Dream: fork: error/ })).toBeDefined()
     await ui.press({ key: 'close' } as never)
     await ui.unmount()
@@ -170,7 +169,7 @@ describe('FR-DP-02: Apply writes the changes after a backup', () => {
 
   test('a bad argument prints the usage', async ($, on) => {
     world(on, { files: TWO, surfaces: [] })
-    expect(await run($, 'dream', 'sideways')).toBe('Usage: /dream [apply | undo | status]')
+    expect(await run($, 'dream', 'sideways')).toBe('Usage: /dream [apply | dismiss | undo | status]')
   })
 })
 
@@ -225,7 +224,7 @@ describe('FR-DP-03: /clear, /resume, /branch', () => {
     await $.session.end(END('clear'))
     w.release(plan(MERGE_AB))
     await drain(w.clock)
-    expect(w.seen.opened).toEqual([])
+    expect(w.raised()).toBe(0)
     expect(w.seen.writes).toEqual([])
     expect(await run($, 'dream', 'status')).toContain('nothing waiting')
   })
@@ -236,10 +235,8 @@ describe('FR-DP-03: /clear, /resume, /branch', () => {
       await $.turn.complete({ answer: 'ok', durationMs: 1, isAborted: false, turnId: `t${i}`, reason: 'answer' } as never)
       await drain(w.clock)
     }
-    expect(w.seen.opened).toEqual(['bws-dream'])
-    const n = w.seen.closed.length
+    expect(w.raised()).toBe(1)
     await $.session.end(END('clear'))
-    expect(w.seen.closed.slice(n)).toContain('bws-dream')
     expect(await run($, 'dream', 'status')).toContain('due: run /dream')
     await run($, 'dream')
     await drain(w.clock)
@@ -258,9 +255,7 @@ describe('FR-DP-03: /clear, /resume, /branch', () => {
     const w = world(on, { files: TWO })
     await run($, 'dream', 'status') // the session this conversation started in
     await preview($ as never, w)
-    const n = w.seen.closed.length
     w.who.session = 'session-bbbb-2222'
     expect(await run($, 'dream', 'status')).toContain('nothing waiting')
-    expect(w.seen.closed.slice(n)).toContain('bws-dream')
   })
 })

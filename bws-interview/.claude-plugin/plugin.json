@@ -1,0 +1,15 @@
+{
+  "name": "bws-interview",
+  "version": "0.1.0",
+  "description": "Keeps every AskUserQuestion round (the question, the options, your answer) per project, pages through them in an Interview tab of the dashboard, and gives the agreed answers back to Claude with /qa send.",
+  "author": { "name": "Brian" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "pinDigest": {
+      "type": "boolean",
+      "title": "Keep this session's answers in Claude's context",
+      "description": "Adds a short digest of this session's Q&A to the context, so it survives a compaction. Costs tokens every turn.",
+      "default": false
+    }
+  }
+}

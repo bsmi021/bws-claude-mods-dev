@@ -1,0 +1,50 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\m2.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+
+❯ Reply with exactly this and nothing else: a fenced mermaid block containing: graph LR; A[Parse request] --> B{Valid?}; B -- yes --> C[Write file]; B -- no --> D[Ask
+  again]
+
+● mermaid
+  graph LR; A[Parse request] --> B{Valid?}; B -- yes --> C[Write file]; B -- no --> D[Ask again]
+
+✻Worked for 2s · done 8:25 AM
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ 1: Assumptions 2: Shelf 3: Board [ Diagram 1 ]                                                                                                                         │
+│ Diagram · 1   │
+│ Pinned: Parse request  1/1  (pinned)        │
+│ ┌ file   ╭ component   ╔ step   ╱ decision                                                                                                                             │
+│            ┌───────────────┐                                                                                                                                           │
+│           │ Parse request │                                      │
+│└───────────────┘│
+│                    │                                                                                                                                                   │
+│ ▼│
+│            ╱───────────────╲                                                                                                                                           │
+│           │    Valid?     │        │
+│╲───────────────╱│
+││││
+│┌───┘└──┐│
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+norun●UE●VRAM 6.4/8.0GBcache59m[-]
+doh:handoffi:ideae:enhanceopen2:dasha:asms:shelf3:hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⏵⏵automodeon (shift+tabtocycle)
+
+
+
+
+
+
+
+
+
+
+
+
+

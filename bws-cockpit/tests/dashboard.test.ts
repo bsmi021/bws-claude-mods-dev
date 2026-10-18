@@ -23,6 +23,8 @@ type World = {
   startedAt?: number
   board?: { summary: { agents: number; openAsks: number; askedOfMe: number } | null; lines: string[]; pane?: BoardPane }
   commands?: string[]
+  // other mods' atoms by plugin: their dashboard `tab` and `summary`
+  mods?: Record<string, { tab?: unknown; summary?: unknown }>
 }
 
 // Stubs every outside call the dashboard makes; the shelf file lives in `files`, panes in `panes`.
@@ -111,6 +113,15 @@ function world(on: On, w: World = {}) {
       const ref = e as unknown as { plugin?: string; key?: string }
       if (ref.plugin !== 'bws-board') return next(e)
       return { value: { value: ref.key === 'summary' ? b.summary : ref.key === 'pane' ? (b.pane ?? null) : b.lines, version: 1 } } as never
+    })
+  }
+  if (w.mods) {
+    const m = w.mods
+    on('state.get', ($, e, next) => {
+      const ref = e as unknown as { plugin?: string; key?: string }
+      const mod = ref.plugin === undefined ? undefined : m[ref.plugin]
+      if (mod === undefined || (ref.key !== 'tab' && ref.key !== 'summary')) return next(e)
+      return { value: { value: (ref.key === 'tab' ? mod.tab : mod.summary) ?? null, version: 1 } } as never
     })
   }
   const shelf = () => parseShelf(files[FILE])
@@ -502,6 +513,57 @@ describe('dashboard', () => {
     expect((await ui.find({ key: 'board-a-aaaaaaaa-2' }))?.props?.borderColor).toBe('subtle')
     expect(await ui.find({ type: 'Text', text: /old text line/ })).toBeUndefined()
     await ui.unmount()
+  })
+
+  test('mod tabs: one per loaded mod after the built-ins; a tab draws its nodes and sends presses and inputs back', async ($, on) => {
+    const notifyTab = {
+      title: 'Notify',
+      badge: '2',
+      tone: 'ok',
+      raise: 0,
+      body: [
+        { kind: 'text', text: 'Toasts on', isBold: true },
+        { kind: 'card', title: 'Last toasts', color: 'ok', body: [{ kind: 'text', text: 'turn done in game', isDim: true }] },
+        { kind: 'buttons', items: [{ id: 'test', label: 'Send a test toast', isPrimary: true }] },
+        { kind: 'input', id: 'note', placeholder: 'a note' },
+      ],
+    }
+    const { clock } = world(on, {
+      mods: { 'bws-notify': { tab: notifyTab }, 'bws-secrets': { summary: { state: 'ok', label: '3 secrets' } }, 'bws-diagram': { tab: { title: '' } } },
+    })
+    const events: unknown[] = []
+    on('state.set', { plugin: 'bws-cockpit', key: 'tabEvent' }, ($, e, next) => {
+      events.push(e.value)
+      return next(e)
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.command.run({ command: 'dashboard', args: 'notify' } as never)
+    await clock.advance(50)
+    const ui = await $.ui.mount(PANE)
+    // Built-ins first, then loaded mods in the configured order; a malformed tab (diagram) draws nothing.
+    expect((await ui.find({ key: 'tab-board' }))?.props?.hotkey).toBe('3')
+    expect((await ui.find({ key: 'tab-bws-secrets' }))?.props?.label).toBe('Secrets ●')
+    expect((await ui.find({ key: 'tab-bws-notify' }))?.props?.label).toBe('Notify 2')
+    expect((await ui.find({ key: 'tab-bws-notify' }))?.props?.variant).toBe('primary')
+    expect(await ui.find({ key: 'tab-bws-diagram' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /^Notify · 2$/ })).toBeDefined()
+    expect((await ui.find({ key: 'mod-bws-notify-1' }))?.props?.borderStyle).toBe('round')
+    expect((await ui.find({ type: 'Text', text: /^turn done in game$/ }))?.props?.dimColor).toBe(true)
+    await ui.press({ key: 'bws-notify-test' })
+    await ui.unmount()
+    const ui2 = await $.ui.mount(PANE)
+    await ui2.input({ key: 'bws-notify-note', text: 'hello' })
+    await ui2.unmount()
+    expect(events).toEqual([
+      { seq: 1, plugin: 'bws-notify', id: 'test' },
+      { seq: 2, plugin: 'bws-notify', id: 'note', value: 'hello' },
+    ])
+  })
+
+  test('/dashboard headless prints the mod tabs as text too', async ($, on) => {
+    world(on, { surfaces: [], mods: { 'bws-skillgate': { summary: { state: 'idle', label: 'gate off', detail: 'Off by default.' } } } })
+    const r = await $.command.run({ command: 'dashboard', args: '' } as never)
+    expect(r.text).toContain('Skillgate\ngate off\nOff by default.')
   })
 
   test('Board tab without bws-board says so', async ($, on) => {

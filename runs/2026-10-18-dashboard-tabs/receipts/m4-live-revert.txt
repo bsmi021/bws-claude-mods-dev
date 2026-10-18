@@ -1,0 +1,12 @@
+C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest,whichcurrentlycontainsonly
+a.txt and a.claude/ folder.
+Context:Beforewriting,listthefolderandreada.txtsotheREADMEdescribeswhatisactuallythere.Donotinventfeaturesorpurposesbeyondwhatthosefiles
+show. If thefolder's purpose is still unclear from itscontents, stateyour assumption in theREADME and inyour reply tome.
+Scope:OnlyaddREADME.md.Donotmodifya.txtoranythingunder.claude/.TheREADMEshouldgiveashortdescriptionofthefolder,alistofitsfilesandwhateach
+is for, and how to use or run anything it contains, if that can be determined fromthefiles. Keep it brief.
+  Constraints: This is a scratch folder and the README is not a published design artifact, so it does not need to go through The Chronicler. It is also not TMS story
+content, so no narrative consultationisneeded.
+Donewhen:README.mdexistsintheboardtestfolder,everystatementinitmatchesthefolder'sactualcontents,andyouhaveprintedthefile'scontentstoconfirm
+itwaswrittencorrectly.r
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⏵⏵automodeon (shift+tabtocycle)✦ enhance

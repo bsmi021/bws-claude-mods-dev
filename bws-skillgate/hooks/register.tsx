@@ -5,6 +5,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, PromptSubmitInput, Register } from 'claude-code'
 import type { Setting } from '../types'
 import { bound } from './kit/classify-fork'
+import { parseEvent } from './kit/tab'
 import {
   addedBlock,
   CLASSIFY_SYSTEM,
@@ -13,6 +14,7 @@ import {
   explainText,
   failLine,
   gateSummary,
+  gateTab,
   hashText,
   keepGate,
   mergeEntries,
@@ -39,6 +41,8 @@ const USAGE = 'Usage: /skillgate [off|on|status|explain]'
 const setting = atom({ plugin: 'bws-skillgate', key: 'setting' } as const, { mode: null } as Setting)
 const last = atom({ plugin: 'bws-skillgate', key: 'last' } as const, null)
 const summary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
+// The dashboard tab bws-cockpit draws (bws-kit/tab.ts).
+const tab = atom({ plugin: 'bws-skillgate', key: 'tab' } as const, null as unknown)
 
 // The options, copied in by register on every load.
 let modeOption: Mode = 'off'
@@ -62,9 +66,17 @@ async function modeNow($: EngineInterface): Promise<Mode> {
 }
 
 async function publish($: EngineInterface) {
-  const mode = await modeNow($)
+  const set = await read($, setting)
+  const mode = set.mode ?? modeOption
   const l = await read($, last)
   await update($, summary, () => gateSummary(mode, l))
+  await update($, tab, () => gateTab(mode, set.mode !== null, topK, classifierModel, l))
+}
+
+// The tab's switch: the same as /skillgate on|off.
+async function setMode($: EngineInterface, mode: Mode) {
+  await update($, setting, () => ({ mode }))
+  await publish($)
 }
 
 async function loadGate($: EngineInterface, session: string): Promise<GateRecord | undefined> {
@@ -186,9 +198,15 @@ export const register: Register = (on, options) => {
     if (arg === '' || arg === 'status') return { text: statusText(set.mode ?? modeOption, set.mode !== null, topK, classifierModel, await read($, last)) }
     const mode = parseMode(arg)
     if (mode === null) return { text: USAGE }
-    await update($, setting, () => ({ mode }))
-    await publish($)
+    await setMode($, mode)
     return { text: statusText(mode, true, topK, classifierModel, await read($, last)) }
+  })
+
+  // A press in the dashboard tab (bws-cockpit writes it): on or off for this session.
+  on('state.set', { plugin: 'bws-cockpit', key: 'tabEvent' }, async ($, e, next) => {
+    const ev = parseEvent(e.value)
+    if (ev?.plugin === 'bws-skillgate' && (ev.id === 'on' || ev.id === 'off')) await setMode($, ev.id).catch(() => undefined)
+    return next(e)
   })
 
   // Later prompts: new picks go in as one context block; when there are none the prompt passes untouched.

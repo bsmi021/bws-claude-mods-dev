@@ -105,8 +105,8 @@ export type ShelfView = {
 export type DashTab = 'assumptions' | 'shelf' | 'board' | 'loop'
 
 export type DashView = {
-  // The tab shown; null until something picks one.
-  tab: DashTab | null
+  // The tab shown: a DashTab, or a mod's `mod:<plugin>`; null until something picks one.
+  tab: string | null
   // The person closed the dashboard: news lights the bar instead of reopening it, until they open it again.
   isClosedByPerson: boolean
 }
@@ -153,14 +153,20 @@ declare module 'claude-code' {
       pane: BoardPane | null
     }
   }
-  // The video-derived mods' summary atoms (bws-kit/summary.ts), read for the bar's chips; each mod declares its own
-  // the same way. Written inline so cockpit type-checks and loads without them.
+  // Each mod's summary (bws-kit/summary.ts) and dashboard tab (bws-kit/tab.ts), read for the dashboard's mod tabs;
+  // each mod declares its own the same way. `tab` is read as unknown and checked by parseTab, so a broken or older
+  // mod can never fail the dashboard. Written inline so cockpit type-checks and loads without them.
   interface PluginState {
-    'bws-memory': { summary: ModSummary | null }
-    'bws-diagram': { summary: ModSummary | null }
-    'bws-skillgate': { summary: ModSummary | null }
-    'bws-secrets': { summary: ModSummary | null }
-    'bws-better': { summary: ModSummary | null }
+    'bws-memory': { summary: ModSummary | null; tab: unknown }
+    'bws-diagram': { summary: ModSummary | null; tab: unknown }
+    'bws-enhance': { summary: ModSummary | null; tab: unknown }
+    'bws-better': { summary: ModSummary | null; tab: unknown }
+    'bws-sidechat': { summary: ModSummary | null; tab: unknown }
+    'bws-secrets': { summary: ModSummary | null; tab: unknown }
+    'bws-skillgate': { summary: ModSummary | null; tab: unknown }
+    'bws-notify': { summary: ModSummary | null; tab: unknown }
+    'bws-shell-lint': { summary: ModSummary | null; tab: unknown }
+    'bws-interview': { tab: unknown }
   }
   interface PluginState {
     'bws-cockpit': {
@@ -176,6 +182,9 @@ declare module 'claude-code' {
       dash: DashView
       shelf: ShelfView
       handoffNudge: HandoffNudge | null
+      // The last press or submitted input in a mod's dashboard tab (bws-kit/tab.ts TabEvent); the mod reads it with a
+      // state.set hook filtered to its own plugin name.
+      tabEvent: { seq: number; plugin: string; id: string; value?: string } | null
       // Cache clock: the window (its startedAt), the last main-loop turn end, the main-loop turns since the last
       // handoff, and when the last auto handoff was written (hooks/cacheclock.ts)
       cacheClock: { startedAt: number; lastAt: number; turns: number; autoHandoffAt: number | null } | null

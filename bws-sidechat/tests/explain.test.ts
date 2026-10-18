@@ -17,7 +17,8 @@ import {
   STEPS,
   STEPS_THEN_CHOICE,
 } from './replies'
-import { DUMP, TREE_PANE, resumeOf, run, settle, sideIdOf, treeWorld } from './treeworld'
+import { mountChat, mountTree } from './tabview'
+import { DUMP, resumeOf, run, settle, sideIdOf, treeWorld } from './treeworld'
 
 const labels = (r: ReturnType<typeof parseOptions>) => r?.options.map(o => `${o.label}|${o.text}`)
 
@@ -107,10 +108,10 @@ describe('FR-DT-02: /explain opens the tree at its root', () => {
     const w = treeWorld(on)
     const r = await run($, 'explain')
     expect(r).toEqual({})
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     await w.clock.advance(900)
-    expect(w.seen.opened[0]).toEqual({ id: 'decisiontree', focus: undefined }) // asked inside the command: placed at any width
-    expect(w.seen.opened.some(o => o.id === 'decisiontree' && o.focus === true)).toBe(true)
+    expect(w.seen.opened[0]).toEqual({ id: 'dashboard', focus: true }) // asked inside the command: placed at any width, with the keys
+    expect(w.seen.opened.some(o => o.id === 'dashboard' && o.focus === true)).toBe(true)
     expect(w.seen.spawns).toHaveLength(0) // nothing explored until asked
     expect(await ui.find({ type: 'Text', text: 'Which would you like me to go with?' })).toBeDefined()
     expect((await ui.find({ key: 'opt-0' }))?.text).toContain('1. SQLite')
@@ -125,7 +126,7 @@ describe('FR-DT-02: /explain opens the tree at its root', () => {
   test('/explain <text> reads the text given instead of the last reply', async ($, on) => {
     treeWorld(on, { rows: [] })
     await run($, 'explain', LETTERED)
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect((await ui.find({ key: 'opt-1' }))?.text).toContain('b. The inline `@tags`')
     await ui.unmount()
   })
@@ -161,8 +162,8 @@ describe('FR-DT-02: /explain opens the tree at its root', () => {
   test('the header counts the nodes against the cap', async ($, on) => {
     treeWorld(on)
     await run($, 'explain')
-    const ui = await $.ui.mount(TREE_PANE())
-    expect((await ui.find({ type: 'Text', text: '1/30' }))?.text).toBe('1/30')
+    const ui = await mountTree($ as never)
+    expect((await ui.find({ type: 'Text', text: 'Decision tree · 1/30' }))?.text).toBe('Decision tree · 1/30')
     await ui.unmount()
   })
 
@@ -178,7 +179,7 @@ describe("FR-DT-02: Explore reuses the side chat's fork child; at most two at on
   test("an Explore runs the side chat's own `claude -p` fork of the main conversation, with no mods in it", async ($, on) => {
     const w = treeWorld(on, { children: [{ reply: 'SQLite is fine here.' }] })
     await run($, 'explain')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     await ui.press({ key: 'opt-0' })
     await settle(w.clock)
     await ui.unmount()
@@ -195,10 +196,10 @@ describe("FR-DT-02: Explore reuses the side chat's fork child; at most two at on
     const w = treeWorld(on, { children: [{ hold: true }, { hold: true }, { reply: 'ok' }] })
     await run($, 'explain')
     for (const opt of [0, 1, 2]) {
-      const ui = await $.ui.mount(TREE_PANE())
+      const ui = await mountTree($ as never)
       await ui.press({ key: 'back' }).catch(() => undefined)
       await ui.unmount()
-      const root = await $.ui.mount(TREE_PANE())
+      const root = await mountTree($ as never)
       await root.press({ key: `opt-${opt}` })
       await settle(w.clock, 5)
       await root.unmount()
@@ -207,10 +208,10 @@ describe("FR-DT-02: Explore reuses the side chat's fork child; at most two at on
     expect(w.seen.toasts).toContain('Decision tree: 2 explorations are running. Wait for one to finish.')
     w.releaseAll()
     await settle(w.clock)
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     await ui.press({ key: 'back' }).catch(() => undefined)
     await ui.unmount()
-    const root = await $.ui.mount(TREE_PANE())
+    const root = await mountTree($ as never)
     await root.press({ key: 'opt-2' })
     await settle(w.clock)
     await root.unmount()
@@ -220,7 +221,7 @@ describe("FR-DT-02: Explore reuses the side chat's fork child; at most two at on
   test('an Explore does not stop a side chat answer, nor the other way round', async ($, on) => {
     const w = treeWorld(on, { children: [{ hold: true }, { reply: 'It is the side chat.' }] })
     await run($, 'explain')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     await ui.press({ key: 'opt-0' })
     await settle(w.clock, 5)
     await ui.unmount()
@@ -229,10 +230,11 @@ describe("FR-DT-02: Explore reuses the side chat's fork child; at most two at on
     await settle(w.clock)
     expect(w.seen.spawns).toHaveLength(2)
     expect(w.seen.kills).toHaveLength(0) // neither killed the other
-    const side = await $.ui.mount({ ...TREE_PANE(), requestId: 'sidechat', props: { ...TREE_PANE().props, title: 'Side chat' } })
+    const side = await mountChat($ as never) // /btw showed the chat view of the tab
     expect(await side.find({ type: 'Text', text: 'It is the side chat.' })).toBeDefined()
     await side.unmount()
-    const tree = await $.ui.mount(TREE_PANE())
+    await run($, 'side', '--tree') // the tab's Decision tree button
+    const tree = await mountTree($ as never)
     expect(await tree.find({ type: 'Text', text: 'exploring…' })).toBeDefined()
     await tree.unmount()
   })

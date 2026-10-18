@@ -13,6 +13,8 @@ A Claude Code mod that sends Windows toasts saying which project and what happen
 
 It sends nothing for: turns shorter than `minTurnSeconds`, a stop while background tasks are pending, the same toast within 8 seconds, headless sessions (`claude -p`, SDK), and internal forks such as prompt suggestions (a subagent stop with no agent type, or a JSON suggestion body).
 
+- **Dashboard tab** (0.2.0): with bws-cockpit 0.21.0+, a Notify tab says which events toast and lists the last five toasts this session sent.
+
 ## How it launches a toast
 
 The engine's `$.process.run` has no hide-window option, so a direct `powershell` call flashes a console window. The mod runs `wscript.exe //B bin/notify.vbs <base64 JSON>` instead. `wscript` is a GUI program, and the script starts `powershell.exe` at window style 0, which runs `bin/toast.ps1` (Windows PowerShell 5.1, WinRT toast API). The text travels as base64, so nothing is quoted or escaped through a shell. A failure writes one line to `%TEMP%\bws-notify.err` and never touches the turn.

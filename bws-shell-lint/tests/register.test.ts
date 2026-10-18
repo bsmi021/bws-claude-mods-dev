@@ -1,8 +1,9 @@
 // The hook: denies what each rule catches (with the fix), lets real OK commands and other tools through untouched.
-import { test, expect } from 'claude-code/testing'
+import { test, expect, mock } from 'claude-code/testing'
 import type { On } from 'claude-code'
 import { FIXTURE } from './corpus-fixture'
 import { commandSize, lint } from '../hooks/lint'
+import { lintTab } from '../hooks/tab'
 
 const BS = '\\'
 const RAN = { stdout: 'ran', stderr: '', interrupted: false }
@@ -12,6 +13,7 @@ type Seen = { bash: string[]; other: string[]; toasts: string[] }
 // The test's hooks sit beneath the plugin: they stand in for the real tools and the toast stack.
 function bottom(on: On): Seen {
   const seen: Seen = { bash: [], other: [], toasts: [] }
+  mock.clock(on, { now: new Date(2026, 9, 18, 9, 5).getTime() })
   on('tool.call', async (_$, e) => {
     if (e.tool === 'Bash') seen.bash.push(e.command)
     else seen.other.push(e.tool)
@@ -144,3 +146,20 @@ test('disabledRules skips only the named rules', { options: { disabledRules: 'lo
   expect(seen.bash).toEqual([LONG, PY_HEREDOC])
   expect(r.deny).toContain('[dq-trailing-backslash]')
 })
+
+test('the dashboard tab: active rules, then each refusal, newest first, with a count', async ($, on) => {
+  bottom(on)
+  const tabs: { badge?: string; body?: unknown[] }[] = []
+  on('state.set', { plugin: 'bws-shell-lint', key: 'tab' }, ($, e, next) => {
+    tabs.push(e.value as { badge?: string; body?: unknown[] })
+    return next(e)
+  })
+  await $.tool.call({ tool: 'Bash', command: DQ_TRAILING } as never)
+  expect(tabs.length).toBe(1)
+  expect(tabs[0]?.badge).toBe('1')
+  expect(tabs[0]?.body?.[2]).toEqual({ kind: 'card', title: 'Last refused', color: 'warn', body: [{ kind: 'text', text: '09:05  blocked a trailing \\" path (would break quoting)' }] })
+  const quiet = lintTab(['long-command'], [], 0)
+  expect([quiet.badge, quiet.tone]).toEqual(['', 'idle'])
+  expect(quiet.body[0]).toEqual({ kind: 'text', text: 'Checks Bash commands for: dq-trailing-backslash, py-backslash.', isBold: true })
+})
+

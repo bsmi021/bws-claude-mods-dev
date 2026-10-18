@@ -1,0 +1,23 @@
+Validating plugin manifest: C:\Projects\bws.mods.claude-code\bws-interview\.claude-plugin\plugin.json
+
+  ❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
+  ❯ types ./types/index.d.ts declares state: bws-interview.tab, bws-cockpit.tabEvent
+
+Validating hooks: C:\Projects\bws.mods.claude-code\bws-interview\hooks\hooks.json
+
+  ❯ ./register.ts hooks: session.start, command.run{command=qa}, tool.call{tool=AskUserQuestion}, tool.call{tool=mcp__bws-interview__qa_history}, prompt.context, state.set{plugin=bws-cockpit, key=tabEvent}
+  ❯ ./register.ts hooks on prompt.context do not run in a plugin a person installs where an organization manages Claude Code: there, these events pass over the plugins you install, and only a plugin the organization lists in managed settings runs them
+  ❯ ./register.ts answers its own command: command.run{command=qa}
+  ❯ ./register.ts gating hook without .catch: tool.call{tool=AskUserQuestion}
+  ❯ ./register.ts gating hook without .catch: tool.call{tool=mcp__bws-interview__qa_history}
+  ❯ ./register.ts gating hook without .catch: state.set{plugin=bws-cockpit, key=tabEvent}
+  ❯ ./register.ts calls: $.clock.after (via submit), $.clock.now, $.command.list (via hasDashboard), $.command.register, $.prompt.submit (via submit), $.session.cwd (via load), $.session.id, $.state.get, $.state.set, $.store.get (via load), $.store.set (via record), $.tool.register, $.ui.invalidate (via record), $.ui.log, $.ui.open (via qaCommand), $.ui.toast (via submit)
+  ❯ ./register.ts state writes: bws-interview.tab
+  ❯ ./register.ts state reads: bws-interview.tab
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:\Projects\bws.mods.claude-code\bws-interview\README.md: This README has no line that installs "bws-interview" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install bws-interview --marketplace <owner>/<repo>
+
+✔ Validation passed

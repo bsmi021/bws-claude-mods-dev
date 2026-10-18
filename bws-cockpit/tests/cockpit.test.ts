@@ -424,7 +424,7 @@ describe('action bar', () => {
     await ui.unmount()
   })
 
-  test('mod chips: one per loaded, non-idle mod summary; absent plugins draw nothing', async ($, on) => {
+  test('mod summaries draw no bar chips any more: they are dashboard tabs', async ($, on) => {
     world(on, { ...RUN_WORLD, procs: '', vram: '1000, 8188' })
     const atoms: Record<string, unknown> = {}
     on('state.get', ($, e, next) => {
@@ -450,9 +450,8 @@ describe('action bar', () => {
     atoms['bws-secrets'] = { state: 'warn', label: '2 secrets' }
     for (const surface of ['terminal', 'desktop'] as const) {
       const r = await chips(surface)
-      expect(r.found).toEqual([true, false, false, true])
-      expect(r.hasText).toBe(true)
-      expect(r.secretsColor).toBe('warning')
+      expect(r.found).toEqual([false, false, false, false])
+      expect(r.hasText).toBe(false)
     }
   })
 

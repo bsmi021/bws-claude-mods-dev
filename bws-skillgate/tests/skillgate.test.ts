@@ -149,6 +149,19 @@ describe('FR-SG-02: picks, /name, topK, later prompts and /skillgate', () => {
     expect(await run('OFF')).toMatch(/^Skill gate: off \(set for this session with \/skillgate\)/)
     expect(await run('loud')).toBe('Usage: /skillgate [off|on|status|explain]')
   })
+
+  test('the dashboard tab is published at start and follows /skillgate', async ($, on) => {
+    world(on)
+    const tabs: { badge?: string }[] = []
+    on('state.set', { plugin: 'bws-skillgate', key: 'tab' }, ($, e, next) => {
+      tabs.push(e.value as { badge?: string })
+      return next(e)
+    })
+    on('session.start', ($, e) => ({ cwd: e.cwd }) as never)
+    await $.session.start({ cwd: 'C:/proj' } as never)
+    await $.command.run({ command: 'skillgate', args: 'on' } as never)
+    expect(tabs.map(t => t.badge)).toEqual(['off', 'on'])
+  })
 })
 
 describe('FR-SG-03: cache safety', () => {

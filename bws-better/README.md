@@ -1,6 +1,7 @@
 # bws-better: Prompt Upgrade
 
-Turns a rough prompt into a great one before it is sent. A pane asks up to three quick multiple-choice questions,
+Turns a rough prompt into a great one before it is sent. Its tab in bws-cockpit's dashboard (0.2.0; it was a pane of its own;
+needs bws-cockpit 0.21.0+) asks up to three quick multiple-choice questions,
 rewrites the prompt, and shows your prompt and the upgrade side by side. Nothing runs until you press **Run it**.
 
 It differs from `/enhance` (bws-enhance): `/better` asks you a few questions and needs no project context, while
@@ -11,14 +12,15 @@ recent conversation. With `/better on`, the bws-enhance prompt bouncer stands as
 
 | Command | What it does |
 | --- | --- |
-| `/better <rough prompt>` | Upgrades that prompt in the pane |
-| `/better` | Opens the pane with a box to type one |
+| `/better <rough prompt>` | Upgrades that prompt in the Better tab |
+| `/better` | Opens the Better tab with a box to type one |
 | `/better on` / `/better off` | Turns automatic mode on or off (remembered across sessions; off by default) |
 | `/better history` | Your last 20 upgrades; pick one to reopen its review |
 
-The pane has four steps, shown across the top: **Your prompt → Questions → Rewrite → Review**.
+The tab has four steps, shown across the top: **Your prompt → Questions → Rewrite → Review**.
 
-- **Questions**: pick a chip, press **Other (type it)** to type your own answer, or **Skip**. When every question is answered or skipped, the rewrite starts. **Skip the rest, upgrade now** starts it at once. When no question would help, the pane goes straight to the rewrite.
+- **Questions**: pick a chip, press **Other (type it)** to type your own answer, or **Skip**. When every question is answered or skipped, the rewrite starts. **Skip the rest, upgrade now** starts it at once. When no question would help, the tab goes straight to the rewrite.
+- Every button and box has a command twin, `/better --<id> [text]` (`run`, `edit`, `copy`, `cancel`, `retry`, `original`, `upgrade`, `o-<q>-<option>`, `other-<q>`, `skip-<q>`, `other-input-<q> <text>`, `compose <text>`, `history`, `auto-on`, `auto-off`).
 - **Review**: three tiles show words before, words after and details added. Under them are **Run it**, **Edit**, **Copy** and **Cancel**, then what was added, then the two prompts side by side.
   - **Run it** sends the upgrade as your own words.
   - **Edit** puts it in the prompt box; Enter there runs it as is.
@@ -27,7 +29,7 @@ The pane has four steps, shown across the top: **Your prompt → Questions → R
 
 ### Automatic mode
 
-While it is on, a prompt you type goes to the pane first instead of being sent. These go straight through untouched:
+While it is on, a prompt you type goes to the Better tab first instead of being sent. These go straight through untouched:
 - slash commands
 - prompts with images or files attached
 - anything typed while Claude is working
@@ -44,7 +46,7 @@ The upgrade the mod sends is never taken again.
 
 Each upgrade makes two model calls: one for the questions and one for the rewrite.
 
-Headless (`claude -p "/better ..."`), there is no pane: the questions are skipped and the upgrade is printed with what it added.
+Headless (`claude -p "/better ..."`), there is no dashboard: the questions are skipped and the upgrade is printed with what it added.
 
 ## Summary atom
 
@@ -66,7 +68,7 @@ and `$.session.surfaces`. No files, no network except the model call, no process
 ## After reload, `/clear`, `/resume`, `/branch`
 
 - Automatic mode and the last 20 upgrades are kept in `$.store`, so they come back in every new session.
-- A reload mid-step sends the pending model call again and reopens the pane (tested).
+- A reload mid-step sends the pending model call again and shows the tab again (tested).
 - What `/clear`, `/resume` and `/branch` do to an upgrade in progress is not tested.
 
 ## Load

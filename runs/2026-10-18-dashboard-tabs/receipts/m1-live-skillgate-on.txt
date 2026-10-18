@@ -1,0 +1,50 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\live.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ 1: Assumptions 2: Shelf 3: Board 4: Better ● [ Skillgate on ] 6: Notify 7: Shell lint                                                                                  │
+│ Skillgate · on    │
+│ Skill gate: on (set for this session with /skillgate). Top 5, model haiku.       │
+│ No prompt gated yet in this conversation.                                                                                                                              │
+│ The listing is cut on the first prompt of a conversation; later prompts can only add skills.  │
+│ ╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮  │
+│ │ Last prompt                                                                                                                            │  │
+│ │ No prompt gated yet in this conversation. While the gate is on, it cuts the listing on a conversation's first prompt.│  │
+│╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯│
+│ [ Turn off for this session ]                                                                                                                                          │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run  ● UE ● VRAM 6.0/8.0 GB                                             [-]
+doh: handoffi: ideae: enhance  open2: dasha: asms: shelfb: board  3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⏵⏵automodeon (shift+tabtocycle)◨side✦enhance
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

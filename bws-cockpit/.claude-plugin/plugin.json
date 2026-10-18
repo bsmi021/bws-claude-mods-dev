@@ -1,6 +1,6 @@
 {
   "name": "bws-cockpit",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "Brian"
@@ -146,9 +146,9 @@
     },
     "modSummaries": {
       "type": "string",
-      "title": "Mod chips",
-      "description": "Mods whose summary shows as a chip in the action bar while loaded and not idle, comma-separated. Known: bws-memory, bws-diagram, bws-skillgate, bws-secrets, bws-better.",
-      "default": "bws-memory,bws-diagram,bws-skillgate,bws-secrets,bws-better"
+      "title": "Mod tabs",
+      "description": "Mods that get a dashboard tab while loaded, in this order, comma-separated. Known: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-interview.",
+      "default": "bws-memory,bws-diagram,bws-enhance,bws-better,bws-sidechat,bws-secrets,bws-skillgate,bws-notify,bws-shell-lint,bws-interview"
     },
     "dashboardOnStart": {
       "type": "boolean",

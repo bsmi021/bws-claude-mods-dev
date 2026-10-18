@@ -4,6 +4,8 @@ With many skills installed, their names and descriptions sit in the model's cont
 small model pick the skills that fit what you asked, and cuts the skill listing the model reads down to those (plus any
 skill you name with `/name`). Off by default.
 
+- **Dashboard tab** (0.2.0): with bws-cockpit 0.21.0+, a Skillgate tab shows the status and the last picks, with a button that turns the gate on or off for this session (the same as `/skillgate on|off`).
+
 ## How it works
 
 - **First prompt of a conversation.** The engine sends the skill listing once, with the first request (the `skill_listing`

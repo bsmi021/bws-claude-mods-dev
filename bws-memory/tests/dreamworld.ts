@@ -1,6 +1,7 @@
 // A stubbed engine for the DreamPath tests, with an in-memory folder (files and sub-folders). Not a test file.
 import { mock } from 'claude-code/testing'
 import type { On } from 'claude-code'
+import { cardView, recordTabs } from './tabview'
 import { memoryFile, type Entry } from '../hooks/memory'
 
 declare const setTimeout: (fn: (...a: never[]) => void, ms: number) => unknown
@@ -125,15 +126,11 @@ export function world(on: On, w: World = {}) {
   on('turn.complete', () => ({ text: '' }) as never)
   on('session.end', ($, e) => ({ sessionId: e.sessionId }))
   on('session.compact', ($, e) => ({ messages: e.messages }) as never)
-  return { seen, clock, files, who, release: (text: string) => release(text) }
+  const tab = recordTabs(on)
+  const mount = ($: { command: { run: (i: never) => Promise<unknown> } }) => cardView(tab.last, 'Dream', (command, args) => run($, command, args))
+  return { seen, clock, files, who, last: tab.last, raised: tab.raised, mount, release: (text: string) => release(text) }
 }
 
-export const PANE = {
-  plugin: 'bws-memory',
-  component: 'Pane',
-  requestId: 'bws-dream',
-  props: { title: 'Dream', isFocused: false, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 8 }, view: {} },
-} as const
 
 // Lets the deferred work and the awaits behind it run.
 export async function drain(clock: { advance: (ms: number) => Promise<unknown> }) {
