@@ -48,7 +48,7 @@ function chatNodes(c: SideChat, hasTree: boolean): TabNode[] {
     }
   }
   if (win.below > 0) nodes.push(buttons({ id: 'newer', label: `↓ ${win.below} rows below` }))
-  if (c.isBusy) nodes.push(text(c.live === '' ? 'thinking…' : 'answering…', { isDim: true }), buttons({ id: 'stop', label: 'Stop', hotkey: 's' }))
+  if (c.isBusy) nodes.push(text(c.live === '' ? 'thinking…' : 'answering…', { isDim: true }), buttons({ id: 'stop', label: 'Stop' }))
   nodes.push({ kind: 'input', id: askKey(c.asks), placeholder: c.isBusy ? 'wait for the answer…' : 'ask in the side chat, Enter sends', isFocused: true })
   return nodes
 }
@@ -82,11 +82,11 @@ function treeNodes(st: TreePane): TabNode[] {
   return nodes
 }
 
-export function sideTab(c: SideChat, st: TreePane, view: View, o: { show: number; exploring: number }): ModTab {
+export function sideTab(c: SideChat, st: TreePane, view: View, o: { show: number; open: number; exploring: number }): ModTab {
   const isTree = view === 'tree'
   const badge = c.isBusy || o.exploring > 0 ? '…' : isTree && st.tree !== null ? 'tree' : c.msgs.length > 0 ? String(c.msgs.filter(m => m.role === 'user').length) : ''
   const tone = c.isBusy || o.exploring > 0 ? 'busy' : c.msgs.length > 0 || st.tree !== null ? 'ok' : 'idle'
-  return makeTab('Side chat', isTree ? treeNodes(st) : chatNodes(c, st.tree !== null), { badge, tone, show: o.show, isPinnedEnd: !isTree })
+  return makeTab('Side chat', isTree ? treeNodes(st) : chatNodes(c, st.tree !== null), { badge, tone, show: o.show, open: o.open, isPinnedEnd: !isTree })
 }
 
 // `/side --<id> [text]`: a tab id and the text an input sent.

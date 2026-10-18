@@ -6,8 +6,8 @@
 import type { On } from 'claude-code'
 
 type Button = { id: string; label: string }
-type Node = { kind: 'text'; text: string } | { kind: 'buttons'; items: Button[] } | { kind: 'input'; id: string; placeholder: string } | { kind: 'card'; title: string; body: Node[] } | { kind: 'raster' }
-export type Tab = { title: string; badge: string; tone: string; raise: number; show?: number; body: Node[] }
+type Node = { kind: 'text'; text: string } | { kind: 'buttons'; items: Button[] } | { kind: 'input'; id: string; placeholder: string; isFocused?: boolean } | { kind: 'card'; title: string; body: Node[] } | { kind: 'raster' }
+export type Tab = { title: string; badge: string; tone: string; raise: number; show?: number; open?: number; body: Node[] }
 export type Found = { key?: string; text?: string; props?: { label?: string } }
 
 let tabs: Tab[] = []

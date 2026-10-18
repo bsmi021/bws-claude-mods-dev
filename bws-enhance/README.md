@@ -29,11 +29,10 @@ The rewrite is grounded in what this session actually has:
 The enhanced prompt replaces the prompt box; edit it there and press `Enter` to send it as your own words. Since 0.4.0
 the buttons live in the **Enhance tab** of bws-cockpit's dashboard (0.21.0+), not a pane of their own: **Send / Revert /
 Dismiss**. **Send** sends the box as it is, edits included. If you typed something else while it was working, the box is
-left alone and the tab offers **Put in box**. `/enhance` opens the dashboard on the Enhance tab and asks for keyboard
-focus (the engine grants it only to a fresh open over an empty box); when the rewrite lands without it, the dashboard is
-reopened asking again. With the keys, `s` / `r` / `d` act at once and `Esc` hands them back to the box. Live in tmux
-(2.1.302) the engine granted neither request, so the keys needed the dashboard focused first; `Enter` in the box, the
-tab's buttons and the commands work regardless. Every button has a command twin, `/enhance --<id>` (`send`,
+left alone and the tab offers **Put in box**. `/enhance` has bws-cockpit (0.21.1+) open the dashboard on the Enhance tab with the keyboard. While you stay there the
+rewrite waits in the tab (0.4.1): `s` sends it, `p` puts it in the box to edit, `d` dismisses (filling the box would hand
+the keyboard to the box). Started from the chord over a draft, the keys stay with the box and the rewrite replaces the
+draft there, with `s` / `r` / `d` in the tab. Every button has a command twin, `/enhance --<id>` (`send`,
 `revert`, `put`, `dismiss`, `cancel`, `sendanyway`, `enhance`, `edit`).
 
 Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output.

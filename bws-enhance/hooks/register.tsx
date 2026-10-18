@@ -42,6 +42,8 @@ import {
 
 const COMMAND = 'enhance'
 const BOUNCE = 'bounce'
+// A ready rewrite kept in the tab because the person was there (View.note).
+const IN_TAB = 'in-tab'
 const IDLE: View = { phase: 'idle', original: '', enhanced: '', isFilled: false, note: '' }
 const view = atom({ plugin: 'bws-enhance', key: 'view' } as const, IDLE)
 // What /bounce set for this session: mode null leaves the bounce option in charge; warned is the text held once in warn mode.
@@ -49,8 +51,12 @@ const setting = atom({ plugin: 'bws-enhance', key: 'setting' } as const, { mode:
 const summary = atom({ plugin: 'bws-enhance', key: 'summary' } as const, null)
 // The Enhance tab bws-cockpit draws in its dashboard (bws-kit/tab.ts).
 const tab = atom({ plugin: 'bws-enhance', key: 'tab' } as const, null as unknown)
-// Counts up when the tab must be shown: an enhance started or done, a prompt held.
+// Counts up when the tab must be shown: an enhance started or done, a prompt held. `openCount` instead asks bws-cockpit
+// to open the dashboard with the keys (from the person's command), so the dashboard is cockpit's and it can move the ring.
 let showCount = 0
+let openCount = 0
+// This run asked for the keys at its start (the person is in the dashboard): its rewrite waits in the tab.
+let isKeysAsked = false
 // bws-better's switch, read-only: while its automatic mode is on it takes the typed prompt, so the bouncer stands aside.
 const betterAuto = atom({ plugin: 'bws-better', key: 'auto' } as const, false)
 // The options, copied in by register on every load.
@@ -135,6 +141,13 @@ async function finish($: EngineInterface, rough: string, model: string) {
     await setView($, () => ({ ...IDLE, phase: 'error', original: rough, note: r.note }))
     return
   }
+  // The person is in the dashboard (the run asked for the keys): keep them there. Filling the prompt box hands the keys
+  // to the box, and nothing but the person can hand them back, so the rewrite waits in the tab: s sends it, p puts it
+  // in the box to edit, d dismisses. Send is marked focused; cockpit moves the ring to it from Cancel.
+  if (isKeysAsked) {
+    await setView($, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: false, note: IN_TAB }))
+    return
+  }
   // The box still holds nothing or the rough draft: replace it. Anything else was typed meanwhile: keep it.
   const box = (await $.prompt.read()).text.trim()
   if (box !== '' && box !== rough) {
@@ -142,14 +155,6 @@ async function finish($: EngineInterface, rough: string, model: string) {
     return
   }
   await setView($, () => ({ ...IDLE, phase: 'ready', original: rough, enhanced: r.text, isFilled: true }))
-  // Still holding the keys from start (the person's open): the tab just changes. Otherwise ask for them again, which
-  // the engine grants only to a fresh open over an empty composer: clear the box, show the tab with focus, then fill.
-  const pane = (await $.ui.panes()).find(p => p.id === DASHBOARD)
-  if (pane?.isFocused) await publish($)
-  else {
-    if (box !== '') await $.prompt.fill({ text: '' })
-    await showTab($, true)
-  }
   const isFilled = (await $.prompt.fill({ text: r.text })).isFilled
   if (!isFilled) await setView($, old => ({ ...old, isFilled: false }))
 }
@@ -159,12 +164,14 @@ async function placed($: EngineInterface, r: { isPlaced: true } | { isPlaced: fa
   if (!r.isPlaced) $.ui.toast(`Enhance: dashboard not shown (${r.reason}). Enter in the box sends.`)
 }
 
-async function start($: EngineInterface, rough: string, model: string) {
+async function start($: EngineInterface, rough: string, model: string, isCommand = false) {
   stop.abort()
   await setView($, () => ({ ...IDLE, phase: 'working', original: rough }))
-  // Called from the person's command or press, so this open is theirs: over an empty box it takes the keys now, and
-  // keeps them when the rewrite lands (c cancels meanwhile; s / r / d after).
-  await showTab($, (await $.prompt.read()).text.trim() === '')
+  // Called from the person's command or press, so this open is theirs and takes the keys now (c cancels meanwhile;
+  // s / r / d once the rewrite lands). From /enhance always: while its hook runs the box still holds the command's own
+  // text, which the engine clears. From the chord or a held prompt only over an empty box: a draft there is the person's.
+  isKeysAsked = isCommand || (await $.prompt.read()).text.trim() === ''
+  await showTab($, isKeysAsked)
   $.clock.after(10, () => void finish($, rough, model).catch(err => setView($, () => ({ ...IDLE, phase: 'error', original: rough, note: String(err) }))))
 }
 
@@ -177,7 +184,7 @@ async function publish($: EngineInterface) {
   const set = await read($, setting)
   const v = await read($, view)
   await update($, summary, () => bounceSummary(set.mode ?? bounceOption, v.phase === 'bounced' ? v.note : null))
-  await update($, tab, () => enhanceTab(v, set.mode ?? bounceOption, { show: showCount }))
+  await update($, tab, () => enhanceTab(v, set.mode ?? bounceOption, { show: showCount, open: openCount }))
 }
 
 async function setView($: EngineInterface, f: (old: View) => View) {
@@ -188,10 +195,15 @@ async function setView($: EngineInterface, f: (old: View) => View) {
 // Shows the Enhance tab: cockpit switches the dashboard to it, and the dashboard is opened from here. `focus` gives it
 // the keys (s / r / d), which the engine grants only to a fresh open over an empty box, so an open dashboard is closed first.
 async function showTab($: EngineInterface, focus: boolean) {
+  if (focus) {
+    // bws-cockpit opens it, inside this same dispatch (its state.set hook is awaited), and takes the keys.
+    openCount += 1
+    await publish($)
+    return
+  }
   showCount += 1
   await publish($)
-  if (focus) await $.ui.close({ id: DASHBOARD })
-  await placed($, await $.ui.open(focus ? { id: DASHBOARD, title: 'Dashboard', focus: true } : { id: DASHBOARD, title: 'Dashboard' }))
+  await placed($, await $.ui.open({ id: DASHBOARD, title: 'Dashboard' }))
 }
 
 async function send($: EngineInterface) {
@@ -421,7 +433,7 @@ export const register: Register = (on, options) => {
       return r.ok ? { text: r.text } : { text: `Enhance failed: ${r.note}`, exitCode: 1 }
     }
     try {
-      await start($, rough, model)
+      await start($, rough, model, true)
       return {}
     } catch (err) {
       return { text: `Enhance failed: ${String(err)}` }

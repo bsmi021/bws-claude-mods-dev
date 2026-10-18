@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { makeSummary } from '../hooks/kit/summary'
 import { makeTab, text } from '../hooks/kit/tab'
-import { DEFAULT_MODS, isRaised, modKey, modOfKey, modTabs, parseMods, tabLabel } from '../hooks/modtabs'
+import { DEFAULT_MODS, focusKeyOf, isRaised, modKey, modOfKey, modTabs, parseMods, tabLabel } from '../hooks/modtabs'
 
 describe('mod tabs', () => {
   test('the option names the mods, in order; unknown names and repeats drop', () => {
@@ -52,5 +52,16 @@ describe('mod tabs', () => {
     expect(isRaised(undefined, 3)).toBe(false)
     expect(isRaised(3, 3)).toBe(false)
     expect(isRaised(3, 4)).toBe(true)
+  })
+
+  test('the focused input key: the first input marked isFocused, inside cards too; none: null', () => {
+    const ask = makeTab('Side chat', [text('x'), { kind: 'input', id: 'ask-3', placeholder: 'p', isFocused: true }])
+    expect(focusKeyOf('bws-sidechat', ask)).toBe('bws-sidechat-ask-3')
+    const inCard = makeTab('Better', [{ kind: 'card', title: 'Q', body: [{ kind: 'input', id: 'other-input-1', placeholder: 'p', isFocused: true }] }])
+    expect(focusKeyOf('bws-better', inCard)).toBe('bws-better-other-input-1')
+    expect(focusKeyOf('bws-notify', makeTab('Notify', [{ kind: 'input', id: 'note', placeholder: 'p' }]))).toBeNull()
+    expect(focusKeyOf('bws-notify', null)).toBeNull()
+    const send = makeTab('Enhance', [{ kind: 'buttons', items: [{ id: 'send', label: 'Send', isFocused: true }, { id: 'revert', label: 'Revert' }] }])
+    expect(focusKeyOf('bws-enhance', send)).toBe('bws-enhance-send')
   })
 })

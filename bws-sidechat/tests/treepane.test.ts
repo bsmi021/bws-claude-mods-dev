@@ -127,8 +127,9 @@ describe('FR-DT-04: Close, and keys and scrolling as the side chat', () => {
   test('closing the tree closes no pane: the dashboard stays', async ($, on) => {
     const w = treeWorld(on)
     await run($, 'explain')
+    const atOpen = w.seen.closed.length // /explain's fresh open (it takes the keys) may close the dashboard just before
     await press($, w.clock, 'close')
-    expect(w.seen.closed).toEqual([])
+    expect(w.seen.closed.length).toBe(atOpen) // closing the tree closes nothing
     expect(w.seen.opened.every(o => o.id === 'dashboard')).toBe(true)
   })
 })

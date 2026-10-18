@@ -18,6 +18,8 @@ const ENHANCED = 'Fix the login redirect loop in src/auth.ts.\n\nDone when\n- np
 type World = {
   surfaces?: string[]
   box?: string
+  // false: the engine keeps the keys with the prompt box (the person is typing there)
+  grantsFocus?: boolean
   reply?: { isAnswered: true; text: string } | { isAnswered: false; reason: 'empty-reply' }
 }
 
@@ -74,7 +76,7 @@ function world(on: On, w: World = {}) {
   const panes = new Map<string, boolean>()
   on('ui.panes', () => ({ value: [...panes].map(([id, isFocused]) => ({ id, title: 'Dashboard', isShown: true, isFocused, isPlaced: true })) as never }))
   on('ui.open', ($, e) => {
-    panes.set(e.id, e.focus === true || (panes.get(e.id) ?? false))
+    panes.set(e.id, (w.grantsFocus !== false && e.focus === true) || (panes.get(e.id) ?? false))
     // The engine grants focus only over an empty composer: record what the box held at the open.
     seen.opened.push({ id: e.id, focus: e.focus, box })
     return { value: { isPlaced: true } }
@@ -174,13 +176,30 @@ describe('mod', () => {
     expect(seen.asks).toEqual([])
   })
 
-  test('interactive: asks for focus over an empty box, then fills it; Send submits the box as the user', async ($, on) => {
-    const { seen, clock, setBox } = world(on)
+  test('in the dashboard: /enhance asks bws-cockpit to open it with the keys; the rewrite waits in the tab and Send sends it', async ($, on) => {
+    const { seen, clock } = world(on)
     const r = await $.command.run({ command: 'enhance', args: 'fix the login thing' } as never)
     expect(r.text).toBeUndefined()
-    expect(seen.opened[0]).toEqual({ id: 'dashboard', focus: true, box: '' }) // the person's open, over an empty box: the keys now
+    expect(lastTab()?.open).toBe(1) // cockpit opens it, inside this command: the person's open, and its own pane
+    expect(seen.opened).toEqual([]) // the mod opens nothing itself
     await clock.advance(50)
-    expect(seen.opened.length).toBe(1) // still focused when the rewrite lands: no reopen
+    expect(seen.fills).toEqual([]) // filling the box would hand it the keys
+    const tab = await mountTab($ as never)
+    expect(await tab.find({ type: 'Text', text: /^✦ Enhanced prompt ready:$/ })).toBeDefined()
+    expect(await tab.find({ type: 'Text', text: ENHANCED })).toBeDefined()
+    expect(await tab.find({ key: 'put' })).toBeDefined()
+    await tab.press({ key: 'send' })
+    await clock.advance(50)
+    expect(seen.sent).toEqual([{ text: ENHANCED, asUser: true }])
+    expect(await (await mountTab($ as never)).find({ type: 'Text', text: /Nothing to enhance/ })).toBeDefined()
+  })
+
+  test('keys with the box (the chord over a draft): the rewrite fills it; Send submits the box as edited', async ($, on) => {
+    const { seen, clock, setBox } = world(on, { box: 'fix the login thing' })
+    const chord = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
+    await chord.press({ key: 'enhance' })
+    await chord.unmount()
+    await clock.advance(50)
     expect(seen.fills).toEqual([ENHANCED])
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await mountTab($ as never)
@@ -188,6 +207,7 @@ describe('mod', () => {
       expect(await ui.find({ key: 'send' })).toBeDefined()
       expect(await ui.find({ key: 'revert' })).toBeDefined()
       await ui.unmount()
+      void surface
     }
     setBox(`${ENHANCED}\nAlso keep the session cookie.`) // edited in the box
     const ui = await mountTab($ as never)
@@ -199,9 +219,25 @@ describe('mod', () => {
     expect(await (await mountTab($ as never)).find({ type: 'Text', text: /Nothing to enhance/ })).toBeDefined()
   })
 
-  test('Revert puts the rough prompt back', async ($, on) => {
-    const { seen, clock } = world(on)
+  test('/enhance asks for the keys even while its own text is still in the box (the engine clears it after the hook)', async ($, on) => {
+    world(on, { box: '/enhance fix the login thing' })
     await $.command.run({ command: 'enhance', args: 'fix the login thing' } as never)
+    expect(lastTab()?.open).toBe(1)
+  })
+
+  test('the chord over a draft leaves the keys with the person', async ($, on) => {
+    const { seen } = world(on, { box: 'make the band nicer' })
+    const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
+    await ui.press({ key: 'enhance' })
+    await ui.unmount()
+    expect(seen.opened[0]?.focus).toBeUndefined()
+  })
+
+  test('Revert puts the rough prompt back', async ($, on) => {
+    const { seen, clock } = world(on, { box: 'fix the login thing' })
+    const chord = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
+    await chord.press({ key: 'enhance' })
+    await chord.unmount()
     await clock.advance(50)
     const ui = await mountTab($ as never)
     await ui.press({ key: 'revert' })
@@ -211,8 +247,10 @@ describe('mod', () => {
   })
 
   test('text typed while waiting is kept; Put in box offers the rewrite', async ($, on) => {
-    const { seen, clock, setBox } = world(on)
-    await $.command.run({ command: 'enhance', args: 'fix the login thing' } as never)
+    const { seen, clock, setBox } = world(on, { box: 'fix the login thing' })
+    const chord = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
+    await chord.press({ key: 'enhance' })
+    await chord.unmount()
     setBox('something else')
     await clock.advance(50)
     expect(seen.fills).toEqual([])
@@ -241,9 +279,9 @@ describe('mod', () => {
     await ui.unmount()
     await clock.advance(50)
     expect(seen.asks[0]?.prompt).toMatch(/<rough_request>\nmake the band nicer\n/)
-    // The draft is cleared first so the focus request is granted, then the rewrite goes in.
-    expect(seen.fills).toEqual(['', ENHANCED])
-    expect(seen.opened.at(-1)).toEqual({ id: 'dashboard', focus: true, box: '' })
+    // The draft is the person's, so the keys stay with the box and the rewrite replaces the draft there.
+    expect(seen.fills).toEqual([ENHANCED])
+    expect(seen.opened.every(o => o.focus === undefined)).toBe(true)
   })
 
   test('footer is shared: a footer drawn by another mod stays beside the enhance button, and the mode labels are not drawn twice', async ($, on) => {
