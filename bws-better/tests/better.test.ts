@@ -1,5 +1,6 @@
 import { test, expect, mock, describe } from 'claude-code/testing'
 import type { On } from 'claude-code'
+import { lastTab, mountTab, recordTabs } from './tabview'
 
 const ROUGH = 'make a landing page for my game'
 const QUESTIONS = JSON.stringify({
@@ -19,6 +20,7 @@ type World = { surfaces?: string[]; box?: string; replies?: Reply[]; isPlaced?: 
 // Stubs every outside call the mod makes and records what reached the engine.
 function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: 1_760_000_000_000 })
+  recordTabs(on)
   const store: Record<string, unknown> = { ...(w.store ?? {}) }
   on('store.get', ($, e) => ({ value: store[e.key] }) as never)
   on('store.set', ($, e) => {
@@ -76,14 +78,6 @@ function world(on: On, w: World = {}) {
   return { seen, clock, store, setBox: (t: string) => (box = t), box: () => box }
 }
 
-const pane = (surface: 'terminal' | 'desktop', bodyColumns = 100) =>
-  ({
-    plugin: 'bws-better',
-    surface,
-    component: 'Pane',
-    requestId: 'bws-better',
-    props: { title: 'Prompt Upgrade', isFocused: true, bodyColumns, placement: 'inline', scroll: { offset: 0, bodyRows: 30 }, view: {} },
-  }) as const
 
 const SURFACES = ['terminal', 'desktop'] as const
 const typed = (text: string, more: Record<string, unknown> = {}) => ({ text, origin: { kind: 'composer' }, wait: false, ...more }) as never
@@ -94,19 +88,19 @@ describe('the full flow', () => {
     const r = await $.command.run({ command: 'better', args: ROUGH } as never)
     expect(r.text).toMatch(/Upgrading your prompt/)
     await clock.advance(50)
-    expect(seen.opened).toEqual(['bws-better'])
+    expect(seen.opened).toEqual(['dashboard'])
     expect(seen.asks[0]?.prompt).toContain(ROUGH)
 
     for (const surface of ['terminal', 'desktop'] as const) {
-      const ui = await $.ui.mount(pane(surface))
+      const ui = await mountTab($ as never)
       expect(await ui.find({ type: 'Text', text: 'PROMPT UPGRADE' })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: 'Who is the page for?' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /Who is the page for?/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: '0 of 3 answered' })).toBeDefined()
       expect(await ui.find({ key: 'upgrade' })).toBeDefined()
       await ui.unmount()
     }
 
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await mountTab($ as never)
     await ui.press({ key: 'o-0-0' }) // New players
     await ui.press({ key: 'skip-1' }) // tone skipped
     expect(await ui.find({ type: 'Text', text: '2 of 3 answered' })).toBeDefined()
@@ -121,9 +115,9 @@ describe('the full flow', () => {
     expect(ask?.prompt).not.toContain('What tone?')
     expect(ask?.system).toMatch(/\[placeholder\]/)
 
-    const review = await $.ui.mount(pane('terminal'))
-    expect(await review.find({ type: 'Text', text: 'WORDS BEFORE' })).toBeDefined()
-    expect(await review.find({ type: 'Text', text: 'Audience: new players' })).toBeDefined()
+    const review = await mountTab($ as never)
+    expect(await review.find({ type: 'Text', text: /words before/ })).toBeDefined()
+    expect(await review.find({ type: 'Text', text: '+ Audience: new players' })).toBeDefined()
     expect(await review.find({ type: 'Text', text: UPGRADED })).toBeDefined()
     expect(await review.find({ type: 'Text', text: ROUGH })).toBeDefined()
     await review.press({ key: 'copy' })
@@ -133,13 +127,13 @@ describe('the full flow', () => {
     await review.unmount()
     await clock.advance(50)
     expect(seen.sent).toEqual([{ text: UPGRADED, asUser: true, kind: 'plugin' }])
-    expect(seen.closed).toContain('bws-better')
+    expect(lastTab()?.body.some(n => n.kind === 'text' && /Nothing to upgrade/.test(n.text))).toBe(true)
 
     // Saved to history; /better history reopens its review.
     expect((store.history as unknown[]).length).toBe(1)
     const h = await $.command.run({ command: 'better', args: 'history' } as never)
     expect(h.text).toMatch(/last 1 upgrade is/)
-    const list = await $.ui.mount(pane('terminal'))
+    const list = await mountTab($ as never)
     const row = await list.find({ type: 'Button', text: new RegExp(ROUGH) })
     expect(row).toBeDefined()
     await list.press({ key: String(row?.key) })
@@ -153,7 +147,7 @@ describe('the full flow', () => {
     await clock.advance(50)
     await clock.advance(50)
     expect(seen.asks.length).toBe(2)
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await mountTab($ as never)
     expect(await ui.find({ key: 'run' })).toBeDefined()
     await ui.unmount()
   })
@@ -164,7 +158,7 @@ describe('the full flow', () => {
     await $.command.run({ command: 'better', args: ROUGH } as never)
     await clock.advance(50)
     await clock.advance(50)
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await mountTab($ as never)
     await ui.press({ key: 'edit' })
     await ui.unmount()
     expect(seen.fills.at(-1)?.text).toBe(UPGRADED)
@@ -179,10 +173,10 @@ describe('cancel and errors', () => {
     const { seen, clock, box } = world(on)
     await $.command.run({ command: 'better', args: ROUGH } as never)
     await clock.advance(50)
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await mountTab($ as never)
     await ui.press({ key: 'cancel' })
     await ui.unmount()
-    expect(seen.closed).toContain('bws-better')
+    expect(lastTab()?.body.some(n => n.kind === 'text' && /Nothing to upgrade/.test(n.text))).toBe(true)
     expect(box()).toBe(ROUGH)
     expect(seen.sent).toEqual([])
   })
@@ -192,7 +186,7 @@ describe('cancel and errors', () => {
     await $.command.run({ command: 'better', args: ROUGH } as never)
     await clock.advance(50)
     setBox('something new')
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await mountTab($ as never)
     await ui.press({ key: 'cancel' })
     await ui.unmount()
     expect(box()).toBe(`something new\n\n${ROUGH}`)
@@ -204,7 +198,7 @@ describe('cancel and errors', () => {
     })
     await $.command.run({ command: 'better', args: ROUGH } as never)
     await clock.advance(50)
-    const ui = await $.ui.mount(pane(surface))
+    const ui = await mountTab($ as never)
     expect(await ui.find({ type: 'Text', text: /Your prompt is safe/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /\(529\)/ })).toBeDefined()
     await ui.press({ key: 'retry' })
@@ -228,7 +222,7 @@ describe('automatic mode', () => {
     const held = await $.prompt.submit(typed(ROUGH))
     expect(held).toMatchObject({ drop: expect.any(String) })
     expect(seen.sent).toEqual([])
-    expect(seen.opened).toEqual(['bws-better'])
+    expect(seen.opened).toEqual(['dashboard'])
     await clock.advance(50)
     expect(seen.asks[0]?.prompt).toContain(ROUGH)
 
@@ -264,7 +258,7 @@ describe('automatic mode', () => {
     await $.prompt.submit(typed(ROUGH))
     await clock.advance(50)
     expect(box()).toBe('')
-    const ui = await $.ui.mount(pane('terminal'))
+    const ui = await mountTab($ as never)
     await ui.press({ key: 'cancel' })
     await ui.unmount()
     expect(box()).toBe(ROUGH)
@@ -299,9 +293,9 @@ describe('reload', () => {
     await $.session.start({ cwd: 'C:/proj', surface: 'terminal', isInteractive: true } as never)
     await clock.advance(50)
     expect(seen.asks.length).toBe(1)
-    const ui = await $.ui.mount(pane('terminal'))
-    expect(await ui.find({ type: 'Text', text: 'Who is the page for?' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'AUTO ON' })).toBeDefined()
+    const ui = await mountTab($ as never)
+    expect(await ui.find({ type: 'Text', text: /Who is the page for?/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /AUTO ON/ })).toBeDefined()
     await ui.unmount()
   })
 })
@@ -314,14 +308,14 @@ describe('commands and widths', () => {
     expect(box()).toBe(ROUGH)
     await clock.advance(50)
     expect(seen.asks).toEqual([])
-    expect(seen.closed).toContain('bws-better')
+    expect(lastTab()?.body.some(n => n.kind === 'text' && /Nothing to upgrade/.test(n.text))).toBe(true)
   })
 
   for (const surface of SURFACES) test(`/better alone opens a box to type one on ${surface}`, async ($, on) => {
     const { seen, clock } = world(on)
     const r = await $.command.run({ command: 'better', args: '' } as never)
     expect(r.text).toMatch(/Type your rough prompt/)
-    const ui = await $.ui.mount(pane(surface))
+    const ui = await mountTab($ as never)
     await ui.input({ key: 'compose', text: ROUGH })
     await ui.unmount()
     await clock.advance(50)
@@ -347,9 +341,9 @@ describe('commands and widths', () => {
       await $.command.run({ command: 'better', args: ROUGH } as never)
       await clock.advance(50)
       await clock.advance(50)
-      const ui = await $.ui.mount(pane(surface, cols))
+      const ui = await mountTab($ as never)
       expect(await ui.find({ key: 'run' })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: 'WORDS BEFORE' }))[cols < 60 ? 'toBeUndefined' : 'toBeDefined']()
+      expect(await ui.find({ type: 'Text', text: /words before/ })).toBeDefined() // laid out for 100 columns, whatever the dashboard's width
       await ui.unmount()
     })
   }

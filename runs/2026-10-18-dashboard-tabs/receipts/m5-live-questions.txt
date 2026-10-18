@@ -1,0 +1,50 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\m5.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+
+❯ /better make a landing page for my game
+  ⎿  bws-better:UpgradingyourpromptintheBettertab.NothingrunsuntilyoupressRun.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ 1: Assumptions 2: Shelf 3: Board [ Better 0/3 ]                                                                                                                        │
+│ Better · 0/3                │
+│ PROMPT UPGRADE   AUTO ON        │
+│ ✓ Your prompt ── ● Questions ── ○ Rewrite ── ○ Review                                                                                                                  │
+│ Questions                                                                                                   │
+│ ╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮  │
+││Question 1 ││
+│ │ 1. What is the main goal of the landing page?                                                                                                                     │  │
+│ │ [ Get players to wishlist or buy ] [ Get players to download or play now ] [ Build an email list before launch ] [ Show press and creators a press kit ]││
+│ │ [ Other (type it) ] [ Skip ]                                                                                                                                      │  │
+│ ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯  │
+│ ╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮  │
+│ │ Question 2                                           ││
+││2.Whatformatshouldthepagetake?││
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run● UE ×2● VRAM 6.9/8.0 GB[-]
+do h: handoff i: idea e: enhance   open 2: dash a: asm s: shelf    3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⏵⏵automodeon (shift+tabtocycle)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

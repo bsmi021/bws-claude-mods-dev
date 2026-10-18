@@ -1,48 +1,14 @@
-// bws-better: turns a rough prompt into a great one before it is sent. A pane asks up to three quick questions,
+// bws-better: turns a rough prompt into a great one before it is sent. Its bws-cockpit dashboard tab asks up to three quick questions,
 // rewrites the prompt, and shows the original and the upgrade side by side. Nothing runs until Run.
 // Triggers: /better <prompt>, /better alone (a box to type one), and typed prompts while /better on.
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, RenderChildren, RenderSurface } from 'claude-code'
+import type { EngineInterface, Register } from 'claude-code'
 import type { Answer, Entry, Flow } from '../types'
-import {
-  addEntry,
-  betterSummary,
-  AMBER,
-  bigDigits,
-  cardWidths,
-  classify,
-  failLine,
-  GOLD,
-  GREEN,
-  HAIR,
-  heading,
-  historyRow,
-  INK,
-  MUTED,
-  ON_GOLD,
-  parseQuestions,
-  parseRewrite,
-  QUESTIONS_SYSTEM,
-  questionsPrompt,
-  readHistory,
-  restoreFill,
-  REWRITE_SYSTEM,
-  rewritePrompt,
-  statsLine,
-  stepIndex,
-  TILE_LABELS,
-  tileInner,
-  tilesWidth,
-  TITLE,
-  titleRule,
-  tracker,
-  wordCount,
-  type Seg,
-} from './lib'
+import { addEntry, betterSummary, classify, failLine, parseQuestions, parseRewrite, QUESTIONS_SYSTEM, questionsPrompt, readHistory, restoreFill, REWRITE_SYSTEM, rewritePrompt } from './lib'
+import { DASHBOARD, parseEvent } from './kit/tab'
+import { betterTab, pressOf, type Press } from './tab'
 
 const COMMAND = 'better'
-const PANE = 'bws-better'
-const PANE_TITLE = 'Prompt Upgrade'
 const TIMEOUT_MS = 90000
 const IDLE: Flow = {
   step: 'idle',
@@ -59,8 +25,8 @@ const IDLE: Flow = {
   fromHistory: false,
 }
 const TAKEN = 'Sent to Prompt Upgrade. Nothing runs until you press Run.'
-const NARROW = 'The window is too narrow for the Prompt Upgrade pane, so your prompt is back in the box.'
-const NARROW_PANE = 'The window is too narrow for the Prompt Upgrade pane. Widen it and try again.'
+const NARROW = 'The window is too narrow for the dashboard, so your prompt is back in the box.'
+const NARROW_PANE = 'The window is too narrow for the dashboard. Widen it and try again.'
 
 const flow = atom({ plugin: 'bws-better', key: 'flow' } as const, IDLE)
 const auto = atom({ plugin: 'bws-better', key: 'auto' } as const, false)
@@ -68,6 +34,10 @@ const history = atom({ plugin: 'bws-better', key: 'history' } as const, [] as En
 const armed = atom({ plugin: 'bws-better', key: 'armed' } as const, false)
 // The summary atom (FR-ALL-05): bws-cockpit's bar draws a chip for it while the mod is loaded and not idle.
 const summary = atom({ plugin: 'bws-better', key: 'summary' } as const, null)
+// The Better tab bws-cockpit draws in its dashboard (bws-kit/tab.ts).
+const tab = atom({ plugin: 'bws-better', key: 'tab' } as const, null as unknown)
+// Counts up when the person's action shows the tab.
+let showCount = 0
 
 // Copied in by register on every load.
 let model = 'haiku'
@@ -77,10 +47,12 @@ let stop = new AbortController()
 async function publish($: EngineInterface) {
   const v = await read($, flow)
   const isOn = await read($, auto)
+  const list = await read($, history)
   await update($, summary, () => betterSummary(v.step, v.note, isOn))
+  await update($, tab, () => betterTab(v, list, isOn, { show: showCount }))
 }
 
-// Every change of the flow goes through here, so the chip never lags the pane.
+// Every change of the flow goes through here, so the summary never lags the tab.
 async function setFlow($: EngineInterface, change: (old: Flow) => Flow): Promise<Flow> {
   const v = await update($, flow, change)
   await publish($)
@@ -92,8 +64,12 @@ function reason(err: unknown): string {
   return t.length > 160 ? `${t.slice(0, 159)}…` : t
 }
 
-function openPane($: EngineInterface) {
-  return $.ui.open({ id: PANE, title: PANE_TITLE, focus: true, closeOnEscape: true, rows: 30 })
+// Shows the Better tab: cockpit switches the dashboard to it; the open is made here, inside the person's command or
+// Enter, so it is placed at any width and takes the keys.
+async function openTab($: EngineInterface) {
+  showCount += 1
+  await publish($)
+  return $.ui.open({ id: DASHBOARD, title: 'Dashboard', focus: true })
 }
 
 // Puts the person's words back in the box without losing anything typed meanwhile.
@@ -103,13 +79,12 @@ async function restore($: EngineInterface, original: string) {
   if (fill) await $.prompt.fill(fill)
 }
 
-// The flow is idle before the pane closes, so the close is never read as the person's.
+// Back to idle: the tab says there is nothing to upgrade; the dashboard stays as it is.
 async function closePane($: EngineInterface) {
   await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
-  await $.ui.close({ id: PANE })
 }
 
-// The pane could not be placed: close it, put the words back, and answer with the one line that says so.
+// The dashboard could not be placed: go idle, put the words back, and answer with the one line that says so.
 async function notPlaced($: EngineInterface, original: string): Promise<string> {
   stop.abort()
   await closePane($)
@@ -117,7 +92,7 @@ async function notPlaced($: EngineInterface, original: string): Promise<string> 
   return original.trim() === '' ? NARROW_PANE : NARROW
 }
 
-// The engine keeps a held prompt's text in the box; the pane has it now, and Cancel puts it back.
+// The engine keeps a held prompt's text in the box; the tab has it now, and Cancel puts it back.
 async function clearTaken($: EngineInterface, original: string) {
   if ((await $.prompt.read()).text.trim() === original) await $.prompt.fill({ text: '' })
 }
@@ -242,8 +217,9 @@ async function edit($: EngineInterface) {
   await $.prompt.fill({ text: v.upgraded })
 }
 
-async function copy($: EngineInterface, surface: RenderSurface) {
+async function copy($: EngineInterface) {
   const v = await read($, flow)
+  const surface = (await $.session.surfaces())[0] ?? 'terminal'
   const r = await $.ui.copy({ text: v.upgraded, surface })
   const flash = r.isCopied ? 'Copied to the clipboard.' : `Could not copy (${r.reason}).`
   await setFlow($, (old): Flow => ({ ...old, flash }))
@@ -282,14 +258,14 @@ async function openEntry($: EngineInterface, entry: Entry) {
   }))
 }
 
-// /better alone: the prompt typed in the pane starts an upgrade.
+// /better alone: the prompt typed in the tab starts an upgrade.
 async function composed($: EngineInterface, text: string) {
   if (text.trim() === '') return
   const attempt = await begin($, text.trim())
   later($, () => askQuestions($, attempt))
 }
 
-// Headless (claude -p): no pane, so no questions: the rewrite alone, as text.
+// Headless (claude -p): no dashboard, so no questions: the rewrite alone, as text.
 async function headless($: EngineInterface, original: string): Promise<{ text: string; exitCode?: number }> {
   const r = await $.model.complete({ model, system: REWRITE_SYSTEM, prompt: rewritePrompt(original, [], []), maxTokens: 2000, timeoutMs: TIMEOUT_MS })
   if (!r.isAnswered) return { text: `Prompt Upgrade could not write the upgrade. ${callNote(r)}`, exitCode: 1 }
@@ -304,11 +280,11 @@ async function setAuto($: EngineInterface, isOn: boolean): Promise<string> {
   await $.store.set('auto', isOn)
   await publish($)
   return isOn
-    ? 'Prompt Upgrade is on: prompts you type go to the pane first. Start one with > to send it as it is.'
+    ? 'Prompt Upgrade is on: prompts you type go to the Better tab first. Start one with > to send it as it is.'
     : 'Prompt Upgrade is off: prompts you type are sent as they are.'
 }
 
-// After a reload the flow is where it was: re-send the call it was waiting on, and bring the pane back.
+// After a reload the flow is where it was: re-send the call it was waiting on, and bring the tab back.
 async function resume($: EngineInterface) {
   const v = await read($, flow)
   if (v.step === 'idle') return
@@ -318,7 +294,40 @@ async function resume($: EngineInterface) {
   } else if (v.step === 'rewrite') {
     await startRewrite($)
   }
-  void openPane($)
+  void openTab($)
+}
+
+// A button or input in the Better tab (or its `/better --<id>` twin): the action the pane's control ran.
+async function act($: EngineInterface, p: Press) {
+  const v = await read($, flow)
+  const id = p.id
+  let m: RegExpExecArray | null
+  if (id === 'cancel') await cancel($)
+  else if (id === 'close') await closePane($)
+  else if (id === 'retry') await retry($)
+  else if (id === 'original') await sendOriginal($)
+  else if (id === 'upgrade') await startRewrite($)
+  else if (id === 'run') await run($)
+  else if (id === 'edit') await edit($)
+  else if (id === 'copy') await copy($)
+  else if (id === 'compose') await composed($, p.value ?? '')
+  else if (id === 'compose-open') await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'compose' }))
+  else if (id === 'history') await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'history' }))
+  else if (id === 'auto-on' || id === 'auto-off') $.ui.toast(await setAuto($, id === 'auto-on'))
+  else if ((m = /^o-(\d+)-(\d+)$/.exec(id))) {
+    const i = Number(m[1])
+    const value = v.questions[i]?.options[Number(m[2])]
+    if (value !== undefined) await answer($, i, { kind: 'option', value })
+  } else if ((m = /^other-(\d+)$/.exec(id))) await openOther($, Number(m[1]))
+  else if ((m = /^skip-(\d+)$/.exec(id))) await answer($, Number(m[1]), { kind: 'skip' })
+  else if ((m = /^other-input-(\d+)$/.exec(id))) {
+    const i = Number(m[1])
+    const text = (p.value ?? '').trim()
+    await (text === '' ? openOther($, i) : answer($, i, { kind: 'other', value: text }))
+  } else if (id.startsWith('h-')) {
+    const entry = (await read($, history)).find(x => `h-${x.id}` === id)
+    if (entry) await openEntry($, entry)
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -351,6 +360,12 @@ export const register: Register = (on, options) => {
   on('command.run', { command: COMMAND }, async ($, e) => {
     try {
       const arg = e.args.trim()
+      // `/better --<id> [text]`: what a button or input in the Better tab does.
+      const p = pressOf(arg)
+      if (p !== null) {
+        await act($, p)
+        return {}
+      }
       const word = arg.toLowerCase()
       if (word === 'on' || word === 'off') return { text: await setAuto($, word === 'on') }
       const isHeadless = (await $.session.surfaces()).length === 0
@@ -360,23 +375,23 @@ export const register: Register = (on, options) => {
         if (isHeadless) return { text: list.map(x => `${x.original}\n→ ${x.upgraded}`).join('\n\n') }
         stop.abort()
         await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'history' }))
-        if (!(await openPane($)).isPlaced) return { text: await notPlaced($, '') }
-        return { text: `Your last ${list.length} ${list.length === 1 ? 'upgrade is' : 'upgrades are'} in the Prompt Upgrade pane.` }
+        if (!(await openTab($)).isPlaced) return { text: await notPlaced($, '') }
+        return { text: `Your last ${list.length} ${list.length === 1 ? 'upgrade is' : 'upgrades are'} in the Better tab.` }
       }
       if (arg === '') {
         if (isHeadless) return { text: 'Usage: /better <rough prompt>, /better on, /better off, /better history.' }
         stop.abort()
         await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1, step: 'compose' }))
-        if (!(await openPane($)).isPlaced) return { text: await notPlaced($, '') }
-        return { text: 'Type your rough prompt in the Prompt Upgrade pane.' }
+        if (!(await openTab($)).isPlaced) return { text: await notPlaced($, '') }
+        return { text: 'Type your rough prompt in the Better tab.' }
       }
       if (isHeadless) return await headless($, arg)
       const attempt = await begin($, arg)
       // Awaited inside the hook: an open behind the person's command is placed at any width; one made after the
       // hook has answered counts as unasked and waits below 144 columns. The model call still goes out later.
-      if (!(await openPane($)).isPlaced) return { text: await notPlaced($, arg) }
+      if (!(await openTab($)).isPlaced) return { text: await notPlaced($, arg) }
       later($, () => askQuestions($, attempt))
-      return { text: 'Upgrading your prompt in the Prompt Upgrade pane. Nothing runs until you press Run.' }
+      return { text: 'Upgrading your prompt in the Better tab. Nothing runs until you press Run.' }
     } catch (err) {
       return { text: `Prompt Upgrade could not start: ${reason(err)}` }
     }
@@ -394,7 +409,7 @@ export const register: Register = (on, options) => {
     const original = e.text.trim()
     const attempt = await begin($, original)
     // A failed open leaves no pane waiting on a prompt the catch below sends as typed.
-    const opened = await openPane($).catch(async err => {
+    const opened = await openTab($).catch(async err => {
       await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
       throw err
     })
@@ -409,278 +424,10 @@ export const register: Register = (on, options) => {
     return { drop: TAKEN }
   }).catch(($, e, next) => next(e))
 
-  // Closed by the person (Esc or its close mark) mid-upgrade: stop the call and put the words back.
-  on('ui.close', async ($, e, next) => {
-    if (e.id === PANE && e.origin.kind === 'person') {
-      const v = await read($, flow)
-      if (v.step !== 'idle') {
-        stop.abort()
-        await setFlow($, (old): Flow => ({ ...IDLE, attempt: old.attempt + 1 }))
-        if (!v.fromHistory) $.clock.after(10, () => void restore($, v.original))
-      }
-    }
+  // A press or a submitted input in the Better tab (bws-cockpit writes it).
+  on('state.set', { plugin: 'bws-cockpit', key: 'tabEvent' }, async ($, e, next) => {
+    const ev = parseEvent(e.value)
+    if (ev?.plugin === 'bws-better') await act($, ev.value === undefined ? { id: ev.id } : { id: ev.id, value: ev.value }).catch(() => $.ui.log(failLine('tab', 'error'), { to: 'debug' }))
     return next(e)
-  })
-
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const v = await read($, flow)
-    const list = v.step === 'history' ? await read($, history) : []
-    const isAuto = await read($, auto)
-    const cols = Math.max(20, e.props.bodyColumns)
-    const table = $.ui.resolve(e)
-    const { Box, Button, Text } = table
-    const Input = e.surface !== 'mobile' && 'Input' in table ? table.Input : null
-
-    // -- shared rows ------------------------------------------------------------------------------------------
-    const rule = titleRule(cols)
-    const right = isAuto ? 'AUTO ON' : ''
-    const header = (
-      <Box flexDirection="column" width={cols}>
-        <Box flexDirection="row" justifyContent="space-between" width={cols}>
-          <Text bold color={INK}>{TITLE}</Text>
-          {right !== '' && cols >= TITLE.length + right.length + 2 ? <Text color={MUTED}>{right}</Text> : null}
-        </Box>
-        <Text>
-          <Text color={GOLD}>{rule.gold}</Text>
-          <Text color={HAIR}>{rule.hair}</Text>
-        </Text>
-      </Box>
-    )
-    const toneColor = (s: Seg) => (s.tone === 'done' ? GREEN : s.tone === 'now' ? GOLD : s.tone === 'line' ? HAIR : MUTED)
-    const index = stepIndex(v.step, v.failed)
-    const steps =
-      index < 0 ? null : (
-        <Text>
-          {tracker(index, cols).map(s => (
-            <Text color={toneColor(s)} bold={s.tone === 'now'}>{s.text}</Text>
-          ))}
-        </Text>
-      )
-    const section = (label: string) => {
-      const head = heading(label, cols)
-      return (
-        <Text>
-          <Text color={MUTED}>{head.label}</Text>
-          <Text color={HAIR}>{head.hair === '' ? '' : ` ${head.hair}`}</Text>
-        </Text>
-      )
-    }
-    const gold = (key: string, label: string, onPress: () => unknown, focus?: true) => (
-      <Button key={key} plain autoFocus={focus} onPress={() => void onPress()}>
-        <Text backgroundColor={GOLD} color={ON_GOLD} bold>{` ${label} `}</Text>
-      </Button>
-    )
-    const slate = (key: string, label: string, onPress: () => unknown) => (
-      <Button key={key} plain onPress={() => void onPress()}>
-        <Text backgroundColor={HAIR} color={INK}>{` ${label} `}</Text>
-      </Button>
-    )
-    const quiet = (key: string, label: string, onPress: () => unknown) => (
-      <Button key={key} plain onPress={() => void onPress()}>
-        <Text color={MUTED}>{label}</Text>
-      </Button>
-    )
-    const card = (key: string, title: string, text: string, width: number, border: string) => (
-      <Box key={key} flexDirection="column" width={width} borderStyle="round" borderColor={border} paddingX={1}>
-        <Text color={MUTED}>{title}</Text>
-        <Text color={INK}>{text}</Text>
-      </Box>
-    )
-    const page = (...body: RenderChildren[]) => (
-      <Box flexDirection="column" width={cols} gap={1}>
-        <Box flexDirection="column" width={cols}>
-          {header}
-          {steps}
-        </Box>
-        {body}
-      </Box>
-    )
-
-    // -- steps ------------------------------------------------------------------------------------------------
-    if (v.step === 'idle') {
-      return page(<Text color={MUTED}>Nothing to upgrade. Type /better followed by a rough prompt.</Text>)
-    }
-
-    if (v.step === 'compose') {
-      return page(
-        section('Your prompt'),
-        Input ? (
-          <Input key="compose" placeholder="What do you want Claude to do?" submitLabel="upgrade" autoFocus onSubmit={text => void composed($, text)} />
-        ) : (
-          <Text color={MUTED}>Type /better followed by your prompt.</Text>
-        ),
-        <Box flexDirection="row" gap={2}>{quiet('cancel', 'Cancel', () => cancel($))}</Box>,
-      )
-    }
-
-    if (v.step === 'history') {
-      return page(
-        section('Recent upgrades'),
-        list.length === 0 ? (
-          <Text color={MUTED}>No upgrades yet.</Text>
-        ) : (
-          <Box flexDirection="column" width={cols}>
-            {list.map((x, i) => {
-              const row = historyRow(x, cols)
-              return (
-                <Button key={`h-${x.id}`} plain autoFocus={i === 0 ? true : undefined} onPress={() => void openEntry($, x)}>
-                  <Text color={MUTED}>{`${row.when}  `}</Text>
-                  <Text color={INK}>{row.text}</Text>
-                </Button>
-              )
-            })}
-          </Box>
-        ),
-        <Box flexDirection="row" gap={2}>{quiet('close', 'Close', () => closePane($))}</Box>,
-      )
-    }
-
-    if (v.step === 'reading' || v.step === 'rewrite') {
-      const given = v.answers.filter(a => a !== null && a.kind !== 'skip').length
-      const line =
-        v.step === 'reading'
-          ? 'Reading your prompt and choosing the questions that would help most.'
-          : `Writing the upgrade from your prompt${given > 0 ? ` and ${given} ${given === 1 ? 'answer' : 'answers'}` : ''}.`
-      return page(
-        <Text color={MUTED}>{line}</Text>,
-        card('original', 'YOUR PROMPT', v.original, cols, HAIR),
-        <Box flexDirection="row" gap={2}>{quiet('cancel', 'Cancel', () => cancel($))}</Box>,
-      )
-    }
-
-    if (v.step === 'error') {
-      const what = v.failed === 'rewrite' ? 'writing the upgrade' : 'choosing the questions'
-      return page(
-        <Box flexDirection="column" width={cols} borderStyle="round" borderColor={AMBER} paddingX={1}>
-          <Text color={AMBER}>{`Something went wrong while ${what}.`}</Text>
-          <Text color={INK}>Your prompt is safe. Nothing was sent.</Text>
-          {v.note !== '' ? <Text color={MUTED}>{v.note}</Text> : null}
-        </Box>,
-        <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
-          {gold('retry', 'Try again', () => retry($), true)}
-          {slate('original', 'Send my original', () => sendOriginal($))}
-          {quiet('cancel', 'Cancel', () => cancel($))}
-        </Box>,
-      )
-    }
-
-    if (v.step === 'questions') {
-      const done = v.answers.filter(a => a !== null).length
-      const firstOpen = v.answers.findIndex(a => a === null)
-      return page(
-        section('Questions'),
-        ...v.questions.map((q, i) => {
-          const a = v.answers[i] ?? null
-          const badge =
-            a === null ? (
-              <Text backgroundColor={GOLD} color={ON_GOLD} bold>{` ${i + 1} `}</Text>
-            ) : a.kind === 'skip' ? (
-              <Text backgroundColor={HAIR} color={MUTED}>{' – '}</Text>
-            ) : (
-              <Text backgroundColor={GREEN} color={ON_GOLD} bold>{' ✓ '}</Text>
-            )
-          const picked = a !== null && a.kind !== 'skip' ? a.value : null
-          const isOther = a !== null && a.kind === 'other'
-          return (
-            <Box key={`q-${i}`} flexDirection="column" width={cols}>
-              <Box flexDirection="row" gap={1} width={cols}>
-                {badge}
-                <Box width={cols - 4}>
-                  <Text color={a !== null && a.kind === 'skip' ? MUTED : INK}>{q.text}</Text>
-                </Box>
-              </Box>
-              <Box flexDirection="row" flexWrap="wrap" columnGap={1} paddingLeft={4} width={cols}>
-                {q.options.map((o, j) =>
-                  picked === o && !isOther
-                    ? gold(`o-${i}-${j}`, o, () => answer($, i, { kind: 'option', value: o }), i === firstOpen && j === 0 ? true : undefined)
-                    : (
-                      <Button key={`o-${i}-${j}`} plain autoFocus={i === firstOpen && j === 0 ? true : undefined} onPress={() => void answer($, i, { kind: 'option', value: o })}>
-                        <Text backgroundColor={HAIR} color={INK}>{` ${o} `}</Text>
-                      </Button>
-                    ),
-                )}
-                {Input ? (isOther && picked ? gold(`other-${i}`, `Other: ${picked}`, () => openOther($, i)) : slate(`other-${i}`, 'Other (type it)', () => openOther($, i))) : null}
-                {quiet(`skip-${i}`, 'Skip', () => answer($, i, { kind: 'skip' }))}
-              </Box>
-              {Input && v.other === i ? (
-                <Box paddingLeft={4} width={cols}>
-                  <Input
-                    key={`other-input-${i}`}
-                    placeholder="Type your answer"
-                    submitLabel="save"
-                    autoFocus
-                    onSubmit={text => void (text.trim() === '' ? openOther($, i) : answer($, i, { kind: 'other', value: text.trim() }))}
-                  />
-                </Box>
-              ) : null}
-            </Box>
-          )
-        }),
-        <Box flexDirection="row" flexWrap="wrap" columnGap={2} width={cols}>
-          <Text color={MUTED}>{`${done} of ${v.questions.length} answered`}</Text>
-          {gold('upgrade', 'Skip the rest, upgrade now', () => startRewrite($))}
-          {quiet('cancel', 'Cancel', () => cancel($))}
-        </Box>,
-      )
-    }
-
-    // review
-    const before = wordCount(v.original)
-    const after = wordCount(v.upgraded)
-    const nums = [before, after, v.added.length]
-    const tiles = tilesWidth(nums, cols)
-    const tileColor = [INK, GOLD, GREEN]
-    const stats =
-      tiles === null ? (
-        <Text color={INK}>{statsLine(before, after, v.added.length, cols)}</Text>
-      ) : (
-        <Box flexDirection="row" gap={1}>
-          {nums.map((n, i) => {
-            const label = TILE_LABELS[i] ?? ''
-            const big = bigDigits(n)
-            return (
-              <Box key={`tile-${i}`} flexDirection="column" borderStyle="round" borderColor={HAIR} width={tileInner(n, label) + 2} paddingX={1}>
-                {big.map(row => (
-                  <Text color={tileColor[i] ?? INK}>{row}</Text>
-                ))}
-                <Text color={MUTED}>{label}</Text>
-              </Box>
-            )
-          })}
-        </Box>
-      )
-    const w = cardWidths(cols)
-    const cards = (
-      <Box flexDirection={w.isSide ? 'row' : 'column'} gap={1} width={cols}>
-        {card('mine', 'YOUR PROMPT', v.original, w.left, HAIR)}
-        {card('upgrade', 'UPGRADE', v.upgraded, w.right, GOLD)}
-      </Box>
-    )
-    return page(
-      stats,
-      <Box flexDirection="column" width={cols}>
-        <Box flexDirection="row" flexWrap="wrap" columnGap={2} width={cols}>
-          {gold('run', 'Run it', () => run($), true)}
-          {slate('edit', 'Edit', () => edit($))}
-          {slate('copy', 'Copy', () => copy($, e.surface))}
-          {quiet('cancel', v.fromHistory ? 'Close' : 'Cancel', () => cancel($))}
-        </Box>
-        {v.flash !== '' ? <Text color={GREEN}>{v.flash}</Text> : null}
-      </Box>,
-      v.added.length === 0
-        ? null
-        : (
-          <Box flexDirection="column" width={cols}>
-            {section('What I added')}
-            {v.added.map(a => (
-              <Text>
-                <Text color={GREEN}>+ </Text>
-                <Text color={INK}>{a}</Text>
-              </Text>
-            ))}
-          </Box>
-        ),
-      cards,
-    )
   })
 }
