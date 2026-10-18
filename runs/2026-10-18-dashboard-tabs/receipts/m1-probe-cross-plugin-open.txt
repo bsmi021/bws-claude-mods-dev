@@ -1,0 +1,50 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\probe.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+▎AutomodeisnowClaudeCode'sdefaultpermissionmode.
+▎AutomodeletsClaudehandlepermissionpromptsautomatically.Claudecheckseachtoolcallforriskyactionsandpromptinjectionbeforeexecuting,runstheonesit
+▎assessesaslower-risk,andblockstherest.
+▎https://code.claude.com/docs/en/permission-modes
+
+❯ /probe-open
+  ⎿  probe-pane: probe: open={"isPlaced":true} panes=[]
+
+❯ /probe-open
+  ⎿  probe-pane: probe: open={"isPlaced":true} panes=[{"id":"dashboard","title":"PROBE","isShown":true,"isFocused":true,"isPlaced":true}]
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ [ Assumptions ] 2: Shelf 3: Board                                                                                                                                      │
+│ ⚑ no assumptions yet                                                                                                                                          │
+│ Nothing to review. Claude records assumptions here as it builds.                                                                                                       │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run  ● UE  ● VRAM 6.0/8.0 GB                                                                                                                                       [-]
+doh: handoffi: ideae: enhance  open2: dasha: asms: shelf  3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⏵⏵automodeon (shift+tabtocycle)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

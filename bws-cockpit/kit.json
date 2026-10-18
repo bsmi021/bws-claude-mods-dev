@@ -1,1 +1,1 @@
-{ "modules": ["summary"] }
+{"modules": ["summary", "tab"]}

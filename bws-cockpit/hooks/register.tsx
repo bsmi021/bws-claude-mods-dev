@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { Color, EngineInterface, Register } from 'claude-code'
+import type { Color, EngineInterface, Register, RenderChildren } from 'claude-code'
 
 import type { BoardAskCard, BoardSessionCard, CockpitChip, CockpitDevices, CockpitRun, CockpitState } from '../types'
 import {
@@ -41,11 +41,14 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
-import { DEFAULT_MODS, modChips, parseMods } from './modchips'
-import type { KnownMod } from './modchips'
+import { DEFAULT_MODS, MOD_TITLE, isRaised, modKey, modOfKey, modTabs, parseMods, tabLabel } from './modtabs'
+import type { KnownMod, ModTabView } from './modtabs'
+import { tabText } from './kit/tab'
+import type { TabNode } from './kit/tab'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from './cacheclock'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
+
 import {
   GUIDE,
   TOOL_DESCRIPTION,
@@ -98,9 +101,25 @@ const boardPane = atom({ plugin: 'bws-board', key: 'pane' } as const, null)
 // The video-derived mods' summaries (bws-kit/summary.ts), drawn as chips when they are loaded and not idle.
 const memorySummary = atom({ plugin: 'bws-memory', key: 'summary' } as const, null)
 const diagramSummary = atom({ plugin: 'bws-diagram', key: 'summary' } as const, null)
-const skillgateSummary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
-const secretsSummary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
+const enhanceSummary = atom({ plugin: 'bws-enhance', key: 'summary' } as const, null)
 const betterSummary = atom({ plugin: 'bws-better', key: 'summary' } as const, null)
+const sidechatSummary = atom({ plugin: 'bws-sidechat', key: 'summary' } as const, null)
+const secretsSummary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, null)
+const skillgateSummary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
+const notifySummary = atom({ plugin: 'bws-notify', key: 'summary' } as const, null)
+const shellLintSummary = atom({ plugin: 'bws-shell-lint', key: 'summary' } as const, null)
+// Each mod's dashboard tab (bws-kit/tab.ts), drawn after the built-in tabs; checked by parseTab, so typed unknown.
+const memoryTab = atom({ plugin: 'bws-memory', key: 'tab' } as const, null as unknown)
+const diagramTab = atom({ plugin: 'bws-diagram', key: 'tab' } as const, null as unknown)
+const enhanceTab = atom({ plugin: 'bws-enhance', key: 'tab' } as const, null as unknown)
+const betterTab = atom({ plugin: 'bws-better', key: 'tab' } as const, null as unknown)
+const sidechatTab = atom({ plugin: 'bws-sidechat', key: 'tab' } as const, null as unknown)
+const secretsTab = atom({ plugin: 'bws-secrets', key: 'tab' } as const, null as unknown)
+const skillgateTab = atom({ plugin: 'bws-skillgate', key: 'tab' } as const, null as unknown)
+const notifyTab = atom({ plugin: 'bws-notify', key: 'tab' } as const, null as unknown)
+const shellLintTab = atom({ plugin: 'bws-shell-lint', key: 'tab' } as const, null as unknown)
+// A press or submitted input in a mod's tab, for that mod to act on (it watches this with a state.set hook).
+const tabEvent = atom({ plugin: 'bws-cockpit', key: 'tabEvent' } as const, null)
 // The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
 const cacheClock = atom({ plugin: 'bws-cockpit', key: 'cacheClock' } as const, null)
 const cacheBar = atom({ plugin: 'bws-cockpit', key: 'cacheBar' } as const, null)
@@ -125,6 +144,12 @@ const handoffNudge = atom({ plugin: 'bws-cockpit', key: 'handoffNudge' } as cons
 
 // Corrections typed but not yet saved with Enter, so Send still carries them. Lost on a reload, by design.
 const drafts = new Map<number, string>()
+// Text typed in a mod tab's input and not yet submitted, by `<plugin>:<input id>`. Lost on a reload, by design.
+const tabDrafts = new Map<string, string>()
+// Counts this process's tab events, so a mod sees each press as a new write.
+let tabEventSeq = 0
+// Each mod's last `raise` seen, so a rise brings its tab up (the first value seen is the baseline).
+const lastRaise = new Map<KnownMod, number>()
 // The shelf file option, read once in register.
 let shelfOption = ''
 // bws-board's last asks-for-this-session count, so a rise raises the Board tab (undefined until its first write).
@@ -830,6 +855,9 @@ async function clearSent($: EngineInterface) {
 
 // ---------- Dashboard ----------
 
+// A mod tab's node colours (bws-kit/tab.ts TabColor) as theme keys.
+const TAB_COLOR: Record<'ok' | 'warn' | 'bad' | 'accent', Color> = { ok: 'success', warn: 'warning', bad: 'error', accent: 'claude' }
+
 // The Board tab's card glyphs and border colours.
 const STATUS_GLYPH: Record<BoardSessionCard['status'], string> = { busy: '🟢', idle: '⚪' }
 const ASK_GLYPH: Record<BoardAskCard['view'], string> = { open: '❓', taken: '🙋', done: '✅', declined: '🚫', withdrawn: '🔙' }
@@ -843,15 +871,58 @@ const isLoopLive = (lp: LoopView | null, now: number) =>
 const loopCount = (lp: LoopView | null) =>
   lp === null ? 0 : lp.alerts.filter(a => a.level !== 'info').length + lp.needs.filter(n => n.answered === null).length
 
-// The tab shown: the one picked while it is there, else the first with something waiting, else Assumptions.
-function pickTab(picked: DashTab | null, tabs: readonly DashTab[], counts: Record<DashTab, number>): DashTab {
+// The tab shown: the one picked while it is there, else the first built-in tab with something waiting, else Assumptions.
+function pickTab(picked: string | null, tabs: readonly string[], counts: Record<DashTab, number>): string {
   if (picked !== null && tabs.includes(picked)) return picked
-  return tabs.find(t => counts[t] > 0) ?? 'assumptions'
+  return TABS.find(t => tabs.includes(t) && counts[t] > 0) ?? 'assumptions'
+}
+
+// Every configured mod's tab, from one literal read per atom (the validator lists what a module reads).
+async function readModTabs($: EngineInterface, names: readonly KnownMod[]): Promise<ModTabView[]> {
+  const has = (n: KnownMod) => names.includes(n)
+  const tabs: Partial<Record<KnownMod, unknown>> = {
+    'bws-memory': has('bws-memory') ? await read($, memoryTab) : null,
+    'bws-diagram': has('bws-diagram') ? await read($, diagramTab) : null,
+    'bws-enhance': has('bws-enhance') ? await read($, enhanceTab) : null,
+    'bws-better': has('bws-better') ? await read($, betterTab) : null,
+    'bws-sidechat': has('bws-sidechat') ? await read($, sidechatTab) : null,
+    'bws-secrets': has('bws-secrets') ? await read($, secretsTab) : null,
+    'bws-skillgate': has('bws-skillgate') ? await read($, skillgateTab) : null,
+    'bws-notify': has('bws-notify') ? await read($, notifyTab) : null,
+    'bws-shell-lint': has('bws-shell-lint') ? await read($, shellLintTab) : null,
+  }
+  const summaries: Partial<Record<KnownMod, unknown>> = {
+    'bws-memory': has('bws-memory') ? await read($, memorySummary) : null,
+    'bws-diagram': has('bws-diagram') ? await read($, diagramSummary) : null,
+    'bws-enhance': has('bws-enhance') ? await read($, enhanceSummary) : null,
+    'bws-better': has('bws-better') ? await read($, betterSummary) : null,
+    'bws-sidechat': has('bws-sidechat') ? await read($, sidechatSummary) : null,
+    'bws-secrets': has('bws-secrets') ? await read($, secretsSummary) : null,
+    'bws-skillgate': has('bws-skillgate') ? await read($, skillgateSummary) : null,
+    'bws-notify': has('bws-notify') ? await read($, notifySummary) : null,
+    'bws-shell-lint': has('bws-shell-lint') ? await read($, shellLintSummary) : null,
+  }
+  return modTabs(names, tabs, summaries)
+}
+
+// A press or a submitted input in a mod's tab: the mod acts on it from its own state.set hook.
+async function sendTabEvent($: EngineInterface, plugin: KnownMod, id: string, value?: string) {
+  tabEventSeq += 1
+  await update($, tabEvent, () => (value === undefined ? { seq: tabEventSeq, plugin, id } : { seq: tabEventSeq, plugin, id, value }))
+}
+
+// A mod rewrote its tab: a rise in `raise` is news, which brings its tab up as board asks do.
+async function noteModTab($: EngineInterface, o: Options, name: KnownMod, value: unknown) {
+  if (!o.mods.includes(name)) return
+  const r = typeof value === 'object' && value !== null && typeof (value as { raise?: unknown }).raise === 'number' ? (value as { raise: number }).raise : 0
+  const before = lastRaise.get(name)
+  lastRaise.set(name, r)
+  if (isRaised(before, r)) await raise($, modKey(name))
 }
 
 // Opened by the person (a command, a bar button): placed at any width. Focus is granted only to a fresh open over an
 // empty box, so an open pane is closed first, as /shelf did.
-async function openDash($: EngineInterface, tab: DashTab | null) {
+async function openDash($: EngineInterface, tab: string | null) {
   await update($, dash, d => ({ tab: tab ?? d.tab, isClosedByPerson: false }))
   const isEmpty = (await $.prompt.read()).text.trim() === ''
   const isOpen = (await $.ui.panes()).some(p => p.id === DASH)
@@ -861,12 +932,12 @@ async function openDash($: EngineInterface, tab: DashTab | null) {
 }
 
 // After the command has returned, when the composer is clear.
-function openDashSoon($: EngineInterface, tab: DashTab | null) {
+function openDashSoon($: EngineInterface, tab: string | null) {
   $.clock.after(10, () => void openDash($, tab).catch(err => $.ui.toast(`Dashboard: could not open (${String(err)})`)))
 }
 
 // News for the person: bring its tab up unless they closed the dashboard, or are using it (the tab counts tell them).
-async function raise($: EngineInterface, tab: DashTab) {
+async function raise($: EngineInterface, tab: string) {
   if ((await $.session.surfaces()).length === 0) return
   const d = await read($, dash)
   if (d.isClosedByPerson) return
@@ -887,7 +958,7 @@ async function toggleDash($: EngineInterface) {
   await openDash($, null)
 }
 
-async function showTab($: EngineInterface, tab: DashTab) {
+async function showTab($: EngineInterface, tab: string) {
   if (tab === 'shelf') await settle(refreshShelf($))
   await openDash($, tab)
 }
@@ -925,7 +996,7 @@ async function pressHandoff($: EngineInterface) {
 }
 
 // Everything the dashboard shows, as text, where nothing draws a pane.
-async function dashText($: EngineInterface) {
+async function dashText($: EngineInterface, mods: readonly KnownMod[]) {
   const list = await read($, assumptions)
   const ideas = openIdeas(await loadShelf($), await sessionRoot($))
   const lines = await read($, boardLines)
@@ -933,7 +1004,18 @@ async function dashText($: EngineInterface) {
     assumptionsText(list),
     ideas.length === 0 ? 'The shelf is empty.' : ideasText(ideas, await $.clock.now(), false, false),
     lines.length === 0 ? 'Board: bws-board is not loaded, or has not read the board yet.' : lines.join('\n'),
+    ...(await readModTabs($, mods)).map(m => tabText(m.tab)),
   ].join('\n\n')
+}
+
+// /dashboard's word: a built-in tab, or a loaded mod by its title or plugin name ("diag", "shell", "bws-notify").
+async function tabOfWord($: EngineInterface, mods: readonly KnownMod[], word: string): Promise<string | null> {
+  if (word === '') return null
+  const builtin = TABS.find(t => t.startsWith(word))
+  if (builtin) return builtin
+  const w = word.replace(/^bws-/, '')
+  const hit = (await readModTabs($, mods)).find(v => v.tab.title.toLowerCase().replace(/\s+/g, '-').startsWith(w) || v.name.slice(4).startsWith(w))
+  return hit ? hit.key : null
 }
 
 export const register: Register = (on, options) => {
@@ -1136,7 +1218,7 @@ export const register: Register = (on, options) => {
       })
     }
     // ---------- Dashboard: its commands and the tools of the Assumptions and Shelf tabs ----------
-    await $.command.register({ name: 'dashboard', description: 'Open the dashboard: Assumptions, Shelf, Board, Loop', argumentHint: '[assumptions|shelf|board|loop]', immediate: true })
+    await $.command.register({ name: 'dashboard', description: 'Open the dashboard: Assumptions, Shelf, Board, Loop, and a tab per loaded mod', argumentHint: '[assumptions|shelf|board|loop|<mod>]', immediate: true })
     await $.command.register({ name: 'assumptions', description: 'Show the assumptions Claude made in this session, to confirm or correct them', immediate: true })
     await $.command.register({ name: 'idea', description: 'Shelve an idea for later without sending it to Claude', argumentHint: '<idea>', immediate: true })
     await $.command.register({
@@ -1277,9 +1359,9 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'dashboard' }, async ($, e) => {
     const word = e.args.trim().toLowerCase()
-    const tab = word === '' ? null : (TABS.find(t => t.startsWith(word)) ?? null)
-    if (word !== '' && tab === null) return { text: 'Usage: /dashboard [assumptions|shelf|board|loop]' }
-    if ((await $.session.surfaces()).length === 0) return { text: await dashText($) }
+    const tab = await tabOfWord($, o.mods, word)
+    if (word !== '' && tab === null) return { text: 'Usage: /dashboard [assumptions|shelf|board|loop|<a loaded mod, e.g. notify>]' }
+    if ((await $.session.surfaces()).length === 0) return { text: await dashText($, o.mods) }
     await settle(refreshShelf($))
     if (tab === 'loop') await refreshLoops($, o)
     openDashSoon($, tab)
@@ -1398,6 +1480,44 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
+  // A mod rewrote its dashboard tab: a rise in its `raise` brings the tab up. One literal matcher per mod.
+  on('state.set', { plugin: 'bws-memory', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-memory', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-diagram', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-diagram', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-enhance', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-enhance', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-better', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-better', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-sidechat', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-sidechat', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-secrets', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-secrets', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-skillgate', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-skillgate', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-notify', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-notify', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-shell-lint', key: 'tab' }, async ($, e, next) => {
+    void noteModTab($, o, 'bws-shell-lint', e.value).catch(() => undefined)
+    return next(e)
+  })
+
   // The dashboard: a tab strip, then the shown tab's body.
   on('ui.render', { component: 'Pane', requestId: DASH }, async ($, e, next) => {
     const table = $.ui.resolve(e)
@@ -1419,21 +1539,93 @@ export const register: Register = (on, options) => {
     const counts: Record<DashTab, number> = { assumptions: active(list).length, shelf: sv.count, board: bs?.askedOfMe ?? 0, loop: loopCount(lp) }
     // Loop: while any loop is live, or the person picked the tab (/loop-watch) for a quiet one.
     const hasLoop = lp !== null && (all.some(l => isLoopLive(l, now)) || d.tab === 'loop')
-    const tabs = TABS.filter(t => t !== 'loop' || hasLoop)
+    const builtin = TABS.filter(t => t !== 'loop' || hasLoop)
+    const mods = await readModTabs($, o.mods)
+    const tabs: string[] = [...builtin, ...mods.map(m => m.key)]
     const tab = pickTab(d.tab, tabs, counts)
+    // Digits 1-9 reach the first nine tabs; the rest by Tab and Enter.
+    const tabButton = (t: string, label: string, i: number, key: string) => (
+      <Button
+        key={key}
+        label={label}
+        {...(i < 9 ? { hotkey: String(i + 1) } : {})}
+        {...(t === tab ? { variant: 'primary' as const } : { plain: true as const, dimColor: true })}
+        onPress={() => update($, dash, old => ({ ...old, tab: t }))}
+      />
+    )
     const strip = (
       <Box key="tabs" flexDirection="row" columnGap={1} flexWrap="wrap">
-        {tabs.map((t, i) => (
-          <Button
-            key={`tab-${t}`}
-            label={counts[t] > 0 ? `${TAB_LABEL[t]} ${counts[t]}` : TAB_LABEL[t]}
-            hotkey={String(i + 1)}
-            {...(t === tab ? { variant: 'primary' as const } : { plain: true as const, dimColor: true })}
-            onPress={() => update($, dash, old => ({ ...old, tab: t }))}
-          />
-        ))}
+        {builtin.map((t, i) => tabButton(t, counts[t] > 0 ? `${TAB_LABEL[t]} ${counts[t]}` : TAB_LABEL[t], i, `tab-${t}`))}
+        {mods.map((m, j) => tabButton(m.key, tabLabel(m.tab), builtin.length + j, `tab-${m.name}`))}
       </Box>
     )
+
+    // A mod's tab: its nodes as plain data, drawn here; presses and inputs go back to the mod as a tabEvent.
+    const shown = mods.find(m => m.key === tab)
+    if (shown !== undefined) {
+      const Raster = !isMobile && 'Raster' in table ? table.Raster : null
+      const name = shown.name
+      const tone = shown.tab.tone
+      const draw = (n: TabNode, k: string): RenderChildren => {
+        if (n.kind === 'text') {
+          return (
+            <Text key={k} wrap="wrap" bold={n.isBold === true} dimColor={n.isDim === true} {...(n.color ? { color: TAB_COLOR[n.color] } : {})}>
+              {n.text}
+            </Text>
+          )
+        }
+        if (n.kind === 'buttons') {
+          return (
+            <Box key={k} flexDirection="row" columnGap={1} flexWrap="wrap">
+              {n.items.map(b => (
+                <Button
+                  key={`${k}-${b.id}`}
+                  label={b.label}
+                  {...(b.isPrimary ? { variant: 'primary' as const } : {})}
+                  onPress={() => void sendTabEvent($, name, b.id)}
+                />
+              ))}
+            </Box>
+          )
+        }
+        if (n.kind === 'input') {
+          const draftKey = `${name}:${n.id}`
+          if (Input === null) return <Text key={k} dimColor>{`${n.placeholder} (type it in the terminal)`}</Text>
+          return (
+            <Input
+              key={k}
+              placeholder={n.placeholder}
+              value={tabDrafts.get(draftKey) ?? ''}
+              onInput={(v: string) => void tabDrafts.set(draftKey, v)}
+              onSubmit={(v: string) => {
+                tabDrafts.delete(draftKey)
+                void sendTabEvent($, name, n.id, v)
+              }}
+            />
+          )
+        }
+        if (n.kind === 'raster') {
+          if (Raster === null) return <Text key={k} dimColor>(a picture: open this tab in the terminal to see it)</Text>
+          return <Raster key={k} columns={n.columns} rows={n.rows} cells={n.cells} />
+        }
+        return (
+          <Box key={k} flexDirection="column" width={width} borderStyle="round" borderColor={n.color ? TAB_COLOR[n.color] : 'subtle'} paddingX={1}>
+            {n.title !== '' && <Text bold>{n.title}</Text>}
+            {n.body.map((c, i) => draw(c, `${k}-${i}`))}
+          </Box>
+        )
+      }
+      return (
+        <Box flexDirection="column">
+          {strip}
+          <Text bold {...(tone === 'warn' ? { color: 'warning' as const } : tone === 'bad' ? { color: 'error' as const } : {})}>
+            {shown.tab.badge ? `${shown.tab.title} · ${shown.tab.badge}` : shown.tab.title}
+          </Text>
+          {shown.tab.body.map((n, i) => draw(n, `mod-${name}-${i}`))}
+          {shown.tab.body.length === 0 && <Text dimColor>{`${MOD_TITLE[name]} has nothing to show yet.`}</Text>}
+        </Box>
+      )
+    }
 
     if (tab === 'assumptions') {
       const open = active(list)
@@ -1737,20 +1929,6 @@ export const register: Register = (on, options) => {
     const sv = await read($, shelf)
     const bs = await read($, boardSummary)
     const isHandoffDue = await isNudged($)
-    // The scan wants a literal source at every read, so one read per mod, and only for the ones the option names.
-    const raw: Partial<Record<KnownMod, unknown>> = {
-      'bws-memory': o.mods.includes('bws-memory') ? await read($, memorySummary) : null,
-      'bws-diagram': o.mods.includes('bws-diagram') ? await read($, diagramSummary) : null,
-      'bws-skillgate': o.mods.includes('bws-skillgate') ? await read($, skillgateSummary) : null,
-      'bws-secrets': o.mods.includes('bws-secrets') ? await read($, secretsSummary) : null,
-      'bws-better': o.mods.includes('bws-better') ? await read($, betterSummary) : null,
-    }
-    const modBoxes = modChips(o.mods, raw).map(c => (
-      <Box key={`chip-mod-${c.name}`} flexDirection="row">
-        <Text color={c.color} dimColor={c.isDim}>{'● '}</Text>
-        <Text dimColor={c.isDim}>{c.label}</Text>
-      </Box>
-    ))
     // The cache clock: plain while fresh, warning once under cacheLowMinutes or cold; hidden before the first turn.
     const cache = await read($, cacheBar)
     const cacheBox =
@@ -1831,7 +2009,7 @@ export const register: Register = (on, options) => {
       bs !== null ? <Button key="tab-board" plain dimColor label="board" hotkey="b" onPress={() => void showTab($, 'board')} /> : null,
       lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void showTab($, 'loop')} /> : null,
     ]
-    const hasSignals = boardChip !== null || modBoxes.length > 0 || asmChip !== null || shelfChip !== null
+    const hasSignals = boardChip !== null || asmChip !== null || shelfChip !== null
     const guardRow = showGuard ? (
       <Box flexDirection="row">
         <Text color="warning">{'⚑ '}</Text>
@@ -1852,7 +2030,6 @@ export const register: Register = (on, options) => {
         {hasSignals ? (
           <Box key="signals" flexDirection="row" columnGap={2} flexWrap="wrap">
             {boardChip}
-            {modBoxes}
             {asmChip}
             {shelfChip}
           </Box>
