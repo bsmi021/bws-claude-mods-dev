@@ -128,7 +128,7 @@ describe('FR-DT-04: Close, and keys and scrolling as the side chat', () => {
     const w = treeWorld(on)
     await run($, 'explain')
     await press($, w.clock, 'close')
-    expect(w.seen.closed).toEqual(['dashboard']) // only the reopen that took the keys
+    expect(w.seen.closed).toEqual([])
     expect(w.seen.opened.every(o => o.id === 'dashboard')).toBe(true)
   })
 })

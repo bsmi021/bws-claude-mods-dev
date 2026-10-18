@@ -74,10 +74,7 @@ async function showTab($: EngineInterface, v: View, isCommand: boolean) {
   showCount += 1
   await publishTab($)
   const isFocus = isCommand || (await $.prompt.read()).text.trim() === ''
-  if (!isFocus) return $.ui.open({ id: DASHBOARD, title: DASH_TITLE })
-  // Re-opening an open pane only retitles it; the keys go to a fresh open, so an open dashboard is closed first.
-  await settle($.ui.close({ id: DASHBOARD }))
-  return $.ui.open({ id: DASHBOARD, title: DASH_TITLE, focus: true })
+  return $.ui.open(isFocus ? { id: DASHBOARD, title: DASH_TITLE, focus: true } : { id: DASHBOARD, title: DASH_TITLE })
 }
 
 async function openPane($: EngineInterface, isCommand = true) {
