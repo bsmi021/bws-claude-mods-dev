@@ -2,6 +2,7 @@
 // a queue (one script per spawn, in order). Not a test file.
 import { mock } from 'claude-code/testing'
 import type { On } from 'claude-code'
+import { recordTabs } from './tabview'
 
 import { NUMBERED_BOLD } from './replies'
 
@@ -26,6 +27,7 @@ export const ROWS = [
 
 export function treeWorld(on: On, w: TreeWorld = {}) {
   const clock = mock.clock(on, { now: Date.parse('2026-10-13T10:00:00') })
+  recordTabs(on)
   const seen = {
     commands: [] as string[],
     opened: [] as { id: string; focus?: boolean }[],

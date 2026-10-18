@@ -1,0 +1,50 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\m6.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+
+❯ say hi in two words
+
+● Hi there!
+
+✻ Churned for 2s · done 9:10 AM
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ 1: Assumptions 2: Shelf 3: Board [ Side chat 1 ]                                                                                                                       │
+│ Side chat · 1                                                                                                                                                   │
+│ Side chat · forked from febc4045                                                                                                       │
+│ [ New fork ] [ Refresh ] [ Pull ] [ Close ]                                                                                                                            │
+│ [ ● default ] [ opus ] [ sonnet ] [ haiku ]                                                                                                                            │
+│ model: default · main: in sync                                          │
+│ You                                                      │
+│ in one sentence, what did I just ask you?                                                                                                                              │
+│ Claude                                                                                                                                                                 │
+│ You asked me tosayhiintwowords, and I replied "Hi there!"                                                                                                         │
+│ [ ↩ Send to main ]                                              │
+│ ask in the side chat, Enter sends                                                                                                                                      │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run  ● UE ×2  ● VRAM 7.2/8.0 GB  cache 59m                         [-]
+do h: handoff i: idea e: enhance   open 2: dash a: asm s: shelf    3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ auto mode on (shift+tab to cycle)◨ side
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

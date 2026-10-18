@@ -1,9 +1,9 @@
 # bws-sidechat
 
-A side chat in the right-hand pane. `/fork`, `/branch` and `/btw` open a copy of the current conversation beside it; you ask in the pane, the main conversation is never touched.
+A side chat in the **Side chat tab** of bws-cockpit's dashboard (0.4.0; it was a pane of its own; needs bws-cockpit 0.21.0+). `/fork`, `/branch` and `/btw` open a copy of the current conversation beside it; you ask in the tab, the main conversation is never touched.
 
 ## How it works
-Each side message runs a headless `claude -p`. The first one forks the main session (`--resume <main> --fork-session --session-id <new>`); later ones resume the fork. So the side chat has the full context, history included, and its own tools. Streamed text shows live in the pane.
+Each side message runs a headless `claude -p`. The first one forks the main session (`--resume <main> --fork-session --session-id <new>`); later ones resume the fork. So the side chat has the full context, history included, and its own tools. Streamed text shows live in the tab.
 
 The child runs with `CLAUDE_CODE_PLUGIN_DIRS` emptied (faster start, no side-of-side) and, by default, no MCP servers (`--strict-mcp-config`). Tools it may use without asking: `Read,Glob,Grep,WebFetch,WebSearch`. It cannot ask permission, so anything else is denied.
 
@@ -12,17 +12,17 @@ The child runs with `CLAUDE_CODE_PLUGIN_DIRS` emptied (faster start, no side-of-
 |---|---|
 | `/fork`, `/branch` | (replaces the built-in background-agent fork and branch) New side chat forked from the conversation as it stands. Text after it is sent as the first message. `/fork native` runs the built-in fork. |
 | `/btw <question>` | Answer in the side chat. Continues an open side chat; forks if none. |
-| `/side [new [msg] \| close \| model [name] \| refresh \| pull [question] \| send-back \| msg]` | The one door: everything the pane does has a `/side` form. `/fork`, `/branch` and `/btw` are shortcuts into it. |
+| `/side [new [msg] \| close \| model [name] \| refresh \| pull [question] \| send-back \| msg]` | The one door: everything the tab does has a `/side` form, and every button or box also has a twin `/side --<id> [text]`. `/fork`, `/branch` and `/btw` are shortcuts into it. |
 | `/side model [name]` | The open side chat's model, from the next message: `opus`, `sonnet`, `haiku`, any model id, or `default` (the `sideModel` setting; empty there means the session's model). Bare, it reports the current one. |
 | `/side refresh` | Re-fork from the main conversation as it stands now. The transcript stays; the next message carries a short replay of the earlier questions. |
 | `/side pull [question]` | Add main's latest reply to the side chat as a message (with your question, or a default one). |
 | `/side send-back` | Send the side chat's latest answer into the main conversation, as you. |
 | `/explain [decide \| close \| text]` | Decision tree of the last reply's options (see below). With text, reads the text instead of the last reply. |
 
-The pane has New fork, Refresh, Pull, Close, Stop, an Ask box, a `model` row (default, opus, sonnet, haiku; the one in use is marked; New fork keeps it; the decision tree's forks follow it), a `main:` status (`busy`, `N ahead`: main turns finished since the fork, or `in sync`), a `↩ Send to main` button under every answer, and ↑/↓ buttons that scroll the transcript half a pane at a time. It takes the keyboard when it opens (so you can type at once), and a long answer never pushes the Ask box or Stop out of view: the transcript is drawn as rows sized to the pane. Stop (and New fork or Close mid-answer) ends the child process at once, even while it is still thinking. In headless runs the built-in commands are left alone.
+The tab has New fork, Refresh, Pull, Close, Stop, an Ask box, a `model` row (default, opus, sonnet, haiku; the one in use is marked; New fork keeps it; the decision tree's forks follow it), a `main:` status (`busy`, `N ahead`: main turns finished since the fork, or `in sync`), a `↩ Send to main` button under every answer, and ↑/↓ buttons that scroll the transcript half a window at a time. It asks for the keyboard when it opens (a fresh open of the dashboard) and the Ask box asks for the ring (so you can type at once; live in tmux on 2.1.302 the engine did not grant it, so typing went to the prompt box until the dashboard was focused), and a long answer never pushes the Ask box or Stop out of view: the transcript is drawn as a fixed window of rows, laid out for 100 columns. Stop (and New fork or Close mid-answer) ends the child process at once, even while it is still thinking. In headless runs the built-in commands are left alone.
 
 ## Decision tree (`/explain`)
-When a reply lists options (`1.` `2.`, `a)` `b)`, `Option A:` headings), `/explain` reads them and opens the **Decision tree** pane at the root: the question and one button per option.
+When a reply lists options (`1.` `2.`, `a)` `b)`, `Option A:` headings), `/explain` reads them and switches the tab to its **Decision tree** view at the root: the question and one button per option (the tab's Side chat / Decision tree buttons switch views).
 
 - **Explore** (press an option): a fork answers the follow-up questions about that option and asks the next decision, if there is one. Its reply becomes the next node: options again, or a free answer. The fork is the side chat's own child (`claude -p --resume <id> --fork-session`, no mods, `sideTools` only): the root's options fork the main conversation, deeper ones fork the fork that wrote their node, so branches never share a session. At most two explorations run at once. The **Or ›** box takes your own answer, which is explored like an option.
 - **Back** goes to the earlier question; picking another option grows a sibling branch and keeps the first. An option already explored is shown, not explored again; a failed one can be explored again.
@@ -43,7 +43,7 @@ The terminal footer carries a small `◨ side` button. Press it, or a chord boun
 }
 ```
 
-(merge it into the file if you already have bindings). `ctrl+x ctrl+o` is free in Claude Code 2.1.296; any chord works. While the `/diff` pane is open the chord belongs to it. The footer is shared with other mods: bws-enhance 0.2.1 or later draws its `✦ enhance` button beside `◨ side` (older bws-enhance drew its own footer and hid it). With text in the prompt box the pane opens but the keyboard stays with you (`ctrl+x tab` or a click moves it). `chordAction` empty hides the button.
+(merge it into the file if you already have bindings). `ctrl+x ctrl+o` is free in Claude Code 2.1.296; any chord works. While the `/diff` pane is open the chord belongs to it. The footer is shared with other mods: bws-enhance 0.2.1 or later draws its `✦ enhance` button beside `◨ side` (older bws-enhance drew its own footer and hid it). With text in the prompt box the dashboard opens but the keyboard stays with you (`ctrl+x tab` or a click moves it). `chordAction` empty hides the button.
 
 ## Install on another computer
 The repository is private, so the computer needs GitHub access first (`gh auth login`, or an SSH key). Then:

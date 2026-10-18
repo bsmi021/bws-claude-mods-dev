@@ -929,6 +929,10 @@ async function noteModTab($: EngineInterface, o: Options, name: KnownMod, value:
   // the pane itself from that command, so placement is theirs.
   if (isRaised(shownBefore, num('show'))) await update($, dash, () => ({ tab: modKey(name), isClosedByPerson: false }))
   else if (isRaised(before, num('raise'))) await raise($, modKey(name))
+  // A tab that asks for it (a chat) keeps the dashboard at its end while it is the one shown, so its newest rows and its
+  // input stay in view however short the pane is.
+  const isPinned = typeof value === 'object' && value !== null && (value as { isPinnedEnd?: unknown }).isPinnedEnd === true
+  if (isPinned && (await read($, dash)).tab === modKey(name)) $.clock.after(20, () => void settle($.ui.scroll({ in: DASH, to: 'end' })))
 }
 
 // Opened by the person (a command, a bar button): placed at any width. Focus is granted only to a fresh open over an
@@ -1575,7 +1579,8 @@ export const register: Register = (on, options) => {
       </Box>
     )
 
-    // A mod's tab: its nodes as plain data, drawn here; presses and inputs go back to the mod as a tabEvent.
+    // A mod's tab: its nodes as plain data, drawn here; presses and inputs go back to the mod as a tabEvent. A button's or
+    // an input's key is `<plugin>-<id>`, so a mod can move the keyboard ring to one ($.ui.focus on the dashboard).
     const shown = mods.find(m => m.key === tab)
     if (shown !== undefined) {
       const Raster = !isMobile && 'Raster' in table ? table.Raster : null
@@ -1594,7 +1599,7 @@ export const register: Register = (on, options) => {
             <Box key={k} flexDirection="row" columnGap={1} flexWrap="wrap">
               {n.items.map(b => (
                 <Button
-                  key={`${k}-${b.id}`}
+                  key={`${name}-${b.id}`}
                   label={b.label}
                   {...(b.isPrimary ? { variant: 'primary' as const } : {})}
                   {...(b.hotkey ? { hotkey: b.hotkey } : {})}
@@ -1609,7 +1614,8 @@ export const register: Register = (on, options) => {
           if (Input === null) return <Text key={k} dimColor>{`${n.placeholder} (type it in the terminal)`}</Text>
           return (
             <Input
-              key={k}
+              key={`${name}-${n.id}`}
+              {...(n.isFocused ? { autoFocus: true } : {})}
               placeholder={n.placeholder}
               value={tabDrafts.get(draftKey) ?? ''}
               onInput={(v: string) => void tabDrafts.set(draftKey, v)}

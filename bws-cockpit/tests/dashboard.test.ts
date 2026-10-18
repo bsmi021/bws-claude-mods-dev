@@ -549,10 +549,10 @@ describe('dashboard', () => {
     expect(await ui.find({ type: 'Text', text: /^Notify · 2$/ })).toBeDefined()
     expect((await ui.find({ key: 'mod-bws-notify-1' }))?.props?.borderStyle).toBe('round')
     expect((await ui.find({ type: 'Text', text: /^turn done in game$/ }))?.props?.dimColor).toBe(true)
-    await ui.press({ key: 'mod-bws-notify-2-test' })
+    await ui.press({ key: 'bws-notify-test' })
     await ui.unmount()
     const ui2 = await $.ui.mount(PANE)
-    await ui2.input({ key: 'mod-bws-notify-3', text: 'hello' })
+    await ui2.input({ key: 'bws-notify-note', text: 'hello' })
     await ui2.unmount()
     expect(events).toEqual([
       { seq: 1, plugin: 'bws-notify', id: 'test' },

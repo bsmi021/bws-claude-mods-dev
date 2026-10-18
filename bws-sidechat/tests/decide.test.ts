@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { EXPLORE_LEAF, EXPLORE_NEXT } from './replies'
-import { TREE_PANE, run, settle, treeWorld } from './treeworld'
+import { mountTree } from './tabview'
+import { run, settle, treeWorld } from './treeworld'
 
 type Mounted = { press: (t: { key: string }) => Promise<unknown>; unmount: () => Promise<void> }
 
 async function press($: { ui: { mount: (t: never) => Promise<Mounted> } }, clock: { advance: (ms: number) => Promise<void> }, key: string) {
-  const ui = await $.ui.mount(TREE_PANE() as never)
+  const ui = await mountTree($ as never)
   await ui.press({ key })
   await settle(clock)
   await ui.unmount()
@@ -20,7 +21,7 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     const w = treeWorld(on, { children: [{ reply: EXPLORE_LEAF }] })
     await run($, 'explain')
     await press($, w.clock, 'opt-2')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ key: 'decide' })).toBeDefined()
     await ui.press({ key: 'decide' })
     await ui.unmount()
@@ -28,7 +29,6 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     await w.clock.advance(10)
     expect(w.seen.sent).toEqual([{ text: LEAF_PARAGRAPH, asUser: true }])
     expect(w.seen.sent[0]?.text).not.toContain('\n')
-    expect(w.seen.closed).toContain('decisiontree')
   })
 
   test('/explain decide: $.prompt.submit is deferred with $.clock.after, never called inside the command', async ($, on) => {
@@ -51,7 +51,7 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     const w = treeWorld(on, { children: [{ reply: EXPLORE_NEXT }, { reply: 'It is built in.' }] })
     await run($, 'explain')
     await press($, w.clock, 'opt-0')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     await (ui as unknown as { input: (t: { key: string; text: string }) => Promise<unknown> }).input({ key: 'answer-0', text: 'whatever Bun ships' })
     await settle(w.clock)
     await ui.unmount()
@@ -65,14 +65,14 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     const w = treeWorld(on, { children: [{ hold: true }] })
     await run($, 'explain')
     await press($, w.clock, 'opt-0')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ key: 'decide' })).toBeUndefined() // the focus ring falls onto it once opt-0 goes, so a second Enter would have sent it
     expect(await ui.find({ key: 'close' })).toBeDefined()
     await ui.unmount()
     expect((await run($, 'explain', 'decide')).text).toBe('Nothing to decide yet: explore an option first.')
     await w.clock.advance(100)
     expect(w.seen.sent).toEqual([])
-    expect(w.seen.closed).toEqual([]) // the tree and its fork are still there
+    expect(w.seen.closed).toEqual(['dashboard']) // only the reopen that took the keys: the tree and its fork are still there
     await run($, 'explain', 'close') // ends the fork, so nothing writes after the test
     w.releaseAll()
     await settle(w.clock)
@@ -85,6 +85,6 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     expect((await run($, 'explain', 'decide')).text).toBe('Nothing to decide yet: explore an option first.')
     await w.clock.advance(100)
     expect(w.seen.sent).toEqual([])
-    expect(w.seen.closed).toEqual([])
+    expect(w.seen.closed).toEqual(['dashboard']) // only the reopen that took the keys
   })
 })

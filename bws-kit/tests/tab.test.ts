@@ -32,10 +32,11 @@ describe('tab', () => {
   })
 
   test('clipped text and the show counter survive the parse; show is left out at zero', () => {
-    const t = makeTab('Diagram', [text('──┐', { isClipped: true })], { raise: 2, show: 5 })
+    const t = makeTab('Diagram', [text('──┐', { isClipped: true })], { raise: 2, show: 5, isPinnedEnd: true })
     expect(parseTab(JSON.parse(JSON.stringify(t)))).toEqual(t)
     expect(Object.keys(makeTab('X', [])).includes('show')).toBe(false)
     expect(parseTab({ title: 'X', show: 'many' })?.show).toBeUndefined()
+    expect(parseTab({ title: 'X', body: [{ kind: 'input', id: 'ask', placeholder: 'p', isFocused: true }] })?.body).toEqual([{ kind: 'input', id: 'ask', placeholder: 'p', isFocused: true }])
   })
 
   test('a button hotkey is one letter; anything else is dropped', () => {

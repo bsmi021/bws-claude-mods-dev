@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { EXPLORE_LEAF, EXPLORE_NEXT } from './replies'
-import { DUMP, TREE_PANE, resumeOf, run, settle, sideIdOf, treeWorld } from './treeworld'
+import { mountTree } from './tabview'
+import { DUMP, resumeOf, run, settle, sideIdOf, treeWorld } from './treeworld'
 
 type Mounted = { press: (t: { key: string }) => Promise<unknown>; unmount: () => Promise<void> }
 
 // Presses one button on a fresh mount of the tree pane, then lets the child's lines be read.
 async function press($: { ui: { mount: (t: never) => Promise<Mounted> } }, clock: { advance: (ms: number) => Promise<void> }, key: string) {
-  const ui = await $.ui.mount(TREE_PANE() as never)
+  const ui = await mountTree($ as never)
   await ui.press({ key })
   await settle(clock)
   await ui.unmount()
@@ -24,7 +25,7 @@ describe('FR-DT-03: Explore forks a side chat about one option', () => {
     expect(prompt).toContain('The question: "Which would you like me to go with?". Explore option 1: "SQLite — one file')
     expect(prompt).toContain('then its options as a numbered list')
     expect(prompt).toContain('must not change any files')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ type: 'Text', text: 'Which driver should it use?' })).toBeDefined()
     expect((await ui.find({ key: 'opt-0' }))?.text).toContain('1. better-sqlite3')
     expect((await ui.find({ key: 'opt-1' }))?.text).toContain('2. node:sqlite')
@@ -37,13 +38,13 @@ describe('FR-DT-03: Explore forks a side chat about one option', () => {
     const w = treeWorld(on, { children: [{ reply: EXPLORE_LEAF }] })
     await run($, 'explain')
     await press($, w.clock, 'opt-2')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ type: 'Text', text: 'Recommendation: fine for a prototype; move to SQLite before more than one process writes.' })).toBeDefined()
     expect(await ui.find({ key: 'opt-0' })).toBeUndefined()
     expect(await ui.find({ type: 'Input' })).toBeUndefined()
     await ui.press({ key: 'back' })
     await ui.unmount()
-    const root = await $.ui.mount(TREE_PANE())
+    const root = await mountTree($ as never)
     expect((await root.find({ key: 'opt-2' }))?.text).toContain('→ answered')
     await root.unmount()
   })
@@ -65,16 +66,16 @@ describe('FR-DT-03: Explore forks a side chat about one option', () => {
   test('a free-text answer is accepted: it becomes an option and is explored', async ($, on) => {
     const w = treeWorld(on, { children: [{ reply: 'Redis needs a server too.' }] })
     await run($, 'explain')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     await ui.input({ key: 'answer-0', text: 'keep it in Redis' })
     await settle(w.clock)
     await ui.unmount()
     expect(promptOf(w.seen.spawns[0]?.argv ?? [])).toContain(`Explore the person's own answer: "keep it in Redis"`)
-    const leaf = await $.ui.mount(TREE_PANE())
+    const leaf = await mountTree($ as never)
     expect(await leaf.find({ type: 'Text', text: 'Redis needs a server too.' })).toBeDefined()
     await leaf.press({ key: 'back' })
     await leaf.unmount()
-    const root = await $.ui.mount(TREE_PANE())
+    const root = await mountTree($ as never)
     expect((await root.find({ key: 'opt-3' }))?.text).toContain('your answer: keep it in Redis')
     expect(await root.find({ key: 'answer-1' })).toBeDefined() // the box was cleared by its new key
     await root.unmount()
@@ -87,7 +88,7 @@ describe('FR-DT-03: Explore forks a side chat about one option', () => {
     await press($, w.clock, 'back')
     await press($, w.clock, 'opt-0')
     expect(w.seen.spawns).toHaveLength(1)
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ key: 'back' })).toBeDefined() // on the child again
     await ui.unmount()
   })
@@ -110,7 +111,7 @@ describe('FR-DT-03 / FR-ALL-03: a failed Explore never blocks: the node says why
     const w = treeWorld(on, { children: [{ isError: true }] })
     await run($, 'explain')
     await press($, w.clock, 'opt-0')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ type: 'Text', text: 'Explore failed: Error: API Error: overloaded' })).toBeDefined()
     await ui.unmount()
     expect(w.seen.logs).toEqual([{ text: 'bws-sidechat explain: explore failed (error result)', to: 'debug' }])
@@ -120,7 +121,7 @@ describe('FR-DT-03 / FR-ALL-03: a failed Explore never blocks: the node says why
     const w = treeWorld(on, { children: [{ exit: 2, stderr: 'unknown option --bogus' }] })
     await run($, 'explain')
     await press($, w.clock, 'opt-1')
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ type: 'Text', text: 'Explore failed: The side chat process ended (exit 2): unknown option --bogus' })).toBeDefined()
     await ui.unmount()
     expect(w.seen.logs).toEqual([{ text: 'bws-sidechat explain: explore failed (exit 2)', to: 'debug' }])
@@ -135,7 +136,7 @@ describe('FR-DT-03 / FR-ALL-03: a failed Explore never blocks: the node says why
     await w.clock.advance(5000)
     await settle(w.clock)
     expect(w.seen.kills.some(k => k.join(' ').includes(sideId))).toBe(true)
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ type: 'Text', text: 'Explore failed: no answer within 5 s' })).toBeDefined()
     await ui.unmount()
     expect(w.seen.logs).toEqual([{ text: 'bws-sidechat explain: explore failed (timeout)', to: 'debug' }])
@@ -146,12 +147,12 @@ describe('FR-DT-03 / FR-ALL-03: a failed Explore never blocks: the node says why
     await run($, 'explain')
     await press($, w.clock, 'opt-0')
     await press($, w.clock, 'back')
-    const root = await $.ui.mount(TREE_PANE())
+    const root = await mountTree($ as never)
     expect((await root.find({ key: 'opt-0' }))?.text).toContain('failed')
     await root.unmount()
     await press($, w.clock, 'opt-0')
     expect(w.seen.spawns).toHaveLength(2)
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ type: 'Text', text: 'Recommendation: fine for a prototype; move to SQLite before more than one process writes.' })).toBeDefined()
     await ui.unmount()
   })
@@ -163,7 +164,7 @@ describe('FR-DT-03 / FR-ALL-03: a failed Explore never blocks: the node says why
     await run($, 'explain')
     await settle(w.clock)
     expect(w.seen.kills).toHaveLength(1)
-    const ui = await $.ui.mount(TREE_PANE())
+    const ui = await mountTree($ as never)
     expect(await ui.find({ key: 'back' })).toBeUndefined() // a fresh root
     expect((await ui.find({ key: 'opt-0' }))?.text).not.toContain('failed')
     await ui.unmount()

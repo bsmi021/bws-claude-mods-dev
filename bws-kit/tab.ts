@@ -23,7 +23,7 @@ export type TabButton = { id: string; label: string; isPrimary?: boolean; hotkey
 export type TabNode =
   | { kind: 'text'; text: string; color?: TabColor; isDim?: boolean; isBold?: boolean; isClipped?: boolean }
   | { kind: 'buttons'; items: TabButton[] }
-  | { kind: 'input'; id: string; placeholder: string }
+  | { kind: 'input'; id: string; placeholder: string; isFocused?: boolean } // isFocused: the ring starts here
   | { kind: 'raster'; columns: number; rows: number; cells: string }
   | { kind: 'card'; title: string; color?: TabColor; body: TabNode[] }
 
@@ -34,12 +34,14 @@ export type ModTab = {
   body: TabNode[]
   raise: number // counts up for news that should bring the tab up
   show?: number // counts up when the person asked for this tab
+  isPinnedEnd?: boolean // keep the dashboard scrolled to the end while this tab is shown (a chat's newest rows)
 }
 
 // A press (`id`, no value) or a submitted input (`id` and its text). `seq` counts up per cockpit process.
 export type TabEvent = { seq: number; plugin: string; id: string; value?: string }
 
 const MAX_TITLE = 24
+const MAX_LABEL = 160 // a button's label: a whole row of a list, at most
 const MAX_BADGE = 16
 const MAX_TEXT = 2000
 const MAX_ID = 64
@@ -53,9 +55,10 @@ const color = (v: unknown): TabColor | undefined => (COLORS.includes(v as TabCol
 const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 const id = (v: unknown) => (typeof v === 'string' && /^[\w:.-]{1,64}$/.test(v) ? v : '')
 
-export const makeTab = (title: string, body: TabNode[], o: { badge?: string; tone?: TabTone; raise?: number; show?: number } = {}): ModTab => {
+export const makeTab = (title: string, body: TabNode[], o: { badge?: string; tone?: TabTone; raise?: number; show?: number; isPinnedEnd?: boolean } = {}): ModTab => {
   const t: ModTab = { title: line(title, MAX_TITLE), badge: line(o.badge ?? '', MAX_BADGE), tone: o.tone ?? 'idle', body, raise: o.raise ?? 0 }
   if (o.show) t.show = o.show
+  if (o.isPinnedEnd) t.isPinnedEnd = true
   return t
 }
 
@@ -78,6 +81,7 @@ export function parseTab(v: unknown): ModTab | null {
     raise: count(v.raise),
   }
   if (count(v.show) > 0) t.show = count(v.show)
+  if (v.isPinnedEnd === true) t.isPinnedEnd = true
   return t
 }
 
@@ -109,15 +113,19 @@ function parseNode(n: unknown, budget: { nodes: number; cells: number }, depth: 
   if (n.kind === 'buttons' && Array.isArray(n.items)) {
     const items: TabButton[] = []
     for (const b of n.items.slice(0, 12)) {
-      if (!isObj(b) || !id(b.id) || !line(b.label, 40)) continue
-      const item: TabButton = { id: id(b.id), label: line(b.label, 40) }
+      if (!isObj(b) || !id(b.id) || !line(b.label, MAX_LABEL)) continue
+      const item: TabButton = { id: id(b.id), label: line(b.label, MAX_LABEL) }
       if (b.isPrimary === true) item.isPrimary = true
       if (typeof b.hotkey === 'string' && /^[a-z]$/.test(b.hotkey)) item.hotkey = b.hotkey
       items.push(item)
     }
     return items.length > 0 ? { kind: 'buttons', items } : null
   }
-  if (n.kind === 'input' && id(n.id)) return { kind: 'input', id: id(n.id), placeholder: line(n.placeholder, 80) }
+  if (n.kind === 'input' && id(n.id)) {
+    const node: TabNode = { kind: 'input', id: id(n.id), placeholder: line(n.placeholder, 80) }
+    if (n.isFocused === true) node.isFocused = true
+    return node
+  }
   if (n.kind === 'raster') {
     const cols = Number(n.columns)
     const rows = Number(n.rows)
