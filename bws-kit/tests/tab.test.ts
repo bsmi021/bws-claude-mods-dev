@@ -31,6 +31,13 @@ describe('tab', () => {
     expect(t?.body).toEqual([{ kind: 'card', title: 'outer', body: [] }])
   })
 
+  test('clipped text and the show counter survive the parse; show is left out at zero', () => {
+    const t = makeTab('Diagram', [text('──┐', { isClipped: true })], { raise: 2, show: 5 })
+    expect(parseTab(JSON.parse(JSON.stringify(t)))).toEqual(t)
+    expect(Object.keys(makeTab('X', [])).includes('show')).toBe(false)
+    expect(parseTab({ title: 'X', show: 'many' })?.show).toBeUndefined()
+  })
+
   test('events: a press and a submit; junk is null', () => {
     expect(parseEvent({ seq: 1, plugin: 'bws-diagram', id: 'redraw' })).toEqual({ seq: 1, plugin: 'bws-diagram', id: 'redraw' })
     expect(parseEvent({ seq: 2, plugin: 'bws-sidechat', id: 'ask', value: 'hi' })).toEqual({ seq: 2, plugin: 'bws-sidechat', id: 'ask', value: 'hi' })

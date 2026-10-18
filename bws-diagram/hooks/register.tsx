@@ -1,8 +1,8 @@
 // bws-diagram: after a big turn a small model decides whether it is worth a diagram; if so a fork draws what happened
-// in a side pane. Mermaid blocks Claude writes are pinned there too. The only file that uses `$`.
+// in its bws-cockpit dashboard tab. Mermaid blocks Claude writes are pinned there too. The only file that uses `$`.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
-import type { Board, Diagram, Entry } from '../types'
+import type { Board, Entry } from '../types'
 import { classifyGate, runFork } from './kit/classify-fork'
 import type { KitModel } from './kit/classify-fork'
 import {
@@ -30,12 +30,19 @@ import {
   turnNumber,
   type Row,
 } from './diagram'
-import { INK, legendOf, textRows } from './render'
+import { DASHBOARD, parseEvent } from './kit/tab'
+import { legendOf, textRows } from './render'
 import { parseDiagramReply } from './spec'
+import { diagramTab } from './tab'
 
-const PANE = 'bws-diagram'
 const board = atom({ plugin: 'bws-diagram', key: 'board' } as const, EMPTY_BOARD)
 const summary = atom({ plugin: 'bws-diagram', key: 'summary' } as const, null)
+// The dashboard tab bws-cockpit draws (bws-kit/tab.ts).
+const tab = atom({ plugin: 'bws-diagram', key: 'tab' } as const, null as unknown)
+
+// Count up to bring the tab up: `raise` for a new diagram, `show` when the person asked (/diagram show).
+let raiseCount = 0
+let showCount = 0
 
 // The options, copied in by register on every load.
 let autoDiagram = true
@@ -69,6 +76,7 @@ function kitModel($: EngineInterface): KitModel {
 async function setBoard($: EngineInterface, f: (b: Board) => Board, isKept = true) {
   const b = await update($, board, f)
   await update($, summary, () => boardSummary(b))
+  await update($, tab, () => diagramTab(b, { raise: raiseCount, show: showCount }))
   if (isKept) {
     const id = lastSession || (await $.session.id())
     await $.store.set(STORE_KEY, keepBoard(await $.store.get(STORE_KEY), id, b, await $.clock.now()))
@@ -76,15 +84,25 @@ async function setBoard($: EngineInterface, f: (b: Board) => Board, isKept = tru
   if (dumpFile) await $.fs.write(dumpFile, JSON.stringify(b, null, 2)).catch(() => $.ui.log(failLine('dump', 'not written'), { to: 'debug' }))
 }
 
-// Opens the pane fresh: close first, so it is never mounted twice. An open the person did not ask for may not be placed
-// (under 144 columns, 110 once they have asked for it): then the diagram is written into the transcript instead, so it
-// is seen either way.
-async function openPane($: EngineInterface, entry?: Entry | null) {
-  await $.ui.close({ id: PANE })
-  const r = await $.ui.open({ id: PANE, title: 'Diagram', columns: 100, closeOnEscape: true })
-  if (r.isPlaced) return
-  $.ui.toast(`Diagram ready, pane not shown (${r.reason}). /diagram show opens it.`)
-  if (entry) $.ui.log(transcriptText(entry, `The pane needs a wider window (${r.reason}); /diagram show opens it.`))
+async function publishTab($: EngineInterface) {
+  const b = await read($, board)
+  await update($, tab, () => diagramTab(b, { raise: raiseCount, show: showCount }))
+}
+
+// The dashboard (bws-cockpit) is loaded when its command is: the tab shows the diagram. Without it the diagram is
+// written into the transcript, so it is seen either way.
+async function hasDashboard($: EngineInterface): Promise<boolean> {
+  return (await $.command.list()).some(c => c.name === 'dashboard')
+}
+
+// A new diagram: bring its tab up (cockpit decides whether that is fine now), or write it into the transcript.
+async function announce($: EngineInterface, entry: Entry | null) {
+  if (await hasDashboard($)) {
+    raiseCount += 1
+    await publishTab($)
+    return
+  }
+  if (entry) $.ui.log(transcriptText(entry, 'bws-cockpit is not loaded, so there is no dashboard tab for diagrams.'))
 }
 
 // The shown entry as lines for the transcript: title, legend, the drawing at 100 columns, the footer.
@@ -94,11 +112,7 @@ function transcriptText(e: Entry, note: string): string {
   return [e.title, ...(d ? [legendOf(d)] : []), ...body, footerOf(e), note].join('\n')
 }
 
-async function closePane($: EngineInterface) {
-  await $.ui.close({ id: PANE })
-}
-
-// The person closed the pane (Close, Esc, its mark): the diagrams stay listed; a failure note is acknowledged.
+// The person dismissed a failure in the tab: the diagrams stay listed.
 async function acknowledge($: EngineInterface) {
   const b = await read($, board)
   if (b.phase === 'error') await setBoard($, x => ({ ...x, phase: 'idle', note: '' }))
@@ -167,7 +181,7 @@ async function draw($: EngineInterface, scope: 'turn' | 'session', material: str
     const at = await $.clock.now()
     const turn = turnNumber(await rows($))
     await setBoard($, b => ({ ...addEntry(b, diagramEntry(scope === 'turn' ? 'auto' : 'session', spec.diagram, at, turn)), phase: 'idle', note: '' }))
-    await openPane($, shownEntry(await read($, board)))
+    await announce($, shownEntry(await read($, board)))
     return { text: `Diagram drawn: ${spec.diagram.title} (${spec.diagram.nodes.length} nodes).`, isDrawn: true }
   } catch (err) {
     return await fail('draw', err instanceof Error ? err.message.slice(0, 80) : 'error')
@@ -195,7 +209,7 @@ async function pin($: EngineInterface, answer: string) {
   const pins = pinsFrom(answer, await $.clock.now(), b.entries, turnNumber(await rows($)))
   if (pins.length === 0) return
   await setBoard($, x => pins.reduce(addPin, x))
-  await openPane($, shownEntry(await read($, board)))
+  await announce($, shownEntry(await read($, board)))
 }
 
 // /diagram: the whole session, no classifier. Headless the process may end once the command returns, so it is awaited.
@@ -206,7 +220,7 @@ async function drawSession($: EngineInterface): Promise<string> {
   if (isHeadless) return (await draw($, 'session', '')).text
   running = true
   $.clock.after(10, () => void draw($, 'session', '').catch(() => undefined))
-  return 'Drawing the session... the pane shows it when done.'
+  return 'Drawing the session... the Diagram tab shows it when done.'
 }
 
 async function diagramCommand($: EngineInterface, args: string): Promise<string> {
@@ -214,12 +228,18 @@ async function diagramCommand($: EngineInterface, args: string): Promise<string>
   await syncSession($)
   if (sub === 'status') return statusText(await read($, board), autoDiagram)
   if (sub === 'show') {
-    await $.ui.close({ id: PANE })
-    const r = await $.ui.open({ id: PANE, title: 'Diagram', columns: 100, focus: true, closeOnEscape: true })
-    return r.isPlaced ? '' : `Pane not shown (${r.reason}).`
+    if (!(await hasDashboard($))) {
+      const entry = shownEntry(await read($, board))
+      return entry ? transcriptText(entry, '') : 'No diagrams yet. /diagram draws the session.'
+    }
+    // Asked for: switch the dashboard to this tab and open it as the person's own open.
+    showCount += 1
+    await publishTab($)
+    const r = await $.ui.open({ id: DASHBOARD, title: 'Dashboard', focus: true })
+    return r.isPlaced ? '' : `Dashboard not shown (${r.reason}).`
   }
   if (sub === '') return drawSession($)
-  return 'Usage: /diagram (draw the whole session), /diagram status, /diagram show'
+  return 'Usage: /diagram (draw the whole session), /diagram status, /diagram show (the Diagram tab)'
 }
 
 export const register: Register = (on, options) => {
@@ -233,7 +253,7 @@ export const register: Register = (on, options) => {
   // Runs at start and after a reload. The board atom outlives a reload as it is; a new process (claude --resume)
   // starts with an empty atom, so it takes the board this conversation left in the store.
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'diagram', description: 'Diagram the whole session in the side pane: /diagram, /diagram status, /diagram show', argumentHint: '[status|show]' })
+    await $.command.register({ name: 'diagram', description: 'Diagram the whole session in the Diagram tab of the dashboard: /diagram, /diagram status, /diagram show', argumentHint: '[status|show]' })
     lastSession = await $.session.id()
     const b = await read($, board)
     if (b.entries.length === 0) {
@@ -242,6 +262,7 @@ export const register: Register = (on, options) => {
     }
     const now = await read($, board)
     await update($, summary, () => boardSummary(now))
+    await publishTab($)
     return next(e)
   })
 
@@ -254,77 +275,29 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // /clear: the conversation's diagrams go with it (its kept copy stays for a later resume), the pane closes, no work
-  // for it continues. /resume: work stops and the pane closes; the next session id seen loads that conversation's board.
+  // /clear: the conversation's diagrams go with it (its kept copy stays for a later resume), no work for it continues.
+  // /resume: work stops; the next session id seen loads that conversation's board.
   on('session.end', async ($, e, next) => {
     if (e.reason === 'clear' || e.reason === 'resume') {
       dropWork()
-      await closePane($).catch(() => undefined)
       if (e.reason === 'clear') await setBoard($, () => EMPTY_BOARD, false).catch(() => undefined)
       else pendingResume = true
     }
     return next(e)
   })
 
-  // The pane: heading, legend, the shown diagram drawn for this surface and width, the labelled edges, the pinned
-  // list, and Prev / Next / Close. Drawn again on every width change, so it is resize-safe.
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const b = await read($, board)
-    const entry = shownEntry(b)
-    const table = $.ui.resolve(e)
-    const { Box, Button, Text } = table
-    if (!entry) return <Text dimColor>No diagrams yet. /diagram draws the session.</Text>
-    const d: Diagram | null = entry.diagram
-    let body
-    let legend = null
-    let footer = footerOf(entry)
-    if (!d) {
-      body = (
-        <Box key="body" flexDirection="column">
-          <Text dimColor>Not a flowchart this pane can draw; the source:</Text>
-          {entry.source.split('\n').map((line, i) => <Text key={`src${i}`} wrap="truncate-end">{line}</Text>)}
-        </Box>
-      )
-    } else {
-      const drawn = textRows(d, e.props.bodyColumns)
-      legend = <Text key="legend" color={INK}>{legendOf(d)}</Text>
-      if (drawn.isCut) footer += `; widen the pane to ${drawn.needed} columns to see it all`
-      body = (
-        <Box key="body" flexDirection="column">
-          {drawn.rows.map((line, i) => <Text key={`row${i}`} color={INK} wrap="truncate-end">{line === '' ? ' ' : line}</Text>)}
-        </Box>
-      )
+  // A press in the Diagram tab (bws-cockpit writes it): Prev / Next, draw the session, dismiss a failure.
+  on('state.set', { plugin: 'bws-cockpit', key: 'tabEvent' }, async ($, e, next) => {
+    const ev = parseEvent(e.value)
+    if (ev?.plugin === 'bws-diagram') {
+      const act =
+        ev.id === 'prev' ? setBoard($, x => move(x, -1))
+        : ev.id === 'next' ? setBoard($, x => move(x, 1))
+        : ev.id === 'dismiss' ? acknowledge($)
+        : ev.id === 'draw' ? drawSession($).then(() => undefined)
+        : Promise.resolve()
+      await act.catch(() => $.ui.log(failLine('tab', 'error'), { to: 'debug' }))
     }
-    const pinned = b.entries.flatMap((x, i) => (x.origin === 'pinned' ? [{ x, i }] : []))
-    const atStart = b.shown <= 0, atEnd = b.shown >= b.entries.length - 1
-    return (
-      <Box flexDirection="column">
-        <Text bold wrap="truncate-end">{heading(b)}</Text>
-        {legend}
-        {body}
-        <Text key="footer" dimColor wrap="truncate-end">{footer}</Text>
-        {pinned.length > 0 ? <Text key="pinned-head" dimColor>Pinned diagrams:</Text> : null}
-        {pinned.map(p => (
-          <Text key={`pin${p.x.id}`} wrap="truncate-end" bold={p.i === b.shown}>
-            {p.i === b.shown ? '> ' : '  '}
-            {p.i + 1}. {p.x.title}
-          </Text>
-        ))}
-        <Box key="nav" flexDirection="row">
-          <Button key="prev" label="< Prev" hotkey="p" dimColor={atStart} onPress={() => setBoard($, x => move(x, -1))} />
-          <Button key="next" label="Next >" hotkey="n" dimColor={atEnd} onPress={() => setBoard($, x => move(x, 1))} />
-          <Button key="close" label="Close" hotkey="c" onPress={async () => {
-              await acknowledge($)
-              await closePane($)
-            }} />
-        </Box>
-      </Box>
-    )
-  })
-
-  // Closed by the person with Esc or the engine's mark.
-  on('ui.close', async ($, e, next) => {
-    if (e.id === PANE && e.origin.kind === 'person') await acknowledge($).catch(() => undefined)
     return next(e)
   })
 }

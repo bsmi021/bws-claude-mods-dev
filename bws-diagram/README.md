@@ -33,13 +33,13 @@ same pane ("Pinned diagrams"), drawn instead of being left as text.
   `A -- label --> B` and `A -->|label| B`, chains on one line. Styling lines (`style`, `classDef`, `subgraph`, ...) are
   ignored. Anything else (another diagram type, `A & B`, over 24 nodes) is pinned as its source text. Pinning is plain
   parsing, so it also runs headless.
-- **The pane.** A heading (title, `2/5`, where it came from), the legend, the drawing, its footer, the
-  "Pinned diagrams" list, and buttons `< Prev` (`p`), `Next >` (`n`) and `Close` (`c`); Esc closes it too. It is drawn
-  again for every width change. In the terminal's fullscreen layout from 110 columns it docks right of the transcript;
-  otherwise it sits above the prompt. A pin or a drawn diagram opens the pane, but an open the mod makes on its own
-  is not drawn below 144 columns (110 once you have opened the pane yourself): the engine decides that, not the mod.
-  Then the mod shows a toast and writes the diagram into the transcript, drawn at 100 columns, so it is seen anyway;
-  `/diagram show` opens the pane at any width.
+- **The Diagram tab** (0.3.0; it was a side pane). Needs bws-cockpit 0.21.0+, whose dashboard shows it as a tab: a
+  heading (title, `2/5`, where it came from), the legend, the drawing laid out for 100 columns and clipped at the
+  pane's edge, its footer, the "Pinned diagrams" list, and buttons `< Prev`, `Next >`, `Draw the session` and, after
+  a failure, `Dismiss the failure`. A pin or a drawn diagram brings the tab up (cockpit's rule: not while you are using
+  the dashboard, not after you closed it). `/diagram show` switches the dashboard to the tab and opens it at any
+  width. Without bws-cockpit the diagram is written into the transcript, drawn at 100 columns, and `/diagram show`
+  prints it.
 - **Fail open.** A classifier error or unreadable answer (15 s timeout), a fork error or timeout (90 s) or an invalid
   spec leaves the session as it was and writes one debug-log line that never carries your text. A fork cannot be
   cancelled, so a timeout only stops waiting for it.
@@ -48,17 +48,17 @@ same pane ("Pinned diagrams"), drawn instead of being left as text.
 
 | Command | What it does |
 | --- | --- |
-| `/diagram` | Draws the whole session so far (no classifier). With a screen it runs behind and opens the pane; headless it runs before the command returns. With nothing to fork (a first command, or right after `/clear`) it asks your session's model with the transcript. |
+| `/diagram` | Draws the whole session so far (no classifier). With a screen it runs behind and brings up the Diagram tab; headless it runs before the command returns. With nothing to fork (a first command, or right after `/clear`) it asks your session's model with the transcript. |
 | `/diagram status` | The option, the drawn diagrams and the pinned ones, `>` marking the one shown. |
-| `/diagram show` | Opens the pane (an open you ask for is placed at any width). |
+| `/diagram show` | Opens the dashboard on the Diagram tab (an open you ask for is placed at any width); without bws-cockpit, prints the diagram. |
 
 ## After reload, `/clear`, `/resume`, `/branch`
 
 - **Reload:** the list lives in a `$.state` atom, which outlives a hot reload. It is also kept in `$.store` per
   conversation (the newest 10), so a new process for the same conversation (`claude --resume`) shows it again.
-- **`/clear`:** the conversation's diagrams go with it and the pane closes; a fork still running is not cancelled, but
+- **`/clear`:** the conversation's diagrams go with it; a fork still running is not cancelled, but
   its diagram is dropped. The cleared conversation's list stays kept for a later resume.
-- **`/resume`:** work stops and the pane closes; on the next turn or command the resumed conversation's list comes back
+- **`/resume`:** work stops; on the next turn or command the resumed conversation's list comes back
   (empty if it had none).
 - **`/branch`:** no event of its own. The mod sees a changed session id on the next turn or command, drops a fork in
   flight and carries the list over to the branch (the branch has the same transcript).
@@ -74,13 +74,13 @@ same pane ("Pinned diagrams"), drawn instead of being left as text.
 ## Summary atom
 
 `{ plugin: 'bws-diagram', key: 'summary' }`: nothing with an empty list, `diagram drawing` (busy) while a fork draws,
-`N diagrams, M pinned` (ok), `diagram failed` (warn) after a failure, until the next drawing or until you close the pane. bws-cockpit lists
+`N diagrams, M pinned` (ok), `diagram failed` (warn) after a failure, until the next drawing or until you dismiss it in the tab. bws-cockpit lists
 `bws-diagram` in its default `modSummaries`.
 
 ## Capabilities used
 
 `turn.complete` (pins inline; the classify-then-fork work starts after it returns, through `$.clock.after`),
-`session.start`, `session.end`, `command.run` (`/diagram`), `ui.render` and `ui.close` for the pane,
+`session.start`, `session.end`, `command.run` (`/diagram`), `state.set` on bws-cockpit's `tabEvent` (its tab's buttons),
 `$.model.classify`, `$.model.fork`, `$.model.complete` (only as the fork's fallback), `$.session.*` (id, messages,
 surfaces, model), `$.state`, `$.store` (its own key `boards`), `$.fs.write` (only the `dumpFile`, when set), `$.ui.log`
 (debug only, and the diagram into the transcript when its pane is not placed), `$.ui.toast`. It makes no network calls of its own, runs no processes and never touches `~/.claude`.

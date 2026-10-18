@@ -148,8 +148,9 @@ const drafts = new Map<number, string>()
 const tabDrafts = new Map<string, string>()
 // Counts this process's tab events, so a mod sees each press as a new write.
 let tabEventSeq = 0
-// Each mod's last `raise` seen, so a rise brings its tab up (the first value seen is the baseline).
+// Each mod's last `raise` and `show` seen, so a rise brings its tab up (the first value seen is the baseline).
 const lastRaise = new Map<KnownMod, number>()
+const lastShow = new Map<KnownMod, number>()
 // The shelf file option, read once in register.
 let shelfOption = ''
 // bws-board's last asks-for-this-session count, so a rise raises the Board tab (undefined until its first write).
@@ -914,10 +915,18 @@ async function sendTabEvent($: EngineInterface, plugin: KnownMod, id: string, va
 // A mod rewrote its tab: a rise in `raise` is news, which brings its tab up as board asks do.
 async function noteModTab($: EngineInterface, o: Options, name: KnownMod, value: unknown) {
   if (!o.mods.includes(name)) return
-  const r = typeof value === 'object' && value !== null && typeof (value as { raise?: unknown }).raise === 'number' ? (value as { raise: number }).raise : 0
+  const num = (k: 'raise' | 'show') => {
+    const v = typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[k] : undefined
+    return typeof v === 'number' ? v : 0
+  }
+  const shownBefore = lastShow.get(name)
+  lastShow.set(name, num('show'))
   const before = lastRaise.get(name)
-  lastRaise.set(name, r)
-  if (isRaised(before, r)) await raise($, modKey(name))
+  lastRaise.set(name, num('raise'))
+  // Asked for by the person (the mod's own command): switch to it even if they had closed the dashboard. The mod opens
+  // the pane itself from that command, so placement is theirs.
+  if (isRaised(shownBefore, num('show'))) await update($, dash, () => ({ tab: modKey(name), isClosedByPerson: false }))
+  else if (isRaised(before, num('raise'))) await raise($, modKey(name))
 }
 
 // Opened by the person (a command, a bar button): placed at any width. Focus is granted only to a fresh open over an
@@ -1569,7 +1578,7 @@ export const register: Register = (on, options) => {
       const draw = (n: TabNode, k: string): RenderChildren => {
         if (n.kind === 'text') {
           return (
-            <Text key={k} wrap="wrap" bold={n.isBold === true} dimColor={n.isDim === true} {...(n.color ? { color: TAB_COLOR[n.color] } : {})}>
+            <Text key={k} wrap={n.isClipped ? 'truncate-end' : 'wrap'} bold={n.isBold === true} dimColor={n.isDim === true} {...(n.color ? { color: TAB_COLOR[n.color] } : {})}>
               {n.text}
             </Text>
           )

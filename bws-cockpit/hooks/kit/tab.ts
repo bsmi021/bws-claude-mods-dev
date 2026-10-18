@@ -7,6 +7,8 @@
 // `state.set` hook filtered to its own plugin name. `raise` counts up when the mod has news: cockpit then brings the
 // tab up (unless the person is using the pane or closed it). A mod that needs the dashboard at once, as the person's
 // own open, sets `raise` and calls `$.ui.open({ id: DASHBOARD })` itself: pane drawing matches by id across plugins.
+// `show` counts up when the person asked for the tab (a mod's own command): cockpit switches to it even if they had
+// closed the dashboard; the mod opens the pane itself from that command, so the open is the person's.
 
 export const DASHBOARD = 'dashboard'
 
@@ -19,7 +21,7 @@ const COLORS: readonly TabColor[] = ['ok', 'warn', 'bad', 'accent']
 export type TabButton = { id: string; label: string; isPrimary?: boolean }
 
 export type TabNode =
-  | { kind: 'text'; text: string; color?: TabColor; isDim?: boolean; isBold?: boolean }
+  | { kind: 'text'; text: string; color?: TabColor; isDim?: boolean; isBold?: boolean; isClipped?: boolean }
   | { kind: 'buttons'; items: TabButton[] }
   | { kind: 'input'; id: string; placeholder: string }
   | { kind: 'raster'; columns: number; rows: number; cells: string }
@@ -31,6 +33,7 @@ export type ModTab = {
   tone: TabTone // colours the badge; 'idle' draws it dim
   body: TabNode[]
   raise: number // counts up for news that should bring the tab up
+  show?: number // counts up when the person asked for this tab
 }
 
 // A press (`id`, no value) or a submitted input (`id` and its text). `seq` counts up per cockpit process.
@@ -47,17 +50,16 @@ const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max
 const line = (v: unknown, max: number) => str(v, max * 2).replace(/\s+/g, ' ').trim().slice(0, max)
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const color = (v: unknown): TabColor | undefined => (COLORS.includes(v as TabColor) ? (v as TabColor) : undefined)
+const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 const id = (v: unknown) => (typeof v === 'string' && /^[\w:.-]{1,64}$/.test(v) ? v : '')
 
-export const makeTab = (title: string, body: TabNode[], o: { badge?: string; tone?: TabTone; raise?: number } = {}): ModTab => ({
-  title: line(title, MAX_TITLE),
-  badge: line(o.badge ?? '', MAX_BADGE),
-  tone: o.tone ?? 'idle',
-  body,
-  raise: o.raise ?? 0,
-})
+export const makeTab = (title: string, body: TabNode[], o: { badge?: string; tone?: TabTone; raise?: number; show?: number } = {}): ModTab => {
+  const t: ModTab = { title: line(title, MAX_TITLE), badge: line(o.badge ?? '', MAX_BADGE), tone: o.tone ?? 'idle', body, raise: o.raise ?? 0 }
+  if (o.show) t.show = o.show
+  return t
+}
 
-export const text = (t: string, o: { color?: TabColor; isDim?: boolean; isBold?: boolean } = {}): TabNode => ({ kind: 'text', text: t, ...o })
+export const text = (t: string, o: { color?: TabColor; isDim?: boolean; isBold?: boolean; isClipped?: boolean } = {}): TabNode => ({ kind: 'text', text: t, ...o })
 export const buttons = (...items: TabButton[]): TabNode => ({ kind: 'buttons', items })
 export const card = (title: string, body: TabNode[], c?: TabColor): TabNode => (c ? { kind: 'card', title, color: c, body } : { kind: 'card', title, body })
 
@@ -68,13 +70,15 @@ export function parseTab(v: unknown): ModTab | null {
   const title = line(v.title, MAX_TITLE)
   if (!title) return null
   const budget = { nodes: MAX_NODES, cells: MAX_CELLS }
-  return {
+  const t: ModTab = {
     title,
     badge: line(v.badge, MAX_BADGE),
     tone: TAB_TONES.includes(v.tone as TabTone) ? (v.tone as TabTone) : 'idle',
     body: parseNodes(v.body, budget, 0),
-    raise: typeof v.raise === 'number' && Number.isFinite(v.raise) ? v.raise : 0,
+    raise: count(v.raise),
   }
+  if (count(v.show) > 0) t.show = count(v.show)
+  return t
 }
 
 function parseNodes(v: unknown, budget: { nodes: number; cells: number }, depth: number): TabNode[] {
@@ -99,6 +103,7 @@ function parseNode(n: unknown, budget: { nodes: number; cells: number }, depth: 
     if (c) node.color = c
     if (n.isDim === true) node.isDim = true
     if (n.isBold === true) node.isBold = true
+    if (n.isClipped === true) node.isClipped = true
     return node
   }
   if (n.kind === 'buttons' && Array.isArray(n.items)) {

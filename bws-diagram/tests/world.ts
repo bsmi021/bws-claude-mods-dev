@@ -29,6 +29,13 @@ export const CHAT_ROWS = [
   { role: 'assistant', text: 'It holds mods.', toolUses: [] },
 ]
 
+// The Diagram tab as published (bws-kit/tab.ts ModTab), as much of it as the tests read.
+type TabNode =
+  | { kind: 'text'; text: string; isClipped?: boolean; isBold?: boolean; isDim?: boolean; color?: string }
+  | { kind: 'buttons'; items: { id: string; label: string }[] }
+  | { kind: 'card' | 'input' | 'raster' }
+export type Tab = { title: string; badge: string; tone: string; raise: number; show?: number; body: TabNode[] }
+
 export type Fork = string | { isAnswered: false; reason: string } | 'throw' | 'defer'
 
 export type World = {
@@ -39,6 +46,8 @@ export type World = {
   session?: string
   store?: Record<string, unknown>
   placed?: boolean
+  // bws-cockpit loaded (its /dashboard command listed): the Diagram tab shows diagrams. Default true.
+  cockpit?: boolean
 }
 
 const norm = (p: string) => p.replace(/\\/g, '/')
@@ -56,6 +65,7 @@ export function world(on: On, w: World = {}) {
     logs: [] as { text: string; to?: string }[],
     toasts: [] as string[],
     commands: [] as string[],
+    tabs: [] as Tab[],
   }
   const who = { session: w.session ?? 'session-aaaa-1111', rows: w.rows ?? BIG_ROWS }
   let release: (text: string) => void = () => undefined
@@ -109,13 +119,22 @@ export function world(on: On, w: World = {}) {
     seen.logs.push({ text: e.text, to: e.to })
     return { value: undefined as never }
   })
+  on('command.list', () => ({ value: (w.cockpit === false ? [] : [{ name: 'dashboard' }]) as never }))
+  on('state.set', { plugin: 'bws-diagram', key: 'tab' }, ($, e, next) => {
+    seen.tabs.push(JSON.parse(JSON.stringify(e.value)) as Tab)
+    return next(e)
+  })
   on('turn.complete', () => ({ text: '' }) as never)
   on('session.end', ($, e) => ({ sessionId: e.sessionId }))
   const dump = () => {
     const t = files.get(DUMP)
     return t === undefined ? null : (JSON.parse(t) as { entries: { origin: string; title: string; diagram: unknown; source: string }[]; shown: number; phase: string; note: string })
   }
-  return { seen, clock, files, store, who, dump, release: (text: string) => release(text) }
+  // The tab as last published, its raise count and its lines of text.
+  const last = () => seen.tabs[seen.tabs.length - 1]
+  const raised = () => last()?.raise ?? 0
+  const lines = (): string[] => (last()?.body ?? []).flatMap(n => (n.kind === 'text' ? [n.text] : n.kind === 'buttons' ? n.items.map(b => `[${b.label}]`) : []))
+  return { seen, clock, files, store, who, dump, last, raised, lines, release: (text: string) => release(text) }
 }
 
 export const TURN = { answer: 'Done: the loader is its own module now.', durationMs: 95_000, isAborted: false, turnId: 't1', reason: 'answer' }
