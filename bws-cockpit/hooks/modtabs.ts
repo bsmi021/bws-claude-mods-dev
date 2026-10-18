@@ -5,7 +5,7 @@
 import { parseSummary } from './kit/summary'
 import type { SummaryState } from './kit/summary'
 import { makeTab, parseTab, text } from './kit/tab'
-import type { ModTab } from './kit/tab'
+import type { ModTab, TabNode } from './kit/tab'
 
 // Atoms are typed per plugin, so the list the option can name is closed.
 export const KNOWN_MODS = [
@@ -83,3 +83,26 @@ export const tabLabel = (t: ModTab) => (t.badge ? `${t.title} ${t.badge}` : t.ti
 
 // News from a mod: its `raise` counted up since the last one seen. The first value seen is the baseline, not news.
 export const isRaised = (before: number | undefined, after: number) => before !== undefined && after > before
+
+// The key cockpit draws a tab's focused element under (`<plugin>-<id>`: the first input or button marked isFocused,
+// cards included), or null. When a mod replaces the element that held the ring (a chat's Ask box re-keyed after each
+// question, a working tab's Cancel giving way to Send), the old element and the ring with it are gone; cockpit, which
+// draws the dashboard, moves the ring to the new key.
+export function focusKeyOf(name: KnownMod, tab: ModTab | null): string | null {
+  const find = (nodes: readonly TabNode[]): string | null => {
+    for (const n of nodes) {
+      if (n.kind === 'input' && n.isFocused === true) return `${name}-${n.id}`
+      if (n.kind === 'buttons') {
+        const b = n.items.find(x => x.isFocused === true)
+        if (b !== undefined) return `${name}-${b.id}`
+      }
+      if (n.kind === 'card') {
+        const inner = find(n.body)
+        if (inner !== null) return inner
+      }
+    }
+    return null
+  }
+  return tab === null ? null : find(tab.body)
+}
+

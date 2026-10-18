@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 import { ROOM, STEP } from '../hooks/tab'
-import { mountChat, recordTabs } from './tabview'
+import { lastTab, mountChat, recordTabs } from './tabview'
 
 const NOW = Date.parse('2026-10-12T10:00:00')
 const NL = String.fromCharCode(10)
@@ -105,8 +105,9 @@ describe('/btw', () => {
     const r = await run($, 'btw', 'what mod is this?')
     expect(r.text ?? '').toBe('')
     await clock.advance(100)
-    // opened inside the command, asking for the keys at once over the empty box (counts as asked: any width, and granted)
-    expect(seen.opened).toEqual([{ id: 'dashboard', focus: true }])
+    // bws-cockpit opens the dashboard with the keys, inside this command (its state.set hook is awaited): the mod opens nothing
+    expect(seen.opened).toEqual([])
+    expect(lastTab()?.open).toBe(1)
     expect(seen.spawns).toHaveLength(1)
     const argv = (seen.spawns[0]?.argv ?? []).join(' ')
     expect(argv).toContain('claude -p what mod is this? --resume main-session-id --fork-session --session-id ')
@@ -136,7 +137,7 @@ describe('/btw', () => {
     const { seen, clock } = world(on)
     await run($, 'btw', '')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(1)
+    expect(lastTab()?.open).toBe(1)
     expect(seen.spawns).toHaveLength(0)
   })
 
@@ -165,7 +166,7 @@ describe('/fork and /side', () => {
     const { seen, clock } = world(on)
     await run($, 'fork')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(1)
+    expect(lastTab()?.open).toBe(1)
     expect(seen.spawns).toHaveLength(0)
     const ui = await mountChat($ as never)
     expect(await ui.find({ type: 'Text', text: /forked from main-ses/ })).toBeDefined()
@@ -176,7 +177,7 @@ describe('/fork and /side', () => {
     const { seen, clock } = world(on)
     await run($, 'branch')
     await clock.advance(100)
-    expect(seen.opened).toHaveLength(1)
+    expect(lastTab()?.open).toBe(1)
   })
 
   test('/fork native hands the command back to the built-in with the rest of the arguments', async ($, on) => {
@@ -209,36 +210,35 @@ describe('/fork and /side', () => {
 })
 
 describe('keyboard focus', () => {
-  test('/btw asks for the keys once, and not again when they are granted', async ($, on) => {
+  test('each command asks bws-cockpit once to open the dashboard with the keys; the mod opens and refocuses nothing itself', async ($, on) => {
     const { seen, clock } = world(on)
     await run($, 'btw', 'q')
     await clock.advance(1000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1) // granted at once, so not asked again
-    // (the ring move itself, $.ui.focus, is answered by the engine before a test can see it: it needs a surface holding the keys)
-    expect(seen.spawns).toHaveLength(1)
-  })
-
-  test('/fork does the same', async ($, on) => {
-    const { seen, clock } = world(on)
+    expect(lastTab()?.open).toBe(1)
     await run($, 'fork')
     await clock.advance(1000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
+    expect(lastTab()?.open).toBe(2)
+    expect(seen.opened).toEqual([])
+    expect(seen.focused).toEqual([])
   })
 
-  test('when the engine keeps the keys with the prompt, the request is repeated a few times after the command returns', async ($, on) => {
-    const { seen, clock } = world(on, { grantsFocus: false })
+  test('the Ask box is marked focused, and is a new one after each question (cockpit moves the ring to it)', async ($, on) => {
+    const { clock } = world(on)
+    const inputs = () => (lastTab()?.body ?? []).flatMap(n => (n.kind === 'input' ? [n] : []))
     await run($, 'fork')
-    await clock.advance(1000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(4) // the open itself, then 10, 250 and 800 ms
-    await clock.advance(5000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(4) // and then stops
+    expect(inputs()).toEqual([{ kind: 'input', id: 'ask-0', placeholder: 'ask in the side chat, Enter sends', isFocused: true }])
+    await run($, 'btw', 'q')
+    await clock.advance(200)
+    expect(inputs().map(n => [n.id, n.isFocused])).toEqual([['ask-1', true]])
   })
 
-  test('a command asks for the keys once (its text is still in the box while it runs); the retries leave a typed box alone', async ($, on) => {
-    const { seen, clock } = world(on, { box: 'half a thought', grantsFocus: false })
-    await run($, 'fork')
-    await clock.advance(1000)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
+  test('with text in the prompt box the footer button shows the tab without asking for the keys', async ($, on) => {
+    const { seen } = world(on, { box: 'half a thought' })
+    const ui = await $.ui.mount(footer())
+    await ui.press({ key: 'side' })
+    await ui.unmount()
+    expect(lastTab()?.open).toBeUndefined()
+    expect(seen.opened).toEqual([{ id: 'dashboard', focus: undefined }])
   })
 })
 
@@ -320,19 +320,16 @@ describe('Stop', () => {
     await ui.unmount()
   })
 
-  test('Stop takes the keyboard back for the Ask box even though the pane still reports focused, and asks again as it settles', async ($, on) => {
-    // the real engine keeps saying isFocused while the keys are on the prompt (the Stop button that held them is gone)
-    const { seen, clock } = world(on, { hold: true, grantsFocus: false, alwaysFocused: true })
+  test('Stop has no hotkey (typing must reach the Ask box) and the Ask box stays the focused element', async ($, on) => {
+    const { clock } = world(on, { hold: true })
     await run($, 'btw', 'think hard')
     await clock.advance(200)
-    const asked = () => seen.opened.filter(o => o.focus === true).length
-    expect(asked()).toBe(1) // the open's own request; the pane then said it was focused, so nothing more
+    const stop = (lastTab()?.body ?? []).flatMap(n => (n.kind === 'buttons' ? n.items : [])).find(b => b.id === 'stop')
+    expect(stop).toEqual({ id: 'stop', label: 'Stop' })
     const ui = await mountChat($ as never)
     await ui.press({ key: 'stop' })
     await ui.unmount()
-    expect(asked()).toBe(2) // Stop's own request, with no clock time passed
-    await clock.advance(1000)
-    expect(asked()).toBe(5) // and again at 10, 250 and 800 ms
+    expect((lastTab()?.body ?? []).some(n => n.kind === 'input' && n.isFocused === true)).toBe(true)
   })
 
   test('after Stop the next message resumes the same fork (it exists once the child said hello)', async ($, on) => {
@@ -408,9 +405,9 @@ describe('hotkey', () => {
     const ui = await $.ui.mount(footer())
     expect(seen.opened).toEqual([])
     await ui.press({ key: 'side' })
-    expect(seen.opened[0]).toEqual({ id: 'dashboard', focus: true })
+    expect(lastTab()?.open).toBe(1) // cockpit opens it with the keys
     await clock.advance(100)
-    expect(seen.opened.filter(o => o.focus === true)).toHaveLength(1)
+    expect(seen.opened).toEqual([])
     expect(seen.spawns).toEqual([]) // nothing is asked of the model by opening it
     await ui.unmount()
   })

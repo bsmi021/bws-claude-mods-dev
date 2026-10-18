@@ -17,7 +17,7 @@ import {
   STEPS,
   STEPS_THEN_CHOICE,
 } from './replies'
-import { mountChat, mountTree } from './tabview'
+import { lastTab, mountChat, mountTree } from './tabview'
 import { DUMP, resumeOf, run, settle, sideIdOf, treeWorld } from './treeworld'
 
 const labels = (r: ReturnType<typeof parseOptions>) => r?.options.map(o => `${o.label}|${o.text}`)
@@ -110,8 +110,7 @@ describe('FR-DT-02: /explain opens the tree at its root', () => {
     expect(r).toEqual({})
     const ui = await mountTree($ as never)
     await w.clock.advance(900)
-    expect(w.seen.opened[0]).toEqual({ id: 'dashboard', focus: true }) // asked inside the command: placed at any width, with the keys
-    expect(w.seen.opened.some(o => o.id === 'dashboard' && o.focus === true)).toBe(true)
+    expect(lastTab()?.open).toBe(1) // bws-cockpit opens it inside the command: any width, with the keys
     expect(w.seen.spawns).toHaveLength(0) // nothing explored until asked
     expect(await ui.find({ type: 'Text', text: 'Which would you like me to go with?' })).toBeDefined()
     expect((await ui.find({ key: 'opt-0' }))?.text).toContain('1. SQLite')

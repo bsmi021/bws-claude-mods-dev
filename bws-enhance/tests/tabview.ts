@@ -4,7 +4,7 @@
 import type { On } from 'claude-code'
 
 type Node = { kind: 'text'; text: string } | { kind: 'buttons'; items: { id: string; label: string; hotkey?: string }[] } | { kind: 'card' | 'input' | 'raster' }
-export type Tab = { title: string; badge: string; tone: string; raise: number; show?: number; body: Node[] }
+export type Tab = { title: string; badge: string; tone: string; raise: number; show?: number; open?: number; body: Node[] }
 
 let tabs: Tab[] = []
 
@@ -25,9 +25,10 @@ export async function mountTab($: Dollar) {
   const texts = (t?.body ?? []).flatMap(n => (n.kind === 'text' ? [n.text] : []))
   const buttons = (t?.body ?? []).flatMap(n => (n.kind === 'buttons' ? n.items : []))
   return {
-    find: async (q: { type?: string; text?: RegExp; key?: string }) => {
+    find: async (q: { type?: string; text?: string | RegExp; key?: string }) => {
       if (q.key !== undefined) return buttons.find(b => b.id === q.key)
-      const hit = texts.find(x => (q.text ? q.text.test(x) : true))
+      const want = q.text
+      const hit = texts.find(x => (want === undefined ? true : typeof want === 'string' ? want === x : want.test(x)))
       return hit === undefined ? undefined : { text: hit }
     },
     press: async (target: { key: string }) => {

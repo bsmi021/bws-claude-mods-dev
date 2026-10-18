@@ -1,0 +1,5 @@
+❯ Reply with the single word "purple" and nothing else. Make no changes to any files in the project at <project_root>. There is no code to build or test here, so no
+  check is needed beyond confirming the reply is exactly "purple".
+● purple
+│ Nothing to enhance. /enhance <rough prompt>, or ✦ enhance under the prompt box.                                                                                        │
+❯

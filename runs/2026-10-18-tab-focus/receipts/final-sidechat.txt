@@ -1,0 +1,55 @@
+PS C:\Projects\bws.mods.claude-code> pwsh -NoProfile -File 'C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91
+\scratchpad\f8.ps1'
+ ▐▛███▛█ClaudeCodev2.1.302
+▝▜██████▀Haiku5.5·ClaudeMax
+ ▝▝▝▝~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest
+
+
+› Prompt from the bws-enhance plugin
+❯ Reply with only the word "purple" and make no other changes. Do not open, create, or edit any files in the project at
+  C:\Users\bsmi0\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\4a9d9f07-06a1-4a7e-9bd6-72052b941f91\scratchpad\boardtest. This is a plain text reply, so no
+  check is needed beyond confirming the reply is exactly "purple".
+
+● purple
+
+✻ Brewed for 2s · done 1:57 PM
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────✕─╮
+│ 1: Assumptions 2: Shelf 3: Board 4: Enhance [ Side chat 1 ]                                                                                                            │
+│ Side chat · 1                                                                                                                                         │
+│ Side chat · forked from 333e3656                                                                                                                                       │
+│ [ New fork ] [ Refresh ] [ Pull ] [ Close ]                                                                                                                            │
+│ [ ● default ] [ opus ] [ sonnet ] [ haiku ]                                                                                                                            │
+│ model: default · main: in sync                                                                                                                                         │
+│ You                                                      │
+│one word: are you there?      │
+│ Claude                                                                                                                                                                 │
+│ Yes.                                                                                                                                                  │
+│ [ ↩ Send to main ]                                    │
+│ duringafter  ⏎ submit                                                                                                                                                  │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+no run  ● UE ×2  ● VRAM 6.6/8.0 GB  cache 59m                         [-]
+do h: handoff i: idea e: enhance   open 2: dash a: asm s: shelf    3: hide
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ auto mode on (shift+tab to cycle)✦ enhance◨ side
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

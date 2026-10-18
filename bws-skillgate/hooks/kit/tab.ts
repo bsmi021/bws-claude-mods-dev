@@ -9,6 +9,9 @@
 // own open, sets `raise` and calls `$.ui.open({ id: DASHBOARD })` itself: pane drawing matches by id across plugins.
 // `show` counts up when the person asked for the tab (a mod's own command): cockpit switches to it even if they had
 // closed the dashboard; the mod opens the pane itself from that command, so the open is the person's.
+// `open` counts up instead when the mod wants cockpit to open it, from the same command: cockpit then owns the pane it
+// draws, so it can move the ring and scroll it (the engine lets only the opener do that, and only onto elements it
+// drew). A tab that changes its focused element (isFocused) needs this.
 
 export const DASHBOARD = 'dashboard'
 
@@ -19,7 +22,8 @@ export type TabColor = 'ok' | 'warn' | 'bad' | 'accent'
 const COLORS: readonly TabColor[] = ['ok', 'warn', 'bad', 'accent']
 
 // `hotkey`: one letter a-z that presses it while the dashboard has the keyboard (digits pick tabs).
-export type TabButton = { id: string; label: string; isPrimary?: boolean; hotkey?: string }
+// `isFocused`: the ring starts on it, and moves to it when it replaces the button that held it.
+export type TabButton = { id: string; label: string; isPrimary?: boolean; hotkey?: string; isFocused?: boolean }
 
 export type TabNode =
   | { kind: 'text'; text: string; color?: TabColor; isDim?: boolean; isBold?: boolean; isClipped?: boolean }
@@ -36,6 +40,7 @@ export type ModTab = {
   raise: number // counts up for news that should bring the tab up
   show?: number // counts up when the person asked for this tab
   isPinnedEnd?: boolean // keep the dashboard scrolled to the end while this tab is shown (a chat's newest rows)
+  open?: number // counts up when the person's command asks cockpit to open the dashboard on this tab, with the keys
 }
 
 // A press (`id`, no value) or a submitted input (`id` and its text). `seq` counts up per cockpit process.
@@ -56,9 +61,10 @@ const color = (v: unknown): TabColor | undefined => (COLORS.includes(v as TabCol
 const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 const id = (v: unknown) => (typeof v === 'string' && /^[\w:.-]{1,64}$/.test(v) ? v : '')
 
-export const makeTab = (title: string, body: TabNode[], o: { badge?: string; tone?: TabTone; raise?: number; show?: number; isPinnedEnd?: boolean } = {}): ModTab => {
+export const makeTab = (title: string, body: TabNode[], o: { badge?: string; tone?: TabTone; raise?: number; show?: number; open?: number; isPinnedEnd?: boolean } = {}): ModTab => {
   const t: ModTab = { title: line(title, MAX_TITLE), badge: line(o.badge ?? '', MAX_BADGE), tone: o.tone ?? 'idle', body, raise: o.raise ?? 0 }
   if (o.show) t.show = o.show
+  if (o.open) t.open = o.open
   if (o.isPinnedEnd) t.isPinnedEnd = true
   return t
 }
@@ -82,6 +88,7 @@ export function parseTab(v: unknown): ModTab | null {
     raise: count(v.raise),
   }
   if (count(v.show) > 0) t.show = count(v.show)
+  if (count(v.open) > 0) t.open = count(v.open)
   if (v.isPinnedEnd === true) t.isPinnedEnd = true
   return t
 }
@@ -117,6 +124,7 @@ function parseNode(n: unknown, budget: { nodes: number; cells: number }, depth: 
       if (!isObj(b) || !id(b.id) || !line(b.label, MAX_LABEL)) continue
       const item: TabButton = { id: id(b.id), label: line(b.label, MAX_LABEL) }
       if (b.isPrimary === true) item.isPrimary = true
+      if (b.isFocused === true) item.isFocused = true
       if (typeof b.hotkey === 'string' && /^[a-z]$/.test(b.hotkey)) item.hotkey = b.hotkey
       items.push(item)
     }

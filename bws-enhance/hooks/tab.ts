@@ -13,32 +13,33 @@ export const actionOf = (word: string): Action | null => {
   return ACTIONS.includes(w as Action) ? (w as Action) : null
 }
 
-export function enhanceTab(v: View, mode: BounceMode, o: { show: number }): ModTab {
-  const opts = (badge: string, tone: ModTab['tone']) => ({ badge, tone, show: o.show })
+export function enhanceTab(v: View, mode: BounceMode, o: { show: number; open: number }): ModTab {
+  const opts = (badge: string, tone: ModTab['tone']) => ({ badge, tone, show: o.show, open: o.open })
   const bounceLine = text(`Vague-prompt check (/bounce): ${mode}.`, { isDim: true })
   if (v.phase === 'working') {
-    return makeTab('Enhance', [text('✦ Enhancing…', { color: 'accent' }), text(v.original, { isDim: true, isClipped: true }), buttons({ id: 'cancel', label: 'Cancel', hotkey: 'c' })], opts('…', 'busy'))
+    return makeTab('Enhance', [text('✦ Enhancing…', { color: 'accent' }), text(v.original, { isDim: true, isClipped: true }), buttons({ id: 'cancel', label: 'Cancel', hotkey: 'c', isFocused: true })], opts('…', 'busy'))
   }
   if (v.phase === 'error') {
-    return makeTab('Enhance', [text(`✦ Enhance failed: ${v.note}`, { color: 'bad' }), buttons({ id: 'dismiss', label: 'Dismiss', hotkey: 'd' })], opts('!', 'bad'))
+    return makeTab('Enhance', [text(`✦ Enhance failed: ${v.note}`, { color: 'bad' }), buttons({ id: 'dismiss', label: 'Dismiss', hotkey: 'd', isFocused: true })], opts('!', 'bad'))
   }
   if (v.phase === 'bounced') {
     const body: TabNode[] = [
       text(`✦ Held as vague: ${v.note}`, { color: 'warn' }),
       ...(mode === 'warn' ? [text('Enter in the box sends it as it is.', { isDim: true })] : []),
-      buttons({ id: 'sendanyway', label: 'Send anyway', hotkey: 's', isPrimary: true }, { id: 'enhance', label: 'Enhance', hotkey: 'e' }, { id: 'edit', label: 'Edit', hotkey: 'x' }),
+      buttons({ id: 'sendanyway', label: 'Send anyway', hotkey: 's', isPrimary: true, isFocused: true }, { id: 'enhance', label: 'Enhance', hotkey: 'e' }, { id: 'edit', label: 'Edit', hotkey: 'x' }),
     ]
     return makeTab('Enhance', body, opts('held', 'warn'))
   }
   if (v.phase === 'idle') {
     return makeTab('Enhance', [text('Nothing to enhance. /enhance <rough prompt>, or ✦ enhance under the prompt box.', { isDim: true }), bounceLine], opts('', 'idle'))
   }
+  const isInTab = !v.isFilled && v.note === 'in-tab'
   const body: TabNode[] = [
-    text(v.isFilled ? '✦ The enhanced prompt is in the box.' : '✦ Enhanced prompt ready. The box had other text, so it was left alone.'),
-    text('s send · r revert · d dismiss (with the dashboard focused) · Esc to edit in the box', { isDim: true }),
+    text(v.isFilled ? '✦ The enhanced prompt is in the box.' : isInTab ? '✦ Enhanced prompt ready:' : '✦ Enhanced prompt ready. The box had other text, so it was left alone.'),
+    text(isInTab ? 's send · p put it in the box to edit · d dismiss' : v.isFilled ? 's send · r revert · d dismiss (with the dashboard focused) · Esc to edit in the box' : 's send · p put in box · d dismiss', { isDim: true }),
     ...(v.isFilled ? [] : [text(v.enhanced)]),
     buttons(
-      { id: 'send', label: 'Send', hotkey: 's', isPrimary: true },
+      { id: 'send', label: 'Send', hotkey: 's', isPrimary: true, isFocused: true },
       v.isFilled ? { id: 'revert', label: 'Revert', hotkey: 'r' } : { id: 'put', label: 'Put in box', hotkey: 'p' },
       { id: 'dismiss', label: 'Dismiss', hotkey: 'd' },
     ),

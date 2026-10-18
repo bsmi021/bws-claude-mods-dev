@@ -72,7 +72,7 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     expect((await run($, 'explain', 'decide')).text).toBe('Nothing to decide yet: explore an option first.')
     await w.clock.advance(100)
     expect(w.seen.sent).toEqual([])
-    expect(w.seen.closed).toEqual([]) // the tree and its fork are still there
+    expect(w.seen.closed.filter(id => id !== 'dashboard')).toEqual([]) // the tree and its fork are still there (the only close is /explain's fresh open of the dashboard)
     await run($, 'explain', 'close') // ends the fork, so nothing writes after the test
     w.releaseAll()
     await settle(w.clock)
@@ -85,6 +85,6 @@ describe('FR-DT-05: Decide sends a one-paragraph summary into the main session',
     expect((await run($, 'explain', 'decide')).text).toBe('Nothing to decide yet: explore an option first.')
     await w.clock.advance(100)
     expect(w.seen.sent).toEqual([])
-    expect(w.seen.closed).toEqual([])
+    expect(w.seen.closed.filter(id => id !== 'dashboard')).toEqual([]) // only /explain's fresh open of the dashboard closed anything
   })
 })

@@ -32,7 +32,7 @@ describe('tab', () => {
   })
 
   test('clipped text and the show counter survive the parse; show is left out at zero', () => {
-    const t = makeTab('Diagram', [text('──┐', { isClipped: true })], { raise: 2, show: 5, isPinnedEnd: true })
+    const t = makeTab('Diagram', [text('──┐', { isClipped: true })], { raise: 2, show: 5, open: 3, isPinnedEnd: true })
     expect(parseTab(JSON.parse(JSON.stringify(t)))).toEqual(t)
     expect(Object.keys(makeTab('X', [])).includes('show')).toBe(false)
     expect(parseTab({ title: 'X', show: 'many' })?.show).toBeUndefined()
@@ -40,8 +40,8 @@ describe('tab', () => {
   })
 
   test('a button hotkey is one letter; anything else is dropped', () => {
-    const t = parseTab({ title: 'X', body: [{ kind: 'buttons', items: [{ id: 'a', label: 'A', hotkey: 's' }, { id: 'b', label: 'B', hotkey: '1' }, { id: 'c', label: 'C', hotkey: 'Enter' }] }] })
-    expect(t?.body).toEqual([{ kind: 'buttons', items: [{ id: 'a', label: 'A', hotkey: 's' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C' }] }])
+    const t = parseTab({ title: 'X', body: [{ kind: 'buttons', items: [{ id: 'a', label: 'A', hotkey: 's', isFocused: true }, { id: 'b', label: 'B', hotkey: '1' }, { id: 'c', label: 'C', hotkey: 'Enter' }] }] })
+    expect(t?.body).toEqual([{ kind: 'buttons', items: [{ id: 'a', label: 'A', hotkey: 's', isFocused: true }, { id: 'b', label: 'B' }, { id: 'c', label: 'C' }] }])
   })
 
   test('events: a press and a submit; junk is null', () => {

@@ -41,9 +41,9 @@ import {
   toWin,
 } from './projects'
 import type { ProjectEntry, ProjectIndex } from './projects'
-import { DEFAULT_MODS, MOD_TITLE, isRaised, modKey, modOfKey, modTabs, parseMods, tabLabel } from './modtabs'
+import { DEFAULT_MODS, MOD_TITLE, focusKeyOf, isRaised, modKey, modOfKey, modTabs, parseMods, tabLabel } from './modtabs'
 import type { KnownMod, ModTabView } from './modtabs'
-import { tabText } from './kit/tab'
+import { parseTab, tabText } from './kit/tab'
 import type { TabNode } from './kit/tab'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from './cacheclock'
@@ -152,6 +152,9 @@ let tabEventSeq = 0
 // Each mod's last `raise` and `show` seen, so a rise brings its tab up (the first value seen is the baseline).
 const lastRaise = new Map<KnownMod, number>()
 const lastShow = new Map<KnownMod, number>()
+const lastOpen = new Map<KnownMod, number>()
+// Each mod's focused input key as last drawn, so a re-keyed input gets the ring back (focusKeyOf).
+const lastFocusKey = new Map<KnownMod, string | null>()
 // The shelf file option, read once in register.
 let shelfOption = ''
 // bws-board's last asks-for-this-session count, so a rise raises the Board tab (undefined until its first write).
@@ -917,7 +920,7 @@ async function sendTabEvent($: EngineInterface, plugin: KnownMod, id: string, va
 // A mod rewrote its tab: a rise in `raise` is news, which brings its tab up as board asks do.
 async function noteModTab($: EngineInterface, o: Options, name: KnownMod, value: unknown) {
   if (!o.mods.includes(name)) return
-  const num = (k: 'raise' | 'show') => {
+  const num = (k: 'raise' | 'show' | 'open') => {
     const v = typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[k] : undefined
     return typeof v === 'number' ? v : 0
   }
@@ -927,12 +930,36 @@ async function noteModTab($: EngineInterface, o: Options, name: KnownMod, value:
   lastRaise.set(name, num('raise'))
   // Asked for by the person (the mod's own command): switch to it even if they had closed the dashboard. The mod opens
   // the pane itself from that command, so placement is theirs.
-  if (isRaised(shownBefore, num('show'))) await update($, dash, () => ({ tab: modKey(name), isClosedByPerson: false }))
+  const openBefore = lastOpen.get(name)
+  lastOpen.set(name, num('open'))
+  if (isRaised(openBefore, num('open'))) await openForMod($, modKey(name))
+  else if (isRaised(shownBefore, num('show'))) await update($, dash, () => ({ tab: modKey(name), isClosedByPerson: false }))
   else if (isRaised(before, num('raise'))) await raise($, modKey(name))
   // A tab that asks for it (a chat) keeps the dashboard at its end while it is the one shown, so its newest rows and its
   // input stay in view however short the pane is.
   const isPinned = typeof value === 'object' && value !== null && (value as { isPinnedEnd?: unknown }).isPinnedEnd === true
-  if (isPinned && (await read($, dash)).tab === modKey(name)) $.clock.after(20, () => void settle($.ui.scroll({ in: DASH, to: 'end' })))
+  const isShown = (await read($, dash)).tab === modKey(name)
+  if (isPinned && isShown) $.clock.after(20, () => void settle($.ui.scroll({ in: DASH, to: 'end' })))
+  // A focused input that changed key (the mod cleared it by re-keying) gets the ring again once it is drawn: its old
+  // element held the ring and is gone, and keys nothing takes would fall through to the prompt box.
+  const key = focusKeyOf(name, parseTab(value))
+  const keyBefore = lastFocusKey.get(name)
+  lastFocusKey.set(name, key)
+  if (isShown && key !== null && keyBefore !== undefined && key !== keyBefore) $.clock.after(20, () => void settle($.ui.focus({ requestId: DASH, key })))
+}
+
+// A mod's command asked for its tab (`open`): this runs inside that command's dispatch (the state.set hook is awaited),
+// so the open is the person's: placed at any width, and given the keys unless text sits in the box. Cockpit opens it
+// itself so the pane is its own site: only the opener may move the ring and scroll it. The keys go to a fresh open
+// only, so a dashboard that is up without them is closed first.
+async function openForMod($: EngineInterface, tab: string) {
+  await update($, dash, () => ({ tab, isClosedByPerson: false }))
+  const pane = (await $.ui.panes()).find(p => p.id === DASH)
+  if (pane?.isFocused) return
+  // Closed whoever opened it: a pane another plugin opened is not in this plugin's list, and only a fresh open is ours.
+  await settle($.ui.close({ id: DASH }))
+  const r = await $.ui.open({ id: DASH, title: DASH_TITLE, focus: true })
+  if (!r.isPlaced) $.ui.toast(`Dashboard not shown (${r.reason}).`)
 }
 
 // Opened by the person (a command, a bar button): placed at any width. Focus is granted only to a fresh open over an
@@ -1497,43 +1524,43 @@ export const register: Register = (on, options) => {
 
   // A mod rewrote its dashboard tab: a rise in its `raise` brings the tab up. One literal matcher per mod.
   on('state.set', { plugin: 'bws-memory', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-memory', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-memory', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-diagram', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-diagram', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-diagram', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-enhance', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-enhance', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-enhance', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-better', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-better', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-better', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-sidechat', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-sidechat', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-sidechat', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-secrets', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-secrets', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-secrets', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-skillgate', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-skillgate', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-skillgate', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-notify', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-notify', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-notify', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-shell-lint', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-shell-lint', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-shell-lint', e.value).catch(() => undefined)
     return next(e)
   })
   on('state.set', { plugin: 'bws-interview', key: 'tab' }, async ($, e, next) => {
-    void noteModTab($, o, 'bws-interview', e.value).catch(() => undefined)
+    await noteModTab($, o, 'bws-interview', e.value).catch(() => undefined)
     return next(e)
   })
 
@@ -1603,6 +1630,7 @@ export const register: Register = (on, options) => {
                   label={b.label}
                   {...(b.isPrimary ? { variant: 'primary' as const } : {})}
                   {...(b.hotkey ? { hotkey: b.hotkey } : {})}
+                  {...(b.isFocused ? { autoFocus: true as const } : {})}
                   onPress={() => void sendTabEvent($, name, b.id)}
                 />
               ))}
@@ -1615,7 +1643,7 @@ export const register: Register = (on, options) => {
           return (
             <Input
               key={`${name}-${n.id}`}
-              {...(n.isFocused ? { autoFocus: true } : {})}
+              {...(n.isFocused ? { autoFocus: true as const } : {})}
               placeholder={n.placeholder}
               value={tabDrafts.get(draftKey) ?? ''}
               onInput={(v: string) => void tabDrafts.set(draftKey, v)}

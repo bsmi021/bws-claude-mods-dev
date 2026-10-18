@@ -35,6 +35,7 @@ const tab = atom({ plugin: 'bws-sidechat', key: 'tab' } as const, null as unknow
 // Which of the two the tab shows, and a count that goes up when the person's command or press shows the tab.
 let view: View = 'chat'
 let showCount = 0
+let openCount = 0
 
 // Module variables: the running child's identity and whether the person pressed Stop. A new fork or a close
 // bumps `runNo`, so the loop of a child that was left behind stops writing into the chat.
@@ -51,7 +52,7 @@ function publishTab($: EngineInterface): Promise<void> {
     .then(async () => {
       const c = await read($, chat)
       const st = await read($, treeState)
-      await update($, tab, () => sideTab(c, st, view, { show: showCount, exploring: exploring.size }))
+      await update($, tab, () => sideTab(c, st, view, { show: showCount, open: openCount, exploring: exploring.size }))
     })
     .catch(() => undefined)
   return publishing
@@ -64,63 +65,28 @@ async function setChat($: EngineInterface, f: (old: SideChat) => SideChat): Prom
   return next
 }
 
-// Shows one view of the tab and opens the dashboard inside the command's own dispatch, so the engine counts it as asked
-// and places it at any width (a deferred open counts as unasked and waits below 144 columns).
-// The keys are asked for in this same dispatch (the person's own open). From a command they always are: the box still
-// holds the command's own text while its hook runs, and the engine clears it. From the footer button only over an
-// empty box, so a person who has started typing keeps the keys.
-async function showTab($: EngineInterface, v: View, isCommand: boolean) {
+// Shows one view of the tab. With the keys (from a command, or the footer button over an empty box) bws-cockpit opens
+// the dashboard: `open` counts up, and cockpit's state.set hook opens it inside this same dispatch, so the open is the
+// person's (any width, the keys) and the pane is cockpit's own site. Only the opener may move the ring and scroll, and
+// only cockpit draws the elements, so the Ask box keeps the ring (cockpit moves it to each new Ask box) and the newest
+// rows stay in view (cockpit scrolls to the end). Without the keys (a draft in the box) this mod only shows the tab.
+async function showTab($: EngineInterface, v: View, isCommand: boolean): Promise<{ isPlaced: true } | { isPlaced: false; reason: string }> {
   view = v
+  const isFocus = isCommand || (await $.prompt.read()).text.trim() === ''
+  if (isFocus) {
+    openCount += 1
+    await publishTab($)
+    return { isPlaced: true } // cockpit says so when it is not
+  }
   showCount += 1
   await publishTab($)
-  const isFocus = isCommand || (await $.prompt.read()).text.trim() === ''
-  return $.ui.open(isFocus ? { id: DASHBOARD, title: DASH_TITLE, focus: true } : { id: DASHBOARD, title: DASH_TITLE })
+  return $.ui.open({ id: DASHBOARD, title: DASH_TITLE })
 }
 
 async function openPane($: EngineInterface, isCommand = true) {
   await setChat($, c => ({ ...c, isClosedByPerson: false }))
   const r = await showTab($, 'chat', isCommand)
   if (!r.isPlaced) $.ui.toast(`Side chat not shown (${r.reason}).`)
-  focusSoon($)
-}
-
-// Keyboard focus is a request: it is granted over an empty composer, and the engine hands the keys back to the prompt
-// once the command that opened the pane has returned. So it is asked again a few times after that, each time only
-// while the box is still empty (the person who has started typing keeps the keys), then the ring goes to the Ask box.
-function focusSoon($: EngineInterface) {
-  for (const ms of [10, 250, 800]) $.clock.after(ms, () => void focusPane($).catch(() => undefined))
-}
-
-async function focusPane($: EngineInterface) {
-  const pane = (await $.ui.panes()).find(p => p.id === DASHBOARD)
-  if (pane === undefined || pane.isFocused) return
-  if ((await $.prompt.read()).text.trim() !== '') return
-  await $.ui.open({ id: DASHBOARD, title: DASH_TITLE, focus: true })
-  await focusAsk($)
-}
-
-// The Ask box in the dashboard: cockpit keys an input `<plugin>-<id>`.
-async function focusAsk($: EngineInterface) {
-  const c = await read($, chat)
-  await settle($.ui.focus({ requestId: DASHBOARD, key: `bws-sidechat-${askKey(c.asks)}` }))
-}
-
-// After Stop: the Stop button held the ring and is gone, and the engine hands the keys back to the prompt (while it
-// still reports the pane as focused, so that flag cannot be trusted here). A ring move is denied for a site that does
-// not hold the keyboard, so the keys are asked for again, as when the pane opens, only over an empty box, and then the
-// ring goes to the Ask box.
-async function refocusAsk($: EngineInterface) {
-  if ((await $.ui.panes()).find(p => p.id === DASHBOARD) === undefined) return
-  if ((await $.prompt.read()).text.trim() !== '') return
-  await $.ui.open({ id: DASHBOARD, title: DASH_TITLE, focus: true })
-  await focusAsk($)
-}
-
-// The keys come back to the prompt a moment after the Stop button is redrawn away, so the request is repeated as the
-// pane settles, as focusSoon does when it opens.
-function refocusSoon($: EngineInterface) {
-  void settle(refocusAsk($))
-  for (const ms of [10, 250, 800]) $.clock.after(ms, () => void refocusAsk($).catch(() => undefined))
 }
 
 // Ends the side chat's child at once. The stream ends it only when the next piece arrives, and a child that is
@@ -159,7 +125,6 @@ async function refresh($: EngineInterface) {
     pendingReplay: true,
     msgs: [...old.msgs, { role: 'note', text: 'Refreshed from main: the next message forks it as it is now.' } as SideMsg],
   }))
-  void settle(focusAsk($))
 }
 
 // The label of the model a side turn would run on.
@@ -243,7 +208,6 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
   const sideCfg = { ...cfg, model: modelOf(c.model, cfg.model) }
   let draft: Draft = { msgs: [...c.msgs, { role: 'user', text: typed ?? message }], live: '' }
   await setChat($, old => ({ ...old, ...draft, isBusy: true, back: 0, asks: old.asks + 1, forkTurns: isFirst ? old.mainTurns : old.forkTurns }))
-  void settle(focusAsk($))
 
   let pending = ''
   let stderr = ''
@@ -304,7 +268,6 @@ async function stop($: EngineInterface) {
     isForked: old.isForked || isInitSeen,
     pendingReplay: old.isForked || isInitSeen ? false : old.pendingReplay,
   }))
-  refocusSoon($) // before the kill, which takes seconds: the Ask box has the keyboard at once
   await killChild($, c.sideId)
 }
 
@@ -355,16 +318,6 @@ async function saveTree($: EngineInterface, change: (p: TreePane) => TreePane) {
 async function openTreePane($: EngineInterface) {
   const r = await showTab($, 'tree', true)
   if (!r.isPlaced) $.ui.toast(`Decision tree not shown (${r.reason}).`)
-  for (const ms of [10, 250, 800]) $.clock.after(ms, () => void focusTree($).catch(() => undefined))
-}
-
-// As the side chat: the keys are asked for only over an empty prompt box, then the ring goes to the first option.
-async function focusTree($: EngineInterface) {
-  const pane = (await $.ui.panes()).find(p => p.id === DASHBOARD)
-  if (pane === undefined || pane.isFocused) return
-  if ((await $.prompt.read()).text.trim() !== '') return
-  await $.ui.open({ id: DASHBOARD, title: DASH_TITLE, focus: true })
-  await settle($.ui.focus({ requestId: DASHBOARD, key: 'bws-sidechat-opt-0' }))
 }
 
 async function stopExplores($: EngineInterface) {
