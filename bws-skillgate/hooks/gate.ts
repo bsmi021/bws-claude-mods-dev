@@ -1,6 +1,6 @@
 // bws-skillgate's logic, pure (no `$`): parse the engine's skill listing, ask which skills fit a prompt, cut the
-// listing to those, and say what the cut saved. register.tsx does the I/O. See runs/2026-10-13-mods-m3-skillgate/
-// DECISIONS.md for why the listing is cut once per conversation and later prompts only add.
+// listing to those, and say what the cut saved. register.tsx does the I/O.
+// The listing is cut once per conversation; later prompts only add to it.
 
 import { makeSummary } from './kit/summary'
 import type { ModSummary } from './kit/summary'

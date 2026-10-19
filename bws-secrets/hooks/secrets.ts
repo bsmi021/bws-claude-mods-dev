@@ -1,6 +1,5 @@
 // Pure pieces of bws-secrets (no `$`): names, the secrets file, the placeholder rewrite that makes the shell read a
-// value at execution time, and the scrub that takes a value (and its encodings) out of a tool's result. The spike
-// behind the rewrite is runs/2026-10-13-mods-m8-secrets/DECISIONS.md (D1).
+// value at execution time, and the scrub that takes a value (and its encodings) out of a tool's result.
 
 export type Secret = { name: string; value: string }
 
