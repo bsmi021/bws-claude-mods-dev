@@ -1,0 +1,18 @@
+ok   bws-better
+ok   bws-board
+ok   bws-cockpit
+ok   bws-design-picker
+ok   bws-diagram
+ok   bws-enhance
+ok   bws-interview
+ok   bws-memory
+ok   bws-notify
+ok   bws-secrets
+ok   bws-shell-lint
+ok   bws-sidechat
+ok   bws-skillgate
+ok   bws-kit
+ok   kit sync
+ok   kit sync tests
+ok   gate tests
+13 plugin(s) + kit, 122s

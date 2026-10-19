@@ -34,3 +34,8 @@ This repo has no CLAUDE.md; `AGENTS.md` is the instruction file (loaded by `cc-p
 
 ## Next
 - Brian reviews the AGENTS.md diff; merge chore/agents-md-review into main and push `private`.
+
+## Follow-ups merged (2026-10-19)
+- All three proposals were built in their own sessions and are on main: gate MCP-types restore (ebeb4da), tools/publish.py (a082090), tools/live.py (443a24e). The other sessions did the merges; AGENTS.md had no conflicts left.
+- Full gate on main 443a24e: 13 mods + kit, kit sync, gate tests all ok (receipts/gate-main-443a24e.txt).
+- Pushed `private` main; deleted feat/publish-script, feat/live-harness (local + private) and their worktrees.
