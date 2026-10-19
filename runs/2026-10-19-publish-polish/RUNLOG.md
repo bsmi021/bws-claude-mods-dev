@@ -23,3 +23,9 @@ bws-interview. Brian clarified that "publish" means a new release on the private
 
 ## Next
 - None for this run. bws-interview's dashboard tab and a live interview round still need a hand check (see its README).
+
+## Install on this machine (2026-10-19)
+- `claude plugin marketplace update bws-mods` pulled 45a6df8 (1.7.0). Installed bws-interview 0.1.0; bws-better 0.2.0 was not installed and was added.
+- The installed copies of the other 12 were pre-1.7.0 files (no CHANGELOG, old manifests): the plugin cache is keyed by version, and 1.7.0 bumped none. Fix: uninstall, delete that version's cache folder, reinstall.
+- Uninstall drops the plugin's `pluginConfigs["<mod>@bws-mods"]` entry: bws-cockpit's options were restored from a backup.
+- Verified: all 13 cache folders match the marketplace clone (only `.in_use` differs); a headless session with `CLAUDE_CODE_PLUGIN_DIRS` emptied loaded all 13 from the cache, with the interview, board, cockpit and secrets MCP servers connected.
