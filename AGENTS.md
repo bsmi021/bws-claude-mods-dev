@@ -13,7 +13,7 @@ Source: [Mods overview](https://code.claude.com/docs/en/plugins/mods/overview).
 ## Establish the contract
 
 - State the visible behavior and the smallest acceptance check before editing.
-- Run `claude --version`. The documented baseline is **2.1.296**; verify requirements against the installed release.
+- Run `claude --version`. The documented baseline is **2.1.296**; recent work ran on 2.1.302–2.1.303; verify requirements against the installed release.
 - Use `/plugin-authoring` when available.
 - Treat locally generated `.claude-plugin/types/` declarations as authoritative over online examples. Claude Code generates them when loading or reloading development mods.
 - Prefer TypeScript when it clarifies event inputs and results; JavaScript is also supported.
@@ -117,13 +117,20 @@ Local Doc: ./docs/mods.md
 
 ## This repo
 
-- `bws-cockpit/` is one plugin with many features. `hooks/register.tsx` is the only file that uses `$`; `lib.ts`, `shell.ts`, `loop.ts`, `finish.ts`, `projects.ts` and `handoff.ts` are pure and tested directly. `bws-shell-lint/` is separate.
+- 13 mods (`bws-*/` with `.claude-plugin/plugin.json`), all in the `bws-mods` marketplace. In each, `hooks/register.ts(x)` is the only file that uses `$`; the other modules are pure and tested directly.
+- `bws-kit/` is shared pure code, not a plugin (see its README). Mods can't import across plugins, so `python tools/sync-kit.py --plugin <mod>` vendors the modules a mod's `kit.json` lists into `<mod>/hooks/kit/`. Edit the kit, never the vendored copy.
 - Each feature gets `runs/<date>-<slug>/` with PLAN.md (finish line first), RUNLOG.md and `receipts/`.
-- Checks, all three before ending a turn: `claude plugin validate ./<plugin>`, `cd <plugin> && claude plugin test`, and tsc 5.x (strict, noUncheckedIndexedAccess) against `.claude-plugin/types/`. Validate does not type-check.
-- Both plugins load in every session through `CLAUDE_CODE_PLUGIN_DIRS`, so a broken `register.tsx` breaks every new session.
-- Validator rules: one unmatched hook per event, so merge into the existing `turn.complete` or `prompt.context` hook. Never name a local `next`.
+- Checks before ending a turn: `python tools/mods-gate.py --plugin <mod>` (validate + `claude plugin test` + tsc 5.8.3 strict); no flag gates every mod, the kit and the kit sync. Validate alone does not type-check.
+- Sessions load the installed marketplace copies (`claude plugin list`), not this source, and `CLAUDE_CODE_PLUGIN_DIRS` is unset. Source edits reach Brian only after a release + `claude plugin update` + `/reload-plugins`; a bad release breaks every new session. Try source with `--plugin-dir ./<mod>`.
+- Peer sessions often work in this checkout. Stage files by name (never `git add -A bws-*`), sync only your own mod's kit, and check `board_status` before editing a file another session touched.
+- Validator rules: one unmatched hook per event, so merge into the existing `turn.complete` or `prompt.context` hook. Never name a local `next` or `h`.
 - `$.prompt.submit` inside a `command.run` hook deadlocks: defer it with `$.clock.after`.
 - A pane opened after a `command.run` hook has answered counts as unasked and opens only from 144 columns. Await `$.ui.open` inside the hook so it is the person's open (bws-better 0.1.1).
+- Dashboard tabs (kit `tab.ts`, cockpit 0.21.1+): a pane belongs to the plugin that opened it, and `$.ui.focus` is refused for another plugin's pane or element. So a mod never opens the dashboard itself: it publishes its `tab` atom and bumps `open` / `show` / `raise`, and cockpit opens it inside the mod's command. Mark the element that should take keys `isFocused`.
+  - Give every tab button a command twin `/<mod> --<id> [text]`. Tests press through the twin, since they can't write another plugin's state.
+  - Republishing a tab from inside your own `state.set` hook reads the old value and stalls. Queue the republish.
+  - Filling the prompt box hands the keyboard to the box.
+- Claude Code Desktop takes some slash names before the mod sees them (`/side` opens its native side chat). Check a new command name in Desktop.
 - A `{ drop }` at `prompt.submit` leaves the typed text in the box. If a pane now owns the prompt, clear the box yourself and put the text back on Cancel (bws-better 0.1.1).
 - `$.model.fork` gives `nothing-to-fork` on a resumed session's first command: fall back to `$.session.messages()` + `$.model.complete`.
 - Wrapping the AskUserQuestion dialog in `ui.render`, the engine refuses `width` on any Box around it and more than 12 rows. It counts side-by-side siblings as stacked and the dialog itself as one row. Draw one Raster/Svg.
@@ -137,12 +144,14 @@ Local Doc: ./docs/mods.md
   - `$.model.complete` stubs answer `{ value: { isAnswered, text, usage } }`. The stub's `next.signal` aborts with the caller's AbortController.
   - The test `$` has no `state` noun, and test hooks can't call `$.state`. Assert plugin state through `$.ui.mount` + `find`.
 - Git Bash here halves backslash runs before bash sees them. Never put Windows backslash paths in heredoc or inline Python strings; use forward slashes, or the Edit/Write tools.
+- Python prints in cp1252 here and crashes on emoji or arrows: run it with `PYTHONIOENCODING=utf-8`.
 - Live checks: `claude -p "..." --plugin-dir ./<plugin> --output-format stream-json --verbose`.
   - Prefix slash commands with `MSYS_NO_PATHCONV=1`.
   - Pass plugin options with `--settings <file>` (`pluginConfigs`); it merges with user settings.
 - Test terminals: the tool shell sets `NO_COLOR=1`, so clear it to see band colors. Launch `wt.exe` through a `.ps1` file, since `wt` splits commands on `;`.
 - Guard and lint rules that block or rewrite match the command position only. Replay them over the real-command corpus before shipping.
-- Generated `.claude-plugin/types/claude-code-mcp` is rewritten only on an interactive save; for a new plugin, copy a sibling's types and add its own `mcp__<plugin>__*` tool inputs by hand so tsc accepts the matchers.
+- Generated `.claude-plugin/types/claude-code-mcp` is rewritten by any live `--plugin-dir` session, with every connected MCP server's tools (~500 KB). tsc then fails with TS2589 in cockpit. After a live run, copy bws-board's lean `claude-code-mcp/index.d.ts` over any copy above 400 KB.
+  - For a new plugin, copy a sibling's types folder.
   - `claude plugin test` regenerates that folder too and drops hand edits. Declare a plugin's own tool inputs instead as an `interface McpToolInputs` augmentation in its `types/index.d.ts` (bws-cockpit does).
 - In the manifest's types contract (`types/index.d.ts`), an `import('…')` type makes the validator report every `PluginState` key as not declared. Write the shapes inline.
 - Never push `main` to `mods`: its `runs/` holds private prompts and transcripts. `git push private main` is fine (bws-claude-mods-dev, a private repo). Publish to `mods` only the orphan `publish` branch:
@@ -152,3 +161,6 @@ Local Doc: ./docs/mods.md
 - Install: the published repo is the `bws-mods` marketplace (`.claude-plugin/marketplace.json`, installed from `bsmi021/bws-claude-mods`). While `CLAUDE_CODE_PLUGIN_DIRS` lists a mod's source folder, that source copy shadows the installed copy, so nothing loads twice.
   - Remote `mods` is the private repo github.com/bsmi021/bws-claude-mods. Its push rule maps only `publish` to `main`, so `git push mods` never sends this repo's `main`.
   - Scan for names, project and game names, serials and paths first.
+- Release steps: bump each touched mod's version and CHANGELOG, bump the marketplace version, merge to main, push `private`, refresh `publish` (above), gate in that worktree, push `mods`, `git tag vX` + `gh release create vX --repo bsmi021/bws-claude-mods`, log it in the RUNLOG.
+  - The plugin cache is keyed by version. A docs- or manifest-only change still needs a patch bump, or `claude plugin update` ships nothing.
+  - Uninstalling a mod drops its `pluginConfigs["<mod>@bws-mods"]` options. Back them up first.
