@@ -154,13 +154,13 @@ Local Doc: ./docs/mods.md
   - For a new plugin, copy a sibling's types folder.
   - `claude plugin test` regenerates that folder too and drops hand edits. Declare a plugin's own tool inputs instead as an `interface McpToolInputs` augmentation in its `types/index.d.ts` (bws-cockpit does).
 - In the manifest's types contract (`types/index.d.ts`), an `import('…')` type makes the validator report every `PluginState` key as not declared. Write the shapes inline.
-- Never push `main` to `mods`: its `runs/` holds private prompts and transcripts. `git push private main` is fine (bws-claude-mods-dev, a private repo). Publish to `mods` only the orphan `publish` branch:
-  - Refresh it in a scratch worktree with `git checkout main -- bws-cockpit bws-shell-lint`.
-  - That checkout never deletes files the source commit dropped. Use `git restore --source=<commit> --staged --worktree -- <dirs>` instead, then confirm with `git ls-files` vs `git ls-tree -r --name-only <commit>` and `git diff --cached --quiet <commit> -- <dirs>`.
-  - A fresh worktree has no `.claude-plugin/types/` (gitignored), so tsc fails with TS5083. Copy each mod's generated types folder in from the working tree first.
+- Never push `main` to `mods`: its `runs/` holds private prompts and transcripts. `git push private main` is fine (bws-claude-mods-dev, a private repo). Publish to `mods` only the orphan `publish` branch, through `tools/publish.py` (below).
+  - It refreshes `publish` in a scratch worktree with `git restore --source=<main> --staged --worktree` (a `git checkout main -- <dirs>` never deletes files main dropped), checks the file list and content match main, and copies each mod's gitignored types in before the gate.
 - Install: the published repo is the `bws-mods` marketplace (`.claude-plugin/marketplace.json`, installed from `bsmi021/bws-claude-mods`). While `CLAUDE_CODE_PLUGIN_DIRS` lists a mod's source folder, that source copy shadows the installed copy, so nothing loads twice.
   - Remote `mods` is the private repo github.com/bsmi021/bws-claude-mods. Its push rule maps only `publish` to `main`, so `git push mods` never sends this repo's `main`.
-  - Scan for names, project and game names, serials and paths first.
-- Release steps: bump each touched mod's version and CHANGELOG, bump the marketplace version, merge to main, push `private`, refresh `publish` (above), gate in that worktree, push `mods`, `git tag vX` + `gh release create vX --repo bsmi021/bws-claude-mods`, log it in the RUNLOG.
+  - The script scans every added line for names, project and game names, serials, keys and Windows user paths, and stops on a hit.
+- Release steps: bump each touched mod's version and CHANGELOG (`## <version>`), bump the marketplace version, merge to main, then
+  `python tools/publish.py <mods...> --version X` (a dry run: version and CHANGELOG checks, publish worktree, privacy scan, gate, then it prints the commands) and the same with `--push` (pushes `private` main if behind, commits `publish`, pushes it to `mods` main, tags `vX`, `gh release create`). Log it in the RUNLOG.
+  - `python tools/publish.py` with no mods answers "is publish current?": it restores every mod and reports any diff vs the publish tip.
   - The plugin cache is keyed by version. A docs- or manifest-only change still needs a patch bump, or `claude plugin update` ships nothing.
   - Uninstalling a mod drops its `pluginConfigs["<mod>@bws-mods"]` options. Back them up first.
