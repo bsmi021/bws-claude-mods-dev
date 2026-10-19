@@ -19,4 +19,12 @@ The shelf is bws-cockpit's dashboard Shelf tab. Finish line: PLAN.md.
   receipts/live-tall (170x140) shows six project headers with "more" lines for harness-loop and bws.game.tms.
 
 ## Next
-- Not released: needs a marketplace bump and `tools/publish.py bws-cockpit --version 1.8.0` when Brian says.
+- Released as 1.8.0 (below).
+
+## Release (2026-10-19)
+- bws-mods 1.8.0 (bws-cockpit 0.22.0) via `tools/publish.py bws-cockpit --version 1.8.0 --push`: marketplace bump 84b3d60
+  pushed to private; dry run then push: worktree matched main, privacy scan clean, gate 13/13 in the worktree.
+  `publish` 690db5c pushed to mods main, tag v1.8.0. Release: https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.8.0
+- Installed on this machine: `claude plugin marketplace update bws-mods` + `claude plugin update bws-cockpit@bws-mods`
+  (0.21.2 -> 0.22.0, cache 0.22.0 has groupByProject); pluginConfigs for bws-cockpit unchanged.
+- Open sessions need `/reload-plugins` (or a restart) to draw the cards.
