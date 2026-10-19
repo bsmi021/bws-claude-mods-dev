@@ -145,8 +145,8 @@ Local Doc: ./docs/mods.md
   - The test `$` has no `state` noun, and test hooks can't call `$.state`. Assert plugin state through `$.ui.mount` + `find`.
 - Git Bash here halves backslash runs before bash sees them. Never put Windows backslash paths in heredoc or inline Python strings; use forward slashes, or the Edit/Write tools.
 - Python prints in cp1252 here and crashes on emoji or arrows: run it with `PYTHONIOENCODING=utf-8`.
-- Live checks: `claude -p "..." --plugin-dir ./<plugin> --output-format stream-json --verbose`.
-  - Prefix slash commands with `MSYS_NO_PATHCONV=1`.
+- Live checks: interactive parts (tabs, buttons, keys, mouse clicks, widths) go through `tools/live.py` (pywinpty + pyte; `python -m pip install --user pywinpty pyte`). It starts `claude --plugin-dir` per `--plugin` at `--size` in a scratch folder, runs `--step`/`--steps` (`say:`, `type:`, `key:`, `click:LABEL`, `wait:REGEX@secs`, `dump:NAME`), writes `live.log` and screen dumps to `--out`, and restores bloated MCP types. Example: `runs/2026-10-19-live-harness/dashboard-steps.txt`.
+  - Headless one-shots: `claude -p "..." --plugin-dir ./<plugin> --output-format stream-json --verbose` (or `tools/probe.py`). Prefix slash commands with `MSYS_NO_PATHCONV=1`.
   - Pass plugin options with `--settings <file>` (`pluginConfigs`); it merges with user settings.
 - Test terminals: the tool shell sets `NO_COLOR=1`, so clear it to see band colors. Launch `wt.exe` through a `.ps1` file, since `wt` splits commands on `;`.
 - Guard and lint rules that block or rewrite match the command position only. Replay them over the real-command corpus before shipping.
