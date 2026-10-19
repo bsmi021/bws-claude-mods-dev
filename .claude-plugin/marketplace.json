@@ -1,7 +1,8 @@
 {
   "name": "bws-mods",
   "owner": {
-    "name": "Brian"
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
   },
   "description": "Claude Code mods for game and app development on Windows.",
   "plugins": [
@@ -30,6 +31,10 @@
       "source": "./bws-enhance"
     },
     {
+      "name": "bws-interview",
+      "source": "./bws-interview"
+    },
+    {
       "name": "bws-memory",
       "source": "./bws-memory"
     },
@@ -55,6 +60,6 @@
     }
   ],
   "metadata": {
-    "version": "1.6.1"
+    "version": "1.7.0"
   }
 }

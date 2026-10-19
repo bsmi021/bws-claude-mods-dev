@@ -3,8 +3,19 @@
   "version": "0.2.0",
   "description": "/better <rough prompt>: asks up to three quick multiple-choice questions, rewrites the prompt with a clear goal, audience, format and finish line, and shows the original and the upgrade side by side. Nothing runs until you press Run. /better on turns typed prompts into upgrades automatically.",
   "author": {
-    "name": "Brian"
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
   },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-better#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "prompt",
+    "prompt-engineering",
+    "review"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "model": {

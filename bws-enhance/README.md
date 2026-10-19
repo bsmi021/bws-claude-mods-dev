@@ -1,118 +1,148 @@
 # bws-enhance
 
-Turns a vague prompt into a specific one Claude Code can act on, then lets you send it. Optionally, it also holds a vague
-prompt before it is sent and says what is missing (the prompt bouncer, below).
+> Turns a vague prompt into a specific one Claude Code can act on, then lets you send it.
 
-It differs from `/better` (bws-better): `/enhance` asks nothing and grounds its rewrite in this project's instruction
-files, file tree, skills and the recent conversation, while `/better` asks you a few multiple-choice questions and
-needs no project context. While `/better on` (its automatic mode) is set, the bouncer stands aside, so only one of
-them takes a typed prompt.
+A rough prompt makes Claude guess. `/enhance` rewrites it using what this session already knows: the project's
+instruction files, a file tree, installed skills and commands, connected MCP servers and the recent conversation. The
+rewrite lands in your prompt box, and you decide whether to send it. An optional prompt bouncer can also hold a vague
+prompt before it is sent and say what is missing.
 
-The rewrite is grounded in what this session actually has:
-- the instruction files the session loaded (user and project `CLAUDE.md`), plus the project's `AGENTS.md` / `CLAUDE.md` / `.claude/CLAUDE.md`
-- installed skills and slash commands (names + one-line descriptions), connected MCP servers
-- the project root, a file tree of it (2 levels, at most 150 entries; skips .git, node_modules, runs, build/output and engine cache folders), and the last few messages, so "it" / "that bug" resolve
-- Anthropic's prompting best practices, plus per-family notes for the model that will run the prompt
-  (Opus: explicit minimal scope; Sonnet: keep going until the checks pass, no extra tests/docs; Haiku: run the check before reporting done).
-  Sources: the [prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices), the per-model prompting pages, and [Claude Code best practices](https://code.claude.com/docs/en/best-practices).
+## Install
+
+```sh
+claude plugin marketplace add bsmi021/bws-claude-mods
+claude plugin install bws-enhance@bws-mods
+```
+
+Then `/reload-plugins`. Requires Claude Code 2.1.296 or later. The review buttons live in the **Enhance** tab of
+[bws-cockpit](../bws-cockpit/README.md)'s dashboard, so install bws-cockpit 0.21.1 or later too. It pairs with
+[bws-better](../bws-better/README.md), which upgrades prompts by asking you questions instead.
 
 ## Use
 
-| Action | Keys |
+| Command | What it does |
 | --- | --- |
-| Enhance a rough prompt | `/enhance <rough prompt>` (works while Claude is busy) |
-| Enhance the draft already in the box | `ctrl+x ctrl+p` (needs the keybinding below) |
-| Send the enhanced prompt | `s` or `Enter` while the dashboard has the keys, `Enter` in the box, click **Send**, or `/enhance --send` |
-| Revert to your rough prompt | `r`, click **Revert**, or `/enhance --revert` |
-| Dismiss / cancel | `d` / `c`, click **Dismiss** / **Cancel**, or `/enhance --dismiss` |
+| `/enhance <rough prompt>` | Rewrites the prompt and puts the result in the prompt box. Works while Claude is busy. |
+| `/enhance --send` | Sends the box as it is, edits included. |
+| `/enhance --revert` | Puts your rough prompt back in the box. |
+| `/enhance --put` | Puts the rewrite in the box so you can edit it. |
+| `/enhance --dismiss`, `--cancel` | Closes the review, or cancels a rewrite in progress. |
+| `/enhance --sendanyway`, `--enhance`, `--edit` | The bouncer's three buttons (see below). |
+| `/bounce [off\|warn\|block\|status]` | Sets the prompt bouncer for this session. With no argument it shows the mode and where it came from. |
 
-The enhanced prompt replaces the prompt box; edit it there and press `Enter` to send it as your own words. Since 0.4.0
-the buttons live in the **Enhance tab** of bws-cockpit's dashboard (0.21.0+), not a pane of their own: **Send / Revert /
-Dismiss**. **Send** sends the box as it is, edits included. If you typed something else while it was working, the box is
-left alone and the tab offers **Put in box**. `/enhance` has bws-cockpit (0.21.1+) open the dashboard on the Enhance tab with the keyboard. While you stay there the
-rewrite waits in the tab (0.4.1): `s` sends it, `p` puts it in the box to edit, `d` dismisses (filling the box would hand
-the keyboard to the box). Started from the chord over a draft, the keys stay with the box and the rewrite replaces the
-draft there, with `s` / `r` / `d` in the tab. Every button has a command twin, `/enhance --<id>` (`send`,
-`revert`, `put`, `dismiss`, `cancel`, `sendanyway`, `enhance`, `edit`).
+Every button in the tab has a `/enhance --<id>` twin: `send`, `revert`, `put`, `dismiss`, `cancel`, `sendanyway`,
+`enhance`, `edit`.
 
-Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output.
+### The Enhance tab
 
-## The prompt bouncer (`bounce`, off by default)
+`/enhance` opens the dashboard on the Enhance tab with the keyboard. While you stay there, the rewrite waits in the
+tab and the keys are letters:
 
-Holds a prompt you type when it is too vague for Claude Code to act on without asking, and says what is missing.
-
-| `bounce` | A vague prompt |
+| Key | Button |
 | --- | --- |
-| `off` (default) | Sent as typed. Nothing is checked and no model is called. |
-| `warn` | Held with the reason; the draft stays in the box. Enter again sends it as it is. |
-| `block` | Not sent; the draft stays in the box. The Enhance tab offers **Send anyway** (`s`), **Enhance** (`e`, the enhance pipeline on the held text) and **Edit** (`x`, back to the box). A headless `claude -p` prompt is refused, and the reason is its output. |
+| `s` | **Send** (or **Send anyway** on a held prompt) |
+| `r` | **Revert** (when the rewrite is in the box) |
+| `p` | **Put in box** |
+| `d` | **Dismiss** |
+| `c` | **Cancel** (while it is working) |
+| `e`, `x` | **Enhance** and **Edit** on a held prompt |
 
-How it decides: one small-model call answers vague or clear for the prompt (4 s timeout). A vague prompt gets a second call
-that writes one sentence, at most 40 words, on what is missing, with the glossary. At most two small-model calls per prompt.
+### Enhance the draft in the box
 
-What is checked: prompts you type (Enter), prompts from the Remote Control bridge, and prompts from the SDK host (`claude -p`).
-What is not: slash commands; short answers (under 4 words such as yes, no, continue, ok, a number or an option letter);
-prompts with an attachment or a leftover paste placeholder; and anything a plugin, another session, a schedule or a task
-sends, including the bouncer's own **Send anyway**. In `warn` mode a headless run is not checked, because it has no dashboard
-to send anyway from.
-
-Pastes arrive expanded, so the paste skip only sees leftover placeholders. A long pasted log is checked as ordinary text.
-
-Fails open: a classifier error, a 4 s timeout, an unreadable answer or a failed reason call sends the prompt unchanged and
-writes one debug line, such as `bws-enhance: bounce classify failed (timeout); the prompt was sent unchanged`. The line never
-contains the prompt.
-
-Glossary: the `glossaryFile` option if set (the whole file); else `docs/GLOSSARY.md`; else the `## Glossary` section of
-`AGENTS.md`, then of `CLAUDE.md`. Capped at 4,000 characters and given to both calls. None found: the calls run without one.
-
-`/bounce [off|warn|block|status]` sets the mode for the current session; it is not written to your settings. With no
-argument it shows the mode and where it came from.
-
-Summary: the mod publishes the `summary` state atom (no chip when off, `bounce <mode>` when on, `prompt held` with the
-reason while a prompt is held). bws-cockpit draws only the mods in its `modSummaries` option, whose default is four other
-names, so no chip shows for this mod unless that option lists it.
-
-## The chord
-
-Mods can't define new keybinding actions. Instead, the footer shows a small `✦ enhance` button that borrows an engine
-action; whatever chord you bind to that action presses the button from the prompt. Default action:
-`app:toggleDiffPreSession` (only Claude Code's old diff panel handles it, which isn't used while the built-in `cc-plugin-diff` mod is on).
-The footer holds one tree, and the hook shares it: another mod's footer (bws-sidechat's `◨ side` button, say) is drawn beside `✦ enhance` whichever mod comes first (0.2.1; before that, bws-enhance drew its own and hid every footer below it).
-In `~/.claude/keybindings.json`:
+The footer shows a small `✦ enhance` button. Bind a chord to its action and you can enhance a draft you have already
+typed, also while Claude is working. The rewrite replaces the draft in the box, and the keys stay with the box.
+Add this to `~/.claude/keybindings.json`:
 
 ```json
 { "bindings": [ { "context": "Global", "bindings": { "ctrl+x ctrl+p": "app:toggleDiffPreSession" } } ] }
 ```
 
-## Options (`/plugin` → bws-enhance)
+Mods cannot define keybinding actions, so the button borrows one of Claude Code's own (the `chordAction` option). The
+default, `app:toggleDiffPreSession`, is handled only by Claude Code's old diff panel, which is not used while the
+built-in `cc-plugin-diff` mod is on. The footer is shared: other mods' buttons, such as bws-sidechat's `◨ side`, are
+drawn beside `✦ enhance`.
 
-- `model`: model that rewrites the prompt (default `haiku`; `sonnet` or `opus` for heavier rewrites).
-- `chordAction`: the engine action the footer button borrows; empty hides the button.
-- `bounce`: `off` (default), `warn` or `block`, as above. `/bounce` changes it for the session.
-- `bounceModel`: model that classifies the prompt and writes the reason (default `haiku`).
-- `glossaryFile`: markdown file of project terms for the bouncer (empty: the defaults above).
+## What it does
 
-## Load
+### The rewrite
 
-```
-claude --plugin-dir ./bws-enhance
-```
-or add the folder's absolute path to `CLAUDE_CODE_PLUGIN_DIRS`.
+The rewriter sees:
 
-## Tested
+- the instruction files the session loaded (user and project `CLAUDE.md`), plus the project's `AGENTS.md`, `CLAUDE.md` and `.claude/CLAUDE.md`;
+- installed skills and slash commands (names and one-line descriptions) and connected MCP servers;
+- the project root, a file tree of it (2 levels, at most 150 entries; it skips `.git`, `node_modules`, `runs`, build and output folders and engine caches), and the last few messages, so "it" and "that bug" resolve;
+- Anthropic's prompting best practices, plus notes for the model that will run the prompt (Opus: explicit, minimal scope; Sonnet: keep going until the checks pass, no extra tests or docs; Haiku: run the check before reporting done). Sources: the [prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices), the per-model prompting pages and [Claude Code best practices](https://code.claude.com/docs/en/best-practices).
 
-Claude Code 2.1.296, Windows. Static: `claude plugin validate` passes (receipt `runs/2026-10-13-mods-m2-bouncer/receipts/t06-validate.txt`).
-Automated: `claude plugin test`, 48 tests: the enhance tests, the bouncer's table tests (skips, glossary, reason cut,
-summary shape, status text) and its mod tests (block, warn, Send anyway, Enhance, the failure branches, the 4 s timeout,
-the headless cases, `/bounce`). Type-check: tsc 5.8.3 strict through the gate. Live: headless `claude -p` runs return
-grounded rewrites (0.2.x).
+Each source is optional: if one cannot be read, that part is left out and the rewrite continues.
 
-Live in Windows Terminal (fullscreen layout, 2026-10-10): `/enhance` filled the box and docked the pane; `Enter` sent the
-rewrite; `ctrl+x ctrl+p` enhanced a typed draft, also while Claude was mid-turn; clicking **Revert** restored the draft and
-closed the pane. 0.2.0 (same day): the file tree reached the rewriter live (it named sibling plugin folders). Pane focus on result, and so `s`/`r`/`d`, is not yet confirmed live: the first try showed the pane never got focus, fixed by close-and-reopen; the retest was cut short by outside input in the test window.
-Not tried: main-screen (inline) layout, desktop app.
+The rewrite replaces the prompt box. Edit it there and press Enter to send it as your own words, or use **Send**. If you
+typed something else while it was working, the box is left alone and the tab offers **Put in box**. If the rewrite
+fails, the tab shows the reason with **Dismiss**.
 
-Not tested live yet: the bouncer in an interactive terminal (the pane's buttons and keys, the warn hint, the draft going
-back into the box after a hold). The headless probe for the bouncer is recorded in
-`runs/2026-10-13-mods-m2-bouncer/receipts/`. Desktop, the Remote Control bridge and the main-screen layout are untested.
-VS Code / mobile / cloud draw no mod UI; use `/enhance` and copy the rewrite.
+Headless (`claude -p "/enhance ..."`) prints the rewrite as the command's output. If it fails, the output says why and
+the exit code is 1.
+
+### The prompt bouncer
+
+Holds a prompt you type when it is too vague for Claude Code to act on without asking, and says what is missing. It is
+off by default. Set it with the `bounce` option, or for one session with `/bounce`.
+
+| `bounce` | A vague prompt |
+| --- | --- |
+| `off` (default) | Sent as typed. Nothing is checked and no model is called. |
+| `warn` | Held with the reason; the draft stays in the box. Enter again sends it as it is. |
+| `block` | Not sent; the draft stays in the box. The Enhance tab offers **Send anyway**, **Enhance** (the rewrite, run on the held text) and **Edit** (back to the box). A headless `claude -p` prompt is refused, and the reason is its output. |
+
+How it decides: one small-model call answers "vague" or "clear" (4 second timeout). A vague prompt gets a second call that
+writes one sentence, at most 40 words, on what is missing. That is at most two small-model calls per prompt.
+
+What is checked: prompts you type, prompts from the Remote Control bridge and prompts from the SDK host (`claude -p`).
+
+What is not checked:
+
+- slash commands;
+- short answers (under 4 words, such as yes, no, continue, ok, a number or an option letter);
+- prompts with an attachment or a leftover paste placeholder (pastes arrive expanded, so a long pasted log is checked as ordinary text);
+- anything a plugin, another session, a schedule or a task sends, including the bouncer's own **Send anyway**;
+- every prompt, while bws-better's automatic mode is on (only one mod takes a typed prompt);
+- a headless run in `warn` mode, which has no dashboard to send anyway from.
+
+It fails open: a classifier error, a timeout, an unreadable answer or a failed reason call sends the prompt unchanged and
+writes one debug line, such as `bws-enhance: bounce classify failed (timeout); the prompt was sent unchanged`. The line
+never contains the prompt.
+
+**Glossary.** The bouncer and its reason use your project's terms: the file named by `glossaryFile`; else
+`docs/GLOSSARY.md`; else the `## Glossary` section of `AGENTS.md`, then of `CLAUDE.md`. Only the first 4,000 characters
+are used. If none is found, the calls run without one.
+
+## Options
+
+Set in `/plugin`, or under `pluginConfigs["bws-enhance"].options` in `settings.json`.
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `model` | `haiku` | Model alias or id that rewrites the prompt (`sonnet`, `opus`, `haiku` or a full id). Use `sonnet` or `opus` for heavier rewrites. |
+| `chordAction` | `app:toggleDiffPreSession` | The engine keybinding action the footer's enhance button borrows. Bind a chord to it in `~/.claude/keybindings.json` (Global). Empty hides the button. |
+| `bounce` | `off` | `off`: prompts are sent as typed. `warn`: a vague prompt is held with the reason; Enter again sends it. `block`: a vague prompt is not sent and the draft stays in the box. `/bounce` changes it for one session. |
+| `bounceModel` | `haiku` | Model alias or id that classifies a prompt as vague and writes the reason. |
+| `glossaryFile` | empty | Markdown file of project terms for the bouncer (first 4,000 characters). Empty: `docs/GLOSSARY.md`, else the `## Glossary` section of `AGENTS.md` or `CLAUDE.md`. |
+
+## Permissions and data
+
+- **Reads** the project's instruction files, the project's directory listing (2 levels), the glossary file, and the session's recent messages, model, command list, tool list and loaded-memory list.
+- **Writes** nothing to disk. `/bounce` is held in memory for the session and is not written to your settings.
+- **Runs** no processes and opens no network connections of its own.
+- **Model calls** go through the session's own client: one call per rewrite (on the `model` option), and with the bouncer on, up to two small calls per typed prompt (on `bounceModel`). The prompt text and the context above are sent to that model, and to no one else.
+- **Never** sends a prompt on your behalf unless you press **Send**, **Send anyway** or Enter, and never changes your settings.
+
+## Compatibility
+
+Checked on Claude Code 2.1.296 on Windows 11, in Windows Terminal and headless (`claude -p`). Needs bws-cockpit 0.21.1 or later for the tab.
+
+- The Desktop app and the Remote Control bridge have not been tried. VS Code, mobile and cloud sessions draw no mod UI: use `/enhance` and copy the rewrite.
+- The chord binding lives in `~/.claude/keybindings.json`, so set it on each computer.
+- The bouncer's prompt hold has not been checked live in an interactive terminal; it is covered by automated tests and headless runs.
+
+## License
+
+MIT. Version history: [CHANGELOG.md](CHANGELOG.md).

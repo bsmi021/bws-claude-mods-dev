@@ -3,8 +3,19 @@
   "version": "0.2.3",
   "description": "When Claude asks you to pick a design direction, each option is drawn as a small rendered mockup above the picker.",
   "author": {
-    "name": "Brian"
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
   },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-design-picker#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "design",
+    "mockup",
+    "askuserquestion"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "autoGenerate": {

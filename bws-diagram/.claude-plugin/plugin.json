@@ -3,8 +3,19 @@
   "version": "0.3.0",
   "description": "Diagram pane: after a big turn a small model decides whether it is worth a diagram; if so a fork draws what happened (steps, files, new components, decisions) in a side pane with a legend. Mermaid blocks Claude writes are pinned there too. /diagram draws the whole session.",
   "author": {
-    "name": "Brian"
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
   },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-diagram#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "diagram",
+    "mermaid",
+    "flowchart"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "autoDiagram": {
