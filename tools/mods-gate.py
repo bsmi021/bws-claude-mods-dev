@@ -3,6 +3,7 @@
     python tools/mods-gate.py                 # every plugin, plus the kit sync check when tools/sync-kit.py exists
     python tools/mods-gate.py --plugin bws-enhance   # one plugin (a fast check while working)
     python tools/mods-gate.py --plugin bws-kit       # the kit folder: its tests and tsc (it is not a plugin)
+    python tools/mods-gate.py --root DIR             # gate another checkout (the publish worktree)
 
 Exit 0 only when everything passes. Failures print the tail of the failing command.
 A plugin folder is any top-level folder with .claude-plugin/plugin.json.
@@ -124,7 +125,12 @@ def check_kit() -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--plugin", help="check one plugin folder only")
+    ap.add_argument("--root", help="another repo root, e.g. the publish worktree (tools/publish.py)")
     a = ap.parse_args()
+    if a.root:
+        global ROOT, KIT
+        ROOT = Path(a.root).resolve()
+        KIT = ROOT / "bws-kit"
     t0 = time.time()
     todo = [p for p in plugins() if a.plugin in (None, p.name)]
     do_kit = KIT.is_dir() and a.plugin in (None, "bws-kit")

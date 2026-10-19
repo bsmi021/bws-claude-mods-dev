@@ -1,0 +1,4 @@
+source main 59aa007 (marketplace 1.7.1), publish tip bfd4c2e (marketplace 1.7.1)
+ok   publish worktree matches main for 13 mod folder(s) and the marketplace
+ok   no diff vs publish tip (1.7.1): nothing to release
+exit=0
