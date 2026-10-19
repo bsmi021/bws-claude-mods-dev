@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.3.0
 - Memory updates and dream plans now show in one Memory tab of bws-cockpit's dashboard (0.21.0 or later) instead of two panes.
 - New `/dream dismiss` closes the plan or result on screen.

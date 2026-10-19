@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+- Code comments no longer point at private development notes.
+
 ## 0.2.0
 - A Secrets tab in bws-cockpit's dashboard (0.21.0 or later) lists the saved names and their placeholders, never a value. The masked entry keeps its own pane.
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.2
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.21.1
 - The Enhance and Side chat tabs keep the keyboard: the cockpit opens the dashboard on them itself, so it can move the focus ring and scroll the pane.
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+- Code comments no longer point at private development notes.
+
 ## 0.3.0
 - A Shell lint tab in the bws-cockpit dashboard lists the active rules and the last five refused commands.
 

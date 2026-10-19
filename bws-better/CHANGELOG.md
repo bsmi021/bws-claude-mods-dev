@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.2.0
 - The Prompt Upgrade moved from a pane of its own into the Better tab of bws-cockpit's dashboard (0.21.0 or later).
 - Every button and box has a command twin: `/better --<id> [text]`.

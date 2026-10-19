@@ -1,6 +1,6 @@
 {
   "name": "bws-skillgate",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Skill gating: on a conversation's first prompt a small model picks the skills that fit it and the skill listing the model reads is cut to those (plus any /name the prompt names); later prompts only add skills, so the prompt cache holds. /skillgate [off|on|status|explain].",
   "author": {
     "name": "bsmi021",

@@ -1,0 +1,13 @@
+bws-board | ✔ Validation passed |  0 fail | tsc:clean
+bws-cockpit | ✔ Validation passed |  0 fail | tsc:clean
+bws-better | ✔ Validation passed |  0 fail | tsc:clean
+bws-design-picker | ✔ Validation passed |  0 fail | tsc:clean
+bws-diagram | ✔ Validation passed |  0 fail | tsc:clean
+bws-enhance | ✔ Validation passed |  0 fail | tsc:clean
+bws-interview | ✔ Validation passed |  0 fail | tsc:clean
+bws-memory | ✔ Validation passed |  0 fail | tsc:clean
+bws-notify | ✔ Validation passed |  0 fail | tsc:clean
+bws-secrets | ✔ Validation passed |  0 fail | tsc:clean
+bws-shell-lint | ✔ Validation passed |  0 fail | tsc:clean
+bws-sidechat | ✔ Validation passed |  0 fail | tsc:clean
+bws-skillgate | ✔ Validation passed |  0 fail | tsc:clean
