@@ -22,7 +22,7 @@ No mods = verify mode ("is publish current?").
 ## Evidence
 - receipts/verify-dry-run.txt: `python tools/publish.py` on main 59aa007 → no diff vs publish tip (1.7.1), exit 0.
 - receipts/tests.txt: 12 tests OK.
-- receipts/gate-publish-worktree.txt: real gate with `--root` on a scratch publish worktree with copied types.
+- receipts/gate-publish-worktree.txt: real gate with `--root` on a scratch publish worktree (types copied by publish.copy_types): 13/13 ok, exit 0, 119s.
 - Privacy patterns over the whole current publish tree: 0 hits (no false positives on the published content).
 
 ## Notes / follow-ups
