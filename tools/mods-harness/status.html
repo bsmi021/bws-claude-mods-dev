@@ -148,9 +148,14 @@ async function refresh(){
   document.getElementById('k-bbar').style.width = (100*doneB/ids.length)+'%';
   document.getElementById('k-tasks').textContent = tAll ? `${tDone} / ${tAll}` : '–';
   document.getElementById('k-tbar').style.width = tAll ? (100*tDone/tAll)+'%' : '0';
-  document.getElementById('k-cost').textContent = '$' + cost.toFixed(2);
+  const unpriced = data.reduce((a,d)=>a+(d.bs.unpricedSessions||0),0);
+  document.getElementById('k-cost').textContent = '$' + cost.toFixed(2) + (unpriced?` + ${unpriced} unpriced`:'');
   const toks = data.reduce((a,d)=>a+(d.bs.tokens||0),0);
-  document.getElementById('k-sessions').textContent = `${sess} worker session${sess===1?'':'s'}` + (toks?` · ${toks.toLocaleString()} uncached tokens (codex)`:'') + (cfg.worker.totalBudgetUsd?` · cap $${cfg.worker.totalBudgetUsd}`:'');
+  const tcap = cfg.worker.totalTokens;
+  document.getElementById('k-sessions').textContent = `${sess} worker session${sess===1?'':'s'}`
+    + (toks||tcap?` · ${toks.toLocaleString()} uncached tokens${tcap?' of '+tcap.toLocaleString():''}`:'')
+    + (cfg.worker.totalBudgetUsd?` · cap $${cfg.worker.totalBudgetUsd}`:'')
+    + (unpriced?` · ${unpriced} session${unpriced===1?'':'s'} cut off before a cost record (the $ undercounts)`:'');
 
   const cur = data.find(d=>d.id===state?.current) || data.find(d=>d.bs.status!=='DONE');
   const nowEl = document.getElementById('now');

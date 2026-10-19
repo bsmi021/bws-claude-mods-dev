@@ -6,13 +6,16 @@ headless worker sessions, one at a time, with swappable backends (claude, codex,
 state is kept on disk, so any fresh session can restart the loop.
 
     python <dir>/harness.py run [--resume] [--dry-run]
-    python <dir>/harness.py answer <unit> <N-id> "<the user's answer>" [--dry-run]
-                                          (N-id WIDE approves wide changes for that unit)
+    python <dir>/harness.py answer <unit> <N-id> "<the user's answer>" [--by user|orchestrator] [--wide] [--dry-run]
+                                          (N-id WIDE approves wide changes for that unit; --wide does it with an answer)
     python <dir>/harness.py status [--dry-run]
     python <dir>/harness.py serve [--port N]
     python <dir>/harness.py validate          (check loop.json and preview the seeded tasks)
     python <dir>/harness.py recover [--force] [--dry-run]   (rebuild state.json from disk after a crash)
-    python <dir>/harness.py gate              (workers: the unit's one regression run; writes a gate receipt)
+    python <dir>/harness.py gate [--background | --wait [--minutes 9]]
+                                          (workers: the unit's one regression run; writes a gate receipt)
+    python <dir>/harness.py watch [--minutes 25] [--dry-run]
+                                          (orchestrators: block until the loop needs attention or a unit finishes)
     python <dir>/harness.py start [--resume]  (launch the driver detached, plus the board, and return)
     python <dir>/harness.py stop [--dry-run]  (the only way to cancel the loop: the supervisor respects it)
     python <dir>/harness.py supervise         (one-shot: relaunch a dead driver the user still wants running)
@@ -66,6 +69,7 @@ ROOT = (HERE / CFG.get("repoRootFromHarness", "../..")).resolve()
 SYSTEM_PROMPT = HERE / "worker-system-prompt.md"
 USER = CFG.get("user", "the user")
 GATE_MARKER = "GATE-RUNNING.json"  # written by `harness.py gate` in the unit folder while the gate runs
+WIDE_MARK = "<!-- harness: wide changes approved -->"  # in ANSWERS.md: the unit's wide changes are approved
 
 TASK_RE = re.compile(r"^- \[( |x|~)\] (T\d+)\b(.*)$")
 NEED_RE = re.compile(r"^- \[( |x)\] (N\d+)\b(.*)$")
@@ -234,7 +238,7 @@ _lock = threading.Lock()
 def _write_durable(p: Path, text: str) -> None:
     """Write via a temp file, fsync it, then rename. Windows: a reader (the board, AV) can hold the target for a
     moment, so the rename retries."""
-    tmp = p.with_name(p.name + ".tmp")
+    tmp = p.with_name(f"{p.name}.{os.getpid()}.{threading.get_ident()}.tmp")  # one temp file per writer
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(text)
         f.flush()
@@ -565,9 +569,23 @@ def parse_event(ev: dict, bs: dict, result: dict) -> None:
                 i = c.get("input", {})
                 hint = i.get("file_path") or i.get("command") or i.get("description") or ""
                 bs["heartbeat"] = {"at": now(), "tool": c.get("name"), "hint": trim(str(hint), 90)}
+        # Per-message usage, kept by message id (stream-json repeats it once per content block): the token count
+        # of a session that is killed before its `result` event.
+        u = ev.get("message", {}).get("usage")
+        mid = ev.get("message", {}).get("id")
+        if u and mid:
+            result.setdefault("msgTokens", {})[mid] = (int(u.get("input_tokens", 0))
+                                                        + int(u.get("cache_creation_input_tokens", 0))
+                                                        + int(u.get("output_tokens", 0)))
     elif t == "result":  # claude
         result["cost"] = float(ev.get("total_cost_usd") or 0)
         result["resultText"] = trim(str(ev.get("result") or ""), 400)
+        result["resultAt"] = time.time()
+        # Cumulative per model, so the last result wins (like cost). Uncached only: cache reads are left out.
+        mu = ev.get("modelUsage") or {}
+        if mu:
+            result["resultTokens"] = sum(int(m.get("inputTokens", 0)) + int(m.get("cacheCreationInputTokens", 0))
+                                         + int(m.get("outputTokens", 0)) for m in mu.values() if isinstance(m, dict))
     elif t in ("item.started", "item.completed"):  # codex
         item = ev.get("item", {})
         hint = item.get("command") or item.get("path") or item.get("text") or ""
@@ -586,8 +604,12 @@ def parse_event(ev: dict, bs: dict, result: dict) -> None:
 def watchdog_cfg(w: dict) -> dict:
     """worker.watchdog with defaults. silentMinutes: no output event at all (claude emits tool heartbeats every
     30 s, so silence means hung; codex is silent for a whole long command, so it gets more). taskMinutes: one task
-    stays the current one without a tick (W2c T02 burned 2.5 h on bisect test runs)."""
-    wd = {"silentMinutes": {"claude": 15, "codex": 90, "command": 15}, "taskMinutes": 90, "checkSeconds": 30}
+    stays the current one without a tick (W2c T02 burned 2.5 h on bisect test runs). afterResultSeconds: the worker
+    ended its turn (a `result` event) but the process stays open, because it left a background task or subagent
+    running that nobody will ever collect; the session is ended as finished, not killed as hung (2026-10: four
+    sessions lost 15 min each and one escalated as "crashed"). 0 turns it off."""
+    wd = {"silentMinutes": {"claude": 15, "codex": 90, "command": 15}, "taskMinutes": 90, "checkSeconds": 30,
+          "afterResultSeconds": 180}
     wd.update(w.get("watchdog") or {})
     return wd
 
@@ -602,17 +624,48 @@ def wide_patterns(u: dict) -> list[str]:
     return [] if u.get("wideOk") else list(CFG.get("delegation", {}).get("widePaths", []))
 
 
+def wide_approved(bs: dict, folder: Path) -> bool:
+    """WIDE approval lives on disk in ANSWERS.md, so an `answer` given while the driver runs is never lost to the
+    driver's next state save (PT1 L-S2, 2026-10-17: approved, then stopped again on the same file)."""
+    a = folder / "ANSWERS.md"
+    return bool(bs.get("wideApproved")) or (a.exists() and WIDE_MARK in a.read_text(encoding="utf-8", errors="replace"))
+
+
+def _blob_id(data: bytes) -> str:
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
 def wide_snapshot(start_head: str, pats: list[str]) -> dict[str, str]:
-    """Content hash of every wide-path file that differs from start_head (committed or not) or is untracked."""
+    """Content hash of every wide-path file whose content differs from start_head (committed or not) or that is
+    new. Never counted: the run folders and the harness dir (a copy under runs/ matched `*Test.kt`), files whose
+    content still equals start_head (tool churn, another session's revert), delegation.ignore patterns (files a
+    tool regenerates), and a wiped index (31k files looked deleted, pitu 2026-10-11)."""
     if not pats or not start_head:
         return {}
+    if not git("ls-files", check=False).strip():
+        return {}
+    skip = tuple(d.rstrip("/") + "/" for d in (CFG.get("unitsRunDir", "runs"), CFG["harnessDir"],
+                                               HERE.relative_to(ROOT).as_posix()))
+    ignore = CFG.get("delegation", {}).get("ignore", [])
     names = set(git("diff", "--name-only", start_head, check=False).splitlines())
     names |= set(git("ls-files", "--others", "--exclude-standard", check=False).splitlines())
+    hits = [n for n in sorted(names) if n and not n.startswith(skip)
+            and any(fnmatch.fnmatch(n, p) for p in pats) and not any(fnmatch.fnmatch(n, p) for p in ignore)]
+    if not hits:
+        return {}
+    head = {}
+    for line in git("ls-tree", "-r", start_head, "--", *hits, check=False).splitlines():
+        meta, _, path = line.partition("\t")
+        head[path] = meta.split()[-1] if meta else ""
     snap = {}
-    for n in sorted(names):
-        if n and any(fnmatch.fnmatch(n, p) for p in pats):
-            f = ROOT / n
-            snap[n] = hashlib.sha1(f.read_bytes()).hexdigest() if f.is_file() else "deleted"
+    for n in hits:
+        f = ROOT / n
+        data = f.read_bytes() if f.is_file() else None
+        if data is None:
+            if n in head:
+                snap[n] = "deleted"
+        elif head.get(n) != _blob_id(data):
+            snap[n] = hashlib.sha1(data).hexdigest()
     return snap
 
 
@@ -646,7 +699,7 @@ def run_worker(u: dict, folder: Path, session: int, state: dict, dry: bool) -> d
     result = {"exit": None, "cost": 0.0, "tokens": 0, "timedOut": False, "resultText": "", "killed": None}
     use_git = git_enabled() and not dry
     start_head = git("rev-parse", "HEAD", check=False) if use_git else ""
-    pats = wide_patterns(u) if use_git and not bs.get("wideApproved") else []
+    pats = wide_patterns(u) if use_git and not wide_approved(bs, folder) else []
     wide0 = wide_snapshot(start_head, pats)
     proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             stdin=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
@@ -659,6 +712,7 @@ def run_worker(u: dict, folder: Path, session: int, state: dict, dry: bool) -> d
     wd = watchdog_cfg(w)
     silent_s = float(for_backend(wd["silentMinutes"], w["backend"]) or 0) * 60
     task_s = float(wd["taskMinutes"] or 0) * 60
+    after_result_s = float(wd.get("afterResultSeconds") or 0)
     last_event = [time.time()]
 
     def kill(kind: str, why: str) -> None:
@@ -675,6 +729,10 @@ def run_worker(u: dict, folder: Path, session: int, state: dict, dry: bool) -> d
             if t > deadline:
                 result["timedOut"] = True
                 kill("timeout", f"session timeout ({w.get('sessionTimeoutMinutes', 240)} min)")
+                return
+            if after_result_s and result.get("resultAt") and t - last_event[0] > after_result_s:
+                kill("ended", f"the worker ended its turn {int(t - last_event[0])} s ago but the process stayed open "
+                              "(it left a background task or subagent running, which nobody collects)")
                 return
             if silent_s and t - last_event[0] > silent_s:
                 kill("hung", f"no output from the worker for {int((t - last_event[0]) // 60)} min (hung)")
@@ -713,6 +771,12 @@ def run_worker(u: dict, folder: Path, session: int, state: dict, dry: bool) -> d
                 last = time.time()
     result["exit"] = proc.wait()
     bs["workerPid"] = None
+    msg = result.pop("msgTokens", {})
+    if "resultTokens" in result:
+        result["tokens"] = result.pop("resultTokens")
+    elif msg:  # claude, cut off before its result: tokens from the messages; the cost is unknown
+        result["tokens"] = sum(msg.values())
+        result["unpriced"] = True
     return result
 
 
@@ -845,12 +909,56 @@ def preconditions(dry: bool) -> str | None:
 
 # ---------------------------------------------------------------- commands
 
+_TOAST_PS = r"""
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
+$x = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+$t = $x.GetElementsByTagName('text')
+$t.Item(0).AppendChild($x.CreateTextNode($env:HARNESS_ATTENTION_TITLE)) > $null
+$t.Item(1).AppendChild($x.CreateTextNode($env:HARNESS_ATTENTION_MESSAGE)) > $null
+[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Harness loop').Show([Windows.UI.Notifications.ToastNotification]::new($x))
+"""
+
+
+def attention(state: dict, kind: str, message: str, dry: bool) -> None:
+    """The loop stopped or needs someone. Nothing used to say so: pauses sat unseen for hours until the user asked
+    "are you there?" (pitu, PT1, items, 2026-10). Writes ATTENTION.json (read by `watch` and the board) and, in real
+    runs, shows a desktop toast and runs loop.json notify.cmd. The same event is not repeated within an hour."""
+    p = harness_dir(dry) / "ATTENTION.json"
+    old = _read_json_any(p) or {}
+    rec = {"at": now(), "kind": kind, "unit": state.get("current"), "message": message,
+           "board": f"http://127.0.0.1:{int(CFG.get('board', {}).get('port', 8765))}/"
+                    f"{HERE.relative_to(ROOT).as_posix()}/status.html" + ("?dry" if dry else "")}
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        _write_durable(p, json.dumps(rec, indent=2))
+    except OSError:
+        pass
+    repeat = (old.get("kind"), old.get("message")) == (kind, message) and old.get("at") and \
+        dt.datetime.now() - dt.datetime.fromisoformat(old["at"]) < dt.timedelta(hours=1)
+    if dry or repeat:
+        return
+    n = CFG.get("notify", {})
+    env = dict(os.environ, HARNESS_ATTENTION_KIND=kind, HARNESS_ATTENTION_TITLE=f"{CFG['title']}: {kind}",
+               HARNESS_ATTENTION_MESSAGE=trim(message, 240), HARNESS_ATTENTION_FILE=str(p))
+    cmds = []
+    if n.get("toast", True) and os.name == "nt":
+        cmds.append(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", _TOAST_PS])
+    if n.get("cmd"):
+        cmds.append([sys.executable if c == "{python}" else c for c in n["cmd"]])
+    for c in cmds:  # best effort: a notifier that fails or hangs never stops the driver
+        try:
+            subprocess.run(c, cwd=ROOT, env=env, capture_output=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+
 def pause(state: dict, uid: str, message: str, code: int, dry: bool) -> int:
     state["units"][uid].update(status="PAUSED", message=message)
     # A pause waits for the user: the supervisor must not relaunch it, `run --resume` does after the answer.
     state["driver"].update(status="PAUSED", pid=None, message=f"{uid}: {message}", desired="idle")
     save_state(state, dry)
     log(f"PAUSED {uid}: {message}")
+    attention(state, f"{uid} needs you" if code == 3 else f"{uid} stopped", message, dry)
     return code
 
 
@@ -860,7 +968,18 @@ def escalate(u: dict, bs: dict, why: str, state: dict, dry: bool) -> bool:
     if not can_escalate(w, bs, dry):
         return False
     old = unit_tier(w, bs, dry)
-    bs["tierBump"] = bs.get("tierBump", 0) + 1
+    same = (lambda r: (r.get("model"), r.get("effort")))
+    was = same(resolve_worker(u, bs, dry))
+    bump = bs.get("tierBump", 0)
+    while True:  # skip tiers that resolve to the same model and effort (pitu escalated sonnet -> sonnet three times)
+        bump += 1
+        trial = dict(bs, tierBump=bump)
+        if same(resolve_worker(u, trial, dry)) != was:
+            break
+        if not can_escalate(w, trial, dry):
+            log(f"{u['id']}: {why}; every higher tier runs the same model and effort, so there is nowhere to go")
+            return False
+    bs["tierBump"] = bump
     bs.update(noProgress=0, crashes=0, verifyFails=0)
     new = unit_tier(w, bs, dry)
     bs.setdefault("escalations", []).append({"at": now(), "from": old, "to": new, "why": why})
@@ -877,6 +996,11 @@ def cmd_run(args) -> int:
         # desired stays "run": the supervisor relaunches after an unexpected error (with a crash-loop guard).
         state["driver"].update(status="ERROR", pid=None, message=f"{type(e).__name__}: {e}")
         save_state(state, args.dry_run)
+        try:
+            attention(state, "driver error", state["driver"]["message"] + " (the supervisor relaunches it)",
+                      args.dry_run)
+        except Exception:  # noqa: BLE001  never mask the original error
+            pass
         raise
 
 
@@ -909,7 +1033,8 @@ def _run(args) -> int:
     dry = args.dry_run
     state = load_state(dry, write=True)
     drv = state["driver"]
-    if drv.get("pid") and drv["pid"] != os.getpid() and is_ours(drv["pid"], "driver") and drv["status"] == "RUNNING":
+    if drv.get("pid") and drv["pid"] != os.getpid() and is_ours(drv["pid"], "driver") and \
+            drv["status"] in ("RUNNING", "STARTING"):
         log(f"another driver (pid {drv['pid']}) is running")
         return 5
     for uid, bs in state["units"].items():
@@ -918,11 +1043,20 @@ def _run(args) -> int:
             kill_tree(bs["workerPid"])
         bs["workerPid"] = None
     drv["desired"] = "run"  # until a pause, COMPLETE or `stop`: the supervisor keeps this driver alive
+    # `start --resume` records the intent in the state, so a relaunch after a BLOCKED precondition or a crash still
+    # resumes the answered unit instead of re-pausing it without a word.
+    args.resume = args.resume or bool(drv.get("resumePending"))
+    # Claim the state before preconditions: a repair can take 15 min, and a supervisor that saw no live pid in that
+    # window started a second driver on the same state (pitu 2026-10-05).
+    drv.update(status="STARTING", pid=os.getpid(), message="checking preconditions")
+    drv.pop("startedAt", None)  # claimed: the supervisor's and watch's grace for a fresh `start` ends here
+    save_state(state, dry)
     problem = preconditions(dry)
     if problem:
         drv.update(status="BLOCKED", message=problem, pid=None)
         save_state(state, dry)
         log(problem)
+        attention(state, "blocked", problem, dry)
         return 5
     drv.update(status="RUNNING", pid=os.getpid(), message="")
     save_state(state, dry)
@@ -939,14 +1073,25 @@ def _run(args) -> int:
                 drv.update(status="PAUSED", pid=None, message=f"{uid}: {bs['message']}", desired="idle")
                 save_state(state, dry)
                 log(f"{uid} is paused: {bs['message']} (answer, then run --resume)")
+                attention(state, f"{uid} needs you", bs["message"], dry)
                 return 3
             bs.update(status="RUNNING", message="", noProgress=0, crashes=0, verifyFails=0)
             args.resume = False
+            drv.pop("resumePending", None)
         folder = seed_folder(u, dry)
         bs["folder"] = folder.relative_to(ROOT).as_posix()
         state["current"] = uid
         bs["status"] = "RUNNING"
         save_state(state, dry)
+        if not bs["sessions"] and not dry and git_enabled() and CFG.get("done", {}).get("requireCleanTree", True):
+            # Someone else's uncommitted file fails this unit's clean-tree check only at its DONE, after the money
+            # is spent (gh1 K1/K2). Say so before the first session instead.
+            dirty = git("status", "--porcelain", *run_dirs_pathspec(), check=False)
+            if dirty:
+                return pause(state, uid, "the tree has uncommitted changes outside the run folders before this "
+                                         f"{CFG.get('unitWord', 'unit')} started, so its DONE check would fail: "
+                                         + ", ".join(dirty.splitlines()[:8])
+                                         + ". Commit, stash or exclude them, then run --resume", 4, dry)
 
         while True:
             before = parse_tasks(folder)
@@ -975,17 +1120,23 @@ def _run(args) -> int:
             killed = res.get("killed")
             bs["costUsd"] = round(bs["costUsd"] + res["cost"], 4)
             bs["tokens"] = bs.get("tokens", 0) + res.get("tokens", 0)
+            if res.get("unpriced"):  # cut off before its result event: the USD total undercounts by this session
+                bs["unpricedSessions"] = bs.get("unpricedSessions", 0) + 1
             bs["lastExit"] = {"code": res["exit"], "timedOut": res["timedOut"], "at": now(), "result": res["resultText"],
                               "killed": killed}
             after = parse_tasks(folder)
             sess_cap = w.get("maxTokensPerSession")
-            if sess_cap and res.get("tokens", 0) > sess_cap:
+            if sess_cap and res.get("tokens", 0) > sess_cap and after["status"] != "DONE":
                 save_state(state, dry)
                 return pause(state, uid, f"session used {res['tokens']:,} uncached tokens, over the "
-                                         f"{sess_cap:,} per-session cap (codex reports usage only at the end)", 4, dry)
+                                         f"{sess_cap:,} per-session cap (usage is known only at the end)", 4, dry)
             log(f"{uid}: session {bs['sessions']} exit={res['exit']} status={after['status']} "
                 f"done={done_count(after)}/{len(after['tasks'])} cost=${res['cost']:.2f}"
+                + (" (unpriced: cut off before its result)" if res.get("unpriced") else "")
+                + (f" tokens={res['tokens']:,}" if res.get("tokens") else "")
                 + (f" killed={killed['kind']}" if killed else ""))
+            # A worker that set DONE and then sat idle (a forgotten background task) still finished: verify it.
+            idle_end = bool(killed) and killed["kind"] in ("ended", "hung")
 
             if killed and killed["kind"] == "wide":
                 files = ", ".join(res.get("wideFiles", [])[:8])
@@ -997,7 +1148,7 @@ def _run(args) -> int:
                 items = "; ".join(f"{n[1]} {n[2]}" for n in open_needs(after)) or "status NEEDS"
                 return pause(state, uid, f"needs {USER}: {items}", 3, dry)
 
-            if after["status"] == "DONE" and not killed:
+            if after["status"] == "DONE" and (not killed or idle_end):
                 problems = verify_done(u, folder, after, dry)
                 if not problems:
                     (folder / "VERIFY-FAIL.md").unlink(missing_ok=True)
@@ -1020,10 +1171,11 @@ def _run(args) -> int:
             progressed = done_count(after) > done_count(before)
             if progressed:
                 (folder / "STUCK.md").unlink(missing_ok=True)
-            if killed and killed["kind"] in ("stuck", "hung"):
+            if killed and (killed["kind"] in ("stuck", "hung") or (killed["kind"] == "ended" and not progressed)):
                 write_stuck(folder, bs["sessions"], killed, after)
-            # A stuck kill is a stall, not a crash: it counts toward noProgress only.
-            crashed = (res["exit"] not in (0, None) or res["timedOut"]) and not (killed and killed["kind"] == "stuck")
+            # A stuck kill is a stall, not a crash, and an ended one finished its turn: noProgress only.
+            crashed = (res["exit"] not in (0, None) or res["timedOut"]) and \
+                not (killed and killed["kind"] in ("stuck", "ended"))
             bs["noProgress"] = 0 if progressed else bs["noProgress"] + 1
             bs["crashes"] = bs["crashes"] + 1 if crashed else 0
             save_state(state, dry)
@@ -1040,10 +1192,12 @@ def _run(args) -> int:
                 return pause(state, uid, why, 4, dry)
 
     state["current"] = None
+    drv.pop("resumePending", None)
     drv.update(status="COMPLETE", pid=None, message=f"All {CFG.get('unitWord', 'unit')}s DONE and verified.",
                desired="idle")
     save_state(state, dry)
     log("complete")
+    attention(state, "complete", drv["message"], dry)
     return 0
 
 
@@ -1055,21 +1209,27 @@ def cmd_gate(args) -> int:
     if not uid:
         log("no current unit (run this from a worker session, or while the loop is on a unit)")
         return 2
+    if getattr(args, "background", False) or getattr(args, "wait", False):
+        return gate_detached(args, uid)
+
+    def end(code: int, msg: str, problems: list[str] | None = None) -> int:
+        log(msg)
+        gate_last_path(uid).parent.mkdir(parents=True, exist_ok=True)
+        _write_durable(gate_last_path(uid), json.dumps({"at": now(), "exit": code, "message": msg,
+                                                        "problems": problems or []}, indent=1))
+        return code
+
     if os.environ.get("HARNESS_DRY") == "1":
-        log("dry run: no gate")
-        return 0
+        return end(0, "dry run: no gate")
     if not git_enabled():
-        log("git is off for this loop, so there is no receipt: the driver runs the gates after DONE")
-        return 2
+        return end(2, "git is off for this loop, so there is no receipt: the driver runs the gates after DONE")
     dirty = git("status", "--porcelain")
     if dirty:
-        log("refused: commit first. The gate only counts for committed code (uncommitted: "
-            + ", ".join(dirty.splitlines()[:8]) + ")")
-        return 2
+        return end(2, "refused: commit first. The gate only counts for committed code (uncommitted: "
+                   + ", ".join(dirty.splitlines()[:8]) + ")")
     r = reusable_receipt(uid)
     if r:
-        log(f"gates already passed for this code ({r['head'][:10]}, {r['at']}); nothing to run")
-        return 0
+        return end(0, f"gates already passed for this code ({r['head'][:10]}, {r['at']}); nothing to run")
     folder = os.environ.get("HARNESS_UNIT_FOLDER")
     limit = int(CFG["worker"].get("gateRunsPerSession", 2))
     lp = Path(folder) / "RUN-LEDGER.json" if folder else None
@@ -1077,9 +1237,8 @@ def cmd_gate(args) -> int:
     if lp and limit > 0:
         done = ((_read_json_any(lp) or {}).get(session, {}).get("_gate") or {}).get("runs", 0)
         if done >= limit:
-            log(f"refused: this session already ran the gate {done} times (limit {limit}). Read the gate "
-                "logs you have, fix what they show, set DONE and let the harness verify, or record the gap.")
-            return 3
+            return end(3, f"refused: this session already ran the gate {done} times (limit {limit}). Read the gate "
+                       "logs you have, fix what they show, set DONE and let the harness verify, or record the gap.")
     # While the gate runs (35+ min on a live editor), the watchdog must neither call the worker stuck nor silent:
     # killing it mid-gate cuts off a live test run, which can wedge the tool it drives.
     marker = Path(folder) / GATE_MARKER if folder else None
@@ -1099,8 +1258,54 @@ def cmd_gate(args) -> int:
         _write_durable(lp, json.dumps(ledger, indent=1))
     for p in problems:
         print(p)
-    log(f"{uid}: gate {'PASS: receipt written; the harness reuses it if nothing outside the run folders changes' if not problems else 'FAIL'}")
-    return 0 if not problems else 1
+    return end(0 if not problems else 1, f"{uid}: gate " + ("PASS: receipt written; the harness reuses it if nothing "
+                                                            "outside the run folders changes" if not problems else "FAIL"),
+               problems)
+
+
+def gate_last_path(uid: str) -> Path:
+    return harness_dir(False) / "logs" / f"{uid}-gate-last.json"
+
+
+def gate_detached(args, uid: str) -> int:
+    """`gate --background` starts the gate as a detached process and returns; `gate --wait` blocks for at most
+    --minutes (default 9, under the Bash tool's 10 min cap) and exits with the gate's code, or 75 while it still
+    runs. A long gate run as a worker's background shell task was killed at Claude's 2 h background limit with
+    527 of 528 tests done (PT1 L-S5, 2026-10-18), and a worker that ends its turn to wait is ended by the driver."""
+    folder = os.environ.get("HARNESS_UNIT_FOLDER")
+    marker = Path(folder) / GATE_MARKER if folder else None
+    last = gate_last_path(uid)
+    out = harness_dir(False) / "logs" / f"{uid}-gate-bg.out.log"
+    if args.background:
+        if marker and gate_running(Path(folder)):
+            log("a gate is already running; wait for it with `harness.py gate --wait`")
+            return 0
+        last.unlink(missing_ok=True)
+        pid = _spawn_detached([sys.executable, str(HERE / "harness.py"), "gate"], out)
+        if marker:  # the child rewrites it; written here too so `--wait` and the watchdog see it at once
+            marker.write_text(json.dumps({"pid": pid, "at": now()}), encoding="utf-8")
+        log(f"gate started in the background (pid {pid}). Now run `python {HERE.relative_to(ROOT).as_posix()}"
+            "/harness.py gate --wait` in the foreground, again each time it exits 75, until it exits 0 or 1. "
+            "Do not end your turn while it runs.")
+        return 0
+    deadline = time.time() + args.minutes * 60
+    while marker and gate_running(Path(folder)) and time.time() < deadline:
+        time.sleep(10)
+    if marker and gate_running(Path(folder)):
+        m = _read_json_any(marker) or {}
+        log(f"gate still running (since {m.get('at', '?')}); run `gate --wait` again")
+        return 75
+    if marker:
+        marker.unlink(missing_ok=True)  # the gate is gone; a marker left by the race with its own cleanup must not stay
+    r = _read_json_any(last)
+    if r is None:
+        tail = out.read_text(encoding="utf-8", errors="replace").splitlines()[-15:] if out.exists() else []
+        log("the background gate exited without a result (it refused or crashed). Its output:\n" + "\n".join(tail))
+        return 2
+    for p in r.get("problems", []):
+        print(p)
+    log(f"{uid}: background gate exit {r['exit']} at {r['at']}: {r.get('message', '')}")
+    return int(r["exit"])
 
 
 def cmd_answer(args) -> int:
@@ -1111,18 +1316,24 @@ def cmd_answer(args) -> int:
         log(f"{args.unit} has no run folder yet")
         return 2
     p = ROOT / folder / "ANSWERS.md"
-    head = "" if p.exists() else f"# {args.unit} — {USER}'s answers (binding)\n\n"
+    head = "" if p.exists() else f"# {args.unit} — answers (binding)\n\n"
+    by = USER if args.by == "user" else "the orchestrator, under the delegation in loop.json (not " + USER + ")"
     text = args.text
-    if args.need == "WIDE":
-        bs["wideApproved"] = True
-        text += f"\n\n({USER} approved wide changes for {args.unit}: the harness no longer stops on them.)"
+    wide = args.need == "WIDE" or args.wide
+    if wide:
+        # A sign-off that already covers wide paths approves them too (gh1 K4 was stopped again after the sign-off).
+        text += f"\n\n({by} approved wide changes for {args.unit}: the harness no longer stops on them.)\n{WIDE_MARK}"
     elif args.need == "WIDE-NO":
-        text += (f"\n\n({USER} declined the wide change. Revert every change to the wide paths that has no approval, "
+        text += (f"\n\n({by} declined the wide change. Revert every change to the wide paths that has no approval, "
                  "keep the change inside this unit's own scope, or raise a blocker.)")
     with p.open("a", encoding="utf-8") as f:
-        f.write(f"{head}## {args.need} — {now()}\n\n{text}\n\n")
-    save_state(state, args.dry_run)
-    log(f"recorded answer for {args.unit} {args.need} in {folder}/ANSWERS.md")
+        f.write(f"{head}## {args.need} — {now()} — by {by}\n\n{text}\n\n")
+    # The answer lives in ANSWERS.md (the driver reads WIDE approval from there). A live driver owns state.json:
+    # writing it here raced the driver's own saves and lost wideApproved (PT1 L-S2, 2026-10-17).
+    if wide and not driver_alive(state):
+        bs["wideApproved"] = True
+        save_state(state, args.dry_run)
+    log(f"recorded answer for {args.unit} {args.need} (by {args.by}) in {folder}/ANSWERS.md")
     return 0
 
 
@@ -1229,12 +1440,16 @@ def cmd_status(args) -> int:
     state = load_state(args.dry_run)
     d = state["driver"]
     shown = d["status"]
-    if shown == "RUNNING" and not driver_alive(state):
+    if shown in ("RUNNING", "STARTING") and not driver_alive(state):
         shown = "STOPPED (driver pid is dead; the supervisor relaunches it if desired=run)"
     print(f"driver: {shown}  desired={d.get('desired', 'idle')}  {d.get('message', '')}")
     for uid in state["order"]:
         bs = state["units"][uid]
         line = f"{uid:4} {bs['status']:8} sessions={bs['sessions']} ${bs['costUsd']:.2f}"
+        if bs.get("unpricedSessions"):
+            line += f" (+{bs['unpricedSessions']} unpriced)"
+        if bs.get("tokens"):
+            line += f" {bs['tokens']:,} tok"
         if bs.get("model"):
             line += f" {bs.get('tier') or '-'}:{bs['model']}"
         if bs.get("folder"):
@@ -1247,6 +1462,67 @@ def cmd_status(args) -> int:
                 line += f"\n      OPEN {n[1]} {n[2]}"
         print(line + (f"\n      {bs['message']}" if bs.get("message") else ""))
     return 0
+
+
+def brief(state: dict) -> str:
+    """One line: driver status, the current unit, its task count and current task, spend."""
+    d = state["driver"]
+    uid = state.get("current")
+    parts = [f"driver {d['status']}" + ("" if d["status"] not in ("RUNNING", "STARTING") or driver_alive(state)
+                                        else " (pid dead)")]
+    if uid and uid in state["units"]:
+        bs = state["units"][uid]
+        parts.append(f"{uid} {bs['status']} session {bs['sessions']}")
+        if bs.get("folder"):
+            info = parse_tasks(ROOT / bs["folder"])
+            cur = current_key(info)[0]
+            parts.append(f"tasks {done_count(info)}/{len(info['tasks'])} on {cur}")
+    done = sum(1 for b in state["units"].values() if b["status"] == "DONE")
+    spent = sum(b.get("costUsd", 0) for b in state["units"].values())
+    parts.append(f"{done}/{len(state['order'])} done, ${spent:.2f}")
+    if d.get("message") and d["status"] not in ("RUNNING",):
+        parts.append(trim(d["message"], 300))
+    return " | ".join(parts)
+
+
+def cmd_watch(args) -> int:
+    """Block until the loop needs someone or a unit finishes, print one line, exit. One bounded process with no
+    pipes, for an orchestrator's Monitor or background task: hand-made `tail -F | grep` watchers were orphaned,
+    reaped for memory and missed pauses (pitu, PT1, items, vfx 2026-10).
+      exit 3  ATTENTION: paused, blocked, error, halted, stopped, complete, or a dead driver nobody relaunched
+      exit 0  UNIT DONE (a unit finished), or STILL RUNNING when --minutes passed (a heartbeat line)"""
+    dry = args.dry_run
+    t0 = time.time()
+    start = load_state(dry)
+    was_done = {uid for uid in start["order"] if start["units"][uid]["status"] == "DONE"}
+    dead_since = None
+    while True:
+        state = load_state(dry)
+        d = state["driver"]
+        live = d["status"] in ("RUNNING", "STARTING")
+        if d.get("desired") == "halted" or not live:
+            # `start` was just run and the new driver has not written its status yet: not an event.
+            fresh = d.get("startedAt") and d.get("desired") == "run" and \
+                dt.datetime.now() - dt.datetime.fromisoformat(d["startedAt"]) < dt.timedelta(seconds=90)
+            if not fresh or d.get("desired") == "halted":
+                print(f"ATTENTION {d['status']}: {brief(state)}", flush=True)
+                return 3
+        elif not driver_alive(state):
+            dead_since = dead_since or time.time()
+            if time.time() - dead_since > args.dead_minutes * 60:
+                print(f"ATTENTION driver dead for {args.dead_minutes} min and not relaunched (is the supervisor "
+                      f"installed?): {brief(state)}", flush=True)
+                return 3
+        else:
+            dead_since = None
+        done = [uid for uid in state["order"] if state["units"][uid]["status"] == "DONE" and uid not in was_done]
+        if done:
+            print(f"UNIT DONE {', '.join(done)}: {brief(state)}", flush=True)
+            return 0
+        if time.time() - t0 >= args.minutes * 60:
+            print(f"STILL RUNNING: {brief(state)}", flush=True)
+            return 0
+        time.sleep(args.poll)
 
 
 def cmd_stop(args) -> int:
@@ -1322,7 +1598,23 @@ def cmd_supervise(args) -> int:
         return 0
     if driver_alive(state):
         return 0
+    started = drv.get("startedAt")
+    if started and dt.datetime.now() - dt.datetime.fromisoformat(started) < dt.timedelta(minutes=2):
+        return 0  # `start` just launched it and it has not claimed the state yet: a second driver would race it
     sup = state.setdefault("supervisor", {"restarts": []})
+    if drv["status"] == "BLOCKED":
+        # A precondition, not a crash: retry it on a slower cadence and never count it toward the crash guard,
+        # which halted PT1 after a reboot left the editor down (2026-10-18). The driver raised attention already.
+        last = sup.get("blockedTry")
+        every = int(CFG.get("supervisor", {}).get("blockedRetryMinutes", 15))
+        if last and dt.datetime.now() - dt.datetime.fromisoformat(last) < dt.timedelta(minutes=every):
+            return 0
+        sup["blockedTry"] = now()
+        save_state(state, False)
+        pid = _spawn_detached([sys.executable, str(HERE / "harness.py"), "run"]
+                          + (["--resume"] if drv.get("resumePending") else []), hd / "driver.out.log")
+        note(f"driver is blocked ({trim(drv.get('message') or '-', 120)}); retrying the preconditions (pid {pid})")
+        return 0
     cutoff = dt.datetime.now() - dt.timedelta(minutes=30)
     recent = [t for t in sup.get("restarts", []) if dt.datetime.fromisoformat(t) > cutoff]
     if len(recent) >= 3:
@@ -1331,11 +1623,13 @@ def cmd_supervise(args) -> int:
                            f"{(hd / 'driver.out.log').relative_to(ROOT).as_posix()}. Fix it, then `run`.")
         save_state(state, False)
         note(drv["message"])
+        attention(state, "halted", drv["message"], False)
         return 1
     recent.append(now())
     sup["restarts"] = recent
     save_state(state, False)
-    pid = _spawn_detached([sys.executable, str(HERE / "harness.py"), "run"], hd / "driver.out.log")
+    pid = _spawn_detached([sys.executable, str(HERE / "harness.py"), "run"]
+                          + (["--resume"] if drv.get("resumePending") else []), hd / "driver.out.log")
     note(f"driver was dead (last status {drv['status']}: {trim(drv.get('message') or '-', 120)}); relaunched it "
          f"(pid {pid})")
     return 0
@@ -1347,9 +1641,12 @@ def cmd_start(args) -> int:
     if driver_alive(state):
         log(f"the driver is already running (pid {state['driver']['pid']})")
         return 0
-    state["driver"]["desired"] = "run"
+    state["driver"].update(desired="run", startedAt=now())
+    if args.resume:
+        state["driver"]["resumePending"] = True
     state.setdefault("supervisor", {})["restarts"] = []
     save_state(state, False)
+    (harness_dir(False) / "ATTENTION.json").unlink(missing_ok=True)  # `watch` must not report the old event
     hd = harness_dir(False)
     pid = _spawn_detached([sys.executable, str(HERE / "harness.py"), "run"] + (["--resume"] if args.resume else []),
                           hd / "driver.out.log")
@@ -1386,6 +1683,14 @@ def cmd_supervisor(args) -> int:
                         "/TR", tr], capture_output=True, text=True, errors="replace")
     print((r.stdout or r.stderr).strip())
     if r.returncode == 0:
+        # schtasks' defaults never start the task on battery and stop it when the laptop unplugs (Inkwell m7).
+        ps = (f"$s = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries "
+              f"-ExecutionTimeLimit (New-TimeSpan -Hours 1); Set-ScheduledTask -TaskName '{task_name()}' -Settings $s")
+        b = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps], capture_output=True,
+                           text=True, errors="replace")
+        print("battery: runs on battery too" if b.returncode == 0 else
+              f"warning: could not allow the task on battery ({(b.stderr or b.stdout).strip()[:200]}); keep the "
+              "laptop plugged in during the loop")
         print(f"{task_name()}: every {args.every} min while you are logged on (so after a reboot too), it relaunches "
               "a dead driver whose desired state is run. Cancel the loop with `harness.py stop`, never by killing "
               "the process, or it is relaunched.")
@@ -1417,6 +1722,10 @@ def cmd_validate(args) -> int:
         print(f"{u['id']:4} {len(t):3} tasks  backend={w['backend']} {path}"
               + (f"  subagent={rw['subagentModel']}" if rw.get("subagentModel") else "")
               + (f"  MISSING: {bad}" if bad else ""))
+        pairs = [(s.get("model"), s.get("effort")) for s in steps]
+        if len(pairs) > 1 and len(set(pairs)) < len(pairs):
+            warnings.append(f"{u['id']}: escalation tiers repeat the same model and effort ({path}); the driver skips "
+                            "repeats, so fix worker.tiers if you meant a real step up")
         if w.get("tier") and w["tier"] not in w.get("tiers", {}):
             warnings.append(f"{u['id']}: tier {w['tier']!r} is not defined in worker.tiers")
         if w["backend"] == "codex" and codex_slugs is not None:
@@ -1433,6 +1742,11 @@ def cmd_validate(args) -> int:
     print(f"wide paths ({len(wide)}): {', '.join(wide) or 'none: the wide-change tripwire is off'}"
           + (f"; pre-approved for {', '.join(u['id'] for u in CFG['units'] if u.get('wideOk'))}"
              if any(u.get("wideOk") for u in CFG["units"]) else ""))
+    if wide and git_enabled():
+        tracked = git("ls-files", check=False).splitlines()
+        for pat in wide:
+            if not any(fnmatch.fnmatch(t, pat) for t in tracked):
+                warnings.append(f"wide path {pat!r} matches no tracked file (a typo guards nothing)")
     if not (HERE / "run_budget.py").exists():
         warnings.append("run_budget.py is missing next to harness.py (regenerate or `new_harness.py --upgrade`)")
     for p in CFG.get("preconditions", []):
@@ -1443,7 +1757,7 @@ def cmd_validate(args) -> int:
         if codex_sandbox() != "danger-full-access":
             warnings.append(f"codex sandbox {codex_sandbox()!r} blocks .git writes: workers can't commit "
                             "(use danger-full-access; the pre-push hook guards pushes)")
-        hook = ROOT / ".git" / "hooks" / "pre-push"
+        hook = ROOT / git("rev-parse", "--git-path", "hooks", check=False).strip() / "pre-push"  # hooksPath, worktrees
         if not CFG["git"].get("allowPush") and not (hook.exists() and "harness" in hook.read_text(errors="replace")):
             warnings.append("codex workers run with full access but .git/hooks/pre-push is not the harness push "
                             "guard; regenerate or install it")
@@ -1503,16 +1817,28 @@ def main() -> int:
     a.add_argument("unit")
     a.add_argument("need")
     a.add_argument("text")
+    a.add_argument("--by", choices=["user", "orchestrator"], default="user",
+                   help="orchestrator: answered under loop.json orchestrator.delegation, never the user's sign-off")
+    a.add_argument("--wide", action="store_true", help="the answer also approves this unit's wide changes")
     a.add_argument("--dry-run", action="store_true")
     s = sub.add_parser("status")
     s.add_argument("--dry-run", action="store_true")
+    wa = sub.add_parser("watch")
+    wa.add_argument("--minutes", type=float, default=25, help="print STILL RUNNING and exit 0 after this long")
+    wa.add_argument("--dead-minutes", type=float, default=12, help="a dead driver this long, unrelaunched, is ATTENTION")
+    wa.add_argument("--poll", type=float, default=10)
+    wa.add_argument("--dry-run", action="store_true")
     v = sub.add_parser("serve")
     v.add_argument("--port", type=int, default=None)
     sub.add_parser("validate")
     rc = sub.add_parser("recover")
     rc.add_argument("--force", action="store_true", help="rebuild even when state.json is readable")
     rc.add_argument("--dry-run", action="store_true")
-    sub.add_parser("gate")
+    ga = sub.add_parser("gate")
+    gm = ga.add_mutually_exclusive_group()
+    gm.add_argument("--background", action="store_true", help="start the gate detached and return")
+    gm.add_argument("--wait", action="store_true", help="wait for a --background gate (exit 75: still running)")
+    ga.add_argument("--minutes", type=float, default=9)
     st = sub.add_parser("stop")
     st.add_argument("--reason", default="cancelled")
     st.add_argument("--by", default="the orchestrator")
@@ -1526,7 +1852,7 @@ def main() -> int:
     args = ap.parse_args()
     return {"run": cmd_run, "answer": cmd_answer, "status": cmd_status, "serve": cmd_serve,
             "validate": cmd_validate, "recover": cmd_recover, "gate": cmd_gate, "stop": cmd_stop, "supervise": cmd_supervise,
-            "start": cmd_start, "supervisor": cmd_supervisor}[args.cmd](args)
+            "start": cmd_start, "supervisor": cmd_supervisor, "watch": cmd_watch}[args.cmd](args)
 
 
 if __name__ == "__main__":

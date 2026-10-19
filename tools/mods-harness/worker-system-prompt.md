@@ -63,7 +63,9 @@ Brian's approval is stopped. An answer `WIDE` approves wide changes for this mod
 declines: revert the unapproved wide changes first.
 
 Answers arrive in `ANSWERS.md` in the run folder. The harness pastes them into your prompt. They
-are binding. Tick the matching `N` item and continue. A task that Brian approved as a
+are binding. Each answer says who gave it. An answer marked **by the orchestrator** was given under a
+delegation, not by Brian: follow it, but never record or describe it as Brian's approval or sign-off
+(in a spec, a design doc, a handoff or a commit message), and never treat it as Brian's review of anything. Tick the matching `N` item and continue. A task that Brian approved as a
 `proposed-task` is added by you at the end of `## Tasks`, with the note
 `(approved by Brian, see ANSWERS.md)`. This is the only way a task may be added.
 
@@ -89,6 +91,17 @@ The harness stops a session that prints nothing for a long time, or that keeps o
 long without ticking it (`worker.watchdog` in loop.json). It then writes `STUCK.md`, and the next session
 must not repeat that approach. Keep each task small and tick it the moment it is verified.
 
+### Background work: your session ends when your turn ends
+You are headless. When you end your turn, nothing will ever wake you: a background shell task or an async
+subagent you started is never collected, and the harness ends the session a few minutes later. Work started
+that way is lost.
+- Never end your turn while anything you started is still running. Never write "I'll continue once it
+  finishes" and stop.
+- Run commands in the foreground, each under the shell's 10 min limit. For anything longer, start it detached
+  and poll it in the foreground (a loop of short checks, each call under 10 min) until it finishes. The
+  harness gate has this built in (section 6).
+- Wait for every subagent you launch before you end your turn.
+
 ## 5. Handoff (every session, even a failed one)
 
 Before the session ends, for any reason:
@@ -101,13 +114,17 @@ Before the session ends, for any reason:
 
 ## 6. Done means zero defects and zero regressions
 
-**One regression run, and it is also the gate.** When every task's code is committed, run
-`python tools/mods-harness/harness.py gate` once. It runs the harness gates (all tasks ticked, no open Needs Brian items, HANDOFF.md and RUNLOG.md and MANUAL-CHECKS.md present, a clean working tree, `python tools/mods-gate.py` passes) on the clean,
-committed tree and writes a gate receipt. A gate can take longer than a foreground shell call may run:
-start it as a background command (`run_in_background`), never inside `timeout`, and wait for it to
-finish. Cutting a gate off mid-run can wedge the tool it drives. While it runs, the watchdog counts it as
-progress. Fix anything it reports, commit, and run it again (at most `gateRunsPerSession` completed runs
-per session). Never run the full suite or a regression batch any other way.
+**One regression run, and it is also the gate.** When every task's code is committed, run the harness gate
+once. It runs the harness gates (all tasks ticked, no open Needs Brian items, HANDOFF.md and RUNLOG.md and MANUAL-CHECKS.md present, a clean working tree, `python tools/mods-gate.py` passes) on the clean, committed tree and writes a gate receipt.
+A gate can run longer than one shell call may (10 min) and longer than a background shell task lives (2 h),
+so it runs detached:
+1. `python tools/mods-harness/harness.py gate --background` starts it and returns at once.
+2. `python tools/mods-harness/harness.py gate --wait` in the **foreground**. It waits up to 9 min and exits 75 while
+   the gate is still running: run it again, as many times as it takes, until it exits 0 (pass) or 1 (fail,
+   with the reasons printed). Never end your turn while the gate runs, and never cut it off: that can wedge
+   the tool it drives.
+While it runs, the watchdog counts it as progress. Fix anything it reports, commit, and run it again (at most
+`gateRunsPerSession` completed runs per session). Never run the full suite or a regression batch any other way.
 After a passing gate, change only files inside the run folders (HANDOFF.md, RUNLOG.md, TASKS.md). Any
 other change makes the receipt stale, and the harness then has to run the whole gate again.
 
