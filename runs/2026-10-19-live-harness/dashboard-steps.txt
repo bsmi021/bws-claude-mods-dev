@@ -5,7 +5,7 @@ wait:\d: Diagram@15
 sleep:3
 dump:01-dashboard
 # a real mouse click on the Diagram tab button switches to it
-click:Diagram@+1
+click:Diagram@first+1
 wait:\[ Diagram \]@15
 wait:No diagrams yet@10
 dump:02-diagram-tab

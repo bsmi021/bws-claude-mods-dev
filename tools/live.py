@@ -8,14 +8,16 @@ Starts `claude --plugin-dir <each mod's source folder>` at --size COLSxROWS (def
 (default <temp>/bws-live, so its transcripts stay out of this repo's project dir and the trust prompt is answered once),
 answers the trust prompt, waits for the prompt box, runs the steps, types /exit, and saves screen dumps to --out.
 Environment: NO_COLOR and the parent session's CLAUDECODE / CLAUDE_CODE_* markers are cleared, MSYS_NO_PATHCONV=1 is
-set, and CLAUDE_CODE_PLUGIN_DIRS is emptied so only the --plugin mods load from source (installed copies still load
-unless --source-only, which passes --setting-sources project,local).
+set, and CLAUDE_CODE_PLUGIN_DIRS is emptied. Installed mods still load beside the --plugin source folders; a source
+folder shadows its own installed copy (checked live 2026-10-19). --source-only passes --setting-sources project,local,
+which also drops user settings and with them mouse tracking and the side-panel layout.
 
 Steps, one per --step or per line of --steps (blank lines and # comments skipped):
   say:TEXT         type TEXT, then Enter
   type:TEXT        type TEXT without Enter
   key:NAME[*N]     enter, tab, shift+tab, esc, up, down, left, right, backspace, space, ctrl+<letter>; N repeats
-  click:LABEL[@+K] SGR mouse press + release on the lowest cell showing LABEL (K columns right of its first letter)
+  click:LABEL[@[first][+K]] SGR mouse press + release on LABEL, K columns right of its first letter; the lowest
+                   line showing it by default, the topmost with `first` (a tab button whose label repeats as a heading)
   wait:REGEX[@SECS] wait until the rendered screen matches REGEX (default 30 s); text scrolled off screen won't match
   sleep:SECS       pause
   dump:NAME        save the rendered screen to <out>/NAME.txt
@@ -101,12 +103,12 @@ class Live:
             time.sleep(0.3)
         return False
 
-    def find_cell(self, label):
-        # (row, col), 1-based, of the lowest line showing `label`
+    def find_cell(self, label, first=False):
+        # (row, col), 1-based, of the lowest (or topmost) line showing `label`
         with self.lock:
             lines = list(self.term.display)
         hits = [(r + 1, line.index(label) + 1) for r, line in enumerate(lines) if label in line]
-        return hits[-1] if hits else None
+        return (hits[0] if first else hits[-1]) if hits else None
 
     def click(self, row, col):
         self.write('%s[<0;%d;%dM' % (ESC, col, row))
@@ -149,13 +151,16 @@ def run_step(live, n, step):
             live.write(key_text(name))
             time.sleep(0.15)
     elif kind == 'click':
-        label, _, offset = arg.partition('@')
+        label, _, where = arg.partition('@')
+        m = re.fullmatch(r'(first)?([+-]\d+)?', where.strip())
+        if m is None:
+            raise Fail(f'bad click position {where!r} (use @+K, @first or @first+K)')
         if not live.mouse_on():
             raise Fail('mouse tracking is not on (no ESC[?1000h seen); a click would type into the box')
-        cell = live.find_cell(label)
+        cell = live.find_cell(label, first=bool(m.group(1)))
         if cell is None:
             raise Fail(f'no cell shows {label!r}')
-        col = cell[1] + int(offset or 0)
+        col = cell[1] + int(m.group(2) or 0)
         live.click(cell[0], col)
         return f'clicked ({cell[0]}, {col})'
     elif kind == 'wait':
