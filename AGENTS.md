@@ -150,7 +150,7 @@ Local Doc: ./docs/mods.md
   - Pass plugin options with `--settings <file>` (`pluginConfigs`); it merges with user settings.
 - Test terminals: the tool shell sets `NO_COLOR=1`, so clear it to see band colors. Launch `wt.exe` through a `.ps1` file, since `wt` splits commands on `;`.
 - Guard and lint rules that block or rewrite match the command position only. Replay them over the real-command corpus before shipping.
-- Generated `.claude-plugin/types/claude-code-mcp` is rewritten by any live `--plugin-dir` session, with every connected MCP server's tools (~500 KB). tsc then fails with TS2589 in cockpit. After a live run, copy bws-board's lean `claude-code-mcp/index.d.ts` over any copy above 400 KB.
+- Generated `.claude-plugin/types/claude-code-mcp` is rewritten by any live `--plugin-dir` session, with every connected MCP server's tools (~500 KB). tsc then fails with TS2589 in cockpit. The gate restores it: before tsc it replaces any copy above 400 KB with bws-board's lean one and prints a `restored` line.
   - For a new plugin, copy a sibling's types folder.
   - `claude plugin test` regenerates that folder too and drops hand edits. Declare a plugin's own tool inputs instead as an `interface McpToolInputs` augmentation in its `types/index.d.ts` (bws-cockpit does).
 - In the manifest's types contract (`types/index.d.ts`), an `import('…')` type makes the validator report every `PluginState` key as not declared. Write the shapes inline.

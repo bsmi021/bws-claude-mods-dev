@@ -1,0 +1,19 @@
+ok   bws-better
+ok   bws-board
+restored bws-cockpit: claude-code-mcp types were 603 KB, replaced with bws-board's copy (288 KB)
+ok   bws-cockpit
+ok   bws-design-picker
+ok   bws-diagram
+ok   bws-enhance
+ok   bws-interview
+ok   bws-memory
+ok   bws-notify
+ok   bws-secrets
+ok   bws-shell-lint
+ok   bws-sidechat
+ok   bws-skillgate
+ok   bws-kit
+ok   kit sync
+ok   kit sync tests
+ok   gate tests
+13 plugin(s) + kit, 124s

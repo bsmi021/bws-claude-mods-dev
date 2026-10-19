@@ -6,6 +6,8 @@
 
 Exit 0 only when everything passes. Failures print the tail of the failing command.
 A plugin folder is any top-level folder with .claude-plugin/plugin.json.
+Before tsc, an oversized generated claude-code-mcp types file (a live --plugin-dir session writes ~500 KB) is
+replaced with bws-board's lean copy.
 """
 import argparse
 import os
@@ -60,6 +62,32 @@ def bootstrap_types(plugin: Path) -> None:
         shutil.copytree(src, plugin / ".claude-plugin" / "types")
 
 
+MCP_TYPES = Path(".claude-plugin") / "types" / "claude-code-mcp" / "index.d.ts"
+MCP_TYPES_LIMIT = 400 * 1024
+MCP_TYPES_REFERENCE = "bws-board"
+
+
+def restore_lean_mcp_types(plugin: Path, root: Path = ROOT) -> None:
+    """A live --plugin-dir session regenerates this gitignored file with every connected MCP server's tools
+    (~500 KB), and tsc then fails with TS2589. Put bws-board's lean copy back when the file is over the limit."""
+    target = plugin / MCP_TYPES
+    if not target.is_file() or target.stat().st_size <= MCP_TYPES_LIMIT:
+        return
+    board = root / MCP_TYPES_REFERENCE
+    if root == ROOT:
+        bootstrap_types(board)
+    ref = board / MCP_TYPES
+    if plugin.resolve() == board.resolve():
+        print(f"warn {plugin.name}: claude-code-mcp types are {target.stat().st_size // 1024} KB (over {MCP_TYPES_LIMIT // 1024} KB) and this is the reference copy; delete it and rerun the gate from a clean tree")
+        return
+    if not ref.is_file() or ref.stat().st_size > MCP_TYPES_LIMIT:
+        print(f"warn {plugin.name}: claude-code-mcp types are {target.stat().st_size // 1024} KB but {MCP_TYPES_REFERENCE}'s copy is not a lean reference; not restored")
+        return
+    size = target.stat().st_size
+    shutil.copyfile(ref, target)
+    print(f"restored {plugin.name}: claude-code-mcp types were {size // 1024} KB, replaced with {MCP_TYPES_REFERENCE}'s copy ({ref.stat().st_size // 1024} KB)")
+
+
 def check(plugin: Path) -> list[str]:
     problems: list[str] = []
     bootstrap_types(plugin)
@@ -69,6 +97,7 @@ def check(plugin: Path) -> list[str]:
     ok, out = run(["claude", "plugin", "test"], plugin)
     if not ok:
         problems.append(f"{plugin.name}: plugin test failed\n{out[-2500:]}")
+    restore_lean_mcp_types(plugin)
     ok, out = run(["node", TSC, "-p", str(plugin), "--noEmit"], ROOT)
     if not ok:
         problems.append(f"{plugin.name}: tsc failed\n{out[-2500:]}")
@@ -85,6 +114,7 @@ def check_kit() -> list[str]:
     ok, out = run(["claude", "plugin", "test"], KIT)
     if not ok:
         problems.append(f"bws-kit: plugin test failed\n{out[-2500:]}")
+    restore_lean_mcp_types(ROOT / "bws-cockpit")
     ok, out = run(["node", TSC, "-p", str(KIT), "--noEmit"], ROOT)
     if not ok:
         problems.append(f"bws-kit: tsc failed\n{out[-2500:]}")
@@ -122,6 +152,12 @@ def main() -> int:
             print(f"{'ok  ' if ok else 'FAIL'} kit sync tests")
             if not ok:
                 problems.append(f"kit sync tests failed\n{out[-1500:]}")
+    gate_tests = ROOT / "tools" / "test_mods_gate.py"
+    if a.plugin is None and gate_tests.exists():
+        ok, out = run([sys.executable, str(gate_tests)], ROOT)
+        print(f"{'ok  ' if ok else 'FAIL'} gate tests")
+        if not ok:
+            problems.append(f"gate tests failed\n{out[-1500:]}")
     print(f"{len(todo)} plugin(s){' + kit' if do_kit else ''}, {time.time() - t0:.0f}s")
     for pr in problems:
         print("\n---\n" + pr)
