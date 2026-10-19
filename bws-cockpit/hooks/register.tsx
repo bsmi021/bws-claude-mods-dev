@@ -69,7 +69,10 @@ import {
 } from './assumptions'
 import {
   addIdea,
+  age,
   contextLine,
+  detailLine,
+  groupByProject,
   ideaLine,
   isAllScope,
   listText as ideasText,
@@ -136,6 +139,8 @@ const TOOL_SHELVE = 'mcp__bws-cockpit__shelve_idea'
 const TOOL_LIST = 'mcp__bws-cockpit__list_ideas'
 const TOOL_CLOSE = 'mcp__bws-cockpit__close_idea'
 const SHELF_SHOWN = 8
+// In the all-projects view: cards per project before a "more" line.
+const SHELF_PER_PROJECT = 4
 const SHELF_IDLE: ShelfView = { isAll: false, root: '', ideas: [], now: 0, note: '', count: 0 }
 
 const assumptions = atom({ plugin: 'bws-cockpit', key: 'assumptions' } as const, [] as Assumption[])
@@ -1726,9 +1731,30 @@ export const register: Register = (on, options) => {
     }
 
     if (tab === 'shelf') {
+      const where = sv.isAll ? 'all projects' : projectName(sv.root)
+      // One bordered card per idea, as on the Board tab. Each glyph opens its line: a wide emoji mid-line can push a
+      // round border out of line.
+      const ideaCard = (i: Idea) => {
+        const isClaude = i.by === 'claude'
+        const detail = detailLine(i)
+        return (
+          <Box key={`idea-${i.id}`} flexDirection="column" width={width} borderStyle="round" borderColor={isClaude ? 'claude' : 'suggestion'} paddingX={1}>
+            <Text bold wrap="truncate-end">
+              {`${isClaude ? '🤖' : '🙋'} #${i.id}`}
+              <Text dimColor bold={false}>{` · ${isClaude ? 'Claude' : 'you'} · ${age(i.createdAt, sv.now)} ago`}</Text>
+            </Text>
+            <Text wrap="wrap">{`💡 ${i.text}`}</Text>
+            {detail !== '' && <Text dimColor wrap="truncate-end">{`📝 ${detail}`}</Text>}
+            <Box flexDirection="row" gap={1}>
+              <Button key={`resume-${i.id}`} plain label="▶ Resume" onPress={() => onResumeIdea($, i)} />
+              <Button key={`done-${i.id}`} plain label="✓ Done" onPress={() => onCloseIdea($, i, 'done')} />
+              <Button key={`drop-${i.id}`} plain label="✗ Drop" onPress={() => onCloseIdea($, i, 'dropped')} />
+            </Box>
+          </Box>
+        )
+      }
       const shown = sv.ideas.slice(0, SHELF_SHOWN)
       const more = sv.ideas.length - shown.length
-      const where = sv.isAll ? 'all projects' : projectName(sv.root)
       return (
         <Box flexDirection="column">
           {strip}
@@ -1736,22 +1762,24 @@ export const register: Register = (on, options) => {
             💡 {sv.ideas.length} open idea{sv.ideas.length === 1 ? '' : 's'} · {where}
           </Text>
           {sv.ideas.length === 0 && <Text dimColor>Nothing shelved. /idea &lt;text&gt; adds one; Claude adds its own tangents.</Text>}
-          {shown.map(i => (
-            <Box key={`idea-${i.id}`} flexDirection="row" gap={1}>
-              <Button key={`resume-${i.id}`} plain label="▶" onPress={() => onResumeIdea($, i)} />
-              <Button key={`done-${i.id}`} plain label="✓" onPress={() => onCloseIdea($, i, 'done')} />
-              <Button key={`drop-${i.id}`} plain label="✗" onPress={() => onCloseIdea($, i, 'dropped')} />
-              <Box flexGrow={1} flexShrink={1}>
-                <Text wrap="wrap">{ideaLine(i, sv.now, sv.isAll)}</Text>
-              </Box>
-            </Box>
-          ))}
-          {more > 0 && <Text dimColor>…{more} more: ask Claude to list ideas.</Text>}
+          {sv.isAll
+            ? groupByProject(sv.ideas, sv.root, SHELF_PER_PROJECT).map(g => (
+                <Box key={`proj-${g.project}`} flexDirection="column" marginTop={1}>
+                  <Text bold color={g.isHere ? 'claude' : undefined} wrap="truncate-end">
+                    {`📁 ${g.label}`}
+                    <Text dimColor bold={false}>{` · ${g.total} open${g.isHere ? ' · this project' : ''}`}</Text>
+                  </Text>
+                  {g.ideas.map(ideaCard)}
+                  {g.total > g.ideas.length && <Text dimColor>{`   …${g.total - g.ideas.length} more in ${g.label}: ask Claude to list ideas.`}</Text>}
+                </Box>
+              ))
+            : shown.map(ideaCard)}
+          {!sv.isAll && more > 0 && <Text dimColor>…{more} more: ask Claude to list ideas.</Text>}
           {sv.note !== '' && <Text color="warning">{sv.note}</Text>}
           <Box flexDirection="row" gap={1}>
             <Button key="scope" label={sv.isAll ? 'This project' : 'All projects'} hotkey="a" onPress={() => refreshShelf($, !sv.isAll)} />
           </Box>
-          {e.props.isFocused && <Text dimColor>▶ resume (fills the prompt box) · ✓ done · ✗ drop</Text>}
+          {e.props.isFocused && <Text dimColor>▶ Resume fills the prompt box · ✓ Done · ✗ Drop</Text>}
         </Box>
       )
     }

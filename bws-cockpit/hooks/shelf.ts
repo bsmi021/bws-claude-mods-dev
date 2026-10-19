@@ -109,6 +109,33 @@ export function listText(ideas: Idea[], now: number, showProject: boolean, withD
     .join('\n')
 }
 
+// The Shelf tab's all-projects view: one group per project, this project first, then the project with the newest
+// idea. Each group shows at most `perProject` ideas (newest first). Two projects with the same folder name are told
+// apart by their full path.
+export type IdeaGroup = { project: string; label: string; isHere: boolean; total: number; ideas: Idea[] }
+
+export function groupByProject(ideas: readonly Idea[], here: string, perProject: number): IdeaGroup[] {
+  const byKey = new Map<string, Idea[]>()
+  for (const i of ideas) {
+    const k = slash(i.project).toLowerCase()
+    byKey.set(k, [...(byKey.get(k) ?? []), i])
+  }
+  const groups = [...byKey.values()].map(list => {
+    const sorted = [...list].sort((a, b) => b.id - a.id)
+    const project = slash(sorted[0]?.project ?? '')
+    return { project, isHere: here !== '' && sameProject(project, here), total: sorted.length, ideas: sorted.slice(0, perProject), top: sorted[0]?.id ?? 0 }
+  })
+  groups.sort((a, b) => Number(b.isHere) - Number(a.isHere) || b.top - a.top)
+  const names = groups.map(g => projectName(g.project).toLowerCase())
+  return groups.map(({ top: _, ...g }) => ({
+    ...g,
+    label: names.filter(n => n === projectName(g.project).toLowerCase()).length > 1 ? g.project : projectName(g.project),
+  }))
+}
+
+// The first line of an idea's detail, for its card.
+export const detailLine = (i: Idea) => i.detail?.split('\n').find(l => l.trim() !== '')?.trim() ?? ''
+
 // What Resume puts in the prompt box.
 export const resumePrompt = (i: Idea) => `Pick up shelved idea #${i.id}: ${i.text}${i.detail ? `\n\n${i.detail}` : ''}`
 

@@ -1,7 +1,7 @@
 import { test, expect, mock, describe } from 'claude-code/testing'
 import type { On } from 'claude-code'
 import { add, listText, markSent, setCorrection, setVerdict, summary, verdictPrompt } from '../hooks/assumptions'
-import { addIdea, age, contextLine, EMPTY, isAllScope, listText as ideasText, openIdeas, parseShelf, serializeShelf, setStatus, shelfPath } from '../hooks/shelf'
+import { addIdea, age, contextLine, detailLine, EMPTY, groupByProject, isAllScope, listText as ideasText, openIdeas, parseShelf, serializeShelf, setStatus, shelfPath } from '../hooks/shelf'
 import type { Assumption, BoardPane } from '../types'
 
 const TOOL = 'mcp__bws-cockpit__record_assumption'
@@ -245,6 +245,21 @@ describe('shelf lib', () => {
     expect(ideasText(openIdeas(s, ROOT), NOW, false, true)).toBe('#3 game idea two  (Claude, 2m)\n    see src/ai.ts\n#1 game idea one  (you, 1h)')
   })
 
+  test('groupByProject: this project first, then newest idea; capped per project; same names get full paths', () => {
+    let s = parseShelf(seeded())
+    s = addIdea(s, { text: 'site idea two', by: 'user', project: OTHER, now: NOW }).shelf
+    s = addIdea(s, { text: 'other game', by: 'user', project: 'D:/Work/game', now: NOW }).shelf
+    const g = groupByProject(openIdeas(s, ''), 'c:\\projects\\GAME', 1)
+    expect(g.map(x => [x.label, x.isHere, x.total, x.ideas.map(i => i.id)])).toEqual([
+      ['C:/Projects/game', true, 2, [3]],
+      ['D:/Work/game', false, 1, [5]],
+      ['site', false, 2, [4]],
+    ])
+    expect(groupByProject([], ROOT, 4)).toEqual([])
+    expect(detailLine({ ...s.ideas[0]!, detail: '\n  first\nsecond' })).toBe('first')
+    expect(detailLine(s.ideas[0]!)).toBe('')
+  })
+
   test('age, scope words, context line', () => {
     expect(age(0, 3 * 3_600_000)).toBe('3h')
     expect(isAllScope(' all ')).toBe(true)
@@ -435,8 +450,25 @@ describe('shelf', () => {
     await ui.unmount()
     ui = await $.ui.mount(PANE)
     expect(await ui.find({ type: 'Text', text: /2 open ideas · all projects/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /#2 site idea/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /💡 site idea/ })).toBeDefined()
+    expect(await ui.find({ key: 'proj-C:/Projects/game' })).toBeDefined()
+    expect(await ui.find({ key: 'proj-C:/Projects/site' })).toBeDefined()
     expect((await ui.find({ key: 'tab-shelf' }))?.props?.label).toBe('Shelf 1') // still this project's count
+    await ui.unmount()
+  })
+
+  test('each idea is a bordered card: author glyph and colour, text, first detail line', async ($, on) => {
+    world(on, { shelf: seeded() })
+    await $.command.run({ command: 'shelf', args: '' } as never)
+    const ui = await $.ui.mount(PANE)
+    expect((await ui.find({ key: 'idea-3' }))?.props?.borderStyle).toBe('round')
+    expect((await ui.find({ key: 'idea-3' }))?.props?.borderColor).toBe('claude')
+    expect((await ui.find({ key: 'idea-1' }))?.props?.borderColor).toBe('suggestion')
+    expect(await ui.find({ type: 'Text', text: /^🤖 #3/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^🙋 #1/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '💡 game idea two' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '📝 see src/ai.ts' })).toBeDefined()
+    expect(await ui.find({ key: 'proj-C:/Projects/game' })).toBeUndefined() // no project headers in this project's view
     await ui.unmount()
   })
 

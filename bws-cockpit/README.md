@@ -84,7 +84,7 @@ Other details:
 
 ### Shelf tab
 - `/idea <text>` adds an idea. Claude shelves its own tangents with `shelve_idea {text, detail?}`; `list_ideas {scope?}` and `close_idea {id, status}` load on demand.
-- The tab lists this project's open ideas, newest first, eight at a time. `▶` puts the idea in the prompt box unsent (the box must be empty), `✓` marks it done, `✗` drops it. `a` switches between this project and all projects.
+- The tab shows this project's open ideas as bordered cards, newest first, eight at a time: who shelved it (🤖 Claude, 🙋 you), its number and age, the idea and the first line of its detail. `▶ Resume` puts the idea in the prompt box unsent (the box must be empty), `✓ Done` marks it done, `✗ Drop` drops it. `a` switches between this project and all projects; all projects groups the cards under one 📁 header per project (this project first, four per project).
 - With `shelfNudge`, each conversation's first message carries one line: the open-idea count and an instruction to shelve tangents rather than follow them.
 - One JSON file holds every project's ideas, so all sessions share it. Every change re-reads the file before writing. Done and dropped ideas stay in the file with `closedAt`. The count refreshes after each turn, which picks up other sessions' ideas.
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.0
+- The Shelf tab draws each idea as a bordered card: who shelved it (🤖 Claude, 🙋 you), its number and age, the idea, the first line of its detail, and Resume / Done / Drop buttons.
+- All projects groups the cards under one 📁 header per project, this project first, at most four per project with a "more" line.
+
 ## 0.21.2
 - No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
   repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.

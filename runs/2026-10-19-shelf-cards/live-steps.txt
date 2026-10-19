@@ -1,0 +1,9 @@
+# Shelf tab as cards, this project then all projects (bws-cockpit from source; reads the real shelf, changes nothing)
+say:/shelf
+wait:open ideas? · @30
+sleep:2
+dump:01-shelf-project
+say:/shelf all
+wait:all projects@20
+sleep:2
+dump:02-shelf-all

@@ -1,0 +1,140 @@
+                                                                                                               │                                                        ✕
+ ▐▛███▛█   Claude Code v2.1.303                                                                                │1: Assumptions [ Shelf ] 3: Board 4: Memory 5: Diagram
+▝▜██████▀  Opus 5.5 with medium effort · Claude Max                                                            │6: Enhance 7: Better 8: Secrets 9: Skillgate off Notify
+ ▝▝   ▝▝   ~\AppData\Local\Temp\bws-live                                                                       │Shell lint Interview
+                                                                                                               │💡 21 open ideas · all projects
+                                                                                                               │
+                                                                                                               │📁 harness-loop · 5 open
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #42 · Claude · 10m ago                             │
+                                                                                                               ││ 💡 harness-loop open generator rows: emit pinned      │
+                                                                                                               ││ subagent .claude/agents file from subagentModel;      │
+                                                                                                               ││ header/line-cap exemption; run repo formatter on      │
+                                                                                                               ││ generated SKILL.md; deterministic finalize (PR) step; │
+                                                                                                               ││ cloud routine metering/fire hook                      │
+                                                                                                               ││ 📝 Still open per lessons.md after the 2026-10-19 re… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #41 · Claude · 10m ago                             │
+                                                                                                               ││ 💡 harness-loop small driver gaps: API-error blip     │
+                                                                                                               ││ counts as failed session; timeouts use wall time      │
+                                                                                                               ││ across laptop sleep; USD estimate for unpriced        │
+                                                                                                               ││ (killed) sessions via a price table;                  │
+                                                                                                               ││ units[].preconditions                                 │
+                                                                                                               ││ 📝 pitu CNT-03 180-min timeout fired after 8h44m wal… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #40 · Claude · 10m ago                             │
+                                                                                                               ││ 💡 harness-loop: Needs with owner                     │
+                                                                                                               ││ (user/orchestrator/device) and blocks:[T..], so a     │
+                                                                                                               ││ unit pauses only when no unblocked task remains;      │
+                                                                                                               ││ deferral registry carried to later units              │
+                                                                                                               ││ 📝 PT1 L-S4/L-S5 re-raised deferred accounts Needs; … │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #39 · Claude · 10m ago                             │
+                                                                                                               ││ 💡 harness-loop: mid-run commands add-unit / set-tier │
+                                                                                                               ││ / skip / reload at a unit boundary (pitu FIX-01..12   │
+                                                                                                               ││ were hand-patched into loop.json + state.json)        │
+                                                                                                               ││ 📝 Also --stop-after-unit. Driver holds loop.json in… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │   …1 more in harness-loop: ask Claude to list ideas.
+                                                                                                               │
+                                                                                                               │📁 bws.mods.claude-code · 2 open
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #37 · Claude · 6h ago                              │
+                                                                                                               ││ 💡 Cockpit "Versions" tab: per mod, source            │
+                                                                                                               ││ plugin.json version vs marketplace (publish tip) vs   │
+                                                                                                               ││ installed cache, flagging unreleased changes and      │
+                                                                                                               ││ stale installs                                        │
+                                                                                                               ││ 📝 From runs/2026-10-19-agents-md-review. Answers Br… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #11 · Claude · 9d ago                              │
+                                                                                                               ││ 💡 bws-cockpit: Hide (3) on the bar has no way back   │
+                                                                                                               ││ in the session; /cockpit or /dashboard could unhide   │
+                                                                                                               ││ it                                                    │
+                                                                                                               ││ 📝 Pre-existing since the tile band: isHidden is set… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │
+                                                                                                               │📁 tms-pt1 · 1 open
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #34 · Claude · 45h ago                             │
+                                                                                                               ││ 💡 Pt1Harness: `harness.py answer` run while the      │
+                                                                                                               ││ driver is RUNNING is lost when the driver next saves  │
+                                                                                                               ││ state.json (wideApproved dropped for L-S2).           │
+                                                                                                               ││ 📝 Seen 2026-10-17 18:24: answer L-S2 WIDE at 17:57 … │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │
+                                                                                                               │📁 bws.game.tms · 5 open
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #32 · Claude · 2d ago                              │
+                                                                                                               ││ 💡 Prune moved art: 105 .blend1 autosaves, 64         │
+                                                                                                               ││ pre-/backup/REJECTED blends, 179 .pyc, and review the │
+                                                                                                               ││ 11.8 GB of PNG renders in art/                        │
+                                                                                                               ││ 📝 Counts in art/README.md; run runs/2026-10-17-art-… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #30 · Claude · 3d ago                              │
+                                                                                                               ││ 💡 Log (throttled) when an enemy's MoveTo request     │
+                                                                                                               ││ fails, so a "he just stops" in playtests shows in the │
+                                                                                                               ││ debrief                                               │
+                                                                                                               ││ 📝 UTmsEnemyBehaviorComponent::MoveTo ignores EPathF… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #29 · Claude · 4d ago                              │
+                                                                                                               ││ 💡 SPEC-FEEDBACK AT15 still asserts a -3 dB stinger   │
+                                                                                                               ││ duck; §6.3/§20 say -6 dB (pre-existing; Chronicler    │
+                                                                                                               ││ note on job 51760a27)                                 │
+                                                                                                               ││ 📝 Found in the SPEC-VFX §11 FEEDBACK candidate revi… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #28 · Claude · 4d ago                              │
+                                                                                                               ││ 💡 Show the soft-lock attack target (no lock) in the  │
+                                                                                                               ││ lock-ready hint                                       │
+                                                                                                               ││ 📝 Attacks pick a target by stick direction or facin… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │   …1 more in bws.game.tms: ask Claude to list ideas.
+                                                                                                               │
+                                                                                                               │📁 bws.game.axo · 2 open
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #31 · Claude · 3d ago                              │
+                                                                                                               ││ 💡 Decide prototype-parity gaps from PR #1: damage    │
+                                                                                                               ││ knockback, 1.8 s respawn protection, enemies staying  │
+                                                                                                               ││ dead across respawn, chase-fall respawn, stomp        │
+                                                                                                               ││ keeping the dash; retire dead tools/axo verify        │
+                                                                                                               ││ scripts                                               │
+                                                                                                               ││ 📝 Listed in runs/2026-10-16-deepdive-code-review/RU… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #26 · Claude · 5d ago                              │
+                                                                                                               ││ 💡 World backdrops pass: generated lp_flower_lotus    │
+                                                                                                               ││ rear flowers sit across the play band on Lilypond 2/3 │
+                                                                                                               ││ (pads read as platforms)                              │
+                                                                                                               ││ 📝 Homewater disables all 18 via scenery_overrides; … │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │
+                                                                                                               │📁 bws.game.pit-maneuver · 5 open
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #25 · Claude · 6d ago                              │
+                                                                                                               ││ 💡 Make the TLS-05 balance report apply each case's   │
+                                                                                                               ││ chapter numbers (trafficDensityScale, startGapM,      │
+                                                                                           ◐ medium · /effort  │
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Opus 5.5] | bws-live | [----------] 0% | v2.1.303                                                                                                    ◨ side ✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents

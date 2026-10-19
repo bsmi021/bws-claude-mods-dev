@@ -1,0 +1,11 @@
+start: --plugin-dir C:/Projects/bws.mods.claude-code/bws-cockpit  size 170x140  cwd C:/Users/bsmi0/AppData/Local/Temp/bws-live
+ready; mouse tracking on
+01 say:/shelf  ok
+02 wait:open ideas? · @30  ok
+03 sleep:2  ok
+04 dump:01-shelf-project  saved 01-shelf-project.txt
+05 say:/shelf all  ok
+06 wait:all projects@20  ok
+07 sleep:2  ok
+08 dump:02-shelf-all  saved 02-shelf-all.txt
+exit 0

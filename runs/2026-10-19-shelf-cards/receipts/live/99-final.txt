@@ -1,0 +1,50 @@
+                                                                                                               │                                                        ✕
+ ▐▛███▛█   Claude Code v2.1.303                                                                                │1: Assumptions [ Shelf ] 3: Board 4: Memory 5: Diagram
+▝▜██████▀  Opus 5.5 with medium effort · Claude Max                                                            │6: Enhance 7: Better 8: Secrets 9: Skillgate off Notify
+ ▝▝   ▝▝   ~\AppData\Local\Temp\bws-live                                                                       │Shell lint Interview
+                                                                                                               │💡 21 open ideas · all projects
+                                                                                                               │
+                                                                                                               │📁 harness-loop · 5 open
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #42 · Claude · 9m ago                              │
+                                                                                                               ││ 💡 harness-loop open generator rows: emit pinned      │
+                                                                                                               ││ subagent .claude/agents file from subagentModel;      │
+                                                                                                               ││ header/line-cap exemption; run repo formatter on      │
+                                                                                                               ││ generated SKILL.md; deterministic finalize (PR) step; │
+                                                                                                               ││ cloud routine metering/fire hook                      │
+                                                                                                               ││ 📝 Still open per lessons.md after the 2026-10-19 re… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #41 · Claude · 9m ago                              │
+                                                                                                               ││ 💡 harness-loop small driver gaps: API-error blip     │
+                                                                                                               ││ counts as failed session; timeouts use wall time      │
+                                                                                                               ││ across laptop sleep; USD estimate for unpriced        │
+                                                                                                               ││ (killed) sessions via a price table;                  │
+                                                                                                               ││ units[].preconditions                                 │
+                                                                                                               ││ 📝 pitu CNT-03 180-min timeout fired after 8h44m wal… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #40 · Claude · 9m ago                              │
+                                                                                                               ││ 💡 harness-loop: Needs with owner                     │
+                                                                                                               ││ (user/orchestrator/device) and blocks:[T..], so a     │
+                                                                                                               ││ unit pauses only when no unblocked task remains;      │
+                                                                                                               ││ deferral registry carried to later units              │
+                                                                                                               ││ 📝 PT1 L-S4/L-S5 re-raised deferred accounts Needs; … │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+                                                                                                               ││ 🤖 #39 · Claude · 9m ago                              │
+                                                                                                               ││ 💡 harness-loop: mid-run commands add-unit / set-tier │
+                                                                                                               ││ / skip / reload at a unit boundary (pitu FIX-01..12   │
+                                                                                                               ││ were hand-patched into loop.json + state.json)        │
+                                                                                                               ││ 📝 Also --stop-after-unit. Driver holds loop.json in… │
+                                                                                                               ││ ▶ Resume ✓ Done ✗ Drop                                │
+                                                                                                               │╰───────────────────────────────────────────────────────╯
+                                                                                           ◐ medium · /effort  │
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Opus 5.5] | bws-live | [----------] 0% | v2.1.303                                                                                                    ◨ side ✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents
