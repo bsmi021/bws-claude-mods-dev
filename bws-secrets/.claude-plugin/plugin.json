@@ -3,8 +3,19 @@
   "version": "0.2.0",
   "description": "Secret box: Claude asks for a secret with request_secret, you type it into a masked pane, it is saved outside the project, and Bash commands use it as {{secret:NAME}}. The value is read by the shell at run time and scrubbed from results, so it never reaches the transcript. /secrets lists and removes names.",
   "author": {
-    "name": "Brian"
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
   },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-secrets#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "secrets",
+    "security",
+    "credentials"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "secretsDir": {

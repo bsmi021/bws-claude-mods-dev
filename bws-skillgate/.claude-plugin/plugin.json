@@ -3,8 +3,19 @@
   "version": "0.2.0",
   "description": "Skill gating: on a conversation's first prompt a small model picks the skills that fit it and the skill listing the model reads is cut to those (plus any /name the prompt names); later prompts only add skills, so the prompt cache holds. /skillgate [off|on|status|explain].",
   "author": {
-    "name": "Brian"
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
   },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-skillgate#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "skills",
+    "context",
+    "tokens"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "mode": {

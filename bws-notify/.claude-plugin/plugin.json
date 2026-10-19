@@ -2,7 +2,20 @@
   "name": "bws-notify",
   "version": "0.2.0",
   "description": "Windows toasts that say which project and what happened: permission asks, finished turns, finished subagents and errors, with the reply's first line. Replaces the modal MessageBox hook.",
-  "author": { "name": "Brian" },
+  "author": {
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
+  },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-notify#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "notifications",
+    "windows",
+    "toast"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "needsInput": {
