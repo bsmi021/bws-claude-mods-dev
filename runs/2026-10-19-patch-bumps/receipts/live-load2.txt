@@ -1,0 +1,4 @@
+13 loaded: bws-better 0.2.1, bws-board 0.6.1, bws-cockpit 0.21.2, bws-design-picker 0.2.4, bws-diagram 0.3.1, bws-enhance 0.4.2, bws-interview 0.1.1, bws-memory 0.3.1, bws-notify 0.2.1, bws-secrets 0.2.1, bws-shell-lint 0.3.1, bws-sidechat 0.4.2, bws-skillgate 0.2.1
+mcp: ['bws-interview:connected', 'bws-board:connected', 'bws-cockpit:connected', 'bws-secrets:connected']
+result success
+options kept: True
