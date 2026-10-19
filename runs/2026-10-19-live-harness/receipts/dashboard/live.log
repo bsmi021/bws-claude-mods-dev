@@ -1,0 +1,12 @@
+start: --plugin-dir C:/Projects/bws.mods.claude-code-live-harness/bws-cockpit --plugin-dir C:/Projects/bws.mods.claude-code-live-harness/bws-diagram  size 170x50  cwd C:/Users/bsmi0/AppData/Local/Temp/bws-live
+ready; mouse tracking on
+01 say:/dashboard  ok
+02 wait:Assumptions.*Shelf.*Board@30  ok
+03 wait:\d: Diagram@15  ok
+04 sleep:3  ok
+05 dump:01-dashboard  saved 01-dashboard.txt
+06 click:Diagram@+1  clicked (2, 161)
+07 wait:\[ Diagram \]@15  ok
+08 wait:No diagrams yet@10  ok
+09 dump:02-diagram-tab  saved 02-diagram-tab.txt
+exit 0
