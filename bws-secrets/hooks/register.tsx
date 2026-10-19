@@ -1,7 +1,7 @@
 // bws-secrets: a secret box. Claude asks for a value with request_secret, the person types it into a masked pane, and
 // it is saved outside the project. A Bash command uses it as {{secret:NAME}}: the command is rewritten so the shell
 // reads the value from the file at execution time, and the result is scrubbed before the engine stores it, so the value
-// never reaches the transcript (runs/2026-10-13-mods-m8-secrets/DECISIONS.md).
+// never reaches the transcript.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 import type { EntryView } from '../types'

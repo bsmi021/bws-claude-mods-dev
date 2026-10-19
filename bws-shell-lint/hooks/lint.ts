@@ -1,5 +1,5 @@
 // The shell-lint rules: pure functions over a Bash command as the model wrote it.
-// Ported 1:1 from runs/2026-10-02-shell-lint-mod/lint.py; tests/agreement.test.ts holds the two to the same verdicts.
+// Ported 1:1 from an earlier Python linter; tests/agreement.test.ts holds the two to the same verdicts.
 //
 // Two facts measured on this machine (Windows, Git Bash, Claude Code 2.1.287) drive the rules:
 // - Bash receives the command after one more round of backslash parsing: a run of n backslashes
