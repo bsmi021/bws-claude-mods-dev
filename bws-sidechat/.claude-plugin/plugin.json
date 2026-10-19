@@ -1,6 +1,6 @@
 {
   "name": "bws-sidechat",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Side chat in the right-hand pane: /fork (or /branch) and /btw open a copy of this conversation beside it, answered by a forked headless session so the main conversation is never touched. /explain turns the last reply's options into a decision tree you explore in forks.",
   "author": {
     "name": "bsmi021",

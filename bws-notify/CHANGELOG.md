@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.2.0
 - A Notify tab in bws-cockpit's dashboard (0.21.0 or later) says which events toast and lists the last five toasts this session sent.
 

@@ -1,6 +1,6 @@
 {
   "name": "bws-notify",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Windows toasts that say which project and what happened: permission asks, finished turns, finished subagents and errors, with the reply's first line. Replaces the modal MessageBox hook.",
   "author": {
     "name": "bsmi021",

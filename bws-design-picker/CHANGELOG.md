@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.2.3
 - A label now sits on a cell row its block covers whole. A text block too short for one grows to the cell edges around it, by at most a pixel.
 

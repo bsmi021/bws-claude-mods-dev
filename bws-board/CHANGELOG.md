@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.6.0
 - The Board tab in bws-cockpit's dashboard draws one bordered card per session and one per ask (needs bws-cockpit 0.18.0 or later). Older cockpits and headless runs get text lines.
 - Checked live in Windows Terminal.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.4.1
 - When you start `/enhance` in the dashboard, the rewrite waits in the Enhance tab and the keyboard stays there: `s` sends it, `p` puts it in the box to edit, `d` dismisses. Filling the box would have taken the keyboard away.
 - Needs bws-cockpit 0.21.1 or later, which opens the dashboard on the Enhance tab with the keyboard.

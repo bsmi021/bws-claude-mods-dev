@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+- Code comments no longer point at private development notes.
+
 ## 0.2.0
 - A Skillgate tab in the bws-cockpit dashboard shows the status and the last picks, with a button that turns the gate on or off for this session.
 - The cockpit action-bar chip is replaced by the tab.

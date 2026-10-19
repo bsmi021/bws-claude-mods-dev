@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.3.0
 - Diagrams now show in a Diagram tab of bws-cockpit's dashboard (0.21.0 or later) instead of a side pane. The tab has `< Prev`, `Next >`, `Draw the session` and `Dismiss the failure` buttons.
 - `/diagram show` opens the dashboard on the Diagram tab at any width.

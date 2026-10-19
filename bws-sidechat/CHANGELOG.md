@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+- No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
+  repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.
+
 ## 0.4.1
 - The Side chat tab keeps the keyboard: a command opens the dashboard with the cursor on the Ask box, so you can type at once, during an answer and after it.
 - Needs bws-cockpit 0.21.1 or later.
