@@ -14,3 +14,9 @@ Not done:
 - Live Desktop check. Desktop loads the installed copy, so it needs a release (or CLAUDE_CODE_PLUGIN_DIRS on ./bws-enhance) and /reload-plugins.
 - Release waits on Brian: fold into the pending 1.9.0 publish (`python tools/publish.py bws-direction bws-cockpit bws-enhance --version 1.9.0`) or a 1.9.1.
 - Shelved: bws-sidechat footer has the same terminal-only guard.
+
+## bws-sidechat 0.4.3 (shelf #43)
+- Same fix: footer `◨ side` drawn on terminal + desktop; `action` on terminal only.
+- Replaced the test that asserted no desktop button with one that asserts the button, no action, and a click opening the tab. 119/119 pass; mods-gate --plugin bws-sidechat ok.
+- README Desktop note updated (native /side still wins; the footer click opens this mod's tab). Not checked live.
+- Release: add bws-sidechat to the same publish as bws-enhance, on Brian's word.

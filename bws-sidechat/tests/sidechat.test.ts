@@ -456,17 +456,18 @@ describe('hotkey', () => {
     expect(drew).toBe(false)
   })
 
-  test('not on the terminal (desktop): no button', async ($, on) => {
-    world(on)
-    on('ui.render', () => ({ type: 'engine' }) as never)
-    let drew = true
-    try {
-      const ui = await $.ui.mount(footer('desktop'))
-      await ui.unmount()
-    } catch (err) {
-      drew = !String(err).includes('drew nothing')
-    }
-    expect(drew).toBe(false)
+  test('desktop: the button is drawn without the chord action, and a click opens the side chat', async ($, on) => {
+    const { seen, clock } = world(on)
+    const ui = await $.ui.mount(footer('desktop'))
+    const button = await ui.find({ key: 'side' })
+    expect(button).toBeDefined()
+    expect(button?.props?.action).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: 'plan' })).toBeDefined()
+    await ui.press({ key: 'side' })
+    expect(lastTab()?.open).toBe(1)
+    await clock.advance(100)
+    expect(seen.spawns).toEqual([])
+    await ui.unmount()
   })
 
   test('headless: pressing opens nothing', async ($, on) => {

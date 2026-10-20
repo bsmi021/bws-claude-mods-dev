@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.3
+- The footer `◨ side` button is drawn in the Claude Desktop app too (it was terminal-only). There it is a click that opens the Side chat tab; the chord stays a terminal feature.
+
 ## 0.4.2
 - No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
   repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.

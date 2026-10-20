@@ -610,8 +610,10 @@ export const register: Register = (on, options) => {
   // The hotkey. A mod cannot bind a chord itself, but a Button can borrow one of the engine's keybinding actions: the
   // footer carries a small "side" button, and the chord the person binds to `chordAction` in ~/.claude/keybindings.json
   // (Global) presses it from the prompt. It opens the pane, or takes the keys back to it, with no command typed.
+  // The engine raises the footer on the terminal and desktop; a chord presses a Button on the terminal only, so the
+  // desktop gets a plain clickable button without the borrowed action.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
-    if (action === '' || e.surface !== 'terminal') return next(e)
+    if (action === '' || (e.surface !== 'terminal' && e.surface !== 'desktop')) return next(e)
     // The footer holds one tree: share it. Another mod's footer (whatever next(e) draws) stays beside ours; with none,
     // the engine's own mode labels are drawn here, as the engine would.
     const drawn = await settle(next(e))
@@ -620,7 +622,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="row" gap={1}>
         {other ?? (e.props.modes.length > 0 ? <Text dimColor>{e.props.modes.join(' & ')}</Text> : null)}
-        <Button key="side" plain dimColor label="◨ side" action={action} onPress={() => void summon($)} />
+        <Button key="side" plain dimColor label="◨ side" {...(e.surface === 'terminal' ? { action } : {})} onPress={() => void summon($)} />
       </Box>
     )
   })

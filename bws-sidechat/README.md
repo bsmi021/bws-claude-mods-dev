@@ -133,7 +133,7 @@ Checked on Claude Code 2.1.296 to 2.1.300 on Windows 11, in Windows Terminal. Li
 another model, the `main:` status, refresh, send-back, pull and a click on **Send to main**. Automated tests cover the
 commands, the transcript window, Stop, the footer button and the decision tree with stubbed children.
 
-- **Claude Code Desktop has its own native side chat.** There, `/side` opens the app's built-in fork and this mod's command never runs. This mod targets the terminal and is not supported on Desktop.
+- **Claude Code Desktop has its own native side chat.** There, `/side` opens the app's built-in fork and this mod's command never runs. Since 0.4.3 the footer `◨ side` button is drawn on Desktop and a click opens this mod's Side chat tab (automated tests; not yet checked live). The mod otherwise targets the terminal.
 - Not checked by hand: the Decision tree in a live terminal (the automated tests and a headless `/explain` probe cover it), the chord in a live terminal, clicks on the model buttons, narrow terminals.
 - The transcript is drawn as a fixed window of rows, laid out for 100 columns.
 
