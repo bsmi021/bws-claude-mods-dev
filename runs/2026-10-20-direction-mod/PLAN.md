@@ -17,7 +17,7 @@
 - [x] Gate green: `python tools/mods-gate.py --plugin bws-direction` and `--plugin bws-cockpit`.
 - [x] Headless proof in `C:/Projects/bws.game.tms`: `/direction` finds docs/GDD.md; `/direction check` returns a verdict.
 - [x] README, CHANGELOG, RUNLOG, commit, `git push private main`.
-- [ ] Release (publish.py --push): waits on Brian.
+- [ ] Release (publish.py --push) (needs Brian: approve the public push; dry run passed)
 
 Out of scope: release/publish (offer it to Brian), automatic overall checks, editing docs.
 
