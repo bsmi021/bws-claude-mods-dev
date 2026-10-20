@@ -16,7 +16,7 @@ Stamina drives every swing. The parry window is 200 ms.
 # not a heading inside a fence
 \`\`\`
 
-### Boss: Warden
+### Boss: Gatekeeper
 Three phases.
 
 ## Exploration
@@ -25,7 +25,7 @@ Lanterns mark the safe rooms.
 
 describe('the corpus', () => {
   test('anchor names for any project: specs, PRDs, requirements and design docs first, then architecture; ordinary docs are not anchors', async () => {
-    for (const n of ['PRD.md', 'prd-v2.md', 'SPEC.md', 'spec-api.md', 'Specification.md', 'requirements.md', 'product-requirements.md', 'software-design.md', 'design-doc.md', 'DESIGN.md', 'VISION.md', 'GDD.md', 'gdd-v2.md', 'tms-gdd.md', 'Game-Design-Document.md'])
+    for (const n of ['PRD.md', 'prd-v2.md', 'SPEC.md', 'spec-api.md', 'Specification.md', 'requirements.md', 'product-requirements.md', 'software-design.md', 'design-doc.md', 'DESIGN.md', 'VISION.md', 'GDD.md', 'gdd-v2.md', 'acme-gdd.md', 'Game-Design-Document.md'])
       expect(anchorRank(n)).toBe(0)
     for (const n of ['architecture.md', 'ARCHITECTURE-overview.md', 'technical-design.md', 'api-spec.md', 'billing-architecture.md', 'tech-spec.md']) expect(anchorRank(n)).toBe(1)
     for (const n of ['animation-pipeline.md', 'gdd.txt', 'designer-notes.md', 'README.md', 'CHANGELOG.md', 'inspection.md']) expect(anchorRank(n)).toBe(null)
@@ -42,9 +42,9 @@ describe('the corpus', () => {
 
   test('sections split on headings, not inside code fences; the outline keeps levels 1-3', async () => {
     const s = splitSections('docs/GDD.md', GDD)
-    expect(s.map(x => x.heading)).toEqual(['Game Design', 'Combat', 'Boss: Warden', 'Exploration'])
+    expect(s.map(x => x.heading)).toEqual(['Game Design', 'Combat', 'Boss: Gatekeeper', 'Exploration'])
     expect(s[1]?.text).toContain('# not a heading inside a fence')
-    expect(outline(GDD)).toBe('- Game Design\n  - Combat\n    - Boss: Warden\n  - Exploration')
+    expect(outline(GDD)).toBe('- Game Design\n  - Combat\n    - Boss: Gatekeeper\n  - Exploration')
     expect(outline(GDD, 40)).toBe('- Game Design\n  - Combat\n  - Exploration')
   })
 
