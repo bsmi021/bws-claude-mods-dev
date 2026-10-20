@@ -1,0 +1,30 @@
+{
+  "project:c:/projects/bws.game.tms": [
+    {
+      "verdict": "aligned",
+      "score": 100,
+      "reason": "The turn is empty: no prompt, no edits, no tool calls and no answer, so nothing moved away from the task, plan or design documents.",
+      "anchor": "task",
+      "cause": "none",
+      "suggestion": "",
+      "at": 1792508484916,
+      "session": "00de12f1-b9d9-41a6-9cfa-c031b466f616",
+      "scope": "turn",
+      "turn": 0,
+      "files": []
+    },
+    {
+      "verdict": "aligned",
+      "score": 88,
+      "reason": "Recent commits build documented items (WRL-03/WRL-05 abbey doors and kit pass, SPEC-TRAVERSAL rev 3, Anselm heal/Focus specs bound to GDD v1.35) through the proposal, review, publish process; promo rendering is a small side thread.",
+      "anchor": "docs/design/specs/SPEC-TRAVERSAL.md § Revision 3: Doors (abbey campus)",
+      "cause": "none",
+      "suggestion": "",
+      "at": 1792508500957,
+      "session": "2df43d77-26a9-4c13-ab26-d51359c0ec7c",
+      "scope": "overall",
+      "turn": 0,
+      "files": []
+    }
+  ]
+}

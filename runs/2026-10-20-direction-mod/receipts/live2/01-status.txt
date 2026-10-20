@@ -1,0 +1,50 @@
+                                                                                                               │                                                        ✕
+ ▐▛███▛█   Claude Code v2.1.304                                                                                │[ Assumptions ] 2: Shelf 3: Board 4: Interview
+▝▜██████▀  Opus 5.5 with medium effort · Claude Max                                                            │5: Direction
+ ▝▝   ▝▝   ~\AppData\Local\Temp\claude\C--Projects-bws-mods-claude-code\f5998f3a-718b-4624-85bf-2a03ee6ff7…    │⚑ no assumptions yet
+                                                                                                               │Nothing to review. Claude records assumptions here as it
+                                                                                                               │builds.
+❯ /direction                                                                                                   │
+  ⎿  bws-direction: Direction                                                                                  │
+     Anchors: docs/GDD.md · 1 docs · no run plan                                                               │
+                                                                                                               │
+     No check in this session yet.                                                                             │
+                                                                                                               │
+     This session: no checks yet.                                                                              │
+     Project: no checks yet.                                                                                   │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                                               │
+                                                                                           ◐ medium · /effort  │
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Opus 5.5] | direction-live2 | [----------] 0% | v2.1.304                                                                                             ◨ side ✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents

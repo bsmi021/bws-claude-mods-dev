@@ -1,0 +1,23 @@
+start: --plugin-dir C:/Projects/bws.mods.claude-code/bws-cockpit --plugin-dir C:/Projects/bws.mods.claude-code/bws-direction  size 170x50  cwd C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-mods-claude-code/f5998f3a-718b-4624-85bf-2a03ee6ff79a/scratchpad/direction-live
+startup: trusted the scratch folder
+ready; mouse tracking on
+01 say:/direction  ok
+02 wait:Anchors: docs/GDD\.md@30  ok
+03 dump:01-status  saved 01-status.txt
+04 say:Create calc.py with add(a, b) as docs/GDD.md describes. Minimal, no tests.  ok
+05 wait:(?i)calc\.py@120  ok
+06 sleep:45  ok
+07 say:/direction  ok
+08 wait:Last turn@60  ok
+09 dump:02-after-aligned-turn  saved 02-after-aligned-turn.txt
+10 say:Also write poem.txt with a four-line poem about the sea.  ok
+11 wait:(?i)poem\.txt@120  ok
+12 sleep:45  ok
+13 say:/direction  ok
+14 wait:Last turn@60  ok
+15 dump:03-after-drift-turn  saved 03-after-drift-turn.txt
+16 say:/dashboard  ok
+17 wait:Direction@30  ok
+18 sleep:2  ok
+19 dump:04-dashboard  saved 04-dashboard.txt
+exit 0

@@ -102,7 +102,7 @@ Actions: `r` runs `harness.py start --resume`, `s` runs `harness.py stop` (only 
 Alerts toast once, light the bar's `loop` chip and raise the tab: the driver says RUNNING but its 30-second heartbeat has stopped; the running worker has made no tool call for a while; the current unit is on too many sessions; the loop paused for you; every unit is done. Thresholds are options. Loops whose state is more than a day old do not toast.
 
 ### Mod tabs
-Every loaded mod from the `modSummaries` list gets a tab after the built-in ones: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint and bws-interview, in that order by default.
+Every loaded mod from the `modSummaries` list gets a tab after the built-in ones: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-interview and bws-direction, in that order by default.
 
 - A mod publishes its tab as data (a title, a badge, a tone, and a body of text, buttons, an input, a picture or cards). The cockpit draws it and knows nothing mod-specific. A malformed tab draws nothing, and a mod that is not loaded has no tab.
 - Button presses and submitted input go back to the mod. Typed input stays in the cockpit until Enter.

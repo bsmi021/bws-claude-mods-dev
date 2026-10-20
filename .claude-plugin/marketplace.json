@@ -27,6 +27,10 @@
       "source": "./bws-diagram"
     },
     {
+      "name": "bws-direction",
+      "source": "./bws-direction"
+    },
+    {
       "name": "bws-enhance",
       "source": "./bws-enhance"
     },
@@ -60,6 +64,6 @@
     }
   ],
   "metadata": {
-    "version": "1.8.0"
+    "version": "1.9.0"
   }
 }

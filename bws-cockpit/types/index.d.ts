@@ -167,6 +167,7 @@ declare module 'claude-code' {
     'bws-notify': { summary: ModSummary | null; tab: unknown }
     'bws-shell-lint': { summary: ModSummary | null; tab: unknown }
     'bws-interview': { tab: unknown }
+    'bws-direction': { summary: ModSummary | null; tab: unknown }
   }
   interface PluginState {
     'bws-cockpit': {

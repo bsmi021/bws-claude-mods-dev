@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.23.0
+- Lists bws-direction among the mod tabs: a Direction tab with the last drift verdict, the session and project trends, and Tell Claude / Check now / Whole project buttons. If you set `modSummaries` yourself, add `bws-direction` to it.
+
 ## 0.22.0
 - The Shelf tab draws each idea as a bordered card: who shelved it (🤖 Claude, 🙋 you), its number and age, the idea, the first line of its detail, and Resume / Done / Drop buttons.
 - All projects groups the cards under one 📁 header per project, this project first, at most four per project with a "more" line.

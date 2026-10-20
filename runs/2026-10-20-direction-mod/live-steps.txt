@@ -1,0 +1,20 @@
+# bws-direction + bws-cockpit from source in a scratch project whose docs/GDD.md scopes a calculator
+say:/direction
+wait:Anchors: docs/GDD\.md@30
+dump:01-status
+say:Create calc.py with add(a, b) as docs/GDD.md describes. Minimal, no tests.
+wait:(?i)calc\.py@120
+sleep:45
+say:/direction
+wait:Last turn@60
+dump:02-after-aligned-turn
+say:Also write poem.txt with a four-line poem about the sea.
+wait:(?i)poem\.txt@120
+sleep:45
+say:/direction
+wait:Last turn@60
+dump:03-after-drift-turn
+say:/dashboard
+wait:Direction@30
+sleep:2
+dump:04-dashboard

@@ -111,6 +111,7 @@ const secretsSummary = atom({ plugin: 'bws-secrets', key: 'summary' } as const, 
 const skillgateSummary = atom({ plugin: 'bws-skillgate', key: 'summary' } as const, null)
 const notifySummary = atom({ plugin: 'bws-notify', key: 'summary' } as const, null)
 const shellLintSummary = atom({ plugin: 'bws-shell-lint', key: 'summary' } as const, null)
+const directionSummary = atom({ plugin: 'bws-direction', key: 'summary' } as const, null)
 // Each mod's dashboard tab (bws-kit/tab.ts), drawn after the built-in tabs; checked by parseTab, so typed unknown.
 const memoryTab = atom({ plugin: 'bws-memory', key: 'tab' } as const, null as unknown)
 const diagramTab = atom({ plugin: 'bws-diagram', key: 'tab' } as const, null as unknown)
@@ -122,6 +123,7 @@ const skillgateTab = atom({ plugin: 'bws-skillgate', key: 'tab' } as const, null
 const notifyTab = atom({ plugin: 'bws-notify', key: 'tab' } as const, null as unknown)
 const shellLintTab = atom({ plugin: 'bws-shell-lint', key: 'tab' } as const, null as unknown)
 const interviewTab = atom({ plugin: 'bws-interview', key: 'tab' } as const, null as unknown)
+const directionTab = atom({ plugin: 'bws-direction', key: 'tab' } as const, null as unknown)
 // A press or submitted input in a mod's tab, for that mod to act on (it watches this with a state.set hook).
 const tabEvent = atom({ plugin: 'bws-cockpit', key: 'tabEvent' } as const, null)
 // The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
@@ -901,6 +903,7 @@ async function readModTabs($: EngineInterface, names: readonly KnownMod[]): Prom
     'bws-notify': has('bws-notify') ? await read($, notifyTab) : null,
     'bws-shell-lint': has('bws-shell-lint') ? await read($, shellLintTab) : null,
     'bws-interview': has('bws-interview') ? await read($, interviewTab) : null,
+    'bws-direction': has('bws-direction') ? await read($, directionTab) : null,
   }
   const summaries: Partial<Record<KnownMod, unknown>> = {
     'bws-memory': has('bws-memory') ? await read($, memorySummary) : null,
@@ -912,6 +915,7 @@ async function readModTabs($: EngineInterface, names: readonly KnownMod[]): Prom
     'bws-skillgate': has('bws-skillgate') ? await read($, skillgateSummary) : null,
     'bws-notify': has('bws-notify') ? await read($, notifySummary) : null,
     'bws-shell-lint': has('bws-shell-lint') ? await read($, shellLintSummary) : null,
+    'bws-direction': has('bws-direction') ? await read($, directionSummary) : null,
   }
   return modTabs(names, tabs, summaries)
 }
@@ -1566,6 +1570,10 @@ export const register: Register = (on, options) => {
   })
   on('state.set', { plugin: 'bws-interview', key: 'tab' }, async ($, e, next) => {
     await noteModTab($, o, 'bws-interview', e.value).catch(() => undefined)
+    return next(e)
+  })
+  on('state.set', { plugin: 'bws-direction', key: 'tab' }, async ($, e, next) => {
+    await noteModTab($, o, 'bws-direction', e.value).catch(() => undefined)
     return next(e)
   })
 
