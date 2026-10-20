@@ -139,7 +139,7 @@ Set in `/plugin`, or under `pluginConfigs["bws-enhance"].options` in `settings.j
 
 Checked on Claude Code 2.1.296 on Windows 11, in Windows Terminal and headless (`claude -p`). Needs bws-cockpit 0.21.1 or later for the tab.
 
-- The Desktop app and the Remote Control bridge have not been tried. VS Code, mobile and cloud sessions draw no mod UI: use `/enhance` and copy the rewrite.
+- Desktop: the footer button and the tab's Enhance draft are drawn there since 0.4.3 (automated tests; not yet checked live). The Remote Control bridge has not been tried. VS Code, mobile and cloud sessions draw no mod UI: use `/enhance` and copy the rewrite.
 - The chord binding lives in `~/.claude/keybindings.json`, so set it on each computer.
 - The bouncer's prompt hold has not been checked live in an interactive terminal; it is covered by automated tests and headless runs.
 

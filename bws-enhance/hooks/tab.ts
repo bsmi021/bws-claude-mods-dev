@@ -6,7 +6,7 @@ import { buttons, makeTab, text } from './kit/tab'
 import type { ModTab, TabNode } from './kit/tab'
 
 // The ids a button sends back; `/enhance --<id>` runs the same action.
-export const ACTIONS = ['send', 'revert', 'put', 'dismiss', 'cancel', 'sendanyway', 'enhance', 'edit'] as const
+export const ACTIONS = ['send', 'revert', 'put', 'dismiss', 'cancel', 'sendanyway', 'enhance', 'edit', 'draft'] as const
 export type Action = (typeof ACTIONS)[number]
 export const actionOf = (word: string): Action | null => {
   const w = word.trim().toLowerCase().replace(/^--/, '')
@@ -31,7 +31,12 @@ export function enhanceTab(v: View, mode: BounceMode, o: { show: number; open: n
     return makeTab('Enhance', body, opts('held', 'warn'))
   }
   if (v.phase === 'idle') {
-    return makeTab('Enhance', [text('Nothing to enhance. /enhance <rough prompt>, or ✦ enhance under the prompt box.', { isDim: true }), bounceLine], opts('', 'idle'))
+    const idle = [
+      text('Nothing to enhance. Type a rough prompt in the box, then Enhance draft (or ✦ enhance in the footer); or /enhance <rough prompt>.', { isDim: true }),
+      bounceLine,
+      buttons({ id: 'draft', label: 'Enhance draft', hotkey: 'e', isFocused: true }),
+    ]
+    return makeTab('Enhance', idle, opts('', 'idle'))
   }
   const isInTab = !v.isFilled && v.note === 'in-tab'
   const body: TabNode[] = [

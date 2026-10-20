@@ -303,6 +303,35 @@ describe('mod', () => {
     await ui.unmount()
   })
 
+  test('footer on desktop: the button is drawn and a click enhances the draft', async ($, on) => {
+    const { seen, clock } = world(on, { box: 'make the band nicer' })
+    const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'desktop', component: 'SessionMode', props: { modes: [] } })
+    expect(await ui.find({ key: 'enhance' })).toBeDefined()
+    await ui.press({ key: 'enhance' })
+    await ui.unmount()
+    await clock.advance(50)
+    expect(seen.fills).toEqual([ENHANCED])
+  })
+
+  test('idle tab: Enhance draft enhances the draft in the box', async ($, on) => {
+    const { seen, clock } = world(on, { box: 'make the band nicer' })
+    await $.command.run({ command: 'enhance', args: '--dismiss' } as never)
+    const tab = await mountTab($ as never)
+    expect(await tab.find({ type: 'Text', text: /Nothing to enhance/ })).toBeDefined()
+    expect(await tab.find({ key: 'draft' })).toBeDefined()
+    await tab.press({ key: 'draft' })
+    await clock.advance(50)
+    expect(seen.asks[0]?.prompt).toMatch(/<rough_request>\nmake the band nicer\n/)
+    expect(seen.fills).toEqual([ENHANCED])
+  })
+
+  test('idle tab: Enhance draft over an empty box only toasts', async ($, on) => {
+    const { seen } = world(on)
+    await $.command.run({ command: 'enhance', args: '--draft' } as never)
+    expect(seen.asks).toEqual([])
+    expect(seen.toasts.length).toBe(1)
+  })
+
   test('footer button with an empty box only toasts', async ($, on) => {
     const { seen } = world(on)
     const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })

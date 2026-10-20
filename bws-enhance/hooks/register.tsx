@@ -391,6 +391,7 @@ async function act($: EngineInterface, a: Action, model: string) {
   else if (a === 'dismiss' || a === 'cancel') await cancel($)
   else if (a === 'sendanyway') await sendAnyway($)
   else if (a === 'enhance') await enhanceHeld($, model)
+  else if (a === 'draft') await enhanceDraft($, model)
   else await editHeld($)
 }
 
@@ -467,15 +468,17 @@ export const register: Register = (on, options) => {
   // A small footer button, so the chord bound to `chordAction` presses it from the prompt. The footer holds one tree:
   // share it. Another mod's footer (whatever next(e) draws, as bws-sidechat's `side` button) stays beside ours; with
   // none, the engine's mode labels are drawn here, as the engine would. Drawing without next hid every footer below us.
+  // The engine raises the footer on the terminal and desktop; a chord presses a Button on the terminal only, so the
+  // desktop gets a plain clickable button without the borrowed action.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
-    if (action === '' || e.surface !== 'terminal') return next(e)
+    if (action === '' || (e.surface !== 'terminal' && e.surface !== 'desktop')) return next(e)
     const drawn = await settle(next(e))
     const other = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
     const { Box, Button, Text } = $.ui.resolve(e)
     return (
       <Box flexDirection="row" gap={1}>
         {other ?? (e.props.modes.length > 0 ? <Text dimColor>{e.props.modes.join(' & ')}</Text> : null)}
-        <Button key="enhance" plain dimColor label="✦ enhance" action={action} onPress={() => enhanceDraft($, model)} />
+        <Button key="enhance" plain dimColor label="✦ enhance" {...(e.surface === 'terminal' ? { action } : {})} onPress={() => enhanceDraft($, model)} />
       </Box>
     )
   })
