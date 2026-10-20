@@ -28,3 +28,8 @@ PLAN.md and the project's `docs/` corpus? Must work for any project (Brian's cor
 
 ## Follow-up
 - Docs, plan, history key and git log now resolve from `$.session.root()` (the project root), not cwd; tests run with cwd in a subfolder. Gate ok.
+
+## Release
+- Brian approved. A stale publish worktree from the earlier failed dry run held the `publish` branch; removed it (`git worktree remove --force`; a few locked temp files remain). `publish.py --push` released v1.9.0: https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.9.0
+- Installed: bws-direction 0.1.0 (new), bws-cockpit 0.22.0 -> 0.23.0.
+- Desktop check: computer use cannot control the Claude app itself, so the Desktop surface is still untested by me; Brian to check (/reload-plugins, /direction, /dashboard Direction tab).
