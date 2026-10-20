@@ -43,7 +43,7 @@ The `every` option checks every Nth such turn. The turn never waits: the check r
 
 - **The task:** the first prompt you typed in the session, plus your latest few prompts.
 - **The plan:** `PLAN.md` in the `runs/<date>-<slug>/` folder the session's tool calls named last (first 3,000 characters).
-- **The documents:** every `.md` under `docs/` (4 levels, 300 files). The anchor documents send their heading outline
+- **The documents:** every `.md` under `docs/` at the project root (where the session started, not where a shell `cd` went) (4 levels, 300 files). The anchor documents send their heading outline
   on every check: the files named like a PRD, spec, requirements, design doc, GDD or vision; else architecture,
   technical design or `*-spec`; the shallowest ones, at most 3. `anchorDocs` names them yourself. Other sections are
   picked by the words they share with the turn (file paths, identifiers, your prompt), about 7,000 characters in all.

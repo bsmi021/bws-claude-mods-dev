@@ -25,3 +25,6 @@ PLAN.md and the project's `docs/` corpus? Must work for any project (Brian's cor
 
 ## Next
 - Release when Brian says so: `python tools/publish.py bws-direction bws-cockpit --version 1.9.0`, then `--push`.
+
+## Follow-up
+- Docs, plan, history key and git log now resolve from `$.session.root()` (the project root), not cwd; tests run with cwd in a subfolder. Gate ok.

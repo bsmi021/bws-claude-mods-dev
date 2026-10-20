@@ -58,7 +58,7 @@ async function settle<T>(p: Promise<T>): Promise<T | undefined> {
 }
 
 async function load($: EngineInterface): Promise<{ key: string; log: Check[] }> {
-  const key = projectKey(await $.session.cwd())
+  const key = projectKey(await $.session.root())
   if (cache?.key === key) return cache
   cache = { key, log: parseChecks(await settle($.store.get(key))) }
   return cache
@@ -109,7 +109,7 @@ async function readDoc($: EngineInterface, abs: string, label: string, mtime: nu
 
 // The corpus text a check sends, with the excerpts picked for `query`. Also sets the one-line `anchors` label.
 async function corpus($: EngineInterface, query: string, planPath: string): Promise<string> {
-  const cwd = await $.session.cwd()
+  const cwd = await $.session.root()
   const dir = joinPath(cwd, docsDir)
   const found: { rel: string; mtime: number; size: number }[] = []
   await listDocs($, dir, '', 0, found)
@@ -146,7 +146,7 @@ async function plan($: EngineInterface, r: readonly Row[]): Promise<{ path: stri
   const dir = sessionRunDir(r)
   if (!dir) return { path: '', text: '' }
   const path = `runs/${dir}/PLAN.md`
-  const text = (await settle($.fs.read(joinPath(await $.session.cwd(), path)))) ?? ''
+  const text = (await settle($.fs.read(joinPath(await $.session.root(), path)))) ?? ''
   return text ? { path, text: text.length > 3000 ? `${text.slice(0, 3000)}...` : text } : { path: '', text: '' }
 }
 
@@ -194,7 +194,7 @@ async function check($: EngineInterface, scope: 'turn' | 'overall', answer?: str
       const docs = await corpus($, turnQuery(d, task.first), p.path)
       out = await judge($, model, CHECK_SYSTEM, checkPrompt({ task, plan: p.text, planPath: p.path, corpus: docs, turn: turnText(d) }), CHECK_TIMEOUT_MS)
     } else {
-      const cwd = await $.session.cwd()
+      const cwd = await $.session.root()
       const git = await settle($.process.run(['git', 'log', '-n', '40', '--since=30.days.ago', '--date=short', '--format=%h %ad %s', '--shortstat'], { cwd, timeoutMs: 15_000 }))
       const log = git && git.exitCode === 0 ? git.stdout.slice(0, 8000) : ''
       const docs = await corpus($, `${log}\n${p.text}`, p.path)
