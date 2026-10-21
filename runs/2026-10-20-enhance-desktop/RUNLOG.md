@@ -20,3 +20,6 @@ Not done:
 - Replaced the test that asserted no desktop button with one that asserts the button, no action, and a click opening the tab. 119/119 pass; mods-gate --plugin bws-sidechat ok.
 - README Desktop note updated (native /side still wins; the footer click opens this mod's tab). Not checked live.
 - Release: add bws-sidechat to the same publish as bws-enhance, on Brian's word.
+
+## Released 2026-10-21
+- bws-enhance 0.4.3 and bws-sidechat 0.4.3 shipped in bws-mods 1.10.0 with bws-cockpit 0.24.0 (tag v1.10.0) and were installed. Live Desktop check still not done.
