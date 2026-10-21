@@ -119,8 +119,12 @@ const firstBulletUnder = (lines: readonly string[], heading: RegExp): string | u
   return undefined
 }
 
-export const parseFinish = (text: string): string | undefined =>
-  firstBulletUnder(text.split(/\r?\n/), /^#{1,4}\s.*finish line/i)
+// A "Finish line:" header line wins, else the first bullet under a "Finish line" heading.
+export const parseFinish = (text: string): string | undefined => {
+  const m = text.match(/^\s*(?:[-*]\s+)?\**finish line\**\s*:\**\s*(.+)$/im)
+  if (m?.[1]) return clean(m[1])
+  return firstBulletUnder(text.split(/\r?\n/), /^#{1,4}\s.*finish line/i)
+}
 
 export const shorten = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
 

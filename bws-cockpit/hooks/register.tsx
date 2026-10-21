@@ -23,7 +23,8 @@ import type { Dialect } from './shell'
 import { ago, answerCommand, judge, loopState, loopText, money, parseAnswers, parseNeeds, parseProgress, parseState, withAnswers } from './loop'
 import type { LoopConfig, LoopLimits } from './loop'
 import type { LoopView } from '../types'
-import { actionable, decide, missingRunlogIn, openItems, openSummary, writtenRunFolders } from './finish'
+import { actionable, decide, headerGapIn, missingRunlogIn, openItems, openSummary, writtenRunFolders } from './finish'
+import type { HeaderGap } from './finish'
 import {
   SCAN_DEPTH,
   findProjects,
@@ -197,7 +198,7 @@ type Options = {
   refreshSeconds: number
   isBackgroundProbe: boolean
   loop: LoopLimits
-  finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; runlogCheck: boolean; isHeadless: boolean; owner: string }
+  finish: { isOn: boolean; maxContinues: number; evidenceCheck: boolean; runlogCheck: boolean; headerCheck: boolean; isHeadless: boolean; owner: string }
   projects: { isOn: boolean; roots: string[] }
   pin: { model: string; types: string[] }
   isShelfNudge: boolean
@@ -465,20 +466,25 @@ async function sessionFinishLine($: EngineInterface, owner: string): Promise<{ f
   return { folder: r.folder, open: actionable([...openItems(r.plan), ...openItems(r.tasks)], owner) }
 }
 
-// A run folder this session's own tool calls wrote that has no RUNLOG.md ("runs/<name>"), or null.
+// The run folders this session's own tool calls wrote: one with no RUNLOG.md ("runs/<name>"), and, when `isHeader`,
+// one whose RUNLOG.md lacks the Status / Finish line / Next step / Open header.
 // Harness report folders (-harness, -sessions) are exempt; a folder that no longer exists is skipped.
-async function missingRunlogFolder($: EngineInterface): Promise<string | null> {
+async function runlogGaps($: EngineInterface, isHeader: boolean): Promise<{ missing: string | null; header: HeaderGap | null }> {
+  const none = { missing: null, header: null }
   const t = await read($, touched)
   const { startedAt } = await $.session.usage()
-  if (t === null || t.startedAt !== startedAt || t.folders.length === 0) return null
+  if (t === null || t.startedAt !== startedAt || t.folders.length === 0) return none
   const runsDir = joinPath(await $.session.cwd(), 'runs')
   const files: Record<string, string[] | null> = {}
+  const runlogs: Record<string, string | null> = {}
   for (const name of t.folders) {
     const list = await settle($.fs.list(joinPath(runsDir, name)))
     files[name] = list ? list.filter(f => f.kind === 'file').map(f => f.name) : null
+    const hit = files[name]?.find(f => f.toLowerCase() === 'runlog.md')
+    runlogs[name] = isHeader && hit ? ((await settle($.fs.read(joinPath(joinPath(runsDir, name), hit)))) ?? null) : null
   }
   const name = missingRunlogIn(files)
-  return name === null ? null : `runs/${name}`
+  return { missing: name === null ? null : `runs/${name}`, header: headerGapIn(runlogs) }
 }
 
 async function refresh($: EngineInterface, o: Options, maxAgeMs: number) {
@@ -1089,6 +1095,7 @@ export const register: Register = (on, options) => {
       maxContinues: Math.max(0, Number(options.finishLineMaxContinues ?? 2)),
       evidenceCheck: options.evidenceCheck === true,
       runlogCheck: options.finishLineRunlog !== false,
+      headerCheck: options.finishLineRunlogHeader !== false,
       isHeadless: options.finishLineHeadless === true,
       owner: String(options.ownerName ?? 'the user'),
     },
@@ -1198,12 +1205,14 @@ export const register: Register = (on, options) => {
     if (!o.finish.isOn) return next(e)
     if (!o.finish.isHeadless && (await $.session.surfaces()).length === 0) return next(e)
     const fl = await sessionFinishLine($, o.finish.owner)
-    const missing = o.finish.runlogCheck ? await missingRunlogFolder($) : null
-    if (fl === null && missing === null) return next(e) // no run folder touched this session: nothing to hold to
+    const gaps = o.finish.runlogCheck ? await runlogGaps($, o.finish.headerCheck) : { missing: null, header: null }
+    const missing = gaps.missing
+    if (fl === null && missing === null && gaps.header === null) return next(e) // no run folder touched this session: nothing to hold to
     const decision = decide({
       open: fl?.open ?? [],
       folder: fl?.folder ?? missing,
       missingRunlog: missing,
+      runlogHeader: gaps.header,
       message: e.last_assistant_message ?? '',
       continuesUsed,
       maxContinues: o.finish.maxContinues,
@@ -1218,7 +1227,9 @@ export const register: Register = (on, options) => {
         ? `finish line: ${fl?.open.length ?? 0} open, keeping Claude going`
         : decision.kind === 'runlog'
           ? `finish line: ${missing} has no RUNLOG.md`
-          : 'finish line: asked Claude for evidence',
+          : decision.kind === 'header'
+            ? `finish line: runs/${gaps.header?.folder} RUNLOG has no ${gaps.header?.missing.join(', ')}`
+            : 'finish line: asked Claude for evidence',
       { timeoutMs: 6000 },
     )
     return { block: decision.block }

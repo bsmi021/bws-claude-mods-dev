@@ -10,9 +10,12 @@ export type FinishInput = {
   evidenceCheck: boolean
   owner?: string // what the block message calls the person ("the user" unless configured)
   missingRunlog?: string | null // a run folder this session wrote that has no RUNLOG.md
+  runlogHeader?: HeaderGap | null // a run folder this session wrote whose RUNLOG.md lacks header fields
 }
 
-export type FinishDecision = { block: string; kind: 'open' | 'runlog' | 'evidence' } | null
+export type FinishDecision = { block: string; kind: 'open' | 'runlog' | 'header' | 'evidence' } | null
+
+export type HeaderGap = { folder: string; missing: string[] }
 
 // Report folders the harness writes by itself (runs/<date>-harness, runs/<date>-sessions) never need a RUNLOG.
 export const isReportFolder = (name: string) => /-(harness|sessions)$/i.test(name.replace(/[\\/]+$/, ''))
@@ -23,6 +26,30 @@ export const missingRunlogIn = (files: Record<string, string[] | null>): string 
     const list = files[name]
     if (list === null || list === undefined || isReportFolder(name)) continue
     if (!list.some(f => f.toLowerCase() === 'runlog.md')) return name
+  }
+  return null
+}
+
+// The header a RUNLOG.md starts with, so the next session reads state, not narrative.
+export const RUNLOG_HEADER = ['Status', 'Finish line', 'Next step', 'Open'] as const
+const HEADER_LINES = 20
+
+const fieldLine = (field: string) => new RegExp(`^\\s*(?:[-*]\\s+)?\\**${field.replace(/\s+/g, '\\s+')}\\**\\s*:\\**\\s*\\S`, 'i')
+
+// The header fields missing from the top of a RUNLOG ("Status: active", "**Next step:** ...", "- Open: none").
+export const missingHeaderFields = (runlog: string): string[] => {
+  const top = runlog.split(/\r?\n/).slice(0, HEADER_LINES)
+  return RUNLOG_HEADER.filter(f => !top.some(l => fieldLine(f).test(l)))
+}
+
+// The first run folder (newest name first) whose RUNLOG.md lacks header fields; `runlogs` maps folder -> RUNLOG text
+// (null when it has none, which missingRunlogIn reports instead).
+export const headerGapIn = (runlogs: Record<string, string | null>): HeaderGap | null => {
+  for (const name of Object.keys(runlogs).sort().reverse()) {
+    const text = runlogs[name]
+    if (text === null || text === undefined || isReportFolder(name)) continue
+    const missing = missingHeaderFields(text)
+    if (missing.length > 0) return { folder: name, missing }
   }
   return null
 }
@@ -141,6 +168,16 @@ export const decide = (x: FinishInput): FinishDecision => {
       block:
         `bws-cockpit finish line: runs/${x.missingRunlog.replace(/^runs[\\/]+/, '')} has no RUNLOG.md. Write one before stopping: the brief, ` +
         'what you did, the outcomes with their receipts, and the next step or blockers, so the next session can continue from it.',
+    }
+  }
+  if (x.runlogHeader) {
+    const folder = `runs/${x.runlogHeader.folder.replace(/^runs[\\/]+/, '')}`
+    return {
+      kind: 'header',
+      block:
+        `bws-cockpit finish line: ${folder}/RUNLOG.md has no ${x.runlogHeader.missing.join(', ')} line at the top. Start it with ` +
+        '"Status: active | blocked | done", "Finish line: <what done means>", "Next step: <one concrete action>" and ' +
+        '"Open: <blockers or pending job IDs, or none>", kept current, so the next session reads state first.',
     }
   }
   if (x.evidenceCheck && claimsDone(x.message) && !hasEvidence(x.message)) {

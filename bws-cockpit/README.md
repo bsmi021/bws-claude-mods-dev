@@ -134,6 +134,7 @@ Keeps Claude from stopping while this session's checklist still has work. This s
 - **Items that never hold it open:** items marked blocked, waiting on, needs the user, parked, deferred, follow-up, later or out of scope; harness proposals marked `(proposed-task)`; and items addressed to you, starting with `<ownerName>:`.
 - **Never blocked:** a reply that hands back (it ends with a question, or says "your call", "want me to", "should I", "let me know", or asks you to act: "tell me when...", "say go"), and a turn with background tasks or scheduled wake-ups pending.
 - **RUNLOG check** (`finishLineRunlog`, on). When a run folder this session wrote has no `RUNLOG.md`, the stop is blocked and Claude is told to write one: brief, steps, outcomes with receipts, next step. Harness report folders (names ending `-harness` or `-sessions`) are exempt.
+- **RUNLOG header check** (`finishLineRunlogHeader`, on, needs `finishLineRunlog`). When a `RUNLOG.md` in a run folder this session wrote has no `Status:`, `Finish line:`, `Next step:` or `Open:` line in its first 20 lines, the stop is blocked and Claude is told which lines to add. Bold and bullet forms (`**Next step:**`, `- Open: none`) count. The run band shows a `Finish line:` line as the finish line.
 - **Evidence check** (`evidenceCheck`, off). When nothing is open but the reply claims "done", "complete" or "all tests pass" without citing evidence (test counts, receipt or log paths, "exit 0", a commit hash, a URL), the stop is blocked once. It is off because it mostly caught status replies.
 - **Bounded.** At most `finishLineMaxContinues` blocks (default 2) per prompt you send, so it cannot loop.
 - **Visible.** When a turn ends with open items anyway, a line under the answer shows the count and the first items.
@@ -182,6 +183,7 @@ Set these in `/plugin`, or under `pluginConfigs["bws-cockpit"].options` in setti
 | `finishLine` | `true` | Finish-Line Guard: keep Claude going while this session's run folder has open checklist items, and ask for evidence when it claims done without any. |
 | `finishLineMaxContinues` | `2` | How many times the guard may block a stop before your next prompt. |
 | `finishLineRunlog` | `true` | Block a stop while a run folder this session wrote has no `RUNLOG.md` (folders ending `-harness` or `-sessions` are exempt). |
+| `finishLineRunlogHeader` | `true` | With `finishLineRunlog` on, also block a stop while such a `RUNLOG.md` lacks `Status:`, `Finish line:`, `Next step:` and `Open:` lines in its first 20 lines. |
 | `evidenceCheck` | `false` | Block once when a reply claims the work is done but cites no evidence (test counts, receipt paths, commit hash). |
 | `finishLineHeadless` | `false` | Also guard `claude -p` and SDK sessions. |
 | `ownerName` | `the user` | What the guard calls you when it asks Claude to mark an item that needs you, as in `(needs <name>: question)`. |

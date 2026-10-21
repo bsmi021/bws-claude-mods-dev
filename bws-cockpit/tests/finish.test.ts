@@ -1,7 +1,23 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { actionable, claimsDone, decide, hasEvidence, isHandBack, isParked, isReportFolder, missingRunlogIn, openItems, writtenRunFolders } from '../hooks/finish'
+import {
+  actionable,
+  claimsDone,
+  decide,
+  hasEvidence,
+  headerGapIn,
+  isHandBack,
+  isParked,
+  isReportFolder,
+  missingHeaderFields,
+  missingRunlogIn,
+  openItems,
+  writtenRunFolders,
+} from '../hooks/finish'
+import { parseFinish } from '../hooks/lib'
+
+const HEADER = 'Status: active\nFinish line: the band row ships\nNext step: write the README\nOpen: none\n'
 
 const CWD = 'C:/proj'
 const STARTED = 1_000_000
@@ -49,7 +65,7 @@ async function world($: { tool: { call: (input: never) => Promise<unknown> } }, 
   const run = `${CWD}/runs/2026-10-02-band-row`
   const files: Record<string, string> = { [`${run}/PLAN.md`]: w.plan ?? PLAN }
   if (w.tasks !== undefined) files[`${run}/TASKS.md`] = w.tasks
-  if (w.runlog !== null) files[`${run}/RUNLOG.md`] = w.runlog ?? '# RUNLOG\n' // runlog: null = a folder without one
+  if (w.runlog !== null) files[`${run}/RUNLOG.md`] = w.runlog ?? `${HEADER}\n# RUNLOG\n` // runlog: null = a folder without one
   on('fs.list', ($, e) => {
     const p = norm(e.path)
     if (p === `${CWD}/runs` && !w.noRuns) return { value: [{ name: '2026-10-02-band-row', kind: 'dir', size: 0, mtimeMs: 0, isLink: false }] }
@@ -163,6 +179,35 @@ describe('RUNLOG rules', () => {
     expect(isReportFolder('2026-10-03-ui-pass')).toBe(false)
     expect(missingRunlogIn({ '2026-10-01-a': ['PLAN.md'], '2026-10-02-b': ['probe.py'], '2026-10-03-harness': ['report.html'] })).toBe('2026-10-02-b')
     expect(missingRunlogIn({ '2026-10-01-a': ['runlog.md'], '2026-10-02-gone': null })).toBeNull()
+  })
+
+  test('header: plain, bold and bullet lines count; only the top 20 lines are read', () => {
+    expect(missingHeaderFields(HEADER)).toEqual([])
+    expect(missingHeaderFields('**Status:** done\n- Finish line: x\n**Next step**: y\n- **Open:** none\n')).toEqual([])
+    expect(missingHeaderFields('# RUNLOG\nStatus: active\n\nNext steps are below.\n')).toEqual(['Finish line', 'Next step', 'Open'])
+    expect(missingHeaderFields('Status:\nFinish line: x\nNext step: y\nOpen: none\n')).toEqual(['Status'])
+    expect(missingHeaderFields(`${'filler\n'.repeat(20)}${HEADER}`)).toEqual(['Status', 'Finish line', 'Next step', 'Open'])
+  })
+
+  test('header: the newest gap is named; folders without a RUNLOG and report folders are skipped', () => {
+    expect(headerGapIn({ '2026-10-01-a': '# old\n', '2026-10-02-b': HEADER, '2026-10-03-c': null, '2026-10-04-harness': '# r\n' })).toEqual({
+      folder: '2026-10-01-a',
+      missing: ['Status', 'Finish line', 'Next step', 'Open'],
+    })
+    expect(headerGapIn({ '2026-10-02-b': HEADER })).toBeNull()
+  })
+
+  test('decide: a missing RUNLOG comes before a header gap, and a hand-back passes', () => {
+    const base = { open: [], folder: 'runs/x', message: 'Done: 3 pass.', continuesUsed: 0, maxContinues: 2, isWaiting: false, evidenceCheck: false }
+    const gap = { folder: '2026-10-03-x', missing: ['Next step'] }
+    expect(decide({ ...base, runlogHeader: gap })?.block).toContain('runs/2026-10-03-x/RUNLOG.md has no Next step line')
+    expect(decide({ ...base, runlogHeader: gap, missingRunlog: 'runs/2026-10-04-y' })?.kind).toBe('runlog')
+    expect(decide({ ...base, runlogHeader: gap, message: 'Done. Want me to push?' })).toBeNull()
+  })
+
+  test('parseFinish reads a header line before a heading', () => {
+    expect(parseFinish(HEADER)).toBe('the band row ships')
+    expect(parseFinish('## Finish line\n- tests pass\n')).toBe('tests pass')
   })
 })
 
@@ -298,6 +343,18 @@ describe('finish-line guard', () => {
     await world($, on, { plan: '## Tasks\n- [x] a\n', extra: { '2026-10-03-scratch': ['probe.py'] } })
     await $.tool.call({ tool: 'Write', file_path: `${CWD}/runs/2026-10-03-scratch/probe.py`, content: '' } as never)
     expect((await $.classic.Stop(stop('Probe written: 1 pass.'))).block).toContain('runs/2026-10-03-scratch has no RUNLOG.md')
+  })
+
+  test('RUNLOG header check: a RUNLOG without the header blocks the stop and names the lines', async ($, on) => {
+    const w = await world($, on, { plan: '## Tasks\n- [x] a\n', runlog: '# RUNLOG\nNext step: ship\n' })
+    const r = await $.classic.Stop(stop('Finished a: 3 pass.'))
+    expect(r.block).toContain('runs/2026-10-02-band-row/RUNLOG.md has no Status, Finish line, Open line')
+    expect(w.toasts.some(t => /RUNLOG has no Status/.test(t))).toBe(true)
+  })
+
+  test('RUNLOG header check: finishLineRunlogHeader: false turns it off', { options: { finishLineRunlogHeader: false } }, async ($, on) => {
+    await world($, on, { plan: '## Tasks\n- [x] a\n', runlog: '# RUNLOG\n' })
+    expect((await $.classic.Stop(stop('Finished a: 3 pass.'))).block).toBeUndefined()
   })
 
   test('RUNLOG check: harness report folders are exempt', async ($, on) => {

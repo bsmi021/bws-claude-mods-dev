@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.24.0
+- Finish-Line Guard: RUNLOG header check. A stop is blocked while a `RUNLOG.md` this session wrote has no `Status:`, `Finish line:`, `Next step:` or `Open:` line in its first 20 lines. New option `finishLineRunlogHeader` (on).
+- The run band reads a `Finish line:` header line as the finish line.
+
 ## 0.23.0
 - Lists bws-direction among the mod tabs: a Direction tab with the last drift verdict, the session and project trends, and Tell Claude / Check now / Whole project buttons. If you set `modSummaries` yourself, add `bws-direction` to it.
 
