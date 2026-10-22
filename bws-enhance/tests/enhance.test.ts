@@ -296,7 +296,7 @@ describe('mod', () => {
 
   test('footer: when the engine draws its own below, the mode labels and the button are drawn here', async ($, on) => {
     world(on)
-    on('ui.render', () => ({ type: 'engine', ref: 'footer' }) as never)
+    on('ui.render', () => ({ type: 'engine', ref: 0 }) as never)
     const ui = await $.ui.mount({ plugin: 'bws-enhance', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus', 'plan'] } })
     expect(await ui.find({ type: 'Text', text: 'focus & plan' })).toBeDefined()
     expect(await ui.find({ key: 'enhance' })).toBeDefined()

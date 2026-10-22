@@ -445,15 +445,10 @@ describe('hotkey', () => {
 
   test('chordAction empty: the plugin draws nothing, so the engine draws its own footer', { options: { chordAction: '' } }, async ($, on) => {
     world(on)
-    on('ui.render', () => ({ type: 'engine' }) as never)
-    let drew = true
-    try {
-      const ui = await $.ui.mount(footer())
-      await ui.unmount()
-    } catch (err) {
-      drew = !String(err).includes('drew nothing')
-    }
-    expect(drew).toBe(false)
+    on('ui.render', () => ({ type: 'engine', ref: 0 }) as never)
+    const ui = await $.ui.mount(footer())
+    expect(await ui.find({ key: 'side' })).toBeUndefined()
+    await ui.unmount()
   })
 
   test('desktop: the button is drawn without the chord action, and a click opens the side chat', async ($, on) => {

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.4
+- No behaviour change. Footer tests updated for Claude Code 2.1.307, where an engine node's `ref` is a number.
+
 ## 0.4.3
 - The footer `✦ enhance` button is drawn in the Claude Desktop app too (it was terminal-only). There it is a click; the chord stays a terminal feature.
 - The idle Enhance tab has an **Enhance draft** button (`e`, or `/enhance --draft`): it enhances the draft in the prompt box, so the dashboard no longer points only at the footer.
