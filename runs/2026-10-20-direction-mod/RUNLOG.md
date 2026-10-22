@@ -1,7 +1,7 @@
-Status: active
+Status: done
 Finish line: bws-direction 0.1.1 released and Tell Claude confirmed working in Desktop
-Next step: Brian runs /reload-plugins in Desktop and clicks Tell Claude on a drift verdict; the tab note says what happened
-Open: Desktop click unverified by me (computer use cannot drive the Claude app)
+Next step: none
+Open: none
 
 # RUNLOG: bws-direction 0.1.0 (drift detection)
 
@@ -49,3 +49,6 @@ PLAN.md and the project's `docs/` corpus? Must work for any project (Brian's cor
 ## Release 1.10.1 (2026-10-22)
 - Brian approved. publish.py --push released v1.10.1 (bws-direction 0.1.1, bws-enhance 0.4.4, bws-sidechat 0.4.4): https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.10.1
 - claude plugin update: direction 0.1.0 -> 0.1.1, enhance 0.4.3 -> 0.4.4, sidechat 0.4.3 -> 0.4.4.
+
+## Desktop confirmed (2026-10-22)
+- After /reload-plugins, Brian clicked Tell Claude in Desktop: the verdict arrived as a prompt (turn 8, drifting 48, cause user: the release widened the plan's scope). Scope change recorded in PLAN.md as Brian's explicit decision.

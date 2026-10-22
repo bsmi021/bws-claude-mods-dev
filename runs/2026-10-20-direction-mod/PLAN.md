@@ -19,7 +19,7 @@
 - [x] README, CHANGELOG, RUNLOG, commit, `git push private main`.
 - [x] Release: bws-mods 1.9.0 published (v1.9.0), installed locally (bws-direction 0.1.0, bws-cockpit 0.23.0)
 
-Out of scope: release/publish (offer it to Brian), automatic overall checks, editing docs.
+Out of scope: automatic overall checks, editing docs. Release was out of scope at the start; Brian approved it explicitly (1.9.0 on 2026-10-20, 1.10.1 on 2026-10-22), and 1.10.1 also shipped the test-only bws-enhance 0.4.4 and bws-sidechat 0.4.4 fixes that the release gate needed.
 
 ## Decisions
 
@@ -29,3 +29,4 @@ Out of scope: release/publish (offer it to Brian), automatic overall checks, edi
 - Session task = first typed prompt (not a slash command) + the last 3 typed prompts (redirections by the user).
 - Run folder = the newest `runs/<date>-<slug>` the session's tool calls named; its PLAN.md (first 3k chars).
 - Model default `haiku`, `maxTokens` 400, JSON only, 20 s timeout.
+- [x] Tell Claude confirmed in Desktop (2026-10-22): the click sent the drift verdict as a prompt.
