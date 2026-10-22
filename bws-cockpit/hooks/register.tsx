@@ -1025,6 +1025,12 @@ async function showTab($: EngineInterface, tab: string) {
 }
 
 // The bar's hide button: say how to get it back, since the bar is gone once it is hidden.
+// The footer's cockpit button: the bar comes back if hidden, and the dashboard opens or closes.
+async function pressCockpit($: EngineInterface) {
+  if (await read($, isHidden)) await update($, isHidden, () => false)
+  await toggleDash($)
+}
+
 async function hideBar($: EngineInterface) {
   await update($, isHidden, () => true)
   $.ui.toast('Cockpit bar hidden. /cockpit show brings it back.')
@@ -2149,6 +2155,21 @@ export const register: Register = (on, options) => {
         </Box>
         {guardRow}
         {belowBox}
+      </Box>
+    )
+  })
+
+  // The footer under the prompt: a cockpit button that opens (or closes) the dashboard, and brings back a hidden bar.
+  // The footer holds one tree: another mod's footer stays beside ours; with none, the engine's mode labels are drawn.
+  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    if (e.surface !== 'terminal' && e.surface !== 'desktop') return next(e)
+    const drawn = await settle(next(e))
+    const other = drawn !== undefined && drawn.type !== 'engine' ? drawn : null
+    const { Box, Button, Text } = $.ui.resolve(e)
+    return (
+      <Box flexDirection="row" gap={1}>
+        {other ?? (e.props.modes.length > 0 ? <Text dimColor>{e.props.modes.join(' & ')}</Text> : null)}
+        <Button key="cockpit" plain dimColor label="◧ cockpit" onPress={() => void pressCockpit($)} />
       </Box>
     )
   })

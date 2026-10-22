@@ -1020,3 +1020,60 @@ describe('bar buttons', () => {
     expect(seen.opened.length).toBe(2)
   })
 })
+
+const FOOTER = (surface: 'terminal' | 'desktop' | 'mobile' = 'terminal', modes: string[] = ['plan']) =>
+  ({ plugin: 'bws-cockpit', component: 'SessionMode', surface, props: { modes } }) as const
+
+describe('footer cockpit button', () => {
+  test('draws beside the engine mode labels on terminal and desktop', async ($, on) => {
+    world(on)
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const ui = await $.ui.mount(FOOTER(surface))
+      expect(String((await ui.find({ key: 'cockpit' }))?.props?.label)).toContain('cockpit')
+      expect(await ui.find({ type: 'Text', text: 'plan' })).toBeDefined()
+      await ui.unmount()
+    }
+  })
+
+  test('keeps another mod footer and draws the labels once', async ($, on) => {
+    world(on)
+    on('ui.render', () => ({ type: 'Text', props: {}, children: ['side footer'] }) as never)
+    const ui = await $.ui.mount(FOOTER())
+    expect(await ui.find({ type: 'Text', text: 'side footer' })).toBeDefined()
+    expect(await ui.find({ key: 'cockpit' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'plan' })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('leaves other surfaces alone', async ($, on) => {
+    world(on)
+    on('ui.render', () => ({ type: 'Text', props: {}, children: ['engine footer'] }) as never)
+    const ui = await $.ui.mount(FOOTER('mobile'))
+    expect(await ui.find({ key: 'cockpit' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: 'engine footer' })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('press opens the dashboard, again closes it; a hidden bar comes back', async ($, on) => {
+    const { seen, clock } = world(on, { shelf: seeded() })
+    on('ui.render', () => ({ type: 'Text', props: {}, children: ['engine'] }) as never) // the hidden bar passes to it
+    await withBar($)
+    await $.command.run({ command: 'cockpit', args: 'hide' } as never)
+    let band = await $.ui.mount(BAND)
+    expect(await band.find({ key: 'dash' })).toBeUndefined()
+    await band.unmount()
+    let ui = await $.ui.mount(FOOTER())
+    await ui.press({ key: 'cockpit' })
+    await clock.settle()
+    await ui.unmount()
+    expect(seen.opened.map(o => o.id)).toEqual(['dashboard'])
+    band = await $.ui.mount(BAND)
+    expect(await band.find({ key: 'dash' })).toBeDefined()
+    await band.unmount()
+    ui = await $.ui.mount(FOOTER())
+    await ui.press({ key: 'cockpit' })
+    await clock.settle()
+    await ui.unmount()
+    expect(seen.closed.at(-1)).toBe('dashboard')
+  })
+})

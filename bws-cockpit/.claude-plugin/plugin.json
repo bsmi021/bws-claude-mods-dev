@@ -1,6 +1,6 @@
 {
   "name": "bws-cockpit",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "bsmi021",

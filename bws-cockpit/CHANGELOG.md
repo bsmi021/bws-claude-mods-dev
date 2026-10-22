@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.26.0
+- A `◧ cockpit` button in the footer under the prompt (terminal and Desktop): opens or closes the dashboard and brings back a hidden bar. It shares the footer with other mods' buttons and the engine's mode labels.
+
 ## 0.25.0
 - Lists bws-summary among the mod tabs: a Summary tab with the rolling conversation summary and Older / Newer / Latest / Refresh. If you set `modSummaries` yourself, add `bws-summary` to it.
 

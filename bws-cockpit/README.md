@@ -74,6 +74,9 @@ Other details:
 - The bar refreshes every `refreshSeconds` and after each turn. It draws once the first probe has landed.
 - It shares the slot above the prompt: when another mod draws a band there, the cockpit draws it under its own row. Hidden, or while a survey shows, it gives the whole slot over. Two mods that bind the same digit will clash.
 - `3` hides the bar and toasts how to get it back.
+
+### Footer button
+Under the prompt, at the right of the footer (terminal and Desktop), `◧ cockpit` opens the dashboard, or closes it when open. It also brings back a hidden bar. It sits beside other mods' footer buttons (bws-sidechat's `◨ side`, bws-enhance's `✦ enhance`) and Claude Code's own mode labels.
 - Every new interactive conversation gets one short block of context naming the newest run folder, its next step and its open count, with a note to confirm before resuming it. `claude -p` and SDK sessions skip it.
 
 ### Assumptions tab
@@ -214,7 +217,7 @@ Set these in `/plugin`, or under `pluginConfigs["bws-cockpit"].options` in setti
 
 ## Compatibility
 
-- Checked on Claude Code 2.1.296 and later (the Mod tabs on 2.1.302), Windows 11, with Git Bash and PowerShell 7.
+- Checked on Claude Code 2.1.296 and later (the Mod tabs on 2.1.302, the footer button on 2.1.307 in the terminal), Windows 11, with Git Bash and PowerShell 7.
 - The dashboard and bar were checked live in a terminal (Windows Terminal and tmux). Desktop is covered by automated tests only and has not been tried in the app; mobile has not been tried. Headless runs (`claude -p`) get text for `/dashboard`, `/cockpit`, `/loop-watch` and `/handoff`, and the guards apply.
 - Not verified live: an unreal-mcp block with the port down, and a running or paused harness loop (tests cover both).
 - The Editor & Device Guard and the process probes are Windows-oriented (PowerShell, `nvidia-smi`).
