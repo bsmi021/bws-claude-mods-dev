@@ -1,3 +1,8 @@
+Status: blocked
+Finish line: bws-direction 0.1.1 released and Tell Claude confirmed working in Desktop
+Next step: once enhance+sidechat tests pass on CC 2.1.307 (proposed session task_91d535c3), run python tools/publish.py bws-direction --version 1.10.1 --push (needs Brian), then claude plugin update bws-direction@bws-mods
+Open: release blocked by bws-enhance/bws-sidechat footer test failures on CC 2.1.307 (not this mod); Desktop click unverified by me
+
 # RUNLOG: bws-direction 0.1.0 (drift detection)
 
 ## Objective
