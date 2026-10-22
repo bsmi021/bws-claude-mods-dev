@@ -1,7 +1,7 @@
 Status: active
 Finish line: bws-summary released in bws-mods 1.11.0 and the Summary tab seen in Desktop
-Next step: Brian approves `python tools/publish.py bws-summary bws-cockpit --version 1.11.0 --push`; then `claude plugin update bws-cockpit@bws-mods`, `claude plugin install bws-summary@bws-mods`, `/reload-plugins`
-Open: release push (needs Brian); Desktop check of `/summary` (Desktop may claim the name)
+Next step: Brian runs `/reload-plugins`, then `/summary` in Desktop; if Desktop claims `/summary`, use `/dashboard` and pick the Summary tab
+Open: Desktop check of `/summary` (Brian)
 
 # RUNLOG: bws-summary (rolling conversation summary tab)
 
@@ -26,3 +26,5 @@ in the cockpit dashboard beside the other mods.
   summary"; `/summary latest` -> `2/2`.
 - No convo-summary copy installed here (`claude plugin list`, dev-mods): no `/summary` clash.
 - Release dry run `publish.py bws-summary bws-cockpit --version 1.11.0`: worktree match, privacy scan, gate 15 ok. Push waits for Brian.
+- Brian approved. publish.py --push released v1.11.0 (bws-summary 0.1.0, bws-cockpit 0.25.0): https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.11.0
+- Installed here: cockpit updated 0.24.0 -> 0.25.0, bws-summary 0.1.0 installed (user scope).
