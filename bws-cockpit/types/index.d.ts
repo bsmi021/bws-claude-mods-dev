@@ -168,6 +168,7 @@ declare module 'claude-code' {
     'bws-shell-lint': { summary: ModSummary | null; tab: unknown }
     'bws-interview': { tab: unknown }
     'bws-direction': { summary: ModSummary | null; tab: unknown }
+    'bws-summary': { summary: ModSummary | null; tab: unknown }
   }
   interface PluginState {
     'bws-cockpit': {

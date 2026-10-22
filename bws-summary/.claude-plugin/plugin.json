@@ -1,0 +1,20 @@
+{
+  "name": "bws-summary",
+  "version": "0.1.0",
+  "description": "Rolling conversation summary: each time Claude stops, Haiku updates a short summary of the whole conversation (goal, decisions, done, open items). The Summary tab of the dashboard shows it, with earlier summaries kept so a rollback never loses one. Session-only; never enters Claude's context.",
+  "author": {
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
+  },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-summary#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "summary",
+    "context",
+    "dashboard"
+  ],
+  "types": "./types/index.d.ts"
+}

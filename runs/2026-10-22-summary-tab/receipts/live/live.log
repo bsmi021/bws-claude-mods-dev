@@ -1,0 +1,23 @@
+start: --plugin-dir C:/Projects/bws.mods.claude-code/bws-cockpit --plugin-dir C:/Projects/bws.mods.claude-code/bws-summary  size 170x50  cwd C:/Users/bsmi0/AppData/Local/Temp/bws-live
+ready; mouse tracking on
+01 say:What is 17 times 23? Answer in one line, and remember my favourite colour is teal.  ok
+02 wait:391@120  ok
+03 sleep:40  ok
+04 say:/summary  ok
+05 wait:1/1 · turn@60  ok
+06 sleep:2  ok
+07 dump:01-summary-tab  saved 01-summary-tab.txt
+08 say:Now what is 2 plus 2? One line.  ok
+09 wait:(?m)^.*\b4\b@120  ok
+10 sleep:40  ok
+11 say:/summary  ok
+12 wait:2/2 · turn@60  ok
+13 sleep:2  ok
+14 dump:02-two-summaries  saved 02-two-summaries.txt
+15 click:Older  clicked (7, 117)
+16 wait:Viewing an older summary@20  ok
+17 dump:03-older  saved 03-older.txt
+18 say:/summary latest  ok
+19 wait:2/2 · turn@20  ok
+20 dump:04-latest  saved 04-latest.txt
+exit 0

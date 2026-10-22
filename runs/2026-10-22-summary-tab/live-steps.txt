@@ -1,0 +1,21 @@
+# bws-summary + bws-cockpit from source: one real turn, then the Summary tab and its buttons
+say:What is 17 times 23? Answer in one line, and remember my favourite colour is teal.
+wait:391@120
+sleep:40
+say:/summary
+wait:1/1 · turn@60
+sleep:2
+dump:01-summary-tab
+say:Now what is 2 plus 2? One line.
+wait:(?m)^.*\b4\b@120
+sleep:40
+say:/summary
+wait:2/2 · turn@60
+sleep:2
+dump:02-two-summaries
+click:Older
+wait:Viewing an older summary@20
+dump:03-older
+say:/summary latest
+wait:2/2 · turn@20
+dump:04-latest

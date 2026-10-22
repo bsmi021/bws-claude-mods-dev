@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.25.0
+- Lists bws-summary among the mod tabs: a Summary tab with the rolling conversation summary and Older / Newer / Latest / Refresh. If you set `modSummaries` yourself, add `bws-summary` to it.
+
 ## 0.24.0
 - Finish-Line Guard: RUNLOG header check. A stop is blocked while a `RUNLOG.md` this session wrote has no `Status:`, `Finish line:`, `Next step:` or `Open:` line in its first 20 lines. New option `finishLineRunlogHeader` (on).
 - The run band reads a `Finish line:` header line as the finish line.

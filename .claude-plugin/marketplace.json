@@ -61,9 +61,13 @@
     {
       "name": "bws-skillgate",
       "source": "./bws-skillgate"
+    },
+    {
+      "name": "bws-summary",
+      "source": "./bws-summary"
     }
   ],
   "metadata": {
-    "version": "1.10.1"
+    "version": "1.11.0"
   }
 }
