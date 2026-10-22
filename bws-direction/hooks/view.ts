@@ -125,7 +125,7 @@ export function directionTab(v: View): ModTab {
   const overall = lastOf(v.log, 'overall')
   const body: TabNode[] = []
   if (v.phase !== 'idle') body.push(text(v.phase === 'overall' ? 'Checking the whole project...' : 'Checking the last turn...', { color: 'accent' }))
-  if (v.note) body.push(text(v.note, { color: 'warn' }))
+  if (v.note) body.push(text(v.note, { color: v.note.startsWith('Sent ') ? 'ok' : v.note.startsWith('Sending') ? 'accent' : 'warn' }))
   if (last) body.push(checkCard(`Last turn · turn ${last.turn} · ${when(last.at)}`, last))
   else body.push(text(v.isAuto ? 'No check yet. Turns that edit files are checked when they end.' : 'Automatic checks are off. Check now runs one.', { isDim: true }))
   body.push(text(sessionLine(v.log, v.session)), text(projectLine(v.log, v.now)))

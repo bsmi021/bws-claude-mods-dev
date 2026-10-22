@@ -270,13 +270,28 @@ async function start($: EngineInterface, scope: 'turn' | 'overall'): Promise<str
   return scope === 'turn' ? 'Checking the last turn... the Direction tab shows the verdict.' : 'Checking the whole project... the Direction tab shows the verdict.'
 }
 
-// Tell Claude: the last drift verdict as the person's own prompt. Deferred: never submit from inside a command.
+// Tell Claude: the last drift verdict as the person's own prompt. Deferred: never submit from inside a command or a
+// press. Every outcome lands in the tab's note, since a press has no reply line of its own.
 async function tell($: EngineInterface): Promise<string> {
-  const last = lastOf((await load($)).log, 'turn', lastSession)
-  if (!isDrift(last) || !last) return 'The last check found no drift; nothing to tell Claude.'
+  const session = lastSession || (await $.session.id())
+  const last = lastOf((await load($)).log, 'turn', session)
+  const said = async (line: string) => {
+    note = line
+    await publish($).catch(() => undefined)
+    return line
+  }
+  if (!isDrift(last) || !last) return said('The last check found no drift; nothing to tell Claude.')
   const text = nudgeText(last)
-  $.clock.after(10, () => void $.prompt.submit({ text, asUser: true }).catch(() => $.ui.toast('bws-direction: could not send the verdict to Claude')))
-  return 'Sending the verdict to Claude.'
+  $.clock.after(10, () => {
+    void $.prompt
+      .submit({ text, asUser: true })
+      .then(r => said('drop' in r && r.drop ? `Not sent to Claude: ${r.drop}` : 'Sent the verdict to Claude.'))
+      .catch(err => {
+        $.ui.log(failLine('tell', reasonOf(err)), { to: 'debug' })
+        return said(`Could not send the verdict to Claude (${reasonOf(err)}).`)
+      })
+  })
+  return said('Sending the verdict to Claude...')
 }
 
 async function hasDashboard($: EngineInterface): Promise<boolean> {

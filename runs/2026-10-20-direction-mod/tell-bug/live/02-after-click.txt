@@ -1,0 +1,50 @@
+      2 It hums of distance, depth and time,                                                                   │                                                        ✕
+      3 Each wave a word it never keeps,                                                                       │1: Assumptions 2: Shelf 3: Board 4: Memory 5: Diagram
+      4 Each tide a slow, returning rhyme.                                                                     │6: Enhance 7: Better 8: Side chat 9: Secrets Skillgate off
+                                                                                                               │Notify Shell lint Interview [ Direction ✗ 30 ]
+● I wrote poem.txt with a four-line poem about the sea.                                                        │Direction · ✗ 30
+                                                                                                               │╭───────────────────────────────────────────────────────╮
+  The GDD says no poems ship in v1. If this project gets packaged, leave the poem out of the release.          ││ Last turn · turn 2 · 2026-10-21 23:40                 │
+                                                                                                               ││ Off course (30) · scope widened by you                │
+✻ Brewed for 5s · done 11:40 PM                                                                                ││ The turn writes poem.txt, which the GDD § Scope       │
+                                                                                                               ││ explicitly excludes ('no poems' in v1), contradicting │
+❯ /direction show                                                                                              ││ the anchor document. The agent flagged the conflict   │
+  ⎿  bws-direction:                                                                                            ││ but still did the work.                               │
+                                                                                                               ││ Anchor: docs/GDD.md § Scope                           │
+› Prompt from the bws-direction plugin                                                                         ││ Next: Confirm with the user whether the GDD should    │
+❯ Direction check (bws-direction) on turn 2: off course, score 30, the scope was widened by the person. The    ││ change; otherwise remove poem.txt and keep v1 to      │
+  turn writes poem.txt, which the GDD § Scope explicitly excludes ('no poems' in v1), contradicting the anchor ││ calc.py with add and sub.                             │
+  document. The agent flagged the conflict but still did the work. It rests on: docs/GDD.md § Scope.           ││ Files: C:/Users/bsmi0/AppData/Local/Temp/claude/C--Pr │
+  Suggested: Confirm with the user whether the GDD should change; otherwise remove poem.txt and keep v1 to     ││ ojects-bws-mods-claude-code/f5998f3a-718b-4624-85bf-2 │
+  calc.py with add and sub. Before more work, say plainly that this widens the agreed scope and offer to park  ││ a03ee6ff79a/scratchpad/direction-live3/poem.txt       │
+  it as a follow-up.                                                                                           │╰───────────────────────────────────────────────────────╯
+  ⎿  UserPromptSubmit hook error                                                                               │This session: ✓✗  2 checks, average 56, → steady
+  ⎿  Failed with non-blocking status code: node:internal/modules/cjs/loader:1503                               │Project: 2 checks over 1 session, 50% aligned, average 56;
+                                                                                                               │last 7 days 56; 1 session drifted.
+● The direction check is right that poem.txt goes beyond the agreed scope. GDD § Scope says no poems in v1, and│Anchors: docs/GDD.md · 1 docs · no run plan
+  you asked for it directly, so I wrote it and only mentioned the conflict afterwards. I should have said up   │[ Tell Claude ] [ Check now ] [ Whole project ]
+  front that this widens scope.                                                                                │[ Pause auto ]
+                                                                                                               │
+  I've left the file where it is because deleting it would undo something you asked for. You can pick one of   │
+  these:                                                                                                       │
+                                                                                                               │
+  1. Keep it outside v1 (my recommendation). The poem stays as a side file and isn't part of v1.               │
+  2. Remove it. I delete poem.txt, and v1 is just calc.py.                                                     │
+  3. Change the GDD. Amend the Scope section to allow it.                                                      │
+                                                                                                               │
+  The check's suggestion also assumes v1 includes sub(a, b). That's still missing because you asked only for   │
+  add. Do you want me to add it to match the GDD?                                                              │
+                                                                                                               │
+✻ Sautéed for 4s · done 11:41 PM                                                                               │
+                                                                                                           [-] │
+next:                                                                                                          │
+  1: Remove poem.txt, add sub                                                                                  │
+  2: Add sub to calc.py                                                                                        │
+  3: Park the poem as a follow-up                                                                              │
+  0: dismiss                                                                                                   │
+                                                                                                               │
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Delete poem.txt and add sub(a, b) to calc.py so v1 matches the GDD scope.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Opus 5.5] | direction-live3 | [----------] 8% | v2.1.307                                                                                             ◨ side ✦ enhance
+  ⏵⏵ auto mode on (shift+tab to cycle)

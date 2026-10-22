@@ -1,0 +1,12 @@
+say:Create calc.py with add(a, b) as docs/GDD.md describes. Minimal, no tests.
+wait:(?i)calc\.py@120
+sleep:40
+say:Also write poem.txt with a four-line poem about the sea.
+wait:(?i)poem\.txt@120
+sleep:45
+say:/direction show
+wait:Tell Claude@60
+dump:01-tab
+click:Tell Claude
+sleep:20
+dump:02-after-click

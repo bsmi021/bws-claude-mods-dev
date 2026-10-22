@@ -21,7 +21,7 @@ const CHAT = [
 const DRIFT = '{"verdict":"drifting","score":48,"reason":"Added photo mode, not in the plan.","anchor":"runs/2026-10-20-parry/PLAN.md","cause":"agent","suggestion":"Revert and park it."}'
 const OK = '{"verdict":"aligned","score":93,"reason":"Parry window as the GDD says.","anchor":"docs/GDD.md § Combat","cause":"none","suggestion":""}'
 
-type W = { surfaces?: string[]; rows?: object[]; answer?: string | 'throw'; store?: Record<string, unknown>; session?: string; noDocs?: boolean }
+type W = { drop?: string; surfaces?: string[]; rows?: object[]; answer?: string | 'throw'; store?: Record<string, unknown>; session?: string; noDocs?: boolean }
 
 function world(on: On, w: W = {}) {
   const clock = mock.clock(on, { now: 1_760_000_000_000 })
@@ -31,7 +31,7 @@ function world(on: On, w: W = {}) {
   const dirs: Record<string, { name: string; kind: 'file' | 'dir' }[]> = w.noDocs
     ? {}
     : { [`${CWD}/docs`]: [{ name: 'GDD.md', kind: 'file' }, { name: 'specs', kind: 'dir' }], [`${CWD}/docs/specs`]: [{ name: 'ui.md', kind: 'file' }] }
-  const seen = { complete: [] as { model: string; prompt: string; system: string }[], toasts: [] as string[], tabs: [] as { badge: string; tone: string; raise: number }[], submitted: [] as string[], logs: [] as string[], git: 0 }
+  const seen = { complete: [] as { model: string; prompt: string; system: string }[], toasts: [] as string[], tabs: [] as { badge: string; tone: string; raise: number; body: { kind: string; text?: string }[] }[], submitted: [] as string[], logs: [] as string[], git: 0 }
   const who = { session: w.session ?? 's1', rows: w.rows ?? ROWS, answer: w.answer ?? DRIFT }
   on('session.start', () => ({ cwd: CWD }) as never)
   on('session.id', () => ({ value: who.session }))
@@ -77,7 +77,7 @@ function world(on: On, w: W = {}) {
   on('ui.open', () => ({ value: { isPlaced: true } as never }))
   on('prompt.submit', ($, e) => {
     seen.submitted.push(e.text)
-    return { text: '' } as never
+    return (w.drop ? { drop: w.drop } : { text: e.text }) as never
   })
   on('prompt.context', ($, e) => ({ blocks: e.blocks }))
   on('state.set', { plugin: 'bws-direction', key: 'tab' }, ($, e, next) => {
@@ -101,6 +101,9 @@ const turn = ($: { turn: { complete: (i: never) => Promise<unknown> } }, o: obje
 const run = async ($: { command: { run: (i: never) => Promise<unknown> } }, args = '') => ((await $.command.run({ command: 'direction', args } as never)) as { text: string }).text
 const block = (r: unknown) => (r as { blocks: { name: string; text: string }[] }).blocks.find(b => b.name === 'bwsDirection')?.text
 const last = <T>(xs: T[]) => xs[xs.length - 1]
+// The note line of the last published tab: the first text node right after the optional "Checking" line.
+const noteOf = (w: { seen: { tabs: { body: { kind: string; text?: string }[] }[] } }) =>
+  last(w.seen.tabs)?.body.find(n => n.kind === 'text' && /^(Sent|Sending|Not sent|Could not|The last check)/.test(n.text ?? ''))?.text
 
 describe('the automatic turn check', () => {
   test('a working turn: the turn returns at once, then one model call with the task, plan, GDD and turn; drift is recorded, toasted and raised', async ($, on) => {
@@ -231,10 +234,42 @@ describe('/direction', () => {
     expect(await run($, '--check')).toContain('Checking the last turn')
     await drain(w.clock)
     expect(w.seen.complete.length).toBe(1)
-    expect(await run($, 'tell')).toBe('Sending the verdict to Claude.')
+    expect(await run($, 'tell')).toBe('Sending the verdict to Claude...')
     expect(w.seen.submitted.length).toBe(0)
     await drain(w.clock)
     expect(w.seen.submitted[0]).toContain('drifting, score 48')
+    expect(noteOf(w)).toBe('Sent the verdict to Claude.')
+  })
+
+  test('tell after /clear (no session id kept yet) still finds the verdict the tab shows', async ($, on) => {
+    const w = world(on)
+    await $.session.start({ cwd: CWD } as never)
+    await run($, 'check')
+    await drain(w.clock)
+    await $.session.end({ reason: 'clear', sessionId: 's1' } as never)
+    expect(await run($, 'tell')).toBe('Sending the verdict to Claude...')
+    await drain(w.clock)
+    expect(w.seen.submitted.length).toBe(1)
+  })
+
+  test('a dropped or failed send says so in the tab', async ($, on) => {
+    const w = world(on, { drop: 'held by another mod' })
+    await $.session.start({ cwd: CWD } as never)
+    await run($, 'check')
+    await drain(w.clock)
+    await run($, 'tell')
+    await drain(w.clock)
+    expect(noteOf(w)).toBe('Not sent to Claude: held by another mod')
+  })
+
+  test('tell with no drift says so in the tab', async ($, on) => {
+    const w = world(on, { answer: OK })
+    await $.session.start({ cwd: CWD } as never)
+    await run($, 'check')
+    await drain(w.clock)
+    expect(await run($, 'tell')).toContain('no drift')
+    expect(noteOf(w)).toContain('no drift')
+    expect(w.seen.submitted.length).toBe(0)
   })
 
   test('pause stops automatic checks for the session; resume restarts them', async ($, on) => {

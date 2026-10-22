@@ -1,0 +1,16 @@
+start: --plugin-dir C:/Projects/bws.mods.claude-code/bws-cockpit --plugin-dir C:/Projects/bws.mods.claude-code/bws-direction  size 170x50  cwd C:/Users/bsmi0/AppData/Local/Temp/claude/C--Projects-bws-mods-claude-code/f5998f3a-718b-4624-85bf-2a03ee6ff79a/scratchpad/direction-live3
+startup: trusted the scratch folder
+ready; mouse tracking on
+01 say:Create calc.py with add(a, b) as docs/GDD.md describes. Minimal, no tests.  ok
+02 wait:(?i)calc\.py@120  ok
+03 sleep:40  ok
+04 say:Also write poem.txt with a four-line poem about the sea.  ok
+05 wait:(?i)poem\.txt@120  ok
+06 sleep:45  ok
+07 say:/direction show  ok
+08 wait:Tell Claude@60  ok
+09 dump:01-tab  saved 01-tab.txt
+10 click:Tell Claude  clicked (25, 115)
+11 sleep:20  ok
+12 dump:02-after-click  saved 02-after-click.txt
+exit 0
