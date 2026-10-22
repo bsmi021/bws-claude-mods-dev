@@ -1,7 +1,7 @@
-Status: blocked
+Status: active
 Finish line: bws-direction 0.1.1 released and Tell Claude confirmed working in Desktop
-Next step: Brian runs python tools/publish.py bws-direction bws-enhance bws-sidechat --version 1.10.1 --push (dry run passed; auto-mode classifier denied my push), then claude plugin update for the three
-Open: Desktop click on Tell Claude unverified by me
+Next step: Brian runs /reload-plugins in Desktop and clicks Tell Claude on a drift verdict; the tab note says what happened
+Open: Desktop click unverified by me (computer use cannot drive the Claude app)
 
 # RUNLOG: bws-direction 0.1.0 (drift detection)
 
@@ -45,3 +45,7 @@ PLAN.md and the project's `docs/` corpus? Must work for any project (Brian's cor
 
 ## Footer tests on Claude Code 2.1.307 (2026-10-21)
 - 2.1.307 types an engine node's `ref` as a number (0 = original props). enhance and sidechat footer fixtures used a string / no ref; sidechat's "chordAction empty" test also relied on a mount error that a valid engine node no longer gives, so it now asserts no `side` button. Mod code only reads `.type`: no runtime change. enhance 0.4.4, sidechat 0.4.4 (test-only, bumped because publish.py requires it). Full gate 14 + kit ok. Release dry run for 1.10.1 ok; the push was refused by the auto-mode classifier.
+
+## Release 1.10.1 (2026-10-22)
+- Brian approved. publish.py --push released v1.10.1 (bws-direction 0.1.1, bws-enhance 0.4.4, bws-sidechat 0.4.4): https://github.com/bsmi021/bws-claude-mods/releases/tag/v1.10.1
+- claude plugin update: direction 0.1.0 -> 0.1.1, enhance 0.4.3 -> 0.4.4, sidechat 0.4.3 -> 0.4.4.
