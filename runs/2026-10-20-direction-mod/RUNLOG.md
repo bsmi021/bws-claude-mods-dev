@@ -1,7 +1,7 @@
 Status: blocked
 Finish line: bws-direction 0.1.1 released and Tell Claude confirmed working in Desktop
-Next step: once enhance+sidechat tests pass on CC 2.1.307 (proposed session task_91d535c3), run python tools/publish.py bws-direction --version 1.10.1 --push (needs Brian), then claude plugin update bws-direction@bws-mods
-Open: release blocked by bws-enhance/bws-sidechat footer test failures on CC 2.1.307 (not this mod); Desktop click unverified by me
+Next step: Brian runs python tools/publish.py bws-direction bws-enhance bws-sidechat --version 1.10.1 --push (dry run passed; auto-mode classifier denied my push), then claude plugin update for the three
+Open: Desktop click on Tell Claude unverified by me
 
 # RUNLOG: bws-direction 0.1.0 (drift detection)
 
@@ -42,3 +42,6 @@ PLAN.md and the project's `docs/` corpus? Must work for any project (Brian's cor
 ## 0.1.1: Tell Claude button (2026-10-21)
 - Brian: the button does nothing in Desktop. Terminal repro (tell-bug/live) works: the click sent the verdict and Claude answered. Found: tell() looked up the verdict under `lastSession`, which is blank after /clear or /resume while the tab still shows it, so it silently did nothing; and a press never showed any result. Fixed both; the tab note now says sending / sent / not sent: <reason> / no drift. 3 tests added; gate ok.
 - Desktop itself still unverified by me (computer use cannot drive the Claude app).
+
+## Footer tests on Claude Code 2.1.307 (2026-10-21)
+- 2.1.307 types an engine node's `ref` as a number (0 = original props). enhance and sidechat footer fixtures used a string / no ref; sidechat's "chordAction empty" test also relied on a mount error that a valid engine node no longer gives, so it now asserts no `side` button. Mod code only reads `.type`: no runtime change. enhance 0.4.4, sidechat 0.4.4 (test-only, bumped because publish.py requires it). Full gate 14 + kit ok. Release dry run for 1.10.1 ok; the push was refused by the auto-mode classifier.
