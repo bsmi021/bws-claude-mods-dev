@@ -1,0 +1,20 @@
+{
+ "task": "linux-tests",
+ "arm": "new",
+ "executor": "sonnet",
+ "prompt": "Make the bouncer (`/bounce`) test suite pass on Linux, as it does on the platform where it passes now. Find which tests fail on Linux and why, and fix the underlying cause so the behaviour is correct on both platforms.\n\nDon't skip, delete or loosen tests, and don't hard-code results to make them pass. Don't add tests or docs beyond what's asked unless the project requires them. Keep working until the checks pass, then stop and report what changed.\n\nDone when: the bouncer tests pass on Linux using the project's test setup, with none skipped or weakened. If a failure depends on something Linux cannot provide, stop and report it instead of working around it.",
+ "result": "The bouncer tests now pass on Linux, but I couldn't run the full gate here. The gate's tsc step looks for a Windows-only TypeScript path (`C:/Users/bsmi0/AppData/Local/pnpm/...`) that doesn't exist on this machine.\n\n**What failed:** three bouncer tests in `bws-enhance/tests/bounce.test.ts` failed:\n- the glossary reaching the classifier and the reason call,\n- the `glossaryFile` option,\n- the `## Glossary` section of AGENTS.md used as the glossary.\n\n**Why:** the tests used `C:/proj` as the project root. On Linux that isn't an absolute path, so the engine resolved it against the working directory before the `fs.read` stub saw it (`…/bws-enhance/C:/proj/AGENTS.md`). The stub missed its files, so the glossary came back as `(none)`. The product code (`resolvePath`, the `fs.read` calls) was fine, since real Linux roots are absolute.\n\n**Fix:** I changed only the test fixture. The root is now `/proj`, and the `fs.read` stub drops a leading drive letter such as `C:`. The stub works whether the engine hands it `/proj/...` or `C:/proj/...`. No tests were skipped, deleted or loosened.\n\n**Results:** `claude plugin test` in `bws-enhance` gives 53 pass and 1 fail.\n\n**Still failing:** the one failure is `enhance.test.ts` \"headless: /enhance answers with the rewrite…\". It has the same cause: its root is `C:/proj`, so its stubs miss the instruction files and the file listing. It's outside the bouncer, so I left it alone. The same kind of fixture change should fix it if you want it done.",
+ "turns": 11,
+ "cost_usd": 0.2181317,
+ "duration_s": 62.586,
+ "diff": "diff --git a/bws-enhance/tests/bounce.test.ts b/bws-enhance/tests/bounce.test.ts\nindex aa5e840..71c6f8e 100644\n--- a/bws-enhance/tests/bounce.test.ts\n+++ b/bws-enhance/tests/bounce.test.ts\n@@ -18,7 +18,8 @@ import {\n   vagueQuestion,\n } from '../hooks/bounce'\n \n-const ROOT = 'C:/proj'\n+// Absolute on every platform: the engine resolves a drive path like C:/proj against the cwd on POSIX.\n+const ROOT = '/proj'\n const PROMPT = 'fix the thing on the settings page'\n const REASON = 'Name the settings page file and the change you want.'\n const COMPOSER = { kind: 'composer' }\n@@ -48,7 +49,7 @@ function world(on: On, w: World = {}) {\n   on('session.root', () => ({ value: ROOT }))\n   on('session.model', () => ({ value: 'claude-sonnet-5-5' }))\n   on('fs.read', ($, e) => {\n-    const path = String(e.path).replace(/\\\\/g, '/')\n+    const path = String(e.path).replace(/\\\\/g, '/').replace(/^[a-zA-Z]:(?=\\/)/, '')\n     const rel = path.startsWith(`${ROOT}/`) ? path.slice(ROOT.length + 1) : path\n     const hit = (w.files ?? {})[rel]\n     if (hit === undefined) throw new Error(`ENOENT ${path}`)\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/tests/bounce.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 53,
+   "fail": 1
+  }
+ }
+}
