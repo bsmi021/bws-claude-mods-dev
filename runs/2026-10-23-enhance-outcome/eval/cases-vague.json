@@ -1,0 +1,26 @@
+[
+ {
+  "id": "tests-vague",
+  "kind": "vague bug",
+  "rough": "enhance tests are red on this machine, fix",
+  "reference": "This machine is Linux. In bws-enhance, `claude plugin test` starts at 54 tests: 50 pass, 4 fail (three glossary tests in tests/bounce.test.ts and the headless /enhance test in tests/enhance.test.ts). Cause: the fixtures use Windows paths (\"C:/proj/...\"), which Linux resolves relative to the cwd (the engine reports ENOENT .../bws-enhance/C:/proj/AGENTS.md). The product code is fine. Good outcome: all bws-enhance tests pass on Linux, the tests still assert the same behaviour (no skips, no deleted or loosened assertions), Windows behaviour is unchanged, the change is small and limited to test fixtures or stubs."
+ },
+ {
+  "id": "sort-vague",
+  "kind": "vague change",
+  "rough": "the command list enhance sends to the model is in a weird order, sort it properly",
+  "reference": "commandsText in bws-enhance/hooks/lib.ts sorts commands with a rank only (built-ins last), so within a rank they keep whatever order they arrived in. 'Properly' most plausibly means a deterministic order: keep built-ins last (the existing intent, pinned by the test expecting '/interview' (user) before '/clear' (builtin)) and order by name (or by source then name) within that. Good outcome: one clear, deterministic ordering that keeps built-ins last, the bws-enhance tests pass (50 pass, 4 fail at the start; the 4 are Linux-path fixtures unrelated to this), the change is small and explained, nothing unrelated changed."
+ },
+ {
+  "id": "fork-vague",
+  "kind": "vague question",
+  "rough": "fork seems broken after resume?",
+  "reference": "Known answer, from the repo's AGENTS.md: \"`$.model.fork` gives `nothing-to-fork` on a resumed session's first command: fall back to `$.session.messages()` + `$.model.complete`.\" A resumed session has nothing to fork until a turn has run there, and the repo's mods that fork already carry that fallback. Good outcome: the agent identifies this (nothing-to-fork on the first command after /resume) with evidence from the repo, notes the existing fallback, and says what it could not confirm. No code change is needed; an unrequested change counts against scope unless it fixes a real gap the agent demonstrates."
+ },
+ {
+  "id": "docs-vague",
+  "kind": "vague docs",
+  "rough": "kit docs are stale",
+  "reference": "bws-kit/README.md should describe the current bws-kit modules and how mods use them (vendored with tools/sync-kit.py per a mod's kit.json). At the start it is missing tab.ts, and parts of it are out of date. Good outcome: only bws-kit/README.md changes; every name, export and behaviour it states exists in the code; stale claims are removed; nothing is invented."
+ }
+]

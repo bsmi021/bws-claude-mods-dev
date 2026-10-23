@@ -13,13 +13,16 @@ from pathlib import Path
 
 from eval import ENV, ROOT, HERE
 
-OUT = HERE / "out-a"
+OUT = HERE / os.environ.get("EVAL_A_OUT", "out-a")
+CASES = HERE / os.environ.get("EVAL_CASES", "cases.json")
 WT = Path(os.environ.get("EVAL_WT", "/tmp/enhance-eval-wt"))
 BASE = "b5f8015"  # main when this eval was written
-REWRITES = HERE / "out-b-haiku" / "gen.json"  # the default enhancer's rewrites, sample 0
-TASKS = ["linux-tests", "method-given", "investigate", "docs"]
+REWRITES = HERE / os.environ.get("EVAL_REWRITES", "out-b-haiku/gen.json")  # the default enhancer's rewrites
+TASKS = os.environ.get("EVAL_TASKS", "linux-tests,method-given,investigate,docs").split(",")
 ARMS = ["raw", "old", "new"]
-EXECUTORS = ["sonnet", "opus"]
+EXECUTORS = os.environ.get("EVAL_EXECUTORS", "sonnet,opus").split(",")
+RUNS = int(os.environ.get("EVAL_RUNS", "1"))  # run k uses rewrite sample k
+PLUGIN_TEST_TASKS = {"linux-tests", "method-given", "tests-vague", "sort-vague"}
 TIMEOUT = 1500
 GIT = threading.Lock()  # worktree add/remove share .git/worktrees
 TOOLS = ["Bash", "Read", "Edit", "Write", "Glob", "Grep"]
@@ -37,11 +40,19 @@ def sh(cmd, cwd, timeout=600):
     return r.returncode, (r.stdout + r.stderr)
 
 
+def cases():
+    return {c["id"]: c for c in json.loads(CASES.read_text())}
+
+
+def reference(t):
+    return cases()[t].get("reference") or REFERENCE[t]
+
+
 def prompts():
-    cases = {c["id"]: c for c in json.loads((HERE / "cases.json").read_text())}
+    cs = cases()
     gen = json.loads(REWRITES.read_text())
-    pick = lambda t, v: next(r["text"] for r in gen if r["case"] == t and r["variant"] == v and r["sample"] == 0)
-    return {t: {"raw": cases[t]["rough"], "old": pick(t, "old"), "new": pick(t, "new")} for t in TASKS}
+    pick = lambda t, v, k: next(r["text"] for r in gen if r["case"] == t and r["variant"] == v and r["sample"] == k)
+    return {t: [{"raw": cs[t]["rough"], "old": pick(t, "old", k), "new": pick(t, "new", k)} for k in range(RUNS)] for t in TASKS}
 
 
 def plugin_test(wt):
@@ -50,9 +61,13 @@ def plugin_test(wt):
     return {"pass": int(p.group(1)) if p else None, "fail": int(f.group(1)) if f else None}
 
 
+def run_name(task, arm, ex, k):
+    return f"{task}--{arm}--{ex}" + (f"--r{k}" if RUNS > 1 else "")
+
+
 def one(job):
-    task, arm, ex, prompt = job
-    name = f"{task}--{arm}--{ex}"
+    task, arm, ex, k, prompt = job
+    name = run_name(task, arm, ex, k)
     wt = WT / name
     with GIT:
         if wt.exists():
@@ -70,9 +85,9 @@ def one(job):
     _, files = sh(["git", "diff", "--cached", "--name-only", BASE], wt)
     files = [f for f in files.split() if "/.claude-plugin/types/" not in f]
     checks = {"files_changed": files}
-    if task in ("linux-tests", "method-given"):
+    if task in PLUGIN_TEST_TASKS:
         checks["plugin_test"] = plugin_test(wt)
-    row = {"task": task, "arm": arm, "executor": ex, "prompt": prompt, "result": j.get("result", ""),
+    row = {"task": task, "arm": arm, "executor": ex, "run": k, "prompt": prompt, "result": j.get("result", ""),
            "turns": j.get("num_turns"), "cost_usd": j.get("total_cost_usd"), "duration_s": (j.get("duration_ms") or 0) / 1000,
            "diff": diff[:30000], "checks": checks}
     (OUT / "runs").mkdir(parents=True, exist_ok=True)
@@ -87,9 +102,9 @@ def run():
     P = prompts()
     OUT.mkdir(exist_ok=True)
     (OUT / "prompts.json").write_text(json.dumps(P, indent=1, ensure_ascii=False))
-    jobs = [(t, a, e, P[t][a]) for t in TASKS for a in ARMS for e in EXECUTORS]
-    only = os.environ.get("EVAL_ONLY")  # e.g. "linux-tests--new--sonnet" for a smoke run
-    if only: jobs = [j for j in jobs if f"{j[0]}--{j[1]}--{j[2]}" == only]
+    jobs = [(t, a, e, k, P[t][k][a]) for t in TASKS for k in range(RUNS) for a in ARMS for e in EXECUTORS]
+    only = os.environ.get("EVAL_ONLY")  # a run name, e.g. "linux-tests--new--sonnet", for a smoke run
+    if only: jobs = [j for j in jobs if run_name(*j[:4]) == only]
     with ThreadPoolExecutor(int(os.environ.get("EVAL_PAR", "4"))) as ex:
         rows = list(ex.map(one, jobs))
     if not only:
@@ -128,20 +143,21 @@ Answer with JSON only: {{"outcome": n, "correctness": n, "scope": n, "report": n
 
 def judge():
     from eval import claude
-    cases = {c["id"]: c for c in json.loads((HERE / "cases.json").read_text())}
+    cs = cases()
     rows = [json.loads(p.read_text()) for p in sorted((OUT / "runs").glob("*.json"))]
     def g(r):
+        key = {k: r.get(k, 0) for k in ("task", "arm", "executor", "run")}
         checks = json.dumps(r["checks"]) + (f" (before any change, at the start commit: 54 tests, 50 pass, 4 fail; a total above 54 means the agent added tests)" if "plugin_test" in r["checks"] else "")
         for _ in range(2):
             raw = claude("opus", "You are a strict, fair evaluator of engineering work. Output only JSON.",
-                         JUDGE.format(rough=cases[r["task"]]["rough"], ref=REFERENCE[r["task"]], checks=checks,
+                         JUDGE.format(rough=cs[r["task"]]["rough"], ref=reference(r["task"]), checks=checks,
                                       result=r["result"][:6000], diff=r["diff"][:20000] or "(no changes)"))
             m = re.search(r"\{.*\}", raw, re.S)
             try:
-                return {**{k: r[k] for k in ("task", "arm", "executor")}, **json.loads(m.group(0))}
+                return {**key, **json.loads(m.group(0))}
             except Exception:
                 pass
-        return {**{k: r[k] for k in ("task", "arm", "executor")}, "error": raw[:300]}
+        return {**key, "error": raw[:300]}
     with ThreadPoolExecutor(6) as ex:
         out = list(ex.map(g, rows))
     (OUT / "judge.json").write_text(json.dumps(out, indent=1, ensure_ascii=False))
@@ -149,31 +165,38 @@ def judge():
 
 
 def report():
-    rows = {(r["task"], r["arm"], r["executor"]): r for r in (json.loads(p.read_text()) for p in (OUT / "runs").glob("*.json"))}
-    J = {(j["task"], j["arm"], j["executor"]): j for j in json.loads((OUT / "judge.json").read_text()) if "error" not in j}
+    key = lambda d: (d["task"], d["arm"], d["executor"], d.get("run", 0))
+    rows = {key(r): r for r in (json.loads(p.read_text()) for p in (OUT / "runs").glob("*.json"))}
+    J = {key(j): j for j in json.loads((OUT / "judge.json").read_text()) if "error" not in j}
     K = ["outcome", "correctness", "scope", "report"]
+    mean = lambda xs: sum(xs) / len(xs) if xs else 0
     md = ["# Eval A: agent work from raw vs old vs new prompts", "",
-          f"Tasks {', '.join(TASKS)}; executors {', '.join(EXECUTORS)}; one run each; worktrees at {BASE}; blind opus judge.", ""]
+          f"Tasks {', '.join(TASKS)}; executors {', '.join(EXECUTORS)}; {RUNS} run(s) per cell; worktrees at {BASE}; blind opus judge.", ""]
     for ex in EXECUTORS:
-        md += [f"## {ex}", "", "| arm | " + " | ".join(K) + " | mean | turns | cost $ | minutes |", "| --- " * (len(K) + 5) + "|"]
+        md += [f"## {ex}", "", "| arm | " + " | ".join(K) + " | mean | turns | cost $ | minutes | runs |", "| --- " * (len(K) + 6) + "|"]
         for a in ARMS:
-            js = [J[(t, a, ex)] for t in TASKS if (t, a, ex) in J]
-            rs = [rows[(t, a, ex)] for t in TASKS if (t, a, ex) in rows]
-            if not js: continue
-            means = [sum(j[k] for j in js) / len(js) for k in K]
-            md.append(f"| {a} | " + " | ".join(f"{m:.2f}" for m in means) + f" | **{sum(means)/len(K):.2f}** | "
-                      f"{sum(r['turns'] or 0 for r in rs)/len(rs):.0f} | {sum(r['cost_usd'] or 0 for r in rs)/len(rs):.2f} | "
-                      f"{sum(r['duration_s'] for r in rs)/len(rs)/60:.1f} |")
-        md.append("")
-    md += ["## Per run", "", "| task | executor | arm | outcome | corr | scope | report | checks | judge |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
-    for t in TASKS:
-        for ex in EXECUTORS:
+            ks = [k for k in J if k[1] == a and k[2] == ex]
+            if not ks: continue
+            means = [mean([J[k][m] for k in ks]) for m in K]
+            rs = [rows[k] for k in ks if k in rows]
+            md.append(f"| {a} | " + " | ".join(f"{m:.2f}" for m in means) + f" | **{mean(means):.2f}** | "
+                      f"{mean([r['turns'] or 0 for r in rs]):.0f} | {mean([r['cost_usd'] or 0 for r in rs]):.2f} | "
+                      f"{mean([r['duration_s'] for r in rs])/60:.1f} | {len(ks)} |")
+        md += ["", "| task | " + " | ".join(ARMS) + " |", "| --- " * (len(ARMS) + 1) + "|"]
+        for t in TASKS:
+            cells = []
             for a in ARMS:
-                j = J.get((t, a, ex)); r = rows.get((t, a, ex))
-                if not (j and r): continue
-                c = r["checks"]; pt = c.get("plugin_test")
-                ck = (f"tests {pt['pass']}/{pt['fail']} fail; " if pt else "") + f"{len(c['files_changed'])} files"
-                md.append(f"| {t} | {ex} | {a} | {j['outcome']} | {j['correctness']} | {j['scope']} | {j['report']} | {ck} | {j['why'].replace('|', '/')} |")
+                ks = [k for k in J if k[0] == t and k[1] == a and k[2] == ex]
+                cells.append(f"{mean([mean([J[k][m] for m in K]) for k in ks]):.2f}" if ks else "")
+            md.append(f"| {t} | " + " | ".join(cells) + " |")
+        md.append("")
+    md += ["## Per run", "", "| task | executor | arm | run | outcome | corr | scope | report | checks | judge |", "| --- " * 10 + "|"]
+    for k in sorted(J, key=lambda k: (TASKS.index(k[0]) if k[0] in TASKS else 99, k[2], ARMS.index(k[1]), k[3])):
+        j = J[k]; r = rows.get(k)
+        if not r: continue
+        c = r["checks"]; pt = c.get("plugin_test")
+        ck = (f"tests {pt['pass']}/{pt['fail']} fail; " if pt else "") + f"{len(c['files_changed'])} files"
+        md.append(f"| {k[0]} | {k[2]} | {k[1]} | {k[3]} | {j['outcome']} | {j['correctness']} | {j['scope']} | {j['report']} | {ck} | {j['why'].replace('|', '/')} |")
     (OUT / "report.md").write_text("\n".join(md))
     print("\n".join(md))
 

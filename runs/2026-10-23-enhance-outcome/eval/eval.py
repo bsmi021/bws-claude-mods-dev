@@ -11,6 +11,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 OUT = HERE / os.environ.get("EVAL_OUT", "out")
+CASES = HERE / os.environ.get("EVAL_CASES", "cases.json")
 ENHANCER = os.environ.get("EVAL_ENHANCER", "")  # the mod's `model` option; empty = its default (haiku)
 SCRATCH = Path(os.environ.get("EVAL_CWD", "/tmp/enhance-eval-cwd"))
 SAMPLES = int(os.environ.get("EVAL_SAMPLES", "2"))
@@ -106,7 +107,7 @@ def setup_session(case):
 
 def gen():
     """The real pipeline: `claude -p "/enhance <rough>" --plugin-dir mods/<variant>` from the repo root."""
-    cases = json.loads((HERE / "cases.json").read_text())
+    cases = json.loads(CASES.read_text())
     bases = {c["id"]: setup_session(c) for c in cases if "setup" in c}
     OUT.mkdir(exist_ok=True)
     (OUT / "setup.json").write_text(json.dumps(bases, indent=1, ensure_ascii=False))
@@ -175,7 +176,7 @@ AGENTS = (ROOT / "AGENTS.md").read_text()[:6000]  # what the mod sends (PER_FILE
 
 
 def judge():
-    cases = {c["id"]: c for c in json.loads((HERE / "cases.json").read_text())}
+    cases = {c["id"]: c for c in json.loads(CASES.read_text())}
     rows = json.loads((OUT / "gen.json").read_text())
     setup = json.loads((OUT / "setup.json").read_text())
     by = {(r["case"], r["variant"], r["sample"]): r["text"] for r in rows}
@@ -222,7 +223,7 @@ def metrics(t):
 
 
 def report():
-    cases = json.loads((HERE / "cases.json").read_text())
+    cases = json.loads(CASES.read_text())
     gen_rows = json.loads((OUT / "gen.json").read_text())
     judged = [j for j in json.loads((OUT / "judge.json").read_text()) if "error" not in j]
     keys = ["outcome", "method_left", "intent", "grounded", "verifiable", "concise"]
