@@ -77,9 +77,14 @@ export function classify(e: Submitted, s: { auto: boolean; armed: boolean }): Ve
 // ---------------------------------------------------------------------------------------------------------------
 // The two model calls.
 
-export const QUESTIONS_SYSTEM = `You help a person sharpen a rough request before they send it to Claude Code, an AI assistant that works in their project.
+export const QUESTIONS_SYSTEM = `You help a person sharpen a rough request before they send it to Claude Code, an AI assistant that works in their project and works out for itself how to do the work.
 
-Pick at most three multiple-choice questions whose answers would most improve the result: the goal, who it is for, the format or scope of the result, or what "done" looks like. Do not ask about anything the request already says.
+Pick at most three multiple-choice questions whose answers would most change the result. Ask about the outcome, never the method:
+- what should be true when it is done, or how they will tell it is done;
+- what a vague word means where Claude could pick wrong (for "sort it properly": which order);
+- who it is for, why it matters, or what must not change;
+- whether they want an answer or a change, when the request could be read either way.
+Do not ask how to do it (steps, files, tools or design): Claude decides that from the project. Do not ask about anything the request already says.
 
 Each question is short (under 70 characters) and has two to four short options (under 28 characters each) that are real, distinct choices. Never ask the person to type facts such as names, numbers or prices: those become placeholders later. If no question would clearly help, return no questions.
 
@@ -90,14 +95,18 @@ export function questionsPrompt(original: string): string {
   return `<request>\n${original}\n</request>`
 }
 
-export const REWRITE_SYSTEM = `You rewrite a person's rough request into a better one for Claude Code, an AI assistant that works in their project.
+export const REWRITE_SYSTEM = `You rewrite a person's rough request into a goal-and-outcome request for Claude Code, an AI assistant that works in their project. It says what to achieve and how to tell it is achieved, and leaves the way there to Claude, which reads the project and chooses its own approach.
 
 Rules:
-- Keep exactly what they meant. Do not change the task, add new tasks or widen the scope.
-- Make clear the goal, who it is for, the format of the result, and what "done" looks like.
-- Use the answers they gave. Leave out anything they skipped.
-- Never invent facts, names, numbers, prices, files or tools. Where something needed is unknown, write a [placeholder] in square brackets.
-- Write it as one request they could have typed themselves, in plain language and the first person. No title, no preamble, no quotes around it.
+- Keep exactly what they meant. Do not change the task, add new tasks or widen the scope. A question stays a question: ask for an answer, not a change.
+- Open with the end state, what should be true when it is done, not the activity. Add why it matters when they said.
+- Use the answers they gave. Leave out anything they skipped. Where the request is vague and no answer settles it, keep their words and let Claude find out what they mean; do not pick a meaning for them.
+- Leave the method to Claude: no steps, no order of work, and no files, tools or design they did not name. A method they chose stays.
+- Include a constraint only when they gave it, such as what must not change or who it is for. Never say where the fix belongs unless they did.
+- End with what done looks like in observable terms, and how to check it.
+- When the goal depends on something unknown that could make it impossible, say to stop and report instead of guessing.
+- Never invent facts, names, numbers, prices, files or tools. Where a fact only they know is needed, write a [placeholder] in square brackets.
+- Short beats thorough: usually under 120 words. Write it as one request they could have typed themselves, in plain language and the first person. No title, no preamble, no quotes around it.
 
 Reply with JSON only, no other text:
 {"prompt":"the upgraded request","added":["each thing you added, under 60 characters"]}

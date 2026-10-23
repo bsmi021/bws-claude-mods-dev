@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+- Upgrades are outcome-first: the rewrite opens with what should be true when the work is done, ends with how to tell it is done, and leaves the way there to Claude (no steps, no order of work, no files or tools you did not name). A method you chose is kept.
+- It no longer guesses for you: a vague word your answers did not settle stays in your words for Claude to work out, a question stays a question, and it never says where a fix belongs unless you did.
+- The questions ask about the outcome (what done looks like, what a vague word means, what must not change, answer or change), never how to do it.
+- Rewrites are shorter, usually under 120 words.
+
 ## 0.2.1
 - No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
   repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.

@@ -2,9 +2,15 @@
 
 > Turns a rough prompt into a clear one before it is sent, by asking you a few quick questions first.
 
-A vague prompt gets a vague answer. `/better` asks up to three multiple-choice questions, rewrites your prompt with a
-clear goal, audience, format and finish line, and shows your prompt and the upgrade side by side. Nothing runs until you
-press **Run it**.
+A vague prompt gets a vague answer. `/better` asks up to three multiple-choice questions about the outcome you want,
+rewrites your prompt as a goal-and-outcome request, and shows your prompt and the upgrade side by side. Nothing runs
+until you press **Run it**.
+
+The upgrade says what should be true when the work is done and how to tell, and leaves the way there to Claude: no
+steps, no order of work, no files or tools you did not name. Your answers settle what is vague; anything they do not
+settle stays in your words for Claude to work out, rather than a guess written as a requirement. A question stays a
+question. The questions ask about the outcome (what done looks like, what a vague word means, what must not change),
+never how to do it.
 
 ## Install
 

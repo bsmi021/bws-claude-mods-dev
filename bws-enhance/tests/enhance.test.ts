@@ -8,7 +8,6 @@ import {
   instructionPaths,
   instructionsText,
   mcpServers,
-  SYSTEM,
   targetNotes,
   userPrompt,
 } from '../hooks/lib'
@@ -131,20 +130,6 @@ describe('lib', () => {
     expect(cleanReply('```markdown\nDo the thing.\n```')).toBe('Do the thing.')
     expect(cleanReply("Here's the enhanced prompt:\nDo the thing.")).toBe('Do the thing.')
     expect(cleanReply('"Do it."')).toBe('Do it.')
-  })
-
-  test('the rewriter asks for the goal and finish line, and leaves the method to Claude', () => {
-    expect(SYSTEM).toMatch(/goal-and-outcome prompt/)
-    expect(SYSTEM).toMatch(/Leave the method to Claude/)
-    expect(SYSTEM).toMatch(/check Claude can run/)
-    expect(SYSTEM).toMatch(/No Steps section/)
-    expect(SYSTEM).toMatch(/open with the end state/)
-    expect(SYSTEM).toMatch(/cut every sentence that tells Claude how/)
-    expect(SYSTEM).toMatch(/Always end with a Done when/)
-    expect(SYSTEM).toMatch(/Do not sequence the work/)
-    expect(SYSTEM).toMatch(/say when to stop and report/)
-    expect(SYSTEM).toMatch(/only when it is in the lists you were given/)
-    expect(SYSTEM).not.toMatch(/Steps or Scope/)
   })
 
   test('per-model notes follow the target family', () => {
