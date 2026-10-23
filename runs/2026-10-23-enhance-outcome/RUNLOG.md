@@ -21,3 +21,7 @@
 - Eval A, agents (sonnet/opus) x raw/old/new on 4 tasks: work quality equal within noise (4.62–4.75); rewrites cost more turns than raw; new cheaper than old on Opus; new best on scope/report; new narrowed linux-tests to the bouncer tests.
 - Harness fixes on the way: judges see AGENTS.md; outcome judge baseline corrected to main's 50/4 (it had this branch's 51/4).
 - Details: eval/README.md.
+
+## 2026-10-23 (4): tsc
+- Generated `.claude-plugin/types/` by starting an interactive `claude --plugin-dir ./bws-enhance` under a pty (headless `-p` does not write them); the footer drew `✦ enhance`, so the mod loads live from source.
+- `MODS_TSC=<scratch>/typescript@5.8.3/bin/tsc python tools/mods-gate.py --plugin bws-enhance`: validate passed, tsc 5.8.3 strict passed (exit 0, 11 hook and test files); the gate is red only on the 4 Linux-only plugin tests (`C:/proj` fixtures), the same as before this change.
