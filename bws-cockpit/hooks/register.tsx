@@ -171,6 +171,8 @@ let shelfOption = ''
 let lastAskedOfMe: number | undefined
 // Between a submitted prompt and its turn's end: a bar Enhance then waits for the turn.
 let isTurnActive = false
+// The session's start-up ran (startAttended): set at the first surface, so a second attach opens nothing again.
+let isStarted = false
 const STOP_CONFIRM_MS = 10_000
 const RECENT_MS = 24 * 60 * 60 * 1000 // a loop whose state changed in the last day counts as recent
 const UNIT_COLOR: Record<string, string | undefined> = { DONE: 'success', RUNNING: 'success', PAUSED: 'warning', STOPPED: undefined, PENDING: undefined }
@@ -1005,7 +1007,34 @@ async function raise($: EngineInterface, tab: string) {
   const pane = (await $.ui.panes()).find(p => p.id === DASH)
   if (pane?.isFocused) return
   if (d.tab !== tab) await update($, dash, old => ({ ...old, tab }))
-  if (!pane || !pane.isShown) await $.ui.open({ id: DASH, title: DASH_TITLE })
+  if (pane && pane.isShown) return
+  const r = await $.ui.open({ id: DASH, title: DASH_TITLE })
+  if (!r.isPlaced) $.ui.log(`dashboard waits undrawn: ${r.reason}`, { to: 'debug' })
+}
+
+// The first surface of a session (at session.start in a terminal, at the first attach on Desktop and phones): the
+// timers, the bar's first data, and the dashboard. Once per session; a close by the person holds until the next one.
+async function startAttended($: EngineInterface, o: Options) {
+  if (isStarted) return
+  isStarted = true
+  $.clock.every(60_000, () => void settle(syncCache($, o)))
+  if (o.isBackgroundProbe) {
+    void refresh($, o, 0)
+    $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
+  } else void settle(showBar($, o))
+  // Something already waits on the person: open the dashboard on it (asks for this session arrive with
+  // bws-board's first summary write, below).
+  await settle(refreshShelf($))
+  const waiting = active(await read($, assumptions)).length > 0 ? 'assumptions' : (await read($, shelf)).count > 0 ? 'shelf' : null
+  // dashboardOnStart: the dashboard is there from the first prompt, on the first tab with something waiting.
+  const tab = waiting ?? (o.isDashboardOnStart ? 'assumptions' : null)
+  if (tab !== null) await settle(raise($, tab))
+}
+
+// The bar without a probe (backgroundProbe off): the run and the loops, no device chips until /cockpit or refresh.
+async function showBar($: EngineInterface, o: Options) {
+  const [run] = await Promise.all([findRun($), refreshLoops($, o)])
+  await update($, view, v => ({ run, devices: v?.devices ?? null, lastGuard: v?.lastGuard ?? null, lastGuardAt: v?.lastGuardAt ?? null }))
 }
 
 // The bar's dash button: open it, or close it as the person's close (news then only lights the bar).
@@ -1336,22 +1365,17 @@ export const register: Register = (on, options) => {
         required: ['id', 'status'],
       },
     })
-    const surfaces = await $.session.surfaces()
-    if (surfaces.length > 0) {
-      $.clock.every(60_000, () => void settle(syncCache($, o)))
-      if (o.isBackgroundProbe) {
-        void refresh($, o, 0)
-        $.clock.every(o.refreshSeconds * 1000, () => void refresh($, o, 0))
-      }
-      // Something already waits on the person: open the dashboard on it (asks for this session arrive with
-      // bws-board's first summary write, below).
-      await settle(refreshShelf($))
-      const waiting = active(await read($, assumptions)).length > 0 ? 'assumptions' : (await read($, shelf)).count > 0 ? 'shelf' : null
-      // dashboardOnStart: the dashboard is there from the first prompt, on the first tab with something waiting.
-      const tab = waiting ?? (o.isDashboardOnStart ? 'assumptions' : null)
-      if (tab !== null) await settle(raise($, tab))
-    }
+    if ((await $.session.surfaces()).length > 0) await startAttended($, o)
     return next(e)
+  })
+
+  // Desktop and phones attach after session.start, so a session started there has no surface yet: the bar and the
+  // dashboard come up on the first attach instead.
+  on('session.attach', async ($, e, next) => {
+    const result = await next(e)
+    $.ui.log(`attach: ${e.surface} (started ${isStarted})`, { to: 'debug' })
+    if (!isStarted) await settle(startAttended($, o))
+    return result
   })
 
   on('prompt.context', async ($, e, next) => {

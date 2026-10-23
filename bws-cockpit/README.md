@@ -57,7 +57,7 @@ One pane, `Dashboard`, docked right of the transcript in fullscreen from 110 col
   - Claude records an assumption: Assumptions.
   - An ask addressed to this session appears on bws-board: Board.
   - A loop alert (needs you, stalled, driver dead, all done): Loop.
-  - A session starts with unsent assumptions or open ideas for the project: that tab. With nothing waiting it opens on Assumptions (`dashboardOnStart`). Headless sessions open nothing, and `/clear`, `/resume` and `/branch` do not reopen it.
+  - A session starts with unsent assumptions or open ideas for the project: that tab. With nothing waiting it opens on Assumptions (`dashboardOnStart`). On Desktop and phones it opens when the app attaches. Headless sessions open nothing, and `/clear`, `/resume` and `/branch` do not reopen it.
   - It opens or switches only while you are not using the pane. Opened unasked, it needs a terminal 144 columns wide; one you opened yourself needs 110.
   - If you close it (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's counts still show. Opening it again clears that.
 - **Headless:** `claude -p "/dashboard"` prints every tab as text.
@@ -179,7 +179,7 @@ Set these in `/plugin`, or under `pluginConfigs["bws-cockpit"].options` in setti
 | `lowVramCvars` | empty | Comma-separated `cvar=value` pairs passed as `-ini:Engine:[SystemSettings]` overrides. Empty uses the built-in set. |
 | `adbPath` | `adb` | Path or name of adb. |
 | `refreshSeconds` | `30` | How often the bar re-probes editors and devices while a terminal or Desktop surface is attached. |
-| `backgroundProbe` | `true` | Re-probe editors, VRAM and devices at session start, every refresh interval and after each turn. Each probe starts powershell, nvidia-smi and adb, which can flash a console window on Windows. Off: probes run only for `/cockpit`, the refresh button and the guard. |
+| `backgroundProbe` | `true` | Re-probe editors, VRAM and devices at session start, every refresh interval and after each turn. Each probe starts powershell, nvidia-smi and adb, which can flash a console window on Windows. Off: probes run only for `/cockpit`, the refresh button and the guard; the bar still shows at start, without device chips. |
 | `loopIdleMinutes` | `20` | Loop alert when the running worker has made no tool call for this long. |
 | `loopSessionAlert` | `6` | Loop alert when the current unit reaches this many worker sessions. |
 | `loopDriverStaleMinutes` | `3` | Loop alert when the driver says RUNNING but its 30-second heartbeat has not updated for this long. |
@@ -217,7 +217,7 @@ Set these in `/plugin`, or under `pluginConfigs["bws-cockpit"].options` in setti
 
 ## Compatibility
 
-- Checked on Claude Code 2.1.296 and later (the Mod tabs on 2.1.302, the footer button on 2.1.307 in the terminal), Windows 11, with Git Bash and PowerShell 7.
+- Checked on Claude Code 2.1.296 and later (the Mod tabs on 2.1.302, the footer button on 2.1.307 in the terminal, start-up open on 2.1.309 in the terminal), Windows 11, with Git Bash and PowerShell 7.
 - The dashboard and bar were checked live in a terminal (Windows Terminal and tmux). Desktop is covered by automated tests only and has not been tried in the app; mobile has not been tried. Headless runs (`claude -p`) get text for `/dashboard`, `/cockpit`, `/loop-watch` and `/handoff`, and the guards apply.
 - Not verified live: an unreal-mcp block with the port down, and a running or paused harness loop (tests cover both).
 - The Editor & Device Guard and the process probes are Windows-oriented (PowerShell, `nvidia-smi`).

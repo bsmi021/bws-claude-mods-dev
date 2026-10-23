@@ -696,6 +696,28 @@ describe('dashboard', () => {
     expect(seen.opened).toEqual([])
   })
 
+  test('Desktop attaches after session start: the first attach opens the dashboard and fills the bar, a second opens nothing', async ($, on) => {
+    const w: World = { surfaces: [] }
+    const { seen } = world(on, w)
+    on('session.attach', ($, e) => ({ clientId: e.clientId }) as never)
+    on('ui.log', () => ({ value: undefined }) as never)
+    await $.session.start({ cwd: ROOT } as never)
+    expect(seen.opened).toEqual([])
+    w.surfaces = ['desktop']
+    await $.session.attach({ surface: 'desktop', clientId: 'desktop:default' } as never)
+    expect(seen.opened).toEqual([{ id: 'dashboard', focus: undefined }])
+    const bar = await $.ui.mount({
+      plugin: 'bws-cockpit',
+      surface: 'desktop',
+      component: 'AbovePrompt',
+      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 80, scroll: { offset: 0, bodyRows: 8 }, view: {} },
+    } as never)
+    expect(await bar.find({ key: 'hide' })).toBeTruthy()
+    await bar.unmount()
+    await $.session.attach({ surface: 'mobile', clientId: 'mobile:1' } as never)
+    expect(seen.opened.length).toBe(1)
+  })
+
   test('handoff nudge: once per session past the threshold, Handoff highlighted', async ($, on) => {
     const { seen, clock } = world(on, { percent: 72 })
     await withBar($)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.26.1
+- The bar and the dashboard now come up at the start of every new session on Desktop and phones too. Those surfaces attach after the session starts, so cockpit now does its start-up on the first attach.
+- With `backgroundProbe` off, the bar shows at start with the run and loops (no device chips until `/cockpit` or refresh) instead of staying hidden until `/cockpit`.
+- An unasked dashboard open that waits undrawn logs its reason to the debug log.
+
 ## 0.26.0
 - A `◧ cockpit` button in the footer under the prompt (terminal and Desktop): opens or closes the dashboard and brings back a hidden bar. It shares the footer with other mods' buttons and the engine's mode labels.
 
