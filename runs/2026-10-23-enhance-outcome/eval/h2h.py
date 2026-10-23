@@ -3,7 +3,7 @@ rewrites for the same request and sample (order shuffled). python h2h.py -> out-
 import json, random, re
 from concurrent.futures import ThreadPoolExecutor
 
-from eval import HERE, JUDGE, TREE, claude
+from eval import AGENTS, HERE, JUDGE, TREE, claude
 
 MODELS = ["haiku", "sonnet", "opus"]
 OUT = HERE / "out-h2h"
@@ -14,6 +14,11 @@ RANK = JUDGE.split("Score each rewrite")[0] + """Rank the three rewrites from be
 Recent conversation: {conv}
 Project file tree (paths in it are real):
 {tree}
+Generated, gitignored folders such as each mod's `.claude-plugin/types/` exist at runtime but are not in the tree.
+The rewriter also had this instruction file; rules and paths cited from it are not invented:
+<file path="AGENTS.md">
+{agents}
+</file>
 </context_given_to_rewriter>
 
 <rough_request>
@@ -48,7 +53,7 @@ def main():
         cid, s, order = j
         c = cases[cid]
         conv = f"user: {c['setup']} | assistant: {setup[cid][1]}" if cid in setup else "(none)"
-        p = RANK.format(conv=conv, tree=TREE, rough=c["rough"], a=gen[order[0]][(cid, s)], b=gen[order[1]][(cid, s)], c=gen[order[2]][(cid, s)])
+        p = RANK.format(conv=conv, tree=TREE, agents=AGENTS, rough=c["rough"], a=gen[order[0]][(cid, s)], b=gen[order[1]][(cid, s)], c=gen[order[2]][(cid, s)])
         for _ in range(2):
             raw = claude("opus", "You are a strict, fair evaluator. Output only JSON.", p)
             m = re.search(r"\{.*\}", raw, re.S)

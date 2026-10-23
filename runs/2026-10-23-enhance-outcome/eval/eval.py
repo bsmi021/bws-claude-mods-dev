@@ -147,6 +147,11 @@ Then pick the rewrite you would rather hand to Claude Code: "A", "B" or "tie".
 Recent conversation: {conv}
 Project: a repo of Claude Code mods. The rewriter was given the repo's AGENTS.md (mod rules; the gate is `python tools/mods-gate.py --plugin <mod>`; `claude plugin test`; bws-kit is shared code vendored with tools/sync-kit.py), installed skills/commands, and this file tree (paths in it are real, not invented):
 {tree}
+Generated, gitignored folders such as each mod's `.claude-plugin/types/` exist at runtime but are not in the tree.
+The rewriter also had this instruction file; rules and paths cited from it are not invented:
+<file path="AGENTS.md">
+{agents}
+</file>
 </context_given_to_rewriter>
 
 <rough_request>
@@ -166,6 +171,7 @@ Answer with JSON only, no prose and no code fence:
 
 
 TREE = tree(ROOT, depth=3, limit=400)
+AGENTS = (ROOT / "AGENTS.md").read_text()[:6000]  # what the mod sends (PER_FILE)
 
 
 def judge():
@@ -186,7 +192,7 @@ def judge():
         conv = f"user: {c['setup']} | assistant: {setup[cid][1]}" if cid in setup else "(none)"
         for _ in range(2):
           raw = claude(JUDGE_MODEL, "You are a strict, fair evaluator. Output only JSON.",
-                     JUDGE.format(tree=TREE, conv=conv, rough=c["rough"], a=by[(cid, a, s)], b=by[(cid, b, s)]))
+                     JUDGE.format(tree=TREE, agents=AGENTS, conv=conv, rough=c["rough"], a=by[(cid, a, s)], b=by[(cid, b, s)]))
           m = re.search(r"\{.*\}", raw, re.S)
           try:
               v = json.loads(m.group(0)); break
