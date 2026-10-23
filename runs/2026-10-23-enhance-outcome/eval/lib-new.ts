@@ -111,7 +111,8 @@ Rules:
 - Leave the method to Claude. Do not list implementation steps, prescribe an algorithm or design, or name files and functions to change, unless the developer did or a project rule requires it; a method the developer chose is part of the intent and stays. Do not sequence the work ("first read…", "start by…", "then…"). Where it helps, point to where to look (an area, a symptom, an existing pattern to match) rather than what to change.
 - Include a constraint only when it bounds the outcome: behaviour that must keep working, things not to touch, project rules that apply (conventions, required checks, where work goes). Cite them briefly; do not restate whole files.
 - Resolve vague references ("it", "that bug") from the recent conversation when it makes them clear.
-- Name a skill, slash command, subagent or MCP server only when it clearly fits, phrased as "use X to…" or "use X when…", never "always use X".
+- Name a skill, slash command, subagent or MCP server only when it is in the lists you were given and clearly fits, phrased as "use X to…" or "use X when…", never "always use X".
+- When the goal may not be reachable (it depends on an API, data or behaviour nobody has confirmed), say when to stop and report instead of guessing or building around it, e.g. "if the types do not expose per-turn token counts, stop and say so". That is part of the outcome, not method.
 - Never invent file paths, symbols, APIs or facts. If something is unknown, leave it to Claude to find out; state an assumption only when the outcome depends on it. Always produce the prompt: never talk to the developer about what you could or could not see.
 - For a large or unclear goal, tell Claude to plan first (or interview the developer) before changing code. For a fix that fits in one sentence, go straight to it.
 - Fix root causes; do not suppress errors or hard-code values to make tests pass.

@@ -10,7 +10,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-OUT = HERE / "out"
+OUT = HERE / os.environ.get("EVAL_OUT", "out")
+ENHANCER = os.environ.get("EVAL_ENHANCER", "")  # the mod's `model` option; empty = its default (haiku)
 SCRATCH = Path(os.environ.get("EVAL_CWD", "/tmp/enhance-eval-cwd"))
 SAMPLES = int(os.environ.get("EVAL_SAMPLES", "2"))
 GEN_MODEL = "haiku"
@@ -113,6 +114,10 @@ def gen():
     def one(j):
         c, v, s = j
         args = [f"/enhance {c['rough']}", "--plugin-dir", str(MODS / v)]
+        if ENHANCER:
+            sf = OUT / "settings.json"
+            sf.write_text(json.dumps({"pluginConfigs": {"bws-enhance": {"options": {"model": ENHANCER}}}}))
+            args += ["--settings", str(sf)]
         args += ["--resume", bases[c["id"]][0], "--fork-session"] if c["id"] in bases else ["--no-session-persistence"]
         r = run(args)
         t = r.stdout.strip()
@@ -216,7 +221,7 @@ def report():
     judged = [j for j in json.loads((OUT / "judge.json").read_text()) if "error" not in j]
     keys = ["outcome", "method_left", "intent", "grounded", "verifiable", "concise"]
     md = ["# Eval: old vs new /enhance rewriter", "",
-          f"{len(cases)} rough requests x {SAMPLES} samples, through the real mod (`claude -p \"/enhance ...\" --plugin-dir`, enhancer model haiku, the default). Blind pairwise judge {JUDGE_MODEL} (A/B shuffled).", ""]
+          f"{len(cases)} rough requests x {SAMPLES} samples, through the real mod (`claude -p \"/enhance ...\" --plugin-dir`, enhancer model {ENHANCER or 'haiku (default)'}). Blind pairwise judge {JUDGE_MODEL} (A/B shuffled).", ""]
     wins = {"new": 0, "old": 0, "tie": 0}
     for j in judged: wins[j["winner"]] += 1
     md += [f"**Pairwise:** new {wins['new']}, old {wins['old']}, tie {wins['tie']} (of {len(judged)})", "",
