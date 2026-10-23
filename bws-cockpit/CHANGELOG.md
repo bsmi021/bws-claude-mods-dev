@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.2
+- Desktop starts a conversation's process only when the first message is sent, and an open at session start is unasked (placed only from 144 columns). The first prompt of a session now places the dashboard (unless you closed it) and fills the bar.
+- A start-up trace, `bws-cockpit-start.log` beside the shelf file: what each surface saw and whether the dashboard was placed.
+
 ## 0.26.1
 - The bar and the dashboard now come up at the start of every new session on Desktop and phones too. Those surfaces attach after the session starts, so cockpit now does its start-up on the first attach.
 - With `backgroundProbe` off, the bar shows at start with the run and loops (no device chips until `/cockpit` or refresh) instead of staying hidden until `/cockpit`.

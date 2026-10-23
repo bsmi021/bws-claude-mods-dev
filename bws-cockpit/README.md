@@ -57,7 +57,7 @@ One pane, `Dashboard`, docked right of the transcript in fullscreen from 110 col
   - Claude records an assumption: Assumptions.
   - An ask addressed to this session appears on bws-board: Board.
   - A loop alert (needs you, stalled, driver dead, all done): Loop.
-  - A session starts with unsent assumptions or open ideas for the project: that tab. With nothing waiting it opens on Assumptions (`dashboardOnStart`). On Desktop and phones it opens when the app attaches. Headless sessions open nothing, and `/clear`, `/resume` and `/branch` do not reopen it.
+  - A session starts with unsent assumptions or open ideas for the project: that tab. With nothing waiting it opens on Assumptions (`dashboardOnStart`). On Desktop, which starts the session with your first message, it opens on that message. `bws-cockpit-start.log` beside the shelf file traces each start-up open. Headless sessions open nothing, and `/clear`, `/resume` and `/branch` do not reopen it.
   - It opens or switches only while you are not using the pane. Opened unasked, it needs a terminal 144 columns wide; one you opened yourself needs 110.
   - If you close it (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's counts still show. Opening it again clears that.
 - **Headless:** `claude -p "/dashboard"` prints every tab as text.

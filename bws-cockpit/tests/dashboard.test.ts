@@ -718,6 +718,41 @@ describe('dashboard', () => {
     expect(seen.opened.length).toBe(1)
   })
 
+  test('an unasked start-up open left undrawn (Desktop under 144 columns) is placed at the first prompt, once; a start trace is kept', async ($, on) => {
+    const w: World = { surfaces: ['desktop'], isPlaced: false }
+    const { seen, files } = world(on, w)
+    await $.session.start({ cwd: ROOT } as never)
+    expect(seen.opened.length).toBe(1)
+    w.isPlaced = true
+    await $.prompt.submit({ text: 'hello' } as never)
+    expect(seen.opened).toEqual([
+      { id: 'dashboard', focus: undefined },
+      { id: 'dashboard', focus: undefined },
+    ])
+    await $.prompt.submit({ text: 'again' } as never)
+    expect(seen.opened.length).toBe(2)
+    const log = Object.entries(files).find(([k]) => k.endsWith('bws-cockpit-start.log'))?.[1] ?? ''
+    expect(log).toContain('raise: dashboard waits undrawn: narrow')
+    expect(log).toContain('first prompt: dashboard placed')
+  })
+
+  test('first prompt: a dashboard the person closed stays closed', async ($, on) => {
+    const { seen } = world(on, { surfaces: ['desktop'] })
+    await $.session.start({ cwd: ROOT } as never)
+    // The bar's dash button closes it as the person's close.
+    const bar = await $.ui.mount({
+      plugin: 'bws-cockpit',
+      surface: 'desktop',
+      component: 'AbovePrompt',
+      props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 80, scroll: { offset: 0, bodyRows: 8 }, view: {} },
+    } as never)
+    await bar.press({ key: 'dash' })
+    await bar.unmount()
+    expect(seen.closed).toEqual(['dashboard'])
+    await $.prompt.submit({ text: 'hello' } as never)
+    expect(seen.opened.length).toBe(1)
+  })
+
   test('handoff nudge: once per session past the threshold, Handoff highlighted', async ($, on) => {
     const { seen, clock } = world(on, { percent: 72 })
     await withBar($)

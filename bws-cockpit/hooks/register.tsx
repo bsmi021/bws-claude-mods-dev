@@ -173,6 +173,9 @@ let lastAskedOfMe: number | undefined
 let isTurnActive = false
 // The session's start-up ran (startAttended): set at the first surface, so a second attach opens nothing again.
 let isStarted = false
+// The session's first prompt was seen (openAtFirstPrompt runs once).
+let isPromptSeen = false
+let traceLines: string[] = []
 const STOP_CONFIRM_MS = 10_000
 const RECENT_MS = 24 * 60 * 60 * 1000 // a loop whose state changed in the last day counts as recent
 const UNIT_COLOR: Record<string, string | undefined> = { DONE: 'success', RUNNING: 'success', PAUSED: 'warning', STOPPED: undefined, PENDING: undefined }
@@ -1009,7 +1012,33 @@ async function raise($: EngineInterface, tab: string) {
   if (d.tab !== tab) await update($, dash, old => ({ ...old, tab }))
   if (pane && pane.isShown) return
   const r = await $.ui.open({ id: DASH, title: DASH_TITLE })
-  if (!r.isPlaced) $.ui.log(`dashboard waits undrawn: ${r.reason}`, { to: 'debug' })
+  await trace($, r.isPlaced ? 'raise: dashboard placed' : `raise: dashboard waits undrawn: ${r.reason}`)
+}
+
+// The first prompt of a session is the person's: an open there is placed at any width. Desktop (under 144 columns)
+// leaves the start-up open undrawn, so the dashboard is placed here unless the person closed it; the bar gets its data.
+async function openAtFirstPrompt($: EngineInterface, o: Options) {
+  const surfaces = await $.session.surfaces()
+  await trace($, `first prompt: surfaces [${surfaces.join(', ')}], started ${isStarted}`)
+  if (surfaces.length === 0) return
+  if (!isStarted) await startAttended($, o)
+  if (!o.isDashboardOnStart || (await read($, dash)).isClosedByPerson) return
+  const pane = (await $.ui.panes()).find(p => p.id === DASH)
+  if (pane?.isPlaced) return
+  if (pane) await settle($.ui.close({ id: DASH }))
+  if ((await read($, dash)).tab === null) await update($, dash, d => ({ ...d, tab: 'assumptions' }))
+  const r = await $.ui.open({ id: DASH, title: DASH_TITLE })
+  await trace($, r.isPlaced ? 'first prompt: dashboard placed' : `first prompt: dashboard waits undrawn: ${r.reason}`)
+}
+
+// The start-up trace: what each surface saw when the bar and dashboard were brought up, kept beside the shelf file as
+// bws-cockpit-start.log (the last 40 lines). Desktop writes no debug log, so this is how a missed open is diagnosed.
+async function trace($: EngineInterface, line: string) {
+  traceLines = [...traceLines, `${new Date(await $.clock.now()).toISOString()} ${line}`].slice(-40)
+  const shelfAt = await settle(shelfFile($))
+  if (shelfAt === undefined) return
+  const dir = shelfAt.slice(0, Math.max(0, shelfAt.lastIndexOf('/')))
+  await settle($.fs.write(`${dir}/bws-cockpit-start.log`, `${traceLines.join('\n')}\n`))
 }
 
 // The first surface of a session (at session.start in a terminal, at the first attach on Desktop and phones): the
@@ -1229,6 +1258,10 @@ export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {
     continuesUsed = 0
     isTurnActive = true
+    if (!isPromptSeen) {
+      isPromptSeen = true
+      await settle(openAtFirstPrompt($, o))
+    }
     return next(e)
   })
 
@@ -1365,7 +1398,9 @@ export const register: Register = (on, options) => {
         required: ['id', 'status'],
       },
     })
-    if ((await $.session.surfaces()).length > 0) await startAttended($, o)
+    const surfaces = await $.session.surfaces()
+    await trace($, `start: surfaces [${surfaces.join(', ')}]`)
+    if (surfaces.length > 0) await startAttended($, o)
     return next(e)
   })
 
@@ -1373,7 +1408,7 @@ export const register: Register = (on, options) => {
   // dashboard come up on the first attach instead.
   on('session.attach', async ($, e, next) => {
     const result = await next(e)
-    $.ui.log(`attach: ${e.surface} (started ${isStarted})`, { to: 'debug' })
+    await trace($, `attach: ${e.surface} ${e.viewport ? `${e.viewport.columns}x${e.viewport.rows}` : ''} (started ${isStarted})`)
     if (!isStarted) await settle(startAttended($, o))
     return result
   })
