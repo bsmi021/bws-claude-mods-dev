@@ -1,0 +1,19 @@
+{
+ "task": "sort-vague",
+ "arm": "new",
+ "executor": "haiku",
+ "run": 1,
+ "prompt": "The command list that the bws-enhance mod sends to the model is out of order. Make it sorted alphabetically by command name, and make sure the sort applies to every place that list is sent, not just the first.\n\nKeep the rest of the list's contents and format unchanged. If the code shows that this order is deliberate, stop and report that instead of changing it.\n\nDone when: the command list the model receives is alphabetical, the bws-enhance tests in `bws-enhance/tests` and its TypeScript type check (`bws-enhance/tsconfig.json`) pass, and you have confirmed the ordering in the output. Keep working until those checks pass, then stop and report. Don't add tests or docs beyond what is needed for this change.",
+ "result": "I stopped without changing anything. The command-list order is deliberate, so the instructions say to report instead of editing.\n\n**What the code shows**\n\n- The list is built in one place, `commandsText` in `bws-enhance/hooks/lib.ts:68`. It is called once, from `gather()` in `bws-enhance/hooks/register.tsx:107`, and that is the only path that sends the list to the model. So there is no second call site to cover.\n- The ordering is an explicit rank function, `rank = c.source === 'builtin' ? 1 : 0` (`lib.ts:69`), with a comment on line 67: \"plugin and user ones first; built-ins last.\"\n- A test pins that grouping: `tests/enhance.test.ts:113`, \"commands: user and plugin first, built-ins last, own command left out\", expects `/interview …` before `/clear …`.\n\nThe user asked for alphabetical order across the whole list. That would break the grouping that the code, its comment and its test all state on purpose, so I left it alone.\n\n**Option if you still want alphabetical order**\n\nSort alphabetically by name inside each group and keep built-ins last. That needs a change to `commandsText` plus an update to the test's expected string. Nothing else would change, because the list is produced in one place. Tell me if you want that, or a full alphabetical sort that drops the grouping.\n\nI did not run the bws-enhance tests or the type check, because no code changed and the stop does not depend on them.",
+ "turns": 6,
+ "cost_usd": 0.01129581,
+ "duration_s": 24.453,
+ "diff": "",
+ "checks": {
+  "files_changed": [],
+  "plugin_test": {
+   "pass": 50,
+   "fail": 4
+  }
+ }
+}

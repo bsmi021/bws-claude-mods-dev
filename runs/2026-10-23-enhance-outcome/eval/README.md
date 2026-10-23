@@ -106,3 +106,40 @@ this branch's count) and penalised old/new on method-given; kept as `*-wrongbase
 - 4 tasks, 1 run per cell, one repo with a strong AGENTS.md, rough prompts that were already fairly specific.
 - One judge family (opus). Judge context changed results twice; read the per-run reasons in `out-a/report.md`.
 - Untested: haiku as the agent, and vaguer rough prompts, where a rewrite has more to add.
+
+---
+
+# Round 5: vague prompts, Haiku agent (`cases-vague.json`, `out-b-vague/`, `out-a-vague/`)
+
+Four vague requests with a gradable right answer: "enhance tests are red on this machine, fix", "the command list
+enhance sends to the model is in a weird order, sort it properly", "fork seems broken after resume?", "kit docs are
+stale". Haiku rewrote each 3 times with each prompt (new preferred 12/12 by the pairwise judge), then a Haiku agent
+did each task from the raw request, the old rewrite and the new rewrite: 3 runs per cell (run k uses rewrite sample
+k), 36 runs, fresh worktree at main each time, blind judge against a reference.
+
+| prompt | mean (1–5) | outcome | turns | cost $ | minutes |
+| --- | --- | --- | --- | --- | --- |
+| raw | **4.67** | 4.67 | 13 | 0.02 | 1.2 |
+| old | 4.06 | 3.58 | 32 | 0.15 | 3.8 |
+| new | 4.40 | 4.08 | 22 | 0.07 | 2.8 |
+
+| task | raw | old | new |
+| --- | --- | --- | --- |
+| tests-vague | 4.75 | 4.08 | 4.33 |
+| sort-vague | 4.92 | 4.92 | 4.42 |
+| fork-vague | 4.42 | 3.42 | 4.50 |
+| docs-vague | 4.58 | 3.83 | 4.33 |
+
+- **The raw request did best, at a third of the cost of the new rewrite.** A vague request leaves the agent to
+  find out what is wrong from the code, and Haiku did that well here.
+- **New beats old** (4.40 vs 4.06, half the cost). The biggest gap is the question: both rewrites turned "fork seems
+  broken after resume?" into "fix it"; old-prompt agents then spent 31–82 turns ($0.17–$0.77), and one edited 2
+  files; new-prompt agents stayed read-only in 24–43 turns.
+- **How rewriting hurts:** the rewriter guesses (where the fix goes, what "properly" means) and writes the guess as a
+  requirement, and the agent obeys it. Both new-prompt failures were this: "fix the cause in the mod, not the test
+  expectations… if it depends on machine setup, stop" (the fix belongs in the test fixtures), and "sort
+  alphabetically… stop if the order is deliberate" (it is: built-ins last). The stop conditions made these fail
+  safe: no damage, and the report named the real cause. Old-prompt guesses failed by wandering instead.
+- Prompt changes this suggests: keep a question a question; carry the developer's vague words through instead of
+  resolving them into a specific choice, and leave finding out what they mean to the agent; no constraint about
+  where the fix goes unless the developer said so.

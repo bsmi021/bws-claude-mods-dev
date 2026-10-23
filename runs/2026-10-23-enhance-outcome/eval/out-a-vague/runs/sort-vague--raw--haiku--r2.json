@@ -1,0 +1,22 @@
+{
+ "task": "sort-vague",
+ "arm": "raw",
+ "executor": "haiku",
+ "run": 2,
+ "prompt": "the command list enhance sends to the model is in a weird order, sort it properly",
+ "result": "The command list that `/enhance` sends to the model is now sorted: plugin and user commands alphabetically by name, then built-ins alphabetically. The change is in `commandsText` in `bws-enhance/hooks/lib.ts`.\n\n**The cause:** the code ranked built-ins last but kept each group in whatever order `$.command.list()` returned. The existing test had one command per group, so it never caught that.\n\n**The fix:** the sort now breaks ties by name (`rank(a) - rank(b) || a.name.localeCompare(b.name)`). The `ALL_COMMANDS` size cap also now cuts from the end of an alphabetical list, so the cut-off is predictable.\n\nI added a test in `bws-enhance/tests/enhance.test.ts` that feeds in a scrambled list and expects a fixed order. The new test passes.\n\n**Verification:**\n- The `bws-enhance` plugin test run: 51 pass, 4 fail. All four fail on `C:/proj` and `C:/Users/...` paths that don't resolve on this Linux box (bounce glossary tests and the headless `/enhance` test). None involve the command list. I did not re-run them on the unmodified code, so that link is inferred from the error text.\n- The gate's tsc step pointed at a Windows pnpm install and could not run. I ran TypeScript 5.8.3 directly against the mod's tsconfig: exit 0.\n\nI did not commit, bump the version, or add a CHANGELOG entry. Shipping this needs a `bws-enhance` patch bump and CHANGELOG entry under the release steps in `AGENTS.md`. Say if you want me to do that, or commit it on a branch.",
+ "turns": 17,
+ "cost_usd": 0.019922259999999997,
+ "duration_s": 70.729,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..acc3fbc 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,12 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last. Each group by name.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\ndiff --git a/bws-enhance/tests/enhance.test.ts b/bws-enhance/tests/enhance.test.ts\nindex 9c10fc4..021b056 100644\n--- a/bws-enhance/tests/enhance.test.ts\n+++ b/bws-enhance/tests/enhance.test.ts\n@@ -123,6 +123,20 @@ describe('lib', () => {\n     expect(t).toBe('/interview — Interview the user\\n/clear — Clear')\n   })\n \n+  test('commands: each group sorted by name, whatever order the list came in', () => {\n+    const t = commandsText(\n+      [\n+        { name: 'compact', description: 'Compact', source: 'builtin' },\n+        { name: 'zeta', description: 'Z', source: 'user' },\n+        { name: 'review', description: 'R', source: 'plugin' },\n+        { name: 'clear', description: 'Clear', source: 'builtin' },\n+        { name: 'alpha', description: 'A', source: 'user' },\n+      ],\n+      'enhance',\n+    )\n+    expect(t).toBe('/alpha — A\\n/review — R\\n/zeta — Z\\n/clear — Clear\\n/compact — Compact')\n+  })\n+\n   test('mcp server names, conversation tail, reply cleanup', () => {\n     expect(mcpServers(['Bash', 'mcp__figma__a', 'mcp__figma__b', 'mcp__claude-in-chrome__nav'])).toEqual(['claude-in-chrome', 'figma'])\n     expect(conversationText([])).toMatch(/nothing said yet/)\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts",
+   "bws-enhance/tests/enhance.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 51,
+   "fail": 4
+  }
+ }
+}

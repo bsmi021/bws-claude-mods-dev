@@ -25,3 +25,6 @@
 ## 2026-10-23 (4): tsc
 - Generated `.claude-plugin/types/` by starting an interactive `claude --plugin-dir ./bws-enhance` under a pty (headless `-p` does not write them); the footer drew `✦ enhance`, so the mod loads live from source.
 - `MODS_TSC=<scratch>/typescript@5.8.3/bin/tsc python tools/mods-gate.py --plugin bws-enhance`: validate passed, tsc 5.8.3 strict passed (exit 0, 11 hook and test files); the gate is red only on the 4 Linux-only plugin tests (`C:/proj` fixtures), the same as before this change.
+
+## 2026-10-23 (5): vague prompts, Haiku agent
+- 4 vague tasks x raw/old/new x 3 runs, Haiku agent: raw 4.67 ($0.02), new 4.40 ($0.07), old 4.06 ($0.15). Rewrites lost to the raw request because the rewriter's guesses became requirements; new failed safe (stopped and reported), old wandered (up to 82 turns on a question). Details in eval/README.md.

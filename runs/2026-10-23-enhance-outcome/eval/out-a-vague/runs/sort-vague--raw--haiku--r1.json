@@ -1,0 +1,22 @@
+{
+ "task": "sort-vague",
+ "arm": "raw",
+ "executor": "haiku",
+ "run": 1,
+ "prompt": "the command list enhance sends to the model is in a weird order, sort it properly",
+ "result": "The command list that `/enhance` sends to the model is now sorted: plugin and user commands A–Z first, then built-ins A–Z. The fix is in `bws-enhance/hooks/lib.ts`, in `commandsText`.\n\nBefore, the code only ranked built-ins last. Within each group the order was whatever the engine returned, which is why it looked random. The sort now breaks ties by name:\n\n```ts\nconst sorted = [...commands].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))\n```\n\nI added a test, `commands: A-Z within the user and plugin group and within built-ins`, in `bws-enhance/tests/enhance.test.ts`. It passes.\n\nVerification:\n- **Tests:** `claude plugin test` in `bws-enhance` gives 51 pass, 4 fail. The same 4 fail on HEAD without my change: three bouncer glossary tests and one headless `/enhance` test. I left them alone.\n- **Type check:** `tsc -p tsconfig.json --noEmit` passes. The gate's tsc path points at a Windows install that doesn't exist here, so I ran the local tsc 6.0.2 rather than the pinned 5.8.3. The gate itself did not complete here.\n- **Not done:** I did not bump the version or CHANGELOG, and I did not commit. Those are part of a release, which you didn't ask for. Say if you want a patch bump, such as 0.4.5, added.",
+ "turns": 13,
+ "cost_usd": 0.01629859,
+ "duration_s": 63.368,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..22fb59d 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,13 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last. A-Z within each group.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  const sorted = [...commands].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))\n+  for (const c of sorted) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\ndiff --git a/bws-enhance/tests/enhance.test.ts b/bws-enhance/tests/enhance.test.ts\nindex 9c10fc4..a2a861b 100644\n--- a/bws-enhance/tests/enhance.test.ts\n+++ b/bws-enhance/tests/enhance.test.ts\n@@ -123,6 +123,20 @@ describe('lib', () => {\n     expect(t).toBe('/interview — Interview the user\\n/clear — Clear')\n   })\n \n+  test('commands: A-Z within the user and plugin group and within built-ins', () => {\n+    const t = commandsText(\n+      [\n+        { name: 'compact', description: 'Compact', source: 'builtin' },\n+        { name: 'zeta', description: 'z', source: 'user' },\n+        { name: 'clear', description: 'Clear', source: 'builtin' },\n+        { name: 'bws-kit', description: 'k', source: 'plugin' },\n+        { name: 'alpha', description: 'a', source: 'user' },\n+      ],\n+      'enhance',\n+    )\n+    expect(t).toBe('/alpha — a\\n/bws-kit — k\\n/zeta — z\\n/clear — Clear\\n/compact — Compact')\n+  })\n+\n   test('mcp server names, conversation tail, reply cleanup', () => {\n     expect(mcpServers(['Bash', 'mcp__figma__a', 'mcp__figma__b', 'mcp__claude-in-chrome__nav'])).toEqual(['claude-in-chrome', 'figma'])\n     expect(conversationText([])).toMatch(/nothing said yet/)\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts",
+   "bws-enhance/tests/enhance.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 51,
+   "fail": 4
+  }
+ }
+}

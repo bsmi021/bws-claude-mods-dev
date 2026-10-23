@@ -1,0 +1,21 @@
+{
+ "task": "sort-vague",
+ "arm": "new",
+ "executor": "haiku",
+ "run": 0,
+ "prompt": "The command list that the enhance mod sends to the model is out of order. Sort it so the model receives the commands in a consistent order: alphabetical by command name, unless the existing code or project docs define a different order that the mod should keep. If the intended order is unclear, stop and say so.\n\nDone when the command list in the model request is sorted as described, the bws-enhance type check and existing tests pass, and you have reported what changed. Keep working until those checks pass, then stop and report. Do not add tests or docs beyond what the project requires.",
+ "result": "The enhance mod's command list is now sorted alphabetically within each group. The type check passes, but the plugin tests don't fully pass: 4 of 54 fail, and they fail the same way on unmodified HEAD.\n\n**What changed:** `commandsText` in `bws-enhance/hooks/lib.ts` (the list sent to the model) now sorts by group, then by name. The existing code and its test pin the group order: plugin and user commands first, built-ins last. I kept that and sorted alphabetically inside each group. I also updated the comment above the function to say so. Only the sort line and that comment changed.\n\nExample output:\n```\n/alpha — a\n/beta — b\n/zeta — z\n/clear — c\n/compact — k\n```\n\n**Checks:**\n- **Type check:** strict `tsc -p bws-enhance/tsconfig.json --noEmit` exits 0. The global tsc is 6.0.2, not the pinned 5.8.3, and the gate's Windows tsc path doesn't exist here, so I ran tsc directly. `mods-gate.py` as written fails in this environment for that reason.\n- **Validate:** `claude plugin validate ./bws-enhance` passes.\n- **Tests:** 50 pass, 4 fail. The failures are three bouncer glossary tests and one headless `/enhance` test. The same four fail on a clean `HEAD` copy, so they predate this change and are not caused by the sort.\n- **Sort output:** checked directly with a small script, shown above.\n\nI added no tests or docs, as you asked. The existing test still passes, but it doesn't cover ordering within a group. Nothing is committed.",
+ "turns": 13,
+ "cost_usd": 0.01721758,
+ "duration_s": 67.99,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..d8e0452 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,13 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last; each group by name.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  const sorted = [...commands].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))\n+  for (const c of sorted) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts"
+  ],
+  "plugin_test": {
+   "pass": 50,
+   "fail": 4
+  }
+ }
+}

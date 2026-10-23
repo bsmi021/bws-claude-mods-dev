@@ -1,0 +1,266 @@
+[
+ {
+  "case": "tests-vague",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 5,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and finish line and leaves the method to Claude; its only extra is a TypeScript check. B prescribes debugging steps, guesses at the cause and the Node/Bun runtime, and pads with an unrelated secrets rule."
+ },
+ {
+  "case": "tests-vague",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and leaves the method to Claude, while B prescribes investigation steps, invents an absolute repo path, and assumes the suite is green elsewhere."
+ },
+ {
+  "case": "tests-vague",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 3,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B states the end state up front and leaves the method to Claude. A prescribes steps, invents a `bws-enhance/types/` folder that isn't in the tree, and adds type-checking and cross-mod checks the developer didn't ask for."
+ },
+ {
+  "case": "sort-vague",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 3,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and finish line without telling Claude where to look or how to proceed. B prescribes investigation steps, points at a loosely referenced types/ directory, and restates AGENTS.md rules without need."
+ },
+ {
+  "case": "sort-vague",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B leads with a clear end state and a concrete finish line (alphabetical list, tests and type check pass) without prescribing steps, while A dictates search and design steps, invents a project root path and a `types/` folder, and leaves its 'intended order' check vague."
+ },
+ {
+  "case": "sort-vague",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and leaves the method to Claude, while B tells Claude where to search (hooks/ and the generated types/), adds scope rules the developer didn't ask for, and is longer; B's concrete test and tsconfig checks don't make up for that."
+ },
+ {
+  "case": "fork-vague",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states a concrete end state (a fork after /resume behaves like a fork in a fresh session) and stops if the bug can't be reproduced, while B lays out step-by-step method, guesses that fork means /branch, and defines success only as 'behaves correctly'."
+ },
+ {
+  "case": "fork-vague",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "B centres the end state (a fork from a resumed session matches a fresh fork) and stops if the bug doesn't reproduce, while A prescribes reproduction steps and adds a repo path that was not in the context."
+ },
+ {
+  "case": "fork-vague",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 3,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "Both turn a tentative question into a fix, but A stays tighter, sets a stop-if-not-reproducible exit, and avoids B's prescribed reproduction steps and session.start hypothesis."
+ },
+ {
+  "case": "docs-vague",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 5,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A opens with the end state and leaves the approach to Claude. B is a step-by-step comparison procedure, adds irrelevant AGENTS.md constraints such as secrets, and pads the prompt with a speculative CHANGELOG check and report requirements."
+ },
+ {
+  "case": "docs-vague",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and a clear finish line in fewer words. B adds meta commentary outside the prompt, prescribes a 'start by reading' sequence, and includes boilerplate constraints."
+ },
+ {
+  "case": "docs-vague",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 3,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and leaves the method to Claude, while B prescribes a reading plan, names a CHANGELOG that the tree shows does not exist, and uses a tsc command instead of the repo's documented gate."
+ }
+]

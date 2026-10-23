@@ -1,0 +1,21 @@
+{
+ "task": "sort-vague",
+ "arm": "old",
+ "executor": "haiku",
+ "run": 0,
+ "prompt": "In bws-enhance, fix the order of the command list the mod sends to the model. The list currently comes out in an odd order and should be sorted properly.\n\nContext: Find where bws-enhance builds that command list for the model request, starting with its hooks/ and types/ directories. Read the current ordering logic before changing it. If the code, comments, existing tests, or a pattern elsewhere in the repo show an intended order, follow it. Otherwise, sort alphabetically by command name and state that assumption in your report.\n\nConstraints: Change only the ordering. Keep the list's contents and format the same. Follow AGENTS.md: keep the hook module statically inspectable, with literal event names, direct `$` calls, and no aliasing. Do not add tests or docs beyond what the project requires.\n\nDone when: the list is sorted as intended, the TypeScript check for bws-enhance/tsconfig.json passes, and the existing tests in bws-enhance/tests pass. Keep working until the Done-when checks pass, then stop and report what changed and the sort order you used.",
+ "result": "The command list is now sorted by name within each group. Plugin and user commands still come first and built-ins last, as the existing comment and test expect.\n\n**The change** is one line in `bws-enhance/hooks/lib.ts`, in `commandsText`. The sort was `rank(a) - rank(b)`, which left each group in whatever order `$.command.list()` returned. It is now `rank(a) - rank(b) || a.name.localeCompare(b.name)`. The contents and format are unchanged, and `register.tsx` is untouched.\n\n**Sort order I used:** plugin and user commands first, each group sorted by name with `localeCompare` (case-insensitive, the same comparison `treeEntries` uses), then built-ins sorted by name. The grouping was already in the code and the existing test asserts it, so I kept it and only added the name tie-break. A sample run gave `/Alpha`, `/bounce`, `/zeta`, `/clear`, `/vim`.\n\n**Checks:**\n- **TypeScript:** passes with tsc 5.8.3 under the project's strict config (`tsconfig.json`). The gate's own tsc step fails because it points at a Windows pnpm install path, so I ran 5.8.3 directly through npx.\n- **Tests:** 50 pass and 4 fail. The 4 failures are the three glossary tests, which expect Windows paths, and the headless `/enhance` test, which needs a live model call. The same 4 fail with the original `lib.ts` restored, so they predate this change. The gate also reported `plugin test failed` on these, so it is not green.\n- **Not added:** I didn't add a test for the within-group order, since you asked for no new tests. The existing test still passes.\n\nI left the worktree with only the one-line diff; nothing is committed.",
+ "turns": 13,
+ "cost_usd": 0.015803940000000002,
+ "duration_s": 61.83,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..b6507aa 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -69,7 +69,7 @@ export function commandsText(commands: readonly Command[], self: string, all = A\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts"
+  ],
+  "plugin_test": {
+   "pass": 50,
+   "fail": 4
+  }
+ }
+}

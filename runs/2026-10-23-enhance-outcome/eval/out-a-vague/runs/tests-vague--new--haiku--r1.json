@@ -1,0 +1,19 @@
+{
+ "task": "tests-vague",
+ "arm": "new",
+ "executor": "haiku",
+ "run": 1,
+ "prompt": "The bws-enhance tests fail on this machine and should pass again. Find out why they fail here and fix the cause in the mod, not the test expectations. Work from the test output, and if the failure turns out to depend on machine setup rather than code, say so and stop rather than papering over it.\n\nConstraints: follow the project's AGENTS.md for mod work and keep behavior unrelated to the failing tests unchanged. Do not add new tests or docs.\n\nDone when: the bws-enhance test suite passes on this machine with the project's type check clean, and the report names the root cause and what changed. Keep working until those checks pass, then stop and report.",
+ "result": "The bws-enhance suite can't pass on this Linux machine without changing the tests, so I stopped without editing anything. The mod's code is not at fault.\n\n**Result:** 50 pass, 4 fail (54 tests). The failures are three in `bounce.test.ts` (glossary cases) and one in `enhance.test.ts` (headless `/enhance`). The strict type check is clean.\n\n**Root cause:** the test fixtures use Windows drive-letter paths (`C:/proj`, `C:/Users/me/.claude/CLAUDE.md`). On Windows those are absolute, so they work. On this Linux box, the `claude plugin test` engine treats them as relative and prefixes them with the plugin directory before the stubs run. The stub's own error shows it:\n\n```\nENOENT .../bws-enhance/C:/proj/AGENTS.md\n```\n\nThe mod hands over the correct paths. `resolvePath` (`hooks/bounce.ts:68`) and `instructionPaths` (`hooks/lib.ts:43`) already treat `C:/` as absolute on every platform. Changing the mod would mean changing how it handles Windows paths for real users, which is unrelated behaviour. Changing the fixtures to POSIX roots would be changing test expectations. You ruled out both.\n\n**Same pattern elsewhere:** bws-board fails two tests with the same `fs` ENOENT signature. bws-notify, bws-skillgate and bws-summary pass. The Windows-root fixtures are the common factor.\n\n**What changed:** nothing tracked. `git status` is clean. The gate copied the gitignored `.claude-plugin/types` folder in from the main checkout.\n\n**Type check:** `tsc` 5.8.3 with `--noEmit` on bws-enhance exits 0. The gate's default tsc path is a Windows pnpm location, so I pointed `MODS_TSC` at the npx-cached 5.8.3 binary. The gate's validate step also passed.\n\n**Decision for you:** to get a green run here, either run the suite on the Windows machine it was written for, or approve converting these fixtures to POSIX paths. The second is a test change, so I didn't make it.",
+ "turns": 14,
+ "cost_usd": 0.02287066,
+ "duration_s": 110.214,
+ "diff": "",
+ "checks": {
+  "files_changed": [],
+  "plugin_test": {
+   "pass": 50,
+   "fail": 4
+  }
+ }
+}
