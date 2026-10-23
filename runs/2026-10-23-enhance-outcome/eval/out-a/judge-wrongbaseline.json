@@ -1,0 +1,242 @@
+[
+ {
+  "task": "docs",
+  "arm": "new",
+  "executor": "opus",
+  "outcome": 5,
+  "correctness": 4,
+  "scope": 5,
+  "report": 5,
+  "why": "Only bws-kit/README.md changed: the edits add the missing tab.ts row, note joinPath, and fix the stale 'video-derived' wording, though I could not confirm the new export names against the code; the report is clear about what was checked, flags that the type-check could not run here, and notes an out-of-scope inconsistency it left alone."
+ },
+ {
+  "task": "docs",
+  "arm": "new",
+  "executor": "sonnet",
+  "outcome": 4,
+  "correctness": 4,
+  "scope": 5,
+  "report": 5,
+  "why": "Only bws-kit/README.md changed: the agent added the missing tab.ts row and named the actual test files, its other claims appear grounded in the code, and the report candidly flags the unrun gate and the possibly stale version line, though leaving that line as is means the README may not be fully current."
+ },
+ {
+  "task": "docs",
+  "arm": "old",
+  "executor": "opus",
+  "outcome": 5,
+  "correctness": 4,
+  "scope": 5,
+  "report": 5,
+  "why": "Only bws-kit/README.md changed: the agent added the missing tab.ts row, corrected the overstated 'every mod publishes' summary claim, and refreshed the stale wording and version, with each change tied to specific code. The report clearly separates what was verified from what was not, though the README's claims could not be independently checked against the code here, so correctness gets a 4 rather than a 5."
+ },
+ {
+  "task": "docs",
+  "arm": "old",
+  "executor": "sonnet",
+  "outcome": 4,
+  "correctness": 4,
+  "scope": 5,
+  "report": 4,
+  "why": "Only bws-kit/README.md changed, with a tab.ts row whose named exports the agent reports checking against the source, and the existing claims were checked rather than left untouched. But the agent kept the 'Tested with Claude Code 2.1.296' line, which it could not confirm is current, so the update may be incomplete, and its long digression about tsc does not bear on a README-only change."
+ },
+ {
+  "task": "docs",
+  "arm": "raw",
+  "executor": "opus",
+  "outcome": 4,
+  "correctness": 4,
+  "scope": 5,
+  "report": 5,
+  "why": "Only bws-kit/README.md changed. It adds the missing tab.ts, fixes the stale summary chip claim and gives a plausible per-kit.json usage table and sync details, though many specifics (all 13 mods, tab fields, tested version 2.1.309) can't be confirmed from the diff. The report is candid that the type-check never ran and flags stale comments elsewhere without touching them."
+ },
+ {
+  "task": "docs",
+  "arm": "raw",
+  "executor": "sonnet",
+  "outcome": 4,
+  "correctness": 3,
+  "scope": 5,
+  "report": 4,
+  "why": "Only bws-kit/README.md changed, and the agent added the missing tab.ts module and the sync-kit command, but the summary.ts row still says 'every mod publishes' right before the new 'Not every mod uses it'. That leaves a self-contradiction instead of removing the stale claim. The tab.ts exports it names couldn't be checked against the code, and the report ends with an odd version-bump aside but otherwise describes the changes and what wasn't verified clearly."
+ },
+ {
+  "task": "investigate",
+  "arm": "new",
+  "executor": "opus",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 5,
+  "report": 5,
+  "why": "Read-only as asked, with no project files changed and the throwaway probe kept in the scratchpad: it names the nothing-to-fork result on a resumed session's first command, explains why (no cached last-request params until the process sends a request), reproduces it, cites the repo's existing $.session.messages()+$.model.complete fallback and runlog evidence, and states what it did not verify."
+ },
+ {
+  "task": "investigate",
+  "arm": "new",
+  "executor": "sonnet",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 5,
+  "report": 5,
+  "why": "The agent correctly identified the nothing-to-fork result on a resumed session's first command, backed it with the AGENTS.md entry, the run log and the code comment, labeled the cause as inferred and listed what it could not confirm, noted the existing messages()+complete fallback, and changed no files."
+ },
+ {
+  "task": "investigate",
+  "arm": "old",
+  "executor": "opus",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 4,
+  "report": 5,
+  "why": "Correctly identified the nothing-to-fork cause on the first command after /resume, citing engine code, repo call sites, AGENTS.md and a live repro, noted the existing fallback and what it couldn't confirm, and changed no repo files; it did run live sessions and the test suite in a scratch copy, more than a 'just tell me' question needed."
+ },
+ {
+  "task": "investigate",
+  "arm": "old",
+  "executor": "sonnet",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 5,
+  "report": 5,
+  "why": "The agent correctly identified the nothing-to-fork result on a resumed session's first command and cited AGENTS.md, the source comment and the RUNLOG, noted the existing fallback, clearly flagged that the engine mechanism was inferred and not reproduced, and changed no files."
+ },
+ {
+  "task": "investigate",
+  "arm": "raw",
+  "executor": "opus",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 5,
+  "report": 5,
+  "why": "The answer names the nothing-to-fork result on the first command after resume, citing repo evidence (RUNLOG line and PLAN quote). It separates the confirmed symptom from the inferred cause, gives the repo's fallback with its cost tradeoff, and changed no files, matching the reference."
+ },
+ {
+  "task": "investigate",
+  "arm": "raw",
+  "executor": "sonnet",
+  "outcome": 5,
+  "correctness": 4,
+  "scope": 5,
+  "report": 4,
+  "why": "The agent identified the nothing-to-fork result on the first command after /resume, cited AGENTS.md and the classify-fork handler, labeled its cause as inference, described the fallback and changed no files, though it oddly gave the no-changes request as its reason for not reading the type declarations, when reading would not have changed anything."
+ },
+ {
+  "task": "linux-tests",
+  "arm": "new",
+  "executor": "opus",
+  "outcome": 4,
+  "correctness": 5,
+  "scope": 5,
+  "report": 5,
+  "why": "The agent correctly diagnosed the Windows-only `C:/proj` fixture root and fixed all three bouncer glossary tests with a small, platform-conditional change that keeps every assertion, and it clearly flagged the one remaining same-cause failure in enhance.test.ts; that test is still failing, so `claude plugin test` is not fully green as the reference expects."
+ },
+ {
+  "task": "linux-tests",
+  "arm": "new",
+  "executor": "sonnet",
+  "outcome": 4,
+  "correctness": 5,
+  "scope": 5,
+  "report": 5,
+  "why": "The agent correctly diagnosed the Windows-path fixture problem and fixed all three bouncer tests with a small change that keeps every assertion, but it left the headless /enhance test failing, so `claude plugin test` is still not fully green as the reference expects; its report states that gap, the unrun gate and the untested Windows path accurately."
+ },
+ {
+  "task": "linux-tests",
+  "arm": "old",
+  "executor": "opus",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 5,
+  "report": 4,
+  "why": "The agent found the right root cause (Windows-style C:/proj fixtures resolving as relative paths on Linux) and fixed it with a small test-only change that keeps every assertion and handles Windows drive letters in the stubs; all 54 tests pass and the report is clear and honest about what went unverified, but it misstates the baseline as 50 passing when it was 51."
+ },
+ {
+  "task": "linux-tests",
+  "arm": "old",
+  "executor": "sonnet",
+  "outcome": 4,
+  "correctness": 3,
+  "scope": 5,
+  "report": 4,
+  "why": "A small, assertion-preserving fixture change gets the Linux suite green (54/0) with a correct root-cause diagnosis, but the drive-less '/proj' root likely resolves to 'C:/proj' on Windows. That would stop the fixtures matching there, so it trades a Linux failure for a probable Windows one. The report honestly flags this as unchecked, though its reassurance that backslash normalization covers it is faulty."
+ },
+ {
+  "task": "linux-tests",
+  "arm": "raw",
+  "executor": "opus",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 5,
+  "report": 4,
+  "why": "A small, test-only fix to the fs stubs makes all 54 tests pass on Linux (4 failed before) without weakening any assertions, though the accurate and honest report spends too long on the tsc environment detour."
+ },
+ {
+  "task": "linux-tests",
+  "arm": "raw",
+  "executor": "sonnet",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 5,
+  "report": 5,
+  "why": "The agent made a minimal, test-only fix that normalizes the cwd-resolved 'C:/' paths in the three stubs. That took the suite from 4 failures to 54 pass / 0 fail without weakening assertions or changing Windows behaviour, and its report correctly gives the root cause and says plainly that the gate's tsc step could not run."
+ },
+ {
+  "task": "method-given",
+  "arm": "new",
+  "executor": "opus",
+  "outcome": 4,
+  "correctness": 4,
+  "scope": 5,
+  "report": 4,
+  "why": "The agent wrote a single source-then-name comparator that keeps built-ins last, which avoids the ordering trap, explained that choice, offered the alternative, and touched only lib.ts. The 4 test failures were pre-existing, as it said, but the pass count dropped from 51 to 50 with no new failure. The report never mentions or explains that drop, so 'nothing changed in tests' is not fully verified."
+ },
+ {
+  "task": "method-given",
+  "arm": "new",
+  "executor": "sonnet",
+  "outcome": 4,
+  "correctness": 4,
+  "scope": 5,
+  "report": 3,
+  "why": "The single comparator correctly orders by source then name and keeps built-ins last, and only lib.ts changed, but the pass count dropped from 51 to 50 (54 tests total vs 55 before) and the report never mentions or explains that drop while presenting the failures as unchanged."
+ },
+ {
+  "task": "method-given",
+  "arm": "old",
+  "executor": "opus",
+  "outcome": 4,
+  "correctness": 3,
+  "scope": 5,
+  "report": 3,
+  "why": "The agent wrote a single source-then-name comparator that keeps built-ins last and changed only lib.ts, but passing tests dropped from 51 to 50 (54 total instead of 55), and the report says the results match the baseline without mentioning or explaining the lost test."
+ },
+ {
+  "task": "method-given",
+  "arm": "old",
+  "executor": "sonnet",
+  "outcome": 3,
+  "correctness": 3,
+  "scope": 4,
+  "report": 2,
+  "why": "The single source-then-name comparator keeps built-ins last and the agent flagged that choice, but the objective checks show passes dropping from 51 to 50, which contradicts the report's claim that a revert gave the identical 50/4 result, and the description tiebreak is a small unrequested extra."
+ },
+ {
+  "task": "method-given",
+  "arm": "raw",
+  "executor": "opus",
+  "outcome": 4,
+  "correctness": 4,
+  "scope": 4,
+  "report": 4,
+  "why": "The agent replaced the sort with one comparator, rank then name, which avoids the trap of putting built-ins first and keeps the existing test passing, but it lumps plugin and user commands into one group instead of ordering by source proper (disclosed in the report); it also added an unrequested test, and its 51-pass count is odd since an added passing test should have raised the total from the 51 before the change."
+ },
+ {
+  "task": "method-given",
+  "arm": "raw",
+  "executor": "sonnet",
+  "outcome": 5,
+  "correctness": 5,
+  "scope": 4,
+  "report": 5,
+  "why": "The agent replaced the rank-only sort with one comparator (built-ins last, then source, then name), which avoids the alphabetical-source trap and keeps the existing test passing with no new failures (51 pass / 4 fail before and after). It added one small unrequested test, and its report accurately covers its interpretation, the pre-existing failures, and the checks it could not run."
+ }
+]

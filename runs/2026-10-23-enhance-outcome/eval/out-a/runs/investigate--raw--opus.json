@@ -1,0 +1,14 @@
+{
+ "task": "investigate",
+ "arm": "raw",
+ "executor": "opus",
+ "prompt": "why does $.model.fork fail on resumed sessions? just tell me, don't change anything",
+ "result": "`$.model.fork` doesn't read the transcript file. It reuses the main loop's last model request in the current process: the same model, the same system prompt, the same message history. That's why it's cheap, since it's served from the prompt cache. A resumed session (`--continue`, `--resume`, `/resume`) loads its history from disk, but no request has been sent yet in this process. So on the first command after resuming there's no request to copy, and fork returns `{ isAnswered: false, reason: 'nothing-to-fork' }` instead of building one. After one normal turn, fork should work again.\n\n**How sure this is:** the symptom is confirmed, but the cause is my inference.\n- **Confirmed:** `runs/2026-10-02-handoff-model-pin/RUNLOG.md:33` records it. `claude -p --continue \"/handoff\"` answered `nothing-to-fork` and wrote no handoff.\n- **Inferred:** the reason is my reading of how the 2.1.287 types describe fork, as quoted in `runs/2026-10-02-handoff-model-pin/PLAN.md:13`: \"this session's own transcript (same model and system prompt, served from the prompt cache)\". I haven't read Claude Code's source. The generated types and `docs/mods.md` in this worktree don't explain it either.\n\n**The repo's workaround:** fall back to `$.session.messages()` plus `$.model.complete` on `$.session.model()`, with the transcript put into the prompt. This lives in `bws-kit/classify-fork.ts` (`fallbackPrompt` and the `nothing-to-fork` branch). It costs more, because there's no cache reuse and the transcript is re-sent as plain text, but it works on a resumed session's first command.\n\nI didn't change anything.",
+ "turns": 6,
+ "cost_usd": 0.27860959999999996,
+ "duration_s": 20.14,
+ "diff": "",
+ "checks": {
+  "files_changed": []
+ }
+}

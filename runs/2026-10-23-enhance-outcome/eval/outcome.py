@@ -131,7 +131,7 @@ def judge():
     cases = {c["id"]: c for c in json.loads((HERE / "cases.json").read_text())}
     rows = [json.loads(p.read_text()) for p in sorted((OUT / "runs").glob("*.json"))]
     def g(r):
-        checks = json.dumps(r["checks"]) + (f" (before any change: 51 pass, 4 fail)" if "plugin_test" in r["checks"] else "")
+        checks = json.dumps(r["checks"]) + (f" (before any change, at the start commit: 54 tests, 50 pass, 4 fail; a total above 54 means the agent added tests)" if "plugin_test" in r["checks"] else "")
         for _ in range(2):
             raw = claude("opus", "You are a strict, fair evaluator of engineering work. Output only JSON.",
                          JUDGE.format(rough=cases[r["task"]]["rough"], ref=REFERENCE[r["task"]], checks=checks,

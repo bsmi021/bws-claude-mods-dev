@@ -1,0 +1,302 @@
+[
+ {
+  "case": "dark-mode",
+  "sample": 0,
+  "ranking": [
+   "opus",
+   "haiku",
+   "sonnet"
+  ],
+  "why": "B states the outcome, adds an honest stop-if-unsupported guard and gives checkable finish criteria without dictating method; A is concise but lacks that feasibility guard; C invents a persistence requirement (at least across reloads) and leans into method steps."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 1,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "C states the outcome (readable in both themes, switches both ways) and a clear finish line, cites only relevant AGENTS.md rules, and stays concise; B is concise and checkable but less specific, while A overloads the prompt with method guidance such as invalidation, control IDs and CHANGELOG rules."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 2,
+  "ranking": [
+   "sonnet",
+   "opus",
+   "haiku"
+  ],
+  "why": "B gives the clearest outcome, keeps the AGENTS.md rules on state lifetime and validation, and has a full checkable finish line; A is close but its /verify step may be invented and it asks about persistence instead of setting the lifetime rule; C is concise but leads with an instruction and leaves state and stop conditions vague."
+ },
+ {
+  "case": "docs",
+  "sample": 0,
+  "ranking": [
+   "sonnet",
+   "opus",
+   "haiku"
+  ],
+  "why": "A is concise and checks both stale claims and undocumented code with a verifiable finish line; C covers the same ground more wordily and states inferred context as fact; B is tight but only checks for stale content and forbids new sections, so code missing from the README may never get documented."
+ },
+ {
+  "case": "docs",
+  "sample": 1,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "A is concise and outcome-first, with a checkable finish line and accurate context drawn from the real file tree; B is close but adds an invented instruction to match other READMEs' style and runs longer; C prescribes method ('read module files and tests', 'keep existing structure'), sets an irrelevant 'tests still pass' check for a README-only change, and never forbids code edits."
+ },
+ {
+  "case": "docs",
+  "sample": 2,
+  "ranking": [
+   "haiku",
+   "opus",
+   "sonnet"
+  ],
+  "why": "B is concise, documentation-only, invents nothing, and has a checkable finish line; A has a stronger finish line that includes callers, but it asserts unverifiable facts (no `.claude-plugin/`); C makes a similar unsupported manifest claim and wrongly steers verification away from the mods that use the kit."
+ },
+ {
+  "case": "investigate",
+  "sample": 0,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "B keeps the read-only diagnosis intent and offers the grounded `/resume` and `session.start` hypothesis without presuming it, with a checkable finish line, while A is close but leans harder on that hypothesis and C is concise but gives Claude less useful context."
+ },
+ {
+  "case": "investigate",
+  "sample": 1,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "C keeps the read-only intent, hedges its file pointer, and offers a grounded AGENTS.md lead (session.start not running after /resume) to confirm or rule out; B is solid with a checkable git-status finish line but states as fact, unverified, that classify-fork.ts calls $.model.fork; A is concise and correct but gives Claude no useful context."
+ },
+ {
+  "case": "investigate",
+  "sample": 2,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "C and B both keep the request read-only, leave the method to Claude, and give a checkable finish line (root cause with evidence, git status clean), with C slightly ahead because it asks Claude to separate confirmed facts from inferences; A steers the method with session.start and classify-fork hints and adds unrequested scope (a fix outline and a list of affected mods)."
+ },
+ {
+  "case": "it-ref",
+  "sample": 0,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "A states the outcome, the unchanged 100+ column behavior and a checkable finish line (tests plus type check) while leaving the method to Claude; B is concise but nudges toward the method and has a weaker finish line; C is verbose and invents `/verify` and `/run` commands that the context does not support."
+ },
+ {
+  "case": "it-ref",
+  "sample": 1,
+  "ranking": [
+   "sonnet",
+   "opus",
+   "haiku"
+  ],
+  "why": "A gives a clear outcome, constraints and a checkable finish line without inventing anything; C is strong but longer and invents `/verify` and `/run` commands; B invents a build step even though the project has no bundler, and wrongly claims the label shortens at wider widths."
+ },
+ {
+  "case": "it-ref",
+  "sample": 2,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "A is outcome-first with clear constraints and a checkable finish line; C is concise and checkable but adds method hints about where to look; B invents a `/verify` command, widens scope with a vague 'reasonable minimum', and relies on manual terminal resizing Claude cannot easily do, despite its useful stop-and-report escape hatch."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 0,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "A stays faithful to the request without inventing details and gives a clear, checkable finish line. C is concise but invents a `/bounce` command, and B invents more (what the mod does, possible Claude Code platform differences) and adds method-heavy scope rules."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 1,
+  "ranking": [
+   "sonnet",
+   "opus",
+   "haiku"
+  ],
+  "why": "A is concise and outcome-focused, invents no file names, and has a clear finish line. C guesses the bouncer is \"the mod behind /bounce\" and lists method hints, though its constraints are sound. B invents a `bws-bounce` folder and falsely says the tree was cut off, when the bouncer files are visible under bws-enhance."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 2,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "C states the outcome with a concrete, checkable finish line (command plus output) and invents nothing, and A is similarly clean but vaguer; B invents details not in the context, namely `/bounce` modes like off/warn/block, and it lists likely causes that steer the method."
+ },
+ {
+  "case": "method-given",
+  "sample": 0,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "A states the intended ordering concisely, keeps the existing source rank as the primary key, preserves the developer's chosen comparator, and gives a checkable finish line. C is solid and adds an ordering check, but it is wordier and leaves the source rank order unspecified. B drops the `commandsText` name, has a typo, and its done criteria restate the method rather than the outcome."
+ },
+ {
+  "case": "method-given",
+  "sample": 1,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "A states the outcome clearly, says what to do if the fields don't exist, and expects tests asserting the old order to be updated; B is correct but awkwardly worded and adds method direction; C invents a requirement to keep the rank sort's existing source ordering."
+ },
+ {
+  "case": "method-given",
+  "sample": 2,
+  "ranking": [
+   "sonnet",
+   "opus",
+   "haiku"
+  ],
+  "why": "B states the outcome cleanly, keeps the developer's single-comparator choice, and gives a checkable finish line that sensibly allows updating tests that asserted the old order; C assumes an 'existing source ranking' and claims only within-source order changes, which may misread the request; A wraps its prompt in leaked rewriter reasoning and omits the type check."
+ },
+ {
+  "case": "new-mod",
+  "sample": 0,
+  "ranking": [
+   "opus",
+   "haiku",
+   "sonnet"
+  ],
+  "why": "A states the outcome most completely and guards against both missing per-turn token data and a missing status-line render site, without dictating the method; B is more concise and has the most checkable finish line (the count matches the turn's final total) but ignores whether a status-line render site exists; C covers similar ground with a vaguer finish line and restates AGENTS.md rules."
+ },
+ {
+  "case": "new-mod",
+  "sample": 1,
+  "ranking": [
+   "sonnet",
+   "opus",
+   "haiku"
+  ],
+  "why": "A is concise, outcome-first, has a clear stop condition and a checkable finish line; C is sound but more prescriptive, telling Claude to only observe events and adding marketplace and tsconfig requirements; B opens with leaked rewriter meta-commentary and invents a hold-the-last-count behavior."
+ },
+ {
+  "case": "new-mod",
+  "sample": 2,
+  "ranking": [
+   "haiku",
+   "sonnet",
+   "opus"
+  ],
+  "why": "A is the most concise and outcome-first, with a clear stop condition and a checkable finish line; C is solid but prescribes more layout and metadata detail and is wordier; B invents a rationale (/usage) and commands (/verify, /reload-plugins) not grounded in the context."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 0,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "A states the outcome first, quotes the error verbatim, rules out suppressing it through ignores, `any` casts or loosened compiler settings, gives a sensible stop condition and a checkable finish line (gate clean plus tests pass); C is nearly as good but lacks the stop clause; B paraphrases the error, nudges the method, omits test verification and repeats itself."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 1,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "C opens with the goal and has a clear finish line that also covers the existing tests. Its constraints come from AGENTS.md and it gives a sensible escape hatch if the generated types are at fault. B is similar but starts with prescriptive method ('find the root cause in the types involved') and drops the test-suite check. A is concise but vaguer ('loosening the types') and doesn't say how to verify that other mods are unaffected."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 2,
+  "ranking": [
+   "haiku",
+   "opus",
+   "sonnet"
+  ],
+  "why": "B states the outcome, the no-suppression rule and a checkable finish line concisely without adding anything, while A and C pile on constraints such as 'don't add tests or docs', and C also steers the method (where to look, how to find the gate)."
+ },
+ {
+  "case": "perf",
+  "sample": 0,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "B is concise and outcome-first, with a checkable finish line (timings, tests, type check) and grounded AGENTS.md constraints. A is similarly good but leaner on constraints and reporting. C is verbose, speculates about causes, prescribes method, and invents a `/verify` step."
+ },
+ {
+  "case": "perf",
+  "sample": 1,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "B gives the clearest outcome-first brief: it says to measure before changing, to stop if the delay is outside the mod's control, and to leave shared code alone, and it ends with checkable before/after timings plus tests; A is similar but thinner and adds an off-topic secrets-logging note; C makes an unneeded ambiguity check and has a weaker finish line that never requires the after timing to be clearly faster."
+ },
+ {
+  "case": "perf",
+  "sample": 2,
+  "ranking": [
+   "sonnet",
+   "haiku",
+   "opus"
+  ],
+  "why": "A states the outcome, requires measuring before and after, keeps the relevant AGENTS.md rules without prescribing a method, and gives a clear finish line; B is concise and checkable but thinner on constraints and its 'output unchanged' check is vaguer; C is wordier, guesses that bws-kit is a likely cause, and adds speculative constraints."
+ },
+ {
+  "case": "typo",
+  "sample": 0,
+  "ranking": [
+   "haiku",
+   "opus",
+   "sonnet"
+  ],
+  "why": "B is the most concise and states a clear, checkable finish: no 'teh' remains and the git diff shows only that one-word fix. A is nearly as good, but its grep check doesn't confirm the rest of the file is unchanged. C opens with awkward outcome phrasing and adds hedges and extra directives the request didn't need."
+ },
+ {
+  "case": "typo",
+  "sample": 1,
+  "ranking": [
+   "opus",
+   "sonnet",
+   "haiku"
+  ],
+  "why": "B is the most concise and gives concrete, checkable verification (grep plus git diff limited to the correction); C is clear but adds unneeded guardrails for a one-word fix; A says the same check twice and is wordier."
+ },
+ {
+  "case": "typo",
+  "sample": 2,
+  "ranking": [
+   "opus",
+   "haiku",
+   "sonnet"
+  ],
+  "why": "B is the most concise and names the exact file, the intended correction and a concrete grep check, while C usefully checks for 'teh' as a standalone word but is less crisp, and A is wordier with redundant constraints."
+ }
+]

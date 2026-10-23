@@ -14,3 +14,10 @@
 - Eval in `eval/` (see its README): real-mod harness, 10 cases x 3, blind opus judge. New preferred 29/30; outcome 3.30 -> 4.67, method_left 2.13 -> 4.53, grounded 2.50 -> 4.47, concise 2.43 -> 4.63, verifiable 4.00 -> 4.10; words 193 -> 101; step lines 3.5 -> 0.
 - Incident: child `claude -p` runs inherit `CLAUDE_CODE_SESSION_ID`. One persisted setup run wrote 2 entries (a user line and its reply) into this cloud session's local transcript. The harness now strips the session/remote env vars and passes its own `--session-id`; re-checked, no further writes.
 - `claude plugin test`: 51 pass, 4 fail (the same Windows-path fixtures as before). tsc still not run here.
+
+## 2026-10-23 (3): stop conditions, enhancer models, agent outcomes
+- Prompt: keep stop-and-report conditions; name only listed commands. Tests 51 pass / 4 fail (same Linux-only 4).
+- Eval B per enhancer (haiku/sonnet/opus): new preferred 27/30, 30/30, 30/30. 3-way ranking of new rewrites: sonnet 1.70, opus 1.97, haiku 2.33 (reversed before the judge saw AGENTS.md).
+- Eval A, agents (sonnet/opus) x raw/old/new on 4 tasks: work quality equal within noise (4.62–4.75); rewrites cost more turns than raw; new cheaper than old on Opus; new best on scope/report; new narrowed linux-tests to the bouncer tests.
+- Harness fixes on the way: judges see AGENTS.md; outcome judge baseline corrected to main's 50/4 (it had this branch's 51/4).
+- Details: eval/README.md.

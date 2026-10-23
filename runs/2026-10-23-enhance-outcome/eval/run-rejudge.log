@@ -1,0 +1,44 @@
+30 judgements, 0 errors
+**Pairwise:** new 27, old 3, tie 0 (of 30)
+
+| Rubric (1-5, mean) | old | new |
+| --- | --- | --- |
+| outcome | 3.53 | 4.73 |
+| method_left | 2.37 | 4.67 |
+| intent | 4.07 | 4.57 |
+| grounded | 3.53 | 4.70 |
+| verifiable | 4.07 | 4.03 |
+| concise | 2.73 | 4.47 |
+30 judgements, 0 errors
+**Pairwise:** new 30, old 0, tie 0 (of 30)
+
+| Rubric (1-5, mean) | old | new |
+| --- | --- | --- |
+| outcome | 3.60 | 4.97 |
+| method_left | 2.13 | 4.57 |
+| intent | 3.77 | 4.63 |
+| grounded | 3.83 | 4.80 |
+| verifiable | 4.13 | 4.13 |
+| concise | 2.43 | 4.63 |
+30 judgements, 0 errors
+**Pairwise:** new 30, old 0, tie 0 (of 30)
+
+| Rubric (1-5, mean) | old | new |
+| --- | --- | --- |
+| outcome | 3.50 | 4.90 |
+| method_left | 1.97 | 4.60 |
+| intent | 3.93 | 4.50 |
+| grounded | 3.50 | 4.43 |
+| verifiable | 4.27 | 4.10 |
+| concise | 2.33 | 4.53 |
+# Enhancer models head to head (new prompt)
+
+30 blind 3-way rankings (opus judge).
+
+| model | 1st | 2nd | 3rd | mean rank |
+| --- | --- | --- | --- | --- |
+| haiku | 4 | 12 | 14 | 2.33 |
+| sonnet | 15 | 9 | 6 | 1.70 |
+| opus | 11 | 9 | 10 | 1.97 |
+
+rejudge exit 0
