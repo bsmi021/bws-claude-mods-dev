@@ -1,0 +1,391 @@
+[
+ {
+  "case": "typo",
+  "sample": 0,
+  "old": {
+   "outcome": 2,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 1,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 3,
+   "verifiable": 5,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A states a clear end state and a runnable check, though it assumes the path bws-enhance/README.md, while B only echoes the raw request inside tags and gives no finish line."
+ },
+ {
+  "case": "typo",
+  "sample": 1,
+  "error": "[error 1] "
+ },
+ {
+  "case": "linux-tests",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "B leads with the end state, stays brief and leaves the method to Claude; A opens with an activity, adds a step list, and invents details such as a `/bounce` command, a claim about the directory layout and a tsconfig check."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "A centres the end state and leaves the method to Claude, while B prescribes a numbered fix plan; A's invented paths and folder names are a real flaw but less costly than B's step list."
+ },
+ {
+  "case": "it-ref",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 1,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B states the end state and a checkable finish line without prescribing steps, while A invents paths (bws-cockpit/hooks, tests, tsconfig.json), adds a step list, and carries a stray system-reminder block."
+ },
+ {
+  "case": "it-ref",
+  "sample": 1,
+  "error": "[error 1] "
+ },
+ {
+  "case": "pasted-error",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "winner": "new",
+  "why": "A's final prompt centres the outcome and leaves the fix to Claude, while B prescribes a numbered plan and guesses a tsconfig path; A still loses points for leaked planning notes and an added tests requirement."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B states the end state briefly and with grounded facts, while A prescribes diagnostic steps, invents specifics (bws-board/tests/, .claude-plugin/types/, claude --version), and adds scope such as showing the gate output."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 3,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "A is centred on the end state and leaves the method to Claude, though it adds unrequested persistence and carries a stray injected block; B gives step-by-step instructions, invents details like kit.json, /reload-plugins and `claude --version`, and is padded."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 3,
+   "grounded": 3,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "A centres the end state and leaves the method to Claude, though it adds unrequested persistence and carries a stray pasted note; B prescribes a step list and invents details such as the tsconfig path and the static-inspection rules."
+ },
+ {
+  "case": "method-given",
+  "sample": 0,
+  "old": {
+   "outcome": 1,
+   "method_left": 3,
+   "intent": 1,
+   "grounded": 4,
+   "verifiable": 1,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A keeps the developer's chosen comparator method, states the end state, and gives a check. However, it assumes bws-enhance has tests it can run, and it adds a no-new-tests constraint nobody asked for. B refuses and returns no usable prompt."
+ },
+ {
+  "case": "method-given",
+  "sample": 1,
+  "old": {
+   "outcome": 1,
+   "method_left": 1,
+   "intent": 1,
+   "grounded": 1,
+   "verifiable": 1,
+   "concise": 1
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "A is a usable prompt that keeps the developer's chosen single source-then-name comparator and sets a clear finish line, though its leading note about the project root adds noise and paths not in the context; B is a stray reminder-style message with no rewritten prompt at all."
+ },
+ {
+  "case": "perf",
+  "sample": 0,
+  "old": {
+   "outcome": 1,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 1,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "A centres the end state of a faster mod with unchanged output and sets a checkable finish line of passing tests plus before/after timings, though it prescribes a measure-then-fix approach and assumes its own tests and tsconfig; B is meta-narration rather than a prompt, invents an absolute Windows path and hooks/kit.json, and has no finish line."
+ },
+ {
+  "case": "perf",
+  "sample": 1,
+  "old": {
+   "outcome": 2,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 1,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "B states the goal (bws-enhance faster with the same behaviour) and sets a checkable finish line with before-and-after timings, though it prescribes measure-then-fix and invents the `bws-enhance/tests` path; A only echoes the rough request and gives Claude no clear target."
+ },
+ {
+  "case": "investigate",
+  "sample": 0,
+  "error": "[error 1] "
+ },
+ {
+  "case": "investigate",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 5,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 3,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 4
+  },
+  "winner": "old",
+  "why": "B keeps the read-only, explain-only scope exactly and sets a clearer finish line, though it prescribes search steps and both rewrites invent paths not in the context."
+ },
+ {
+  "case": "new-mod",
+  "sample": 0,
+  "old": {
+   "outcome": 2,
+   "method_left": 1,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 1
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 3,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A opens with meta-commentary, prescribes a step-by-step plan with files and APIs (ui.render, .claude-plugin/types/, bws-memory/tests/) not given in the context, and contradicts itself on tests, while B states the goal and finish line cleanly, though its 'checks pass' could have named tools/mods-gate.py."
+ },
+ {
+  "case": "new-mod",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 1,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "A is a step-by-step plan with likely invented specifics such as example mods, event names and a types path, while B states the outcome and a checkable finish line and leaves the method to Claude, despite a stray meta preamble that should be removed."
+ },
+ {
+  "case": "docs",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "Both invent module and file names the context never gave, but A also prescribes a numbered step plan and pads the prompt with extra rules, while B keeps the goal and check and leaves the method to Claude, even with its stray meta preamble."
+ },
+ {
+  "case": "docs",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 1,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 2,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 1,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B has a stronger finish line, but it invents a project path, specific source files and directories, prescribes a reading list, and wraps made-up facts in a fake system-reminder; A adds no checks but gives Claude no false information."
+ }
+]

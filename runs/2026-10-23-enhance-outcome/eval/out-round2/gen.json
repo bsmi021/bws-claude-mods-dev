@@ -1,0 +1,242 @@
+[
+ {
+  "case": "typo",
+  "variant": "old",
+  "sample": 0,
+  "text": "Fix the typo \"teh\" in the README of the bws-enhance mod, at /home/user/bws-claude-mods-dev/bws-enhance/README.md. Change only that word to \"the\" and leave the rest of the file unchanged. Search the file for any other \"teh\" occurrences first; if there are more, fix each one and list them in your report.\n\nDone when a search of that README for \"teh\" returns no matches and `git diff` shows only the corrected word(s). Do not add tests, docs, or other edits beyond this fix. Keep working until the check passes, then stop and report the changed lines."
+ },
+ {
+  "case": "typo",
+  "variant": "old",
+  "sample": 1,
+  "text": "Fix the typo \"teh\" in the README for the bws-enhance mod at bws-enhance/README.md, changing it to \"the\" wherever it appears as a standalone word. Search the file for other occurrences of \"teh\" first, and correct only typos of that kind; leave the rest of the file and other mods unchanged.\n\nDone when `grep -n \"\\bteh\\b\" bws-enhance/README.md` returns no matches and the diff touches only the corrected words. Do not add tests, docs or changelog entries, and do not change the wording or formatting elsewhere. Keep working until that check passes, then stop and report the lines you changed."
+ },
+ {
+  "case": "typo",
+  "variant": "new",
+  "sample": 0,
+  "text": "Fix the typo \"teh\" in the bws-enhance README (bws-enhance/README.md) so the word reads \"the\", and change nothing else in the file. Done when the file contains no remaining \"teh\" typo and the diff touches only that word."
+ },
+ {
+  "case": "typo",
+  "variant": "new",
+  "sample": 1,
+  "text": "Fix the typo \"teh\" in the bws-enhance README (bws-enhance/README.md) so it reads \"the\". Change only that word, leave the rest of the file as it is, and confirm with a search that \"teh\" no longer appears in the file."
+ },
+ {
+  "case": "linux-tests",
+  "variant": "old",
+  "sample": 0,
+  "text": "Make the bouncer tests pass on Linux. The bouncer is the `/bounce` mod, which holds a vague prompt before it is sent. Find its test directory by searching for \"bounce\" under the `bws-*` mod folders before changing anything.\n\nRun that mod's test suite on this Linux machine and capture the failing output. Find the root cause of each failure. It may be a platform assumption such as a macOS-only command, path separators, case-sensitive paths, or line endings, but confirm this from the output rather than assuming it. Fix the code or the test setup so the behavior is correct on Linux and still correct on other platforms. Follow the conventions in `AGENTS.md`.\n\nDo not hard-code expected values, skip tests, or loosen assertions to get green. Keep the change limited to what the failures require. Do not add new tests or docs beyond what the project requires.\n\nDone when the bouncer test suite passes on Linux using the test command the mod already defines (check its package file or README), and the other mods' tests still pass. Keep working until those checks pass, then stop and report what was broken, what you changed, and the final test output."
+ },
+ {
+  "case": "linux-tests",
+  "variant": "old",
+  "sample": 1,
+  "text": "Find the bouncer mod's tests (the one behind the `/bounce` command, which holds a vague prompt before it is sent) and make them pass on Linux as well as on the platform they currently pass on. Start by running that mod's test suite on this machine and recording which tests fail and the errors they produce. Then find the root cause, which is likely something platform-specific such as a macOS-only command, a path or shell assumption, case-sensitive filenames, or line endings. Fix that cause in the mod's source, not in the tests. Don't hard-code values or skip tests to get a green run. Keep the mod's behavior unchanged on other platforms, and touch only the files needed for this fix. Follow the mod conventions in `AGENTS.md`, including the static-module rules for `hooks/register.ts`. Don't add new tests or docs unless a failing test truly needs them. Keep working until the bouncer test suite passes on Linux and the existing checks for the mod still pass, then stop and report what was broken, what you changed, and the test output."
+ },
+ {
+  "case": "linux-tests",
+  "variant": "new",
+  "sample": 0,
+  "text": "The bouncer tests currently fail on Linux (they pass on the developer's other platform), and the goal is for them to pass on Linux too without changing what they check. Find the cause of the Linux-specific failure in the bouncer mod's tests and fix it in the code or test setup, not by skipping, loosening, or hard-coding around the failing assertions. Check that the tests run on Linux with the project's usual test command, and that nothing already passing on other platforms breaks. Don't add new tests or docs beyond what the fix needs. Keep working until the Done-when checks pass, then stop and report what the cause was and what changed."
+ },
+ {
+  "case": "linux-tests",
+  "variant": "new",
+  "sample": 1,
+  "text": "Make the bouncer tests pass on Linux as well as on the platform they currently run on. Find out why they fail or are skipped on Linux and fix the cause in the code or the test setup, without changing what the tests assert about the bouncer's behaviour.\n\nContext: the bouncer lives in the mod project under /home/user/bws-claude-mods-dev. Follow the project's AGENTS.md. Match the existing platform handling in other mods where one exists.\n\nDone when: the bouncer test suite passes on Linux, the other mods' tests still pass, and you can say what the root cause was. Keep working until these checks pass, then stop and report. Do not add new tests or docs beyond what is needed to make the existing ones pass."
+ },
+ {
+  "case": "it-ref",
+  "variant": "old",
+  "sample": 0,
+  "text": "Fix the bws-cockpit footer so its button stays visible when the terminal is narrower than 100 columns. At 99 columns the footer row currently drops the button entirely; instead, keep the button and shorten its label.\n\nContext: Find the footer rendering in bws-cockpit, searching for the footer and the 100-column breakpoint, before editing. Check bws-cockpit/AGENTS.md and the project's AGENTS.md for conventions that apply, and look at the existing tests in bws-cockpit/tests for how footer layout is covered.\n\nSteps: Confirm why the button is dropped at 99 columns, then change the layout logic so the button remains and its label shortens at narrow widths. Fix the layout logic itself rather than special-casing the 99-column value.\n\nDone when: at 99 columns the button is visible with a shortened label; at 100 columns and wider the footer looks as it did before; the bws-cockpit test suite passes and the TypeScript check (tsconfig.json) is clean. Keep working until these checks pass, then stop and report what changed and the results. Do not add new tests or docs beyond what the project requires."
+ },
+ {
+  "case": "it-ref",
+  "variant": "old",
+  "sample": 1,
+  "text": "Fix the bws-cockpit footer so the button stays visible when the terminal is narrower than 100 columns, shortening its label instead of removing it. The bug: at 99 columns the footer row drops the button entirely.\n\nStart by locating the footer rendering in bws-cockpit (look under its hooks/ and types/ folders and the component that draws the footer row) and find where the button is removed based on width. Reproduce it first: at 99 columns the button should be missing, and at 100 it should show. Then make the button fall back to a shorter label at narrow widths rather than being dropped. Keep the existing label at 100+ columns unchanged.\n\nFollow the project's AGENTS.md: keep the change inside bws-cockpit, preserve unrelated code, and use stable control identifiers. Do not add tests or docs beyond what is needed for this fix, unless the project requires them.\n\nDone when: the button is visible at 99 columns with a shortened label, it is unchanged at 100 and above, and the bws-cockpit test suite and TypeScript check (tsc --noEmit in bws-cockpit) pass. Keep working until those checks pass, then stop and report what changed and the results."
+ },
+ {
+  "case": "it-ref",
+  "variant": "new",
+  "sample": 0,
+  "text": "Fix the bws-cockpit footer so the button stays visible when the terminal is narrower than 100 columns. At 99 columns the footer row currently drops the button entirely; it should shorten the button's label to fit instead. Find the footer's width handling in bws-cockpit and fix the root cause rather than special-casing the 99-column width.\n\nDone when a footer test or render check at 99 columns and at 100 columns shows the button present, with the label shortened below 100, and the existing bws-cockpit tests still pass. Run the bws-cockpit test suite and report the result. Keep working until those checks pass, then stop and report. Don't add tests or docs beyond what the fix needs unless the project requires them."
+ },
+ {
+  "case": "it-ref",
+  "variant": "new",
+  "sample": 1,
+  "text": "The cockpit footer in bws-cockpit should keep its button visible when the terminal is narrower than 100 columns, shortening the button's label instead of dropping the button. Resizing the terminal to 99 columns currently removes the button from the footer row entirely.\n\nContext: the developer asked for this to wait until now, so start by finding where the footer decides to hide the button and what the narrow-width label should be, following the existing layout pattern in the cockpit mod.\n\nConstraints: keep the full label at 100 columns and wider, and do not change footer behavior for other widths beyond what this requires.\n\nDone when: at widths from 40 to 99 columns the button stays in the footer with a shortened label, at 100 and above it shows the full label as before, and the bws-cockpit tests pass. Keep working until those checks pass, then stop and report what changed. Do not add tests or docs beyond what is needed for this fix unless the project requires them."
+ },
+ {
+  "case": "pasted-error",
+  "variant": "old",
+  "sample": 0,
+  "text": "Fix the TypeScript error that the gate reports for the bws-board mod. The compiler fails at `hooks/register.tsx` line 212, column 15:\n\n<error>\nbws-board: tsc failed\nhooks/register.tsx(212,15): error TS2589: Type instantiation is excessively deep and possibly infinite.\n</error>\n\nStart by reading the code around line 212 and working out which expression triggers the deep instantiation. It is often a recursive or very large generic, such as a JSX or element type, or a mods API type that is being inferred through a long chain. Fix the root cause with a narrower type, an explicit annotation, or a simpler expression. Do not silence the error with `@ts-ignore`, a blanket `any` cast, or by weakening the tsconfig. Where the type comes from the mods API, check the generated declarations in `.claude-plugin/types/` for the real signature, as AGENTS.md directs. Keep the change limited to what this error needs, and leave the component's behavior unchanged.\n\nVerification: rerun the same gate command that produced the failure, and confirm `tsc` passes for bws-board with its `tsconfig.json`. Keep working until those checks pass, then stop and report what caused the error, what you changed, and the check results. Do not add tests or docs unless the project requires them."
+ },
+ {
+  "case": "pasted-error",
+  "variant": "old",
+  "sample": 1,
+  "text": "Fix the TypeScript error that fails the type-check gate in the bws-board mod, at `hooks/register.tsx` line 212 (`TS2589: Type instantiation is excessively deep and possibly infinite`).\n\n<error>\nbws-board: tsc failed\nhooks/register.tsx(212,15): error TS2589: Type instantiation is excessively deep and possibly infinite.\n</error>\n\nContext:\n- Find the gate's command (check the project's scripts or the bws-board README), then run it to reproduce the failure. If no gate command is found, use `tsc --noEmit -p bws-board/tsconfig.json`.\n- Read the code around line 212 to find the type expression that causes the deep instantiation.\n- Check the generated declarations in `bws-board/.claude-plugin/types/` for the API types involved. Treat them as authoritative over online examples.\n\nConstraints:\n- Fix the root cause by simplifying or correcting the type. Do not cast to `any`, add `@ts-ignore`, or loosen `tsconfig.json`.\n- Keep runtime behavior unchanged and leave unrelated code alone.\n- Do not add tests or docs beyond what is asked, unless the project requires them.\n\nDone when:\n- The gate passes, and `tsc --noEmit -p bws-board/tsconfig.json` reports no errors.\n- Keep working until those checks pass, then stop and report the cause of the error and what you changed."
+ },
+ {
+  "case": "pasted-error",
+  "variant": "new",
+  "sample": 0,
+  "text": "Make the bws-board TypeScript check pass so the gate goes green. The gate currently fails with:\n\n<error>\nbws-board: tsc failed\nhooks/register.tsx(212,15): error TS2589: Type instantiation is excessively deep and possibly infinite.\n</error>\n\nFind the root cause of this type instantiation at that location and fix it so the hook's runtime behaviour stays the same. Don't suppress the error with `@ts-ignore` or loosen the types to `any` to get past it.\n\nDone when the gate passes with no tsc errors for bws-board. Keep working until that check passes, then stop and report what was wrong and what changed. Don't add tests or docs beyond what the project requires."
+ },
+ {
+  "case": "pasted-error",
+  "variant": "new",
+  "sample": 1,
+  "text": "Make the type check for bws-board pass so the gate's `tsc` step completes with no errors.\n\n<error>\nbws-board: tsc failed\nhooks/register.tsx(212,15): error TS2589: Type instantiation is excessively deep and possibly infinite.\n</error>\n\nThe error is at line 212 of `bws-board/hooks/register.tsx`. Find what makes that type instantiation recurse and fix the cause. Don't silence the error by loosening types to `any` or adding suppression comments. Keep the hook's runtime behaviour unchanged.\n\nDone when `tsc` in bws-board reports no errors and the hook still registers as before. Keep working until those checks pass, then stop and report what caused the error and what you changed. Don't add tests or docs beyond what the fix needs."
+ },
+ {
+  "case": "dark-mode",
+  "variant": "old",
+  "sample": 0,
+  "text": "Add a light/dark theme toggle to the bws-cockpit dashboard in /home/user/bws-claude-mods-dev/bws-cockpit.\n\nFollow the mod rules in /home/user/bws-claude-mods-dev/AGENTS.md. Read bws-cockpit/README.md and its hooks/ directory to find the existing dashboard `ui.render` site and how it styles its elements. Before editing, state the visible behavior and the smallest acceptance check.\n\nSteps:\n- Add a toggle control to the dashboard that switches all of its existing elements between light and dark colors.\n- Give the control a stable identifier and handle its click with a literal event name, using direct `$.namespace` calls.\n- Keep the chosen theme in `$.state` so it survives reloads. Default to the dashboard's current appearance. Note this choice in your summary.\n\nConstraints:\n- Change only the bws-cockpit mod. Leave other mods untouched.\n- Do not add tests or docs beyond what is asked, unless the project requires them.\n\nDone when:\n- The bws-cockpit type check (tsconfig.json) and its existing tests pass.\n- In a dev session, `/reload-plugins` loads the mod, the toggle switches to each theme and back, and the selected theme persists after a reload.\n\nKeep working until these checks pass, then stop and report what changed and any assumptions you made."
+ },
+ {
+  "case": "dark-mode",
+  "variant": "old",
+  "sample": 1,
+  "text": "In the bws-cockpit mod, add a light/dark theme toggle to the cockpit dashboard. First, locate where the dashboard is rendered and how its styling is currently defined, then add a visible control that switches the whole dashboard between light and dark.\n\nContext: Follow /home/user/bws-claude-mods-dev/AGENTS.md. Run `claude --version` and check the generated declarations in `.claude-plugin/types/` before calling any API. Render the control through `ui.render` at the existing dashboard render site, with a stable control id wired to a click or selection event. Reuse the existing styling approach rather than adding a new styling system. Keep the module statically inspectable: literal event names, direct `$.namespace.method(...)` calls, and no aliasing.\n\nScope: Decide whether the choice should survive reloads. If it is not obvious from the code, assume it is session-only and state that assumption in your report. Do not change other cockpit behavior.\n\nDone when: the toggle switches the dashboard between light and dark and the existing tests and any validation step in the bws-cockpit project pass. Find the test or validation command in the package or README before running it. Run the dashboard, or take a screenshot if a `/run` skill setup exists, to confirm the change visually. Keep working until those checks pass, then stop and report what changed and what you verified. Do not add new tests or docs unless the project requires them."
+ },
+ {
+  "case": "dark-mode",
+  "variant": "new",
+  "sample": 0,
+  "text": "Add a light/dark theme toggle to the bws-cockpit dashboard. Users can switch the dashboard between light and dark, and both themes stay readable across all cockpit views. Follow the mod rules in AGENTS.md, and match how cockpit already renders and stores state. Leave existing cockpit behaviour unchanged. Don't add features, tests, or docs beyond the toggle unless the project requires them. Done when the toggle switches both themes, the bws-cockpit tests and type check pass using the project's commands, and you report what you changed and what you verified. Keep working until those checks pass, then stop and report."
+ },
+ {
+  "case": "dark-mode",
+  "variant": "new",
+  "sample": 1,
+  "text": "Add a light/dark theme toggle to the bws-cockpit dashboard so the user can switch the whole dashboard between light and dark appearance. Use `/plugin-authoring` and follow the project's AGENTS.md, treating the generated types in `.claude-plugin/types/` as authoritative for the APIs.\n\nDone when the toggle is visible in the cockpit dashboard, clicking it switches the entire dashboard between light and dark, and the existing bws-cockpit tests and type check still pass. Confirm both themes in the running app with screenshots. Keep other cockpit behavior unchanged, and don't add tests or docs beyond what the project requires. Keep working until those checks pass, then stop and report what you changed and how you verified it."
+ },
+ {
+  "case": "method-given",
+  "variant": "old",
+  "sample": 0,
+  "text": "Find `commandsText` in `bws-enhance` and replace its current rank-only sort with one comparator that orders entries by source rank first, then by name as the tie-breaker. Reuse the existing rank logic for source order and keep the current ordering of sources. Find the rank function and the sort call before editing, and confirm that `commandsText` is the only place this sort lives.\n\nContext: `bws-enhance` is a mod. Follow `AGENTS.md` at the project root, which asks you to preserve unrelated code and keep the module statically inspectable. Do not change the event contract or any other handler.\n\nScope: only the comparator in `commandsText`. Do not change how the sources are ranked, how entries are collected, or how the output is rendered.\n\nDone when:\n- Entries are grouped by source in the existing source order, and names within each source are sorted alphabetically.\n- The existing tests in `bws-enhance/tests` pass, and the project's type check for `bws-enhance` passes. Use the command named in its README or package scripts.\n- If there are no tests covering this sort, say so in your report rather than adding new tests or docs.\n\nKeep working until those checks pass, then stop and report what changed."
+ },
+ {
+  "case": "method-given",
+  "variant": "old",
+  "sample": 1,
+  "text": "Sort the commands listed by the bws-enhance `commandsText` output using a single comparator that orders by source first, then by name, replacing the current rank-only sort.\n\nContext: the sort lives in bws-enhance, and its surrounding code and tests should show how `commandsText` builds its list. I have not confirmed the file path, so find where `commandsText` is defined before editing. Keep the sort in one comparator function rather than chaining sorts.\n\nSteps:\n1. Locate `commandsText` in bws-enhance and read the existing rank-based sort and the fields it uses (source and name).\n2. Replace that sort with one comparator: compare source first, then name, using the same string ordering the codebase already uses elsewhere.\n3. Leave the rest of the output format and the ranking data untouched unless the comparator needs them.\n\nConstraints: follow the project's AGENTS.md mod conventions. Do not add features, new tests, or docs beyond what the change needs. Fix the sort itself; do not hard-code an order to satisfy existing expectations.\n\nDone when: the bws-enhance test suite and type check pass (run them from the bws-enhance directory, using the commands in its package or tsconfig setup), and the output of `commandsText` is ordered by source then name in a quick manual check. Keep working until these checks pass, then stop and report what changed and the results."
+ },
+ {
+  "case": "method-given",
+  "variant": "new",
+  "sample": 0,
+  "text": "Change the sort in bws-enhance's commandsText so it uses one comparator that orders entries by source, then by name, replacing the current rank-only sort. The output should be grouped by source with names alphabetical within each group. Read the existing sort and the code around it first, and keep the rest of the output format unchanged. Run the bws-enhance tests and confirm they pass; if an existing test asserts the old rank order, update it to match the new order and say so in your report."
+ },
+ {
+  "case": "method-given",
+  "variant": "new",
+  "sample": 1,
+  "text": "Change the sort in bws-enhance's commandsText so it uses one comparator that orders entries by source first, then by name, replacing the current rank-only sort. Done when the commands text lists entries in that order and the bws-enhance tests pass. Run the bws-enhance test suite (from its folder, using whatever command its AGENTS.md or README names) and fix any failures that come from this change. Keep the existing output format and any behaviour that the rank sort did not affect. Keep working until those checks pass, then stop and report what changed and the test results. Do not add tests or docs beyond what the project requires."
+ },
+ {
+  "case": "perf",
+  "variant": "old",
+  "sample": 0,
+  "text": "Find out why the bws-enhance mod feels slow, then make it faster without changing what it does. Before editing, measure the slow path and record a baseline. Start with the handlers in `bws-enhance/hooks/` and the notes in `bws-enhance/README.md`, and identify which events run on each interaction. Then find the redundant work, such as repeated file reads, uncached calls, or unnecessary re-renders, and remove it.\n\nConstraints:\n- Keep the module statically inspectable, as AGENTS.md requires: top-level imports, literal event names, and direct `$.namespace.method(...)` calls.\n- Keep each handler's results and its `next` behavior the same. Don't add features or change output.\n- Cache only where the state guide in AGENTS.md allows it for the value's lifetime.\n- Don't add tests or docs beyond what the project requires.\n\nDone when:\n- The test command from `bws-enhance/README.md` or its package config passes.\n- TypeScript checks against `bws-enhance/tsconfig.json` are clean.\n- The timing of the slow path, measured before and after, is lower, and you report both numbers.\n\nKeep working until these checks pass, then stop and report what was slow and what changed."
+ },
+ {
+  "case": "perf",
+  "variant": "old",
+  "sample": 1,
+  "text": "Find out why the bws-enhance mod feels slow, then make it faster without changing its visible behavior.\n\nContext: bws-enhance/ is one mod in this project, with handlers in hooks/ and tests in tests/. Run `claude --version`, then read bws-enhance/README.md and its hook registration to see which events it handles on the path that feels slow, such as prompt.submit, tool.call, or ui.render. Before editing, measure the baseline by timing the handlers or the operation involved, and record the numbers.\n\nSteps: Identify the root cause on that path, for example repeated work on every render, unnecessary awaited calls, or redundant file or model calls, and fix that cause. Keep matchers so handlers run only for the events they need. Do not change event results or payload shapes.\n\nConstraints: Follow AGENTS.md. Keep the module statically inspectable: literal event names, direct `$` calls, no aliasing or destructuring. Use no Node built-ins or npm imports, and never log secrets. Do not add features, tests, or docs beyond what is needed. If the cause is not clear after measuring, stop and report the findings before attempting a large refactor. If the cause lies outside bws-enhance, report it rather than editing other mods.\n\nDone when: the bws-enhance test suite passes, the TypeScript type check for bws-enhance passes, and the before-and-after timing shows a measurable improvement. Keep working until these checks pass, then stop and report the cause, the change, and the numbers."
+ },
+ {
+  "case": "perf",
+  "variant": "new",
+  "sample": 0,
+  "text": "Make the bws-enhance mod respond faster. Its current behavior should be unchanged, and the slowness should be fixed at its cause, not hidden.\n\nContext: bws-enhance is the mod in this project that handles the enhance feature. Start by measuring how long it takes today and finding where that time goes. Then make the slow part faster.\n\nDone when:\n- The bws-enhance tests pass, and any hook or API validation that AGENTS.md requires passes too.\n- You report before and after timings for the same run, with the slow part you changed.\n\nKeep working until those checks pass, then stop and report. Don't add tests or docs beyond what the project requires."
+ },
+ {
+  "case": "perf",
+  "variant": "new",
+  "sample": 1,
+  "text": "The bws-enhance mod is slow to respond; make it noticeably faster without changing what it does. Find where the time goes first (the hot path on the user's enhance action, and whether it blocks on something it does not need to wait for), then fix the cause. Keep the visible behavior and output the same.\n\nDone when the enhance flow is measurably faster on the same input, the existing tests in bws-enhance/tests still pass, and the TypeScript build for bws-enhance is clean. Report the before and after timings and what was responsible for the delay.\n\nKeep working until those checks pass, then stop and report. Do not add tests or docs beyond what the project requires."
+ },
+ {
+  "case": "investigate",
+  "variant": "old",
+  "sample": 0,
+  "text": "Find out why `$.model.fork` fails in resumed sessions. Do not edit, create, or delete any files, and do not run commands that change state. Report the cause in your reply.\n\nStart by finding every call to `$.model.fork` in this project's mod code. Check its signature in the generated declarations under `.claude-plugin/types/`. Then trace the code path for a resumed session. AGENTS.md says `session.start` does not run after `/resume`, so check whether anything the fork depends on (registration, state, or the model handle) is set up only in that hook. Also check whether `bws-kit/classify-fork.ts` is involved, and read the exact error or failing condition.\n\nDone when you can name the root cause with file and line references, explain how you confirmed it (by reading code, types, or running a read-only check), and describe the fix you would make without applying it. If the code does not show the cause, say what information is missing instead of guessing. Keep working until you have a verified answer, then stop and report. Do not add tests or docs."
+ },
+ {
+  "case": "investigate",
+  "variant": "old",
+  "sample": 1,
+  "text": "Investigate why `$.model.fork` fails in resumed sessions and explain the root cause. This is read-only: do not edit, create, or delete files, and do not change git state.\n\nContext: The mods API rules and the lifecycle notes are in the project's AGENTS.md. Treat the generated declarations under `.claude-plugin/types/` in the mod project as the authoritative signature for `$.model.fork`. Start by finding every call site of `$.model.fork` in the repo. Then trace how the handler gets its session or transcript data on the resumed path. AGENTS.md says `session.start` does not run after `/resume`, so check what state the failing code depends on. Run the existing tests for the affected mod as they are, to see whether any of them reproduce the failure.\n\nSteps:\n1. Find the failing call path and the exact error or condition it hits.\n2. Compare it with the path for a fresh session.\n3. Confirm the cause against the generated types and the code.\n\nConstraints: Do not add tests, docs, or fixes. If you cannot reproduce the failure or confirm the cause, say what you checked and what remains unknown instead of guessing.\n\nDone when: you report the root cause with file paths and line numbers, the evidence (test output or the code path), and a short description of the fix you would make, without making it. Keep working until you have a confirmed answer, then stop and report."
+ },
+ {
+  "case": "investigate",
+  "variant": "new",
+  "sample": 0,
+  "text": "Find out why `$.model.fork` fails on resumed sessions in this mod project, and explain the cause to me. Do not change any code or files.\n\nContext: the project's mod guidance in AGENTS.md covers the mods API and session lifecycle, including that `session.start` does not run after `/resume`. Look at how the failing call is made and what session state it depends on after a resume, and reproduce the failure if you can without editing anything.\n\nDone when: you have a clear explanation of the root cause, with the relevant file and line references, and you have stated whether the failure was reproduced or inferred from the code. Stop after reporting; make no edits."
+ },
+ {
+  "case": "investigate",
+  "variant": "new",
+  "sample": 1,
+  "text": "Find out why `$.model.fork` fails on resumed sessions in this mod project, and report the cause with the evidence for it. Make no code changes; this is investigation only.\n\n<context>\nThe developer is asking about a failure they have seen, not asking for a fix. AGENTS.md at the project root applies: check the generated declarations for `$.model.fork`'s actual signature and behaviour rather than assuming it, and note what the mods documentation says about `session.start` and `/resume`.\n</context>\n\n<done_when>\n- The report names the specific condition under which `$.model.fork` fails on a resumed session and what error or misbehaviour occurs.\n- Each claim is tied to a file and line, or to a generated declaration or doc passage, that supports it.\n- Anything that could not be confirmed from the code or docs is stated as unknown, with the reproduction step that would settle it.\n- No files have been modified.\n</done_when>"
+ },
+ {
+  "case": "new-mod",
+  "variant": "old",
+  "sample": 0,
+  "text": "Create a new Claude Code mod, in its own directory at the project root (for example `bws-turn-tokens/`, following the existing `bws-*` mod layout), that shows how many tokens the current turn used in the status line.\n\nContext:\n- Follow the mod layout in AGENTS.md: `.claude-plugin/plugin.json`, `hooks/hooks.json` pointing to one `./register.ts` module, and `register(on, options)` using literal event names and direct `$.namespace.method(...)` calls.\n- Run `claude --version` first and check the generated `.claude-plugin/types/` declarations for the exact status line rendering API and the turn-complete or usage event fields before writing code. Do not guess these names.\n- Model the new directory on an existing mod such as `bws-cockpit/` or `bws-notify/` for manifest, tests, and tsconfig shape.\n\nSteps:\n1. Find the event and field that report token usage for a turn, and the status line render hook that can display text.\n2. Keep the per-turn count in a module variable, since it only needs to live for the current session.\n3. Render it in the status line as a short label, such as \"Turn: 1,234 tokens\".\n\nConstraints:\n- Show only the current turn's usage. Do not add cost, totals across sessions, or other stats.\n- Do not log session content or secrets.\n- Do not add tests or docs beyond what the project requires; keep the README minimal if the other mods require one.\n\nDone when:\n- The module validates against the generated declarations, and the project's mod validation passes.\n- Loading the mod in a dev session shows the turn token count in the status line and updates it after a turn completes.\n- Keep working until these checks pass, then stop and report what you verified."
+ },
+ {
+  "case": "new-mod",
+  "variant": "old",
+  "sample": 1,
+  "text": "Create a new Claude Code mod that shows how many tokens the current turn has used in the status line, using the mod conventions in AGENTS.md.\n\nContext:\n- Put the mod in a new folder at the project root, following the layout AGENTS.md describes: `.claude-plugin/plugin.json`, `hooks/hooks.json` pointing to `./register.ts`, and `hooks/register.ts`. Use a descriptive plugin name and version. Compare with an existing mod such as `bws-cockpit/` or `bws-memory/` for the manifest and hooks layout.\n- Run `claude --version` and read the generated `.claude-plugin/types/` declarations before choosing the status line render site, event, and token fields. Do not guess these names.\n\nSteps:\n- Confirm the visible behavior and the smallest acceptance check before editing, as AGENTS.md asks.\n- Find the event and interface call that expose per-turn token usage, and the `ui.render` site for the status line. Use literal event names and direct `$.namespace.method(...)` calls.\n- Display only the current turn's token count. Do not add other metrics, settings, or persistence.\n\nConstraints:\n- Observe with `next(e)`; do not rewrite or handle events.\n- Do not log session content or secrets.\n- Do not add tests or docs beyond what is asked unless the project requires them.\n\nDone when:\n- The mod validates with the project's checks (the mod validation step AGENTS.md describes, and the package's `tsconfig.json` type check).\n- Loading the mod in a session shows the turn's token count in the status line and it updates as the turn progresses.\n\nKeep working until these checks pass, then stop and report the results."
+ },
+ {
+  "case": "new-mod",
+  "variant": "new",
+  "sample": 0,
+  "text": "Add a new mod to this repository, as a bws-* directory alongside the existing mods, that shows the number of tokens used by the current turn in Claude Code's status line. The count should reflect the turn in progress and start over on the next turn.\n\nFollow the mod rules in AGENTS.md at the project root, including its structure, static-inspectability rules, and verification steps, and use /plugin-authoring. Check the installed Claude Code version first and confirm it supports the status line and per-turn token data you need.\n\nDone when a development session loads the mod, the status line shows the current turn's token count, and the count restarts on the next turn. Confirm this by running a session and watching the status line, and run the type-check and the validation AGENTS.md describes. Keep working until those checks pass, then stop and report what you verified. Do not add tests or docs beyond what is asked unless the project requires them."
+ },
+ {
+  "case": "new-mod",
+  "variant": "new",
+  "sample": 1,
+  "text": "Build a new Claude Code mod that shows the number of tokens used by the current turn in the status line. Read the mod contract in AGENTS.md and confirm the smallest acceptance check before editing. Use `/plugin-authoring` to create the mod.\n\nDone when the status line shows the turn's token count while Claude is working, the count resets when the next turn starts, and the mod's static validation passes with the intended hooks and API calls listed. Run the mod in Claude Code and confirm the count against the turn's reported usage. Keep working until those checks pass, then stop and report what you verified. Do not add tests or docs beyond what the project requires."
+ },
+ {
+  "case": "docs",
+  "variant": "old",
+  "sample": 0,
+  "text": "Update bws-kit/README.md so it matches the current code in bws-kit/. Start by reading the README and the bws-kit sources (classify-fork.ts, raster.ts, runfolder.ts, summary.ts, tab.ts, transcript.ts) and the hooks/ and tests/ folders to see what the module exports and does today. Then correct any out-of-date descriptions, file names, function names, usage examples or setup steps in the README. Keep the existing structure and tone, and don't add new sections beyond what is needed to reflect the code.\n\nConstraints:\n- Only edit bws-kit/README.md. Don't change the code or the other mod READMEs.\n- Don't invent behavior; if something in the README can't be confirmed from the source, say so in your report rather than guessing.\n- Don't add tests or docs beyond this README update.\n\nDone when: every file, function and command named in the README exists in bws-kit/ with the described behavior, and running the bws-kit tests (check bws-kit/tests/ and the package scripts for the test command) still passes. Keep working until those checks pass, then stop and report what changed."
+ },
+ {
+  "case": "docs",
+  "variant": "old",
+  "sample": 1,
+  "text": "Update the README in the bws-kit package (bws-kit/README.md) so it matches the current code. Start by reading the README and the source files in bws-kit/ (classify-fork.ts, raster.ts, runfolder.ts, summary.ts, tab.ts, transcript.ts) and the tests in bws-kit/tests/, then list each place where the README's descriptions, exports, usage examples or file references no longer match the code.\n\nScope: edit only bws-kit/README.md. Keep its existing structure and tone. Do not change the source files, add new docs, or touch other mods' READMEs. Where a claim cannot be confirmed from the code, leave it out or flag it in your summary rather than guessing.\n\nProject conventions from AGENTS.md apply: do not log or document secrets, and describe behavior as it actually is.\n\nDone when: every function, file, and example in the README matches the current source (check names and signatures by grepping the .ts files), and the tests in bws-kit/tests/ still pass when run with the project's test command. Then stop and report which sections you changed and anything you could not verify."
+ },
+ {
+  "case": "docs",
+  "variant": "new",
+  "sample": 0,
+  "text": "The README for bws-kit (bws-kit/README.md) no longer matches the code in that directory. Bring it up to date with the current exports and behaviour of the kit's TypeScript modules (classify-fork.ts, raster.ts, runfolder.ts, summary.ts, tab.ts, transcript.ts) and its hooks, and leave the other mods' READMEs alone. Keep the existing README structure and tone, and describe only what the code does today.\n\nDone when every statement in bws-kit/README.md is confirmed against the source, and the bws-kit tests still pass. Do not add tests or docs beyond the README itself, and keep working until those checks pass, then stop and report what changed."
+ },
+ {
+  "case": "docs",
+  "variant": "new",
+  "sample": 1,
+  "text": "Update bws-kit/README.md so it matches the current code in bws-kit (classify-fork.ts, raster.ts, runfolder.ts, summary.ts, tab.ts, transcript.ts and its hooks and tests). Read the source to find what the README gets wrong or leaves out, and fix only those parts; keep the README's existing structure and tone.\n\nDone when every exported function, module behaviour and usage example the README describes matches the code, and nothing the code does is missing from it. Check the examples against the code, and run the bws-kit tests if they touch documented behaviour.\n\nDo not change any source files or other mods' READMEs, and do not add new docs."
+ }
+]

@@ -138,6 +138,10 @@ describe('lib', () => {
     expect(SYSTEM).toMatch(/Leave the method to Claude/)
     expect(SYSTEM).toMatch(/check Claude can run/)
     expect(SYSTEM).toMatch(/No Steps section/)
+    expect(SYSTEM).toMatch(/open with the end state/)
+    expect(SYSTEM).toMatch(/cut every sentence that tells Claude how/)
+    expect(SYSTEM).toMatch(/Always end with a Done when/)
+    expect(SYSTEM).toMatch(/Do not sequence the work/)
     expect(SYSTEM).not.toMatch(/Steps or Scope/)
   })
 

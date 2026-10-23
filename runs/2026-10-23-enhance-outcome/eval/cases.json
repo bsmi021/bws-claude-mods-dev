@@ -1,0 +1,53 @@
+[
+ {
+  "id": "typo",
+  "kind": "trivial",
+  "rough": "fix the typo teh in the enhance readme"
+ },
+ {
+  "id": "linux-tests",
+  "kind": "bug",
+  "rough": "make the bouncer tests pass on linux too"
+ },
+ {
+  "id": "it-ref",
+  "kind": "vague reference",
+  "rough": "ok fix it",
+  "setup": "The cockpit footer button disappears when I resize the terminal below 100 columns. At 99 columns the footer row drops the button entirely instead of shortening its label. Don't investigate yet; reply with one short sentence acknowledging it."
+ },
+ {
+  "id": "pasted-error",
+  "kind": "pasted error",
+  "rough": "getting this when I run the gate, fix\nbws-board: tsc failed\nhooks/register.tsx(212,15): error TS2589: Type instantiation is excessively deep and possibly infinite."
+ },
+ {
+  "id": "dark-mode",
+  "kind": "large, unclear feature",
+  "rough": "add a light/dark theme toggle to the cockpit dashboard"
+ },
+ {
+  "id": "method-given",
+  "kind": "developer chose the method",
+  "rough": "in bws-enhance commandsText, sort with a single comparator that ranks by source then name instead of the current rank-only sort"
+ },
+ {
+  "id": "perf",
+  "kind": "performance",
+  "rough": "enhance feels slow, speed it up"
+ },
+ {
+  "id": "investigate",
+  "kind": "question / investigation",
+  "rough": "why does $.model.fork fail on resumed sessions? just tell me, don't change anything"
+ },
+ {
+  "id": "new-mod",
+  "kind": "new feature",
+  "rough": "new mod that shows how many tokens the current turn used in the status line"
+ },
+ {
+  "id": "docs",
+  "kind": "docs",
+  "rough": "the bws-kit readme is out of date, update it"
+ }
+]

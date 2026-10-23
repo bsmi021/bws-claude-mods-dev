@@ -1,8 +1,9 @@
 # Changelog
 
 ## 0.5.0
-- `/enhance` writes outcome-first prompts: the goal, why it matters when that is not obvious, what done looks like and a check to confirm it, plus only the constraints that bound the result. It leaves the approach to the model that runs the prompt: no step lists, and no files or functions to change unless you named them or a project rule does.
+- `/enhance` writes outcome-first prompts: it opens with the end state, adds why it matters when that is not obvious and only the constraints that bound the result, and always ends with a Done when and a check to confirm it. It leaves the approach to the model that runs the prompt: no step lists, no "first do X", and no files or functions to change unless you named them or a project rule does. A method you chose yourself is kept.
 - Rewrites are shorter (usually 40–150 words); a trivial request stays one or two lines.
+- Compared with 0.4.4 on 10 rough requests x 3 samples (blind pairwise judge): preferred in 29 of 30, about half the words, no step lists.
 
 ## 0.4.4
 - No behaviour change. Footer tests updated for Claude Code 2.1.307, where an engine node's `ref` is a number.

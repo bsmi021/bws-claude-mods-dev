@@ -76,10 +76,10 @@ The rewriter sees:
 
 Each source is optional: if one cannot be read, that part is left out and the rewrite continues.
 
-The rewrite is outcome-first: one sentence with the goal, then only the Context, Constraints and Done when it needs.
-Done when names a check Claude can run. It does not list steps or pick files and functions to change unless you did or
-a project rule requires it, since the model running the prompt can read the code and choose the way there. It is
-usually 40–150 words; a trivial request stays one or two lines.
+The rewrite is outcome-first: one sentence with the end state, Context and Constraints only when needed, and always a
+Done when with a check Claude can run. It does not list steps, order the work or pick files and functions to change
+unless you did or a project rule requires it, since the model running the prompt can read the code and choose the way
+there. A method you chose yourself is kept. It is usually 40–150 words; a trivial request stays one or two lines.
 
 The rewrite replaces the prompt box. Edit it there and press Enter to send it as your own words, or use **Send**. If you
 typed something else while it was working, the box is left alone and the tab offers **Put in box**. If the rewrite
