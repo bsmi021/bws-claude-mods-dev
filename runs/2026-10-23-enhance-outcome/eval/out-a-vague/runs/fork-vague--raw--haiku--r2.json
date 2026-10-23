@@ -1,0 +1,15 @@
+{
+ "task": "fork-vague",
+ "arm": "raw",
+ "executor": "haiku",
+ "run": 2,
+ "prompt": "fork seems broken after resume?",
+ "result": "This is probably the known `$.model.fork` problem: on a resumed session's first command, it answers `nothing-to-fork`. I'm assuming that's what you mean by \"fork\" here, since this repo's `AGENTS.md` documents exactly that case. If you meant the Agent tool's fork subagent, tell me and I'll look at that instead.\n\nThe repo already handles it. `bws-kit/classify-fork.ts` (`runFork`, lines 108–129) does this:\n\n1. Calls `$.model.fork`.\n2. If the reply is `nothing-to-fork`, reads `$.session.messages()`.\n3. Builds a transcript and calls `$.model.complete` on the session's model (`$.session.model()`), with the same timeout and signal.\n4. Returns `via: 'complete'` on that path, or `nothing-to-fork` if there are no messages at all.\n\nThe `bws-kit` tests in `tests/classify-fork.test.ts` (around lines 125–150) cover both branches. The mods that use it (`bws-memory`, `bws-direction`, `bws-diagram`) vendor their own copies under `hooks/kit/`, so a fix has to go into the kit and then be synced with `python tools/sync-kit.py --plugin <mod>`.\n\nTwo things I did not check:\n\n- I read the code and didn't run the tests or a live session, so I can't say the fallback works end to end after a resume.\n- The mods that call `$.model.fork` directly, `bws-memory/hooks/register.tsx:121` and `bws-diagram/hooks/register.tsx:67`, pass `fork` straight through. They get the fallback only if they call `runFork`. I haven't confirmed that every path goes through it.\n\nIf you're seeing a failure, send me the mod and the symptom (an error message, or the `--debug` log around the resumed command). I can then run `runFork`'s tests or reproduce it with `tools/live.py`.",
+ "turns": 4,
+ "cost_usd": 0.006944390000000001,
+ "duration_s": 17.126,
+ "diff": "",
+ "checks": {
+  "files_changed": []
+ }
+}

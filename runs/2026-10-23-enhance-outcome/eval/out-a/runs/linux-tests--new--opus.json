@@ -1,0 +1,20 @@
+{
+ "task": "linux-tests",
+ "arm": "new",
+ "executor": "opus",
+ "prompt": "Make the bouncer (`/bounce`) test suite pass on Linux, as it does on the platform where it passes now. Find which tests fail on Linux and why, and fix the underlying cause so the behaviour is correct on both platforms.\n\nDon't skip, delete or loosen tests, and don't hard-code results to make them pass. Don't add tests or docs beyond what's asked unless the project requires them. Keep working until the checks pass, then stop and report what changed.\n\nDone when: the bouncer tests pass on Linux using the project's test setup, with none skipped or weakened. If a failure depends on something Linux cannot provide, stop and report it instead of working around it.",
+ "result": "The bouncer suite (`bws-enhance/tests/bounce.test.ts`) now passes on Linux: all 29 tests, none skipped and no assertions changed.\n\n**Why the three tests failed:** they were the glossary tests (`docs/GLOSSARY.md`, the `glossaryFile` option, and the `## Glossary` section of AGENTS.md). The test fixture set the project root to `C:/proj`, which is an absolute path only on Windows. On Linux the engine treats it as relative and puts the plugin folder in front of it before calling `fs.read`. The test's fake file reader then got `<plugin folder>/C:/proj/docs/GLOSSARY.md`, found no match, and the glossary came back empty.\n\n**The mod itself was fine.** It reads files under whatever `session.root` returns, and on a real Linux session that is a normal `/…` path. The bug was a Windows-only assumption in the test fixture.\n\n**What changed (one line in `bws-enhance/tests/bounce.test.ts`):** the root now matches the platform the tests run on:\n```ts\nconst ROOT = /^file:\\/\\/\\/[A-Za-z]:/.test(import.meta.url) ? 'C:/proj' : '/proj'\n```\nTest files can't see `process`, but `import.meta.url` shows whether the host uses drive letters. On Windows the root is still `C:/proj`, so behaviour there is unchanged. I couldn't run the tests on Windows from here.\n\n**Checks:**\n- **Tests:** `claude plugin test` in `bws-enhance` gives 53 passed, 1 failed. Every bouncer test passes.\n- **Remaining failure:** `enhance.test.ts` › \"headless: /enhance answers with the rewrite…\". It has the same cause: that fixture uses `C:/proj` and `C:/Users/me/.claude/CLAUDE.md`. It isn't part of `/bounce`, so I didn't touch it. The same fix would work there if you want it.\n- **Validation:** `claude plugin validate ./bws-enhance` passes.\n- **Type check: not run.** `tools/mods-gate.py` calls tsc at a hard-coded Windows path (`C:/Users/bsmi0/AppData/...`). This worktree also has no generated `.claude-plugin/types/`, and a headless `--plugin-dir` run didn't create them. The only new syntax is `import.meta.url`, so the risk is low, but it hasn't been checked.\n\nNothing is committed: the only change is that line in `bws-enhance/tests/bounce.test.ts`.",
+ "turns": 24,
+ "cost_usd": 0.8769893999999998,
+ "duration_s": 166.082,
+ "diff": "diff --git a/bws-enhance/tests/bounce.test.ts b/bws-enhance/tests/bounce.test.ts\nindex aa5e840..79db933 100644\n--- a/bws-enhance/tests/bounce.test.ts\n+++ b/bws-enhance/tests/bounce.test.ts\n@@ -18,7 +18,8 @@ import {\n   vagueQuestion,\n } from '../hooks/bounce'\n \n-const ROOT = 'C:/proj'\n+// The project root must be absolute on the host, or the engine resolves it under the plugin folder before fs.read.\n+const ROOT = /^file:\\/\\/\\/[A-Za-z]:/.test(import.meta.url) ? 'C:/proj' : '/proj'\n const PROMPT = 'fix the thing on the settings page'\n const REASON = 'Name the settings page file and the change you want.'\n const COMPOSER = { kind: 'composer' }\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/tests/bounce.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 53,
+   "fail": 1
+  }
+ }
+}

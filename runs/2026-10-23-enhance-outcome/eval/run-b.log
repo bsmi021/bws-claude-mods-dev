@@ -1,0 +1,39 @@
+== haiku
+60 rewrites, 0 errors
+30 judgements, 0 errors
+**Pairwise:** new 26, old 4, tie 0 (of 30)
+
+| Rubric (1-5, mean) | old | new |
+| --- | --- | --- |
+| outcome | 3.40 | 4.67 |
+| method_left | 2.23 | 4.57 |
+| intent | 4.03 | 4.43 |
+| grounded | 2.70 | 4.37 |
+| verifiable | 4.03 | 3.97 |
+| concise | 2.60 | 4.37 |
+== sonnet
+60 rewrites, 0 errors
+30 judgements, 0 errors
+**Pairwise:** new 30, old 0, tie 0 (of 30)
+
+| Rubric (1-5, mean) | old | new |
+| --- | --- | --- |
+| outcome | 3.53 | 4.93 |
+| method_left | 1.97 | 4.47 |
+| intent | 3.63 | 4.70 |
+| grounded | 2.90 | 4.27 |
+| verifiable | 4.13 | 4.17 |
+| concise | 2.20 | 4.57 |
+== opus
+60 rewrites, 0 errors
+30 judgements, 0 errors
+**Pairwise:** new 30, old 0, tie 0 (of 30)
+
+| Rubric (1-5, mean) | old | new |
+| --- | --- | --- |
+| outcome | 3.43 | 4.87 |
+| method_left | 1.93 | 4.60 |
+| intent | 4.00 | 4.57 |
+| grounded | 3.07 | 4.20 |
+| verifiable | 4.27 | 4.17 |
+| concise | 2.27 | 4.37 |

@@ -1,0 +1,20 @@
+{
+ "task": "method-given",
+ "arm": "new",
+ "executor": "sonnet",
+ "prompt": "Make the commands list in bws-enhance order its entries with one comparator that sorts by source and then by name, replacing the current rank-only sort. Done when the sort is a single comparator that orders by source, then name, the bws-enhance tests pass, and the type check for that package is clean. Keep the working until those checks pass, then stop and report. Do not add tests or docs beyond what the project requires.",
+ "result": "I replaced the rank-only sort with one comparator, but I couldn't get both checks clean here, so I'm stopping short of the finish line.\n\n**Change** (`bws-enhance/hooks/lib.ts`, `commandsText`): `bySourceThenName` sorts by source, then by name. I kept `builtin` last, as the existing comment says, so the comparator checks that first and then compares source and name. Plain alphabetical order would have put `builtin` first.\n\n**Checks**\n- **Tests:** 50 pass and 4 fail. The same 4 fail with my change reverted, so my change didn't cause them. They are:\n  - three glossary tests in the bouncer suite;\n  - the headless `/enhance` test.\n  Each fails because the fake `C:/proj/...` Windows paths in the tests resolve as relative paths on this Linux box. The gate output shows the ENOENT lines.\n- **Type check:** the gate can't run tsc here, because it hardcodes the Windows path to TypeScript 5.8.3. The only tsc on this machine is 6.0.2.\n  - Run directly, it reports no errors in `hooks/lib.ts`.\n  - It does report errors elsewhere in the package, such as \"Cannot find module 'claude-code'\". The generated types aren't available here, so that run doesn't count as a clean type check.\n\nThe test and tsc gates need a run on a Windows checkout, or on this one with those paths fixed, to finish. I didn't change them. I also didn't add tests or docs, or bump the version or CHANGELOG.",
+ "turns": 12,
+ "cost_usd": 0.1979537,
+ "duration_s": 69.594,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..c33c09b 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,15 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, by source then name; built-ins last.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n-  const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n+  const bySourceThenName = (a: Command, b: Command) =>\n+    Number(a.source === 'builtin') - Number(b.source === 'builtin') ||\n+    a.source.localeCompare(b.source) ||\n+    a.name.localeCompare(b.name)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort(bySourceThenName)) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts"
+  ],
+  "plugin_test": {
+   "pass": 50,
+   "fail": 4
+  }
+ }
+}

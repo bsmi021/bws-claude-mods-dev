@@ -1,0 +1,15 @@
+{
+ "task": "fork-vague",
+ "arm": "new",
+ "executor": "haiku",
+ "run": 1,
+ "prompt": "Find out why forking breaks after a session is resumed, and fix the root cause so a fork from a resumed session behaves the same as a fork from a fresh one. The fork logic in `bws-kit` (`classify-fork.ts`) is a likely place to look, but confirm that before changing anything. If \"fork\" refers to a different flow, or the break doesn't reproduce after resuming, stop and report what you found rather than guessing.\n\nContext: `AGENTS.md` says behavior after `/resume` and `/branch` must be defined deliberately, so check that the fix keeps session state consistent.\n\nDone when: forking from a resumed session gives the same result as forking from a fresh session, the existing tests for the affected mod pass, and you can state the root cause in a sentence or two. Keep working until those checks pass, then stop and report. Don't add tests or docs beyond what the fix needs unless the project requires them.",
+ "result": "I couldn't reproduce a fork break after resume, so I changed nothing. I'm stopping here as you asked.\n\n**What I checked**\n\n- `bws-kit/classify-fork.ts` is the shared fork logic, vendored unchanged into bws-memory, bws-diagram, bws-direction, bws-enhance and bws-skillgate. Its `runFork` already handles the resume case: when `$.model.fork` answers `nothing-to-fork`, it reads `$.session.messages()` and calls `$.model.complete`.\n- bws-cockpit's `/handoff` has its own copy of that fallback (`bws-cockpit/hooks/register.tsx:676`).\n- I ran throwaway probes from the scratchpad, not the repo. They used the Claude Code 2.1.309 CLI with haiku, and the kit probe ran the real `bws-kit` code.\n\n| Scenario | Fork result |\n|---|---|\n| Fresh session, first command | `nothing-to-fork`, no messages, so `ok: false` |\n| Resumed session, first command | `nothing-to-fork`, 2 transcript rows present; kit fallback returns `{ok: true, via: 'complete'}` |\n| Fresh session, after one completed turn | Fork answers `FORKED` via `fork` |\n| Resumed session, after one completed turn | Fork answers `FORKED` via `fork` |\n\n**Root cause:** there isn't one. A fork returns `nothing-to-fork` until the session has run a turn to its end, and that holds for a resumed session as well as a fresh one. The first command after resume takes the documented fallback, which works. The only visible difference is `via: 'complete'` instead of `via: 'fork'`: the fallback doesn't use the prompt cache and has no tools. That is the expected path, not a fault.\n\n**Not covered**\n\n- I did not run cockpit's `/handoff` end to end after a resume. Its fallback uses the same steps I checked one by one, but that is not the same as running it.\n- If you're seeing a failure, please send the mod, the command and the exact message or debug line. That would tell me which path to probe.",
+ "turns": 25,
+ "cost_usd": 0.13414953000000002,
+ "duration_s": 197.351,
+ "diff": "",
+ "checks": {
+  "files_changed": []
+ }
+}

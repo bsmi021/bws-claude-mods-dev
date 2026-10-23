@@ -1,0 +1,152 @@
+[
+ {
+  "rough": "enhance tests are red on this machine, fix",
+  "old": "The \"enhance\" tests are failing on this machine (they are red). Please find out why they fail here and fix the problem so the tests pass. Run the enhance test suite before and after your change to confirm. Keep the fix limited to what is needed to make these tests pass; don't refactor unrelated code. In your reply, tell me the root cause in a few sentences and list the files you changed. [Test command, if known]\n\nWhat I added:\n- Goal: find root cause and fix red tests\n- Run tests before and after the change\n- Keep the fix limited, no unrelated refactors\n- Reply with root cause and changed files\n- Test command placeholder for the user",
+  "new": "The enhance tests are failing on this machine, and I need them passing here. Find out why they fail on this machine and fix it. Done when the enhance tests run green on this machine and no test that was passing before has started failing. If the fix would need a decision from me, such as changing expected behavior or a dependency version, stop and tell me what you found instead of guessing.\n\nWhat I added:\n- Done when: enhance tests pass on this machine\n- Done when: no previously passing test fails\n- Stop and report if a decision from me is needed\n- Scope: this machine only",
+  "questions": [
+   {
+    "q": "What should be true when the enhance tests pass?",
+    "options": [
+     "They pass with no code changes to tests",
+     "Tests may be updated if they are wrong",
+     "Behavior matches the spec, tests unchanged",
+     "Only the failing tests need to pass"
+    ]
+   },
+   {
+    "q": "Should I keep the existing test expectations?",
+    "options": [
+     "Yes, keep expectations as they are",
+     "No, update expectations if they are stale",
+     "Not sure, judge from the code"
+    ]
+   }
+  ]
+ },
+ {
+  "rough": "the command list enhance sends to the model is in a weird order, sort it properly",
+  "old": "The list of commands that the enhance feature sends to the model comes out in a strange order. Find where that list is built and sort it properly. [Describe the intended order, such as alphabetical or grouped by category, if known.] Change only the order. Keep the same commands and the same format of the list. Done when the list is sorted in the intended order and [test command] passes.\n\nWhat I added:\n- Goal: fix the order of the enhance command list\n- Scope: change order only, not the commands\n- Sort order placeholder for the intended order\n- Done when: list is sorted and [test command] passes\n- Location: find where the list is built in code",
+  "new": "I want the command list that enhance sends to the model to come out in a proper order instead of the weird one it has now. Work out from the project what order is meant. If it isn't clear, stop and tell me what you found rather than guessing. Done when the list the model receives is in that order, which you can confirm by running enhance and checking the list it sends.\n\nWhat I added:\n- Done when: list sent to model is in intended order\n- Verify by running enhance and checking the list\n- Stop and report if the intended order is unclear",
+  "questions": [
+   {
+    "q": "What should the correct order look like when done?",
+    "options": [
+     "Alphabetical by command name",
+     "Grouped by category, then alphabetical",
+     "Matches the order shown in the UI",
+     "Most-used commands first"
+    ]
+   },
+   {
+    "q": "Which list does this affect?",
+    "options": [
+     "Commands sent to the model only",
+     "Command list shown to the user too"
+    ]
+   }
+  ]
+ },
+ {
+  "rough": "fork seems broken after resume?",
+  "old": "After I resume a previous session, forking it doesn't work correctly. Please figure out why. First, reproduce it: resume a session, then fork it. My steps were: [steps you took]. What I see is: [what happens, including any error text]. What I expect is: [expected behavior]. Then fix the cause in this project and explain what was wrong. Done when a resumed session can be forked and the fork works as expected, and you've confirmed it by running [test command or check, if any].\n\nWhat I added:\n- Goal: find and fix the fork-after-resume bug\n- Steps to reproduce and actual behavior\n- Expected behavior\n- Explanation of the root cause\n- Done when: fork works after resume, verified",
+  "new": "I'm seeing that fork seems broken after resume. Please tell me whether that's actually happening and, if so, why. Don't change any code. Done when you can explain what happens when I fork a session after resuming it, what causes it, and what evidence you used to confirm it. If you can't reproduce it or the cause is unclear, stop and report what you found instead of guessing.\n\nWhat I added:\n- Output: an answer, not a code change\n- Done when: cause explained with evidence\n- Stop and report if not reproducible\n- Scope: fork behavior after resume",
+  "questions": [
+   {
+    "q": "What goes wrong when you fork after resuming?",
+    "options": [
+     "An error message appears",
+     "Forked session lacks history",
+     "Fork starts from the wrong point",
+     "Nothing happens at all"
+    ]
+   },
+   {
+    "q": "What should happen when it works?",
+    "options": [
+     "Fork continues from resumed point",
+     "Fork gets a clean new history",
+     "Original session stays unchanged"
+    ]
+   }
+  ]
+ },
+ {
+  "rough": "kit docs are stale",
+  "old": "The docs for [kit name] are out of date. Please compare the documentation in [docs location] against the current code and update any pages, examples, or references that no longer match how the kit works. Only change the documentation, not the code. When you're finished, give me a short list of the files you changed and what was wrong in each. Done when every doc page matches the current behavior and no references to removed or renamed items remain.\n\nWhat I added:\n- Kit name and docs location as placeholders\n- Scope: update docs only, not code\n- Done when docs match current behavior\n- Output: list of changed files with fixes",
+  "new": "I want the kit's documentation to match how the kit works today. Find the docs that no longer describe the current behavior and update them. Done when the docs describe what the code actually does, including commands, options, and examples that run as written, and you give me a list of what changed and why so I can review it. If you can't tell what the current behavior is for some part, stop and tell me instead of guessing.\n\nWhat I added:\n- Scope: all kit docs\n- Done when docs match current behavior\n- Examples must run as written\n- Summary of changes for review\n- Stop and report if behavior is unclear",
+  "questions": [
+   {
+    "q": "What should be true when the docs are fixed?",
+    "options": [
+     "Docs match current code and behavior",
+     "Outdated pages are removed or archived",
+     "Docs are rewritten for a new audience",
+     "Only the broken examples are corrected"
+    ]
+   },
+   {
+    "q": "Which kit docs are you most concerned about?",
+    "options": [
+     "The main README and getting started",
+     "API reference pages",
+     "Tutorials and examples",
+     "All documentation in the project"
+    ]
+   }
+  ]
+ },
+ {
+  "rough": "make the bouncer tests pass on linux too",
+  "old": "Make the bouncer tests pass on Linux as well. Find out why they fail there, fix the code or the tests so they pass on Linux, and make sure they still pass on the platforms where they already work. Run the bouncer test suite on Linux with [test command] to confirm. When you're done, give me a short summary of what was failing, what you changed, and the final test results.\n\nWhat I added:\n- Goal: bouncer tests pass on Linux\n- Done when: suite passes on Linux\n- Constraint: existing platforms keep passing\n- Format: summary of cause, changes, results\n- Test command placeholder for the suite",
+  "new": "I want the bouncer tests to pass on Linux too, in addition to where they already pass. Done when the bouncer test suite runs green on Linux and you show me the passing output from that run. If they can't pass on Linux without changing what they expect, stop and report why instead of guessing.\n\nWhat I added:\n- Done when bouncer tests pass on Linux\n- Show passing output from a Linux run\n- Stop and report if it needs changed expectations\n- Platform: Linux, alongside current platform",
+  "questions": [
+   {
+    "q": "What must stay unchanged while doing this?",
+    "options": [
+     "Behavior on macOS and Windows",
+     "Existing test expectations",
+     "Nothing, Linux is the only target"
+    ]
+   },
+   {
+    "q": "How will you know it is done?",
+    "options": [
+     "Full bouncer suite passes on Linux",
+     "Passes on Linux and other platforms",
+     "CI job goes green"
+    ]
+   }
+  ]
+ },
+ {
+  "rough": "add a light/dark theme toggle to the cockpit dashboard",
+  "old": "Add a light/dark theme toggle to the cockpit dashboard. Users should be able to switch between light and dark mode from a visible control on the dashboard. Keep the chosen theme across page reloads, and start with the system's color scheme preference if no choice has been saved yet. Use the project's existing styling approach for the colors, and check that text and key UI elements stay readable in both themes. [Location of the cockpit dashboard code, e.g. file or folder path]. Done when the toggle switches every dashboard view between light and dark, the choice persists after a reload, and the existing tests still pass (or any new tests I add pass).\n\nWhat I added:\n- Toggle placed as a visible control on the dashboard\n- Persist choice across page reloads\n- Default to system color scheme preference\n- Readable text and UI in both themes\n- Placeholder for dashboard code location\n- Done-when criteria: switching, persistence, tests",
+  "new": "I want the cockpit dashboard to offer light and dark themes, with a toggle that switches between them. It's done when the toggle is visible on the dashboard and clicking it changes the whole dashboard between light and dark appearance, with every panel following. The existing dashboard features should still work in both themes, and the existing tests should still pass. To check, switch the toggle in the running dashboard and confirm every panel changes, then run the tests.\n\nWhat I added:\n- Toggle switches between light and dark themes\n- Done when: toggle is visible and works\n- Every panel changes theme, not just some\n- Existing dashboard features work in both themes\n- Done when: existing tests pass",
+  "questions": [
+   {
+    "q": "What should the toggle do when the page loads?",
+    "options": [
+     "Remember the last choice",
+     "Follow the OS setting",
+     "Always start in light",
+     "Always start in dark"
+    ]
+   },
+   {
+    "q": "Where should the toggle live on the dashboard?",
+    "options": [
+     "In the header",
+     "In a settings panel",
+     "Floating in a corner"
+    ]
+   },
+   {
+    "q": "Should the choice persist across visits?",
+    "options": [
+     "Yes, keep it saved",
+     "No, reset each visit"
+    ]
+   }
+  ]
+ }
+]

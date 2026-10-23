@@ -1,0 +1,74 @@
+done linux-tests--raw--sonnet: turns=10 cost=0.18755320000000003 files=2 {'pass': 54, 'fail': 0}
+done linux-tests--old--sonnet: turns=10 cost=0.22164810000000001 files=2 {'pass': 54, 'fail': 0}
+done linux-tests--raw--opus: turns=20 cost=0.8466848 files=2 {'pass': 54, 'fail': 0}
+done linux-tests--old--opus: turns=26 cost=1.1027215000000004 files=2 {'pass': 54, 'fail': 0}
+done linux-tests--new--sonnet: turns=12 cost=0.20198149999999998 files=1 {'pass': 53, 'fail': 1}
+done method-given--raw--sonnet: turns=9 cost=0.1617033 files=2 {'pass': 51, 'fail': 4}
+done method-given--old--sonnet: turns=10 cost=0.1699426 files=1 {'pass': 50, 'fail': 4}
+done method-given--raw--opus: turns=11 cost=0.39549950000000006 files=2 {'pass': 51, 'fail': 4}
+done linux-tests--new--opus: turns=24 cost=0.8769893999999998 files=1 {'pass': 53, 'fail': 1}
+done investigate--raw--sonnet: turns=2 cost=0.0905697 files=0 
+done investigate--raw--opus: turns=6 cost=0.27860959999999996 files=0 
+done method-given--old--opus: turns=16 cost=0.5235557 files=1 {'pass': 50, 'fail': 4}
+done method-given--new--sonnet: turns=12 cost=0.1979537 files=1 {'pass': 50, 'fail': 4}
+done investigate--old--sonnet: turns=9 cost=0.1953225 files=0 
+done investigate--new--sonnet: turns=7 cost=0.16284179999999998 files=0 
+done docs--raw--sonnet: turns=5 cost=0.14948299999999998 files=1 
+done method-given--new--opus: turns=21 cost=0.65437 files=1 {'pass': 50, 'fail': 4}
+done docs--raw--opus: turns=9 cost=0.4409212999999999 files=1 
+done investigate--new--opus: turns=22 cost=0.7200334000000002 files=0 
+done docs--old--sonnet: turns=9 cost=0.2314939 files=1 
+done docs--new--sonnet: turns=8 cost=0.2130168 files=1 
+done investigate--old--opus: turns=26 cost=0.9371515000000002 files=0 
+done docs--new--opus: turns=10 cost=0.5701422 files=1 
+done docs--old--opus: turns=16 cost=0.7578732 files=1 
+24 judged, 0 errors
+# Eval A: agent work from raw vs old vs new prompts
+
+Tasks linux-tests, method-given, investigate, docs; executors sonnet, opus; one run each; worktrees at b5f8015; blind opus judge.
+
+## sonnet
+
+| arm | outcome | correctness | scope | report | mean | turns | cost $ | minutes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| raw | 4.75 | 4.25 | 4.75 | 4.50 | **4.56** | 6 | 0.15 | 0.7 |
+| old | 4.00 | 3.75 | 4.75 | 3.75 | **4.06** | 10 | 0.20 | 1.1 |
+| new | 4.25 | 4.50 | 5.00 | 4.50 | **4.56** | 10 | 0.19 | 1.0 |
+
+## opus
+
+| arm | outcome | correctness | scope | report | mean | turns | cost $ | minutes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| raw | 4.50 | 4.50 | 4.75 | 4.50 | **4.56** | 12 | 0.49 | 1.2 |
+| old | 4.75 | 4.25 | 4.75 | 4.25 | **4.50** | 21 | 0.83 | 2.8 |
+| new | 4.50 | 4.50 | 5.00 | 4.75 | **4.69** | 19 | 0.71 | 2.1 |
+
+## Per run
+
+| task | executor | arm | outcome | corr | scope | report | checks | judge |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| linux-tests | sonnet | raw | 5 | 5 | 5 | 5 | tests 54/0 fail; 2 files | The agent made a minimal, test-only fix that normalizes the cwd-resolved 'C:/' paths in the three stubs. That took the suite from 4 failures to 54 pass / 0 fail without weakening assertions or changing Windows behaviour, and its report correctly gives the root cause and says plainly that the gate's tsc step could not run. |
+| linux-tests | sonnet | old | 4 | 3 | 5 | 4 | tests 54/0 fail; 2 files | A small, assertion-preserving fixture change gets the Linux suite green (54/0) with a correct root-cause diagnosis, but the drive-less '/proj' root likely resolves to 'C:/proj' on Windows. That would stop the fixtures matching there, so it trades a Linux failure for a probable Windows one. The report honestly flags this as unchecked, though its reassurance that backslash normalization covers it is faulty. |
+| linux-tests | sonnet | new | 4 | 5 | 5 | 5 | tests 53/1 fail; 1 files | The agent correctly diagnosed the Windows-path fixture problem and fixed all three bouncer tests with a small change that keeps every assertion, but it left the headless /enhance test failing, so `claude plugin test` is still not fully green as the reference expects; its report states that gap, the unrun gate and the untested Windows path accurately. |
+| linux-tests | opus | raw | 5 | 5 | 5 | 4 | tests 54/0 fail; 2 files | A small, test-only fix to the fs stubs makes all 54 tests pass on Linux (4 failed before) without weakening any assertions, though the accurate and honest report spends too long on the tsc environment detour. |
+| linux-tests | opus | old | 5 | 5 | 5 | 4 | tests 54/0 fail; 2 files | The agent found the right root cause (Windows-style C:/proj fixtures resolving as relative paths on Linux) and fixed it with a small test-only change that keeps every assertion and handles Windows drive letters in the stubs; all 54 tests pass and the report is clear and honest about what went unverified, but it misstates the baseline as 50 passing when it was 51. |
+| linux-tests | opus | new | 4 | 5 | 5 | 5 | tests 53/1 fail; 1 files | The agent correctly diagnosed the Windows-only `C:/proj` fixture root and fixed all three bouncer glossary tests with a small, platform-conditional change that keeps every assertion, and it clearly flagged the one remaining same-cause failure in enhance.test.ts; that test is still failing, so `claude plugin test` is not fully green as the reference expects. |
+| method-given | sonnet | raw | 5 | 5 | 4 | 5 | tests 51/4 fail; 2 files | The agent replaced the rank-only sort with one comparator (built-ins last, then source, then name), which avoids the alphabetical-source trap and keeps the existing test passing with no new failures (51 pass / 4 fail before and after). It added one small unrequested test, and its report accurately covers its interpretation, the pre-existing failures, and the checks it could not run. |
+| method-given | sonnet | old | 3 | 3 | 4 | 2 | tests 50/4 fail; 1 files | The single source-then-name comparator keeps built-ins last and the agent flagged that choice, but the objective checks show passes dropping from 51 to 50, which contradicts the report's claim that a revert gave the identical 50/4 result, and the description tiebreak is a small unrequested extra. |
+| method-given | sonnet | new | 4 | 4 | 5 | 3 | tests 50/4 fail; 1 files | The single comparator correctly orders by source then name and keeps built-ins last, and only lib.ts changed, but the pass count dropped from 51 to 50 (54 tests total vs 55 before) and the report never mentions or explains that drop while presenting the failures as unchanged. |
+| method-given | opus | raw | 4 | 4 | 4 | 4 | tests 51/4 fail; 2 files | The agent replaced the sort with one comparator, rank then name, which avoids the trap of putting built-ins first and keeps the existing test passing, but it lumps plugin and user commands into one group instead of ordering by source proper (disclosed in the report); it also added an unrequested test, and its 51-pass count is odd since an added passing test should have raised the total from the 51 before the change. |
+| method-given | opus | old | 4 | 3 | 5 | 3 | tests 50/4 fail; 1 files | The agent wrote a single source-then-name comparator that keeps built-ins last and changed only lib.ts, but passing tests dropped from 51 to 50 (54 total instead of 55), and the report says the results match the baseline without mentioning or explaining the lost test. |
+| method-given | opus | new | 4 | 4 | 5 | 4 | tests 50/4 fail; 1 files | The agent wrote a single source-then-name comparator that keeps built-ins last, which avoids the ordering trap, explained that choice, offered the alternative, and touched only lib.ts. The 4 test failures were pre-existing, as it said, but the pass count dropped from 51 to 50 with no new failure. The report never mentions or explains that drop, so 'nothing changed in tests' is not fully verified. |
+| investigate | sonnet | raw | 5 | 4 | 5 | 4 | 0 files | The agent identified the nothing-to-fork result on the first command after /resume, cited AGENTS.md and the classify-fork handler, labeled its cause as inference, described the fallback and changed no files, though it oddly gave the no-changes request as its reason for not reading the type declarations, when reading would not have changed anything. |
+| investigate | sonnet | old | 5 | 5 | 5 | 5 | 0 files | The agent correctly identified the nothing-to-fork result on a resumed session's first command and cited AGENTS.md, the source comment and the RUNLOG, noted the existing fallback, clearly flagged that the engine mechanism was inferred and not reproduced, and changed no files. |
+| investigate | sonnet | new | 5 | 5 | 5 | 5 | 0 files | The agent correctly identified the nothing-to-fork result on a resumed session's first command, backed it with the AGENTS.md entry, the run log and the code comment, labeled the cause as inferred and listed what it could not confirm, noted the existing messages()+complete fallback, and changed no files. |
+| investigate | opus | raw | 5 | 5 | 5 | 5 | 0 files | The answer names the nothing-to-fork result on the first command after resume, citing repo evidence (RUNLOG line and PLAN quote). It separates the confirmed symptom from the inferred cause, gives the repo's fallback with its cost tradeoff, and changed no files, matching the reference. |
+| investigate | opus | old | 5 | 5 | 4 | 5 | 0 files | Correctly identified the nothing-to-fork cause on the first command after /resume, citing engine code, repo call sites, AGENTS.md and a live repro, noted the existing fallback and what it couldn't confirm, and changed no repo files; it did run live sessions and the test suite in a scratch copy, more than a 'just tell me' question needed. |
+| investigate | opus | new | 5 | 5 | 5 | 5 | 0 files | Read-only as asked, with no project files changed and the throwaway probe kept in the scratchpad: it names the nothing-to-fork result on a resumed session's first command, explains why (no cached last-request params until the process sends a request), reproduces it, cites the repo's existing $.session.messages()+$.model.complete fallback and runlog evidence, and states what it did not verify. |
+| docs | sonnet | raw | 4 | 3 | 5 | 4 | 1 files | Only bws-kit/README.md changed, and the agent added the missing tab.ts module and the sync-kit command, but the summary.ts row still says 'every mod publishes' right before the new 'Not every mod uses it'. That leaves a self-contradiction instead of removing the stale claim. The tab.ts exports it names couldn't be checked against the code, and the report ends with an odd version-bump aside but otherwise describes the changes and what wasn't verified clearly. |
+| docs | sonnet | old | 4 | 4 | 5 | 4 | 1 files | Only bws-kit/README.md changed, with a tab.ts row whose named exports the agent reports checking against the source, and the existing claims were checked rather than left untouched. But the agent kept the 'Tested with Claude Code 2.1.296' line, which it could not confirm is current, so the update may be incomplete, and its long digression about tsc does not bear on a README-only change. |
+| docs | sonnet | new | 4 | 4 | 5 | 5 | 1 files | Only bws-kit/README.md changed: the agent added the missing tab.ts row and named the actual test files, its other claims appear grounded in the code, and the report candidly flags the unrun gate and the possibly stale version line, though leaving that line as is means the README may not be fully current. |
+| docs | opus | raw | 4 | 4 | 5 | 5 | 1 files | Only bws-kit/README.md changed. It adds the missing tab.ts, fixes the stale summary chip claim and gives a plausible per-kit.json usage table and sync details, though many specifics (all 13 mods, tab fields, tested version 2.1.309) can't be confirmed from the diff. The report is candid that the type-check never ran and flags stale comments elsewhere without touching them. |
+| docs | opus | old | 5 | 4 | 5 | 5 | 1 files | Only bws-kit/README.md changed: the agent added the missing tab.ts row, corrected the overstated 'every mod publishes' summary claim, and refreshed the stale wording and version, with each change tied to specific code. The report clearly separates what was verified from what was not, though the README's claims could not be independently checked against the code here, so correctness gets a 4 rather than a 5. |
+| docs | opus | new | 5 | 4 | 5 | 5 | 1 files | Only bws-kit/README.md changed: the edits add the missing tab.ts row, note joinPath, and fix the stale 'video-derived' wording, though I could not confirm the new export names against the code; the report is clear about what was checked, flags that the type-check could not run here, and notes an out-of-scope inconsistency it left alone. |
+exit 0

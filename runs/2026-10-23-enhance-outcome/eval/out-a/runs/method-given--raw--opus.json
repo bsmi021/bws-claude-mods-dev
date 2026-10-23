@@ -1,0 +1,21 @@
+{
+ "task": "method-given",
+ "arm": "raw",
+ "executor": "opus",
+ "prompt": "in bws-enhance commandsText, sort with a single comparator that ranks by source then name instead of the current rank-only sort",
+ "result": "I changed the sort in `commandsText` (`bws-enhance/hooks/lib.ts:72`) to one comparator. It still puts plugin and user commands first and built-ins last, and now orders by name inside each group:\n\n```ts\n.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))\n```\n\nPlugin and user commands share a group, so they're mixed together alphabetically. I also updated the comment above the function and added a test (`tests/enhance.test.ts`, \"commands: by name within each source rank\"). It passes, and so does the existing ordering test.\n\n**Checks:**\n- **Validation:** `claude plugin validate` passes.\n- **Tests:** 51 pass, 4 fail. The same 4 fail on an unchanged copy of HEAD, so they aren't caused by this change. They're three bouncer glossary tests and the headless `/enhance` test, where the instruction and glossary files come back empty. My guess is that their Windows-style `C:/proj` fixture paths don't resolve in this Linux sandbox.\n- **Type check:** the gate's tsc step can't run here because it points to a Windows tsc path. Running tsc 5.8.3 strict on `hooks/lib.ts` alone passes. I didn't get a clean type check of the whole plugin, because tsc on the project's tsconfig in this sandbox fails on ES5 lib and module-resolution settings in the test files.\n\nI didn't bump the version, update the CHANGELOG, or commit.",
+ "turns": 11,
+ "cost_usd": 0.39549950000000006,
+ "duration_s": 83.371,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..d114f8b 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,12 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last; by name within each.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\ndiff --git a/bws-enhance/tests/enhance.test.ts b/bws-enhance/tests/enhance.test.ts\nindex 9c10fc4..a55850b 100644\n--- a/bws-enhance/tests/enhance.test.ts\n+++ b/bws-enhance/tests/enhance.test.ts\n@@ -123,6 +123,19 @@ describe('lib', () => {\n     expect(t).toBe('/interview — Interview the user\\n/clear — Clear')\n   })\n \n+  test('commands: by name within each source rank', () => {\n+    const t = commandsText(\n+      [\n+        { name: 'model', description: 'M', source: 'builtin' },\n+        { name: 'zoom', description: 'Z', source: 'plugin' },\n+        { name: 'clear', description: 'C', source: 'builtin' },\n+        { name: 'audit', description: 'A', source: 'user' },\n+      ],\n+      'enhance',\n+    )\n+    expect(t).toBe('/audit — A\\n/zoom — Z\\n/clear — C\\n/model — M')\n+  })\n+\n   test('mcp server names, conversation tail, reply cleanup', () => {\n     expect(mcpServers(['Bash', 'mcp__figma__a', 'mcp__figma__b', 'mcp__claude-in-chrome__nav'])).toEqual(['claude-in-chrome', 'figma'])\n     expect(conversationText([])).toMatch(/nothing said yet/)\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts",
+   "bws-enhance/tests/enhance.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 51,
+   "fail": 4
+  }
+ }
+}

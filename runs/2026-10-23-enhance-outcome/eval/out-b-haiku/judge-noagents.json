@@ -1,0 +1,662 @@
+[
+ {
+  "case": "typo",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 5,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the one-word fix and a clear git-diff finish line; B invents an absolute path, adds needless prohibitions and steps, and has a fuzzier grep check."
+ },
+ {
+  "case": "typo",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 4
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A gives the end state and a clear check using only the real repo path, while B invents an absolute path that was not in the context, despite its stronger grep and git diff checks."
+ },
+ {
+  "case": "typo",
+  "sample": 2,
+  "old": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "old",
+  "why": "A covers every occurrence of 'teh' while protecting code and quoted text, and gives runnable grep and git diff checks, whereas B's 'change only that typo' is ambiguous if the word appears more than once."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A states the end state and leaves the method to Claude; B prescribes steps, assumes macOS is the other platform (bws-notify's .vbs/.ps1 files suggest Windows), names an absolute path it was not given, and wrongly claims nothing is named bounce when bws-enhance has bounce.ts and bounce.test.ts."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 4
+  },
+  "winner": "old",
+  "why": "B leaves the method to Claude better, but it invents a `bws-bounce` mod and wrongly says the tree was cut off, while the bounce tests are actually in bws-enhance. A tells Claude to locate the owning mod and gives clearer finish-line checks, despite its list of likely causes and an invented package.json reference."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and leaves the method to Claude, while B prescribes a search-run-diagnose sequence, assumes macOS without basis, and wrongly says the bouncer code may not be in the tree when bws-enhance/hooks/bounce.ts and tests/bounce.test.ts are listed."
+ },
+ {
+  "case": "it-ref",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 5,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A states the end state and a clear finish line without prescribing steps, while B adds a step list and cites a `.claude-plugin/types/` path that the file tree does not show."
+ },
+ {
+  "case": "it-ref",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B states the end state and a finish line concisely and leaves the approach to Claude. A prescribes investigation steps and implementation patterns and pads the prompt with constraints. Both skip the repo's mods-gate check, and B adds a 'clickable' requirement that was never stated."
+ },
+ {
+  "case": "it-ref",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 1,
+   "intent": 3,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A states the end state and a concrete finish line without prescribing steps, while B adds a step list, extra constraints the developer never gave (a stable control identifier, a ban on special-casing 99), and an unsupported claim about ui.render conventions in AGENTS.md."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 5,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A states the goal and finish line without dictating the method. B tells Claude where to look and how to fix it, and cites a .claude-plugin/types/ directory that does not appear in the given file tree."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A states the end state and constraints without a step plan; B prescribes a step-by-step method, invents a `.claude-plugin/types/` directory and doesn't name the known gate command, though A also adds unsupported 'generated API types' and 'static-analysis rules' and omits the gate command."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A opens with the end state, leaves the fix to Claude and invents nothing, while B prescribes steps and cites a bws-board/.claude-plugin/types/ path that is not in the tree."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 0,
+  "old": {
+   "outcome": 2,
+   "method_left": 1,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and a checkable finish line without prescribing method. B gives a step-by-step plan, refers to a types/ directory that is not in the file tree, adds an unrelated `claude --version` check, and is padded."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 1,
+  "old": {
+   "outcome": 2,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A opens with investigation steps, prescribes the render site and state mechanisms, adds an unrequested persistence requirement, and cites bws-cockpit/types, which is not in the given tree; B centres the visible end state, leaves the method to Claude and gives a clear stop condition."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A stays on the requested outcome with checkable finish criteria, while B invents `bws-cockpit/types/` and package scripts, adds reload persistence nobody asked for, prescribes state and styling choices, and omits the mods gate."
+ },
+ {
+  "case": "method-given",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 3,
+   "grounded": 4,
+   "verifiable": 3,
+   "concise": 4
+  },
+  "winner": "old",
+  "why": "B keeps the developer-named `commandsText` target and gives concrete test and typecheck checks, despite some step-listing and padding; A turns `commandsText` into a vague 'commands list', which risks editing the wrong code."
+ },
+ {
+  "case": "method-given",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "Both keep the developer's chosen single source-then-name comparator, but B centres the end state with a clear 'Done when' and stays tighter, while A adds procedural steps and extra constraints; neither runs the repo's mods gate, and B's specific AGENTS.md convention claims carry some grounding risk."
+ },
+ {
+  "case": "method-given",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "B keeps the developer's chosen comparator and states the result and finish line without a step list, though its prompt is wrapped in leaked reasoning; A adds procedural steps and speculative rank-handling guidance, and neither uses the repo's mods-gate check."
+ },
+ {
+  "case": "perf",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B is outcome-first, leaves the approach to Claude and invents nothing. A prescribes investigation steps, invents a nonexistent `types/` directory and unverified AGENTS.md rules, and still omits the real gate command."
+ },
+ {
+  "case": "perf",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state, behaviour constraints and a checkable finish line, and leaves the approach to Claude; B prescribes a step-by-step investigation plan, specific optimisation tactics, and details like the `next` continuation that may not be grounded in the context."
+ },
+ {
+  "case": "perf",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B opens with the end state and leaves the method to Claude. Its finish line is checkable: measured speedup, tests pass, output unchanged. A prescribes investigation steps, lists candidate fixes, pads with constraints, and uses an unverified tsc command instead of the project's gate."
+ },
+ {
+  "case": "investigate",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A keeps the investigate-only scope and leaves the approach to Claude, while B lays out step-by-step instructions and cites a `.claude-plugin/types/` directory and AGENTS.md details (session.start after /resume, a 2.1.296 baseline) that do not appear in the given context."
+ },
+ {
+  "case": "investigate",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B keeps the read-only investigation scope, states a clear end state, and leaves the method to Claude. A prescribes investigation steps and cites a `.claude-plugin/types/` path that is not in the file tree. A also attributes a claim to AGENTS.md that cannot be confirmed from the context."
+ },
+ {
+  "case": "investigate",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 5,
+   "grounded": 3,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "Both keep the explain-only scope and cite a `.claude-plugin/types/` path that does not appear in the tree, but B prescribes a step-by-step investigation (run claude --version, then search, then trace), while A states the outcome and leaves the method to Claude."
+ },
+ {
+  "case": "new-mod",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 1,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A leads with the end state and a clear stop-and-report fallback, while B prescribes steps and design and invents a layout (`.claude-plugin/plugin.json`, `./register.ts`, `.claude-plugin/types/`) that the file tree doesn't show."
+ },
+ {
+  "case": "new-mod",
+  "sample": 1,
+  "old": {
+   "outcome": 5,
+   "method_left": 2,
+   "intent": 5,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 2,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "winner": "old",
+  "why": "A opens with leaked meta-reasoning instead of the end state and adds unrequested live-update behaviour; B opens with the outcome and scopes tightly, though it over-prescribes layout and guesses an event name (`turn.complete`)."
+ },
+ {
+  "case": "new-mod",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A opens with the end state and leaves the approach to Claude, while B prescribes reading steps and which mods to copy, picks the token formula itself, and invents a `.claude-plugin/types/` path that is not in the tree."
+ },
+ {
+  "case": "docs",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B centres a stale-free README with a checkable finish line, while A prescribes reading steps, claims AGENTS.md says things it was never shown to say, and uses a tsc check that cannot catch README errors."
+ },
+ {
+  "case": "docs",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 3,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and a checkable finish line in a few lines and leaves the approach to Claude, while B adds a step list and padding, and its finish line is weaker because it says to run the tests only when the README contains tested code examples."
+ },
+ {
+  "case": "docs",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 3,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "B states the end state and leaves the approach to Claude without inventing anything, while A prescribes reading and grepping steps and attributes a 'generated declarations' rule to AGENTS.md that the context does not contain."
+ }
+]

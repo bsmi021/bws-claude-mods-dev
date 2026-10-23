@@ -1,0 +1,3 @@
+bws-enhance: Make the bouncer tests pass on Linux as well as they do on the platform they currently target. Find out why they fail or are skipped on Linux and fix the cause in the code or tests, without hard-coding values or disabling checks.
+
+Done when the bouncer test suite passes on Linux, with the test command output shown, and no existing passing tests on other platforms regress. Check the project's AGENTS.md for the required validation steps for mods and follow them. Keep working until the checks pass, then stop and report what was wrong and what changed. Do not add new tests or docs beyond what the fix needs unless the project requires them.

@@ -1,0 +1,20 @@
+{
+ "task": "method-given",
+ "arm": "new",
+ "executor": "opus",
+ "prompt": "Make the commands list in bws-enhance order its entries with one comparator that sorts by source and then by name, replacing the current rank-only sort. Done when the sort is a single comparator that orders by source, then name, the bws-enhance tests pass, and the type check for that package is clean. Keep the working until those checks pass, then stop and report. Do not add tests or docs beyond what the project requires.",
+ "result": "The sort change is done, but neither check passes in this environment. Both failures come from the Linux cloud sandbox, not the change, and fixing them here would mean editing tests, which you asked me not to do.\n\n**The change** (`bws-enhance/hooks/lib.ts:69`): the rank-only sort is now one comparator, `bySourceThenName`. It sorts by source and then by name, and built-ins still come last. I kept built-ins last because the function stops adding lines once the length budget runs out, and the old comment said plugin and user commands come first. If you meant a plain alphabetical sort by source, `builtin` would come first; tell me and I'll drop that first key. Nothing else in the diff changed.\n\n**Tests (`claude plugin test`): 50 pass, 4 fail.** The same 4 fail when I put back the original `lib.ts`, so they were failing before this change.\n- The test fixtures use Windows paths like `C:/proj/AGENTS.md`. On Linux the test engine treats them as relative and puts the working folder in front, so the fake file reads never match.\n- The 4 failures are the three glossary tests in `bounce.test.ts` and the \"headless: /enhance answers…\" test.\n- None of them exercise the order. The order test, \"commands: user and plugin first, built-ins last…\", passes.\n\n**Type check: not run.**\n- `tools/mods-gate.py` has the TypeScript compiler path hard-coded to a Windows folder. I got past that by installing TypeScript 5.8.3 in my scratchpad and setting `MODS_TSC`.\n- tsc then failed because `bws-enhance/.claude-plugin/types/` doesn't exist in this worktree or the main checkout, so `claude-code` can't be found.\n- Those types are generated when Claude Code loads the mod. A headless run and a short interactive run under 2.1.309 didn't create them here.\n\nRunning `python tools/mods-gate.py --plugin bws-enhance` on your Windows machine should settle both checks. Nothing is committed.",
+ "turns": 21,
+ "cost_usd": 0.65437,
+ "duration_s": 138.866,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..c33c09b 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,15 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, by source then name; built-ins last.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n-  const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n+  const bySourceThenName = (a: Command, b: Command) =>\n+    Number(a.source === 'builtin') - Number(b.source === 'builtin') ||\n+    a.source.localeCompare(b.source) ||\n+    a.name.localeCompare(b.name)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort(bySourceThenName)) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts"
+  ],
+  "plugin_test": {
+   "pass": 50,
+   "fail": 4
+  }
+ }
+}

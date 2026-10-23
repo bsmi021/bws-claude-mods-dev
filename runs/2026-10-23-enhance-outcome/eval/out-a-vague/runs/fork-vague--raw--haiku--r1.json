@@ -1,0 +1,15 @@
+{
+ "task": "fork-vague",
+ "arm": "raw",
+ "executor": "haiku",
+ "run": 1,
+ "prompt": "fork seems broken after resume?",
+ "result": "I couldn't reproduce a fork bug from the code, and I don't know which \"fork\" you mean. My best guess is `/handoff` in bws-cockpit, which forks the session with `$.model.fork`. I haven't changed anything.\n\n**What the source does:** `$.model.fork` answers `nothing-to-fork` on a resumed session's first command. Both `/handoff` (`bws-cockpit/hooks/register.tsx:676`) and the shared kit (`bws-kit/classify-fork.ts`, `runFork`) catch that and fall back to `$.session.messages()` plus `$.model.complete`. The fallback is in the code, but the test that covers it fails here.\n\n**Test results** (`claude plugin test` in `bws-cockpit`, Linux): 160 pass, 65 fail. The failures are mostly Windows-style fixtures (`C:/proj/...`) that the Linux `fs` stub can't resolve, and that includes the resumed-session handoff test. So this run doesn't prove the fallback works on Windows, and it doesn't prove it's broken either.\n\n**Gaps:**\n- I didn't run the bws-kit or bws-enhance tests.\n- `claude plugin list` returned nothing, so I couldn't check which cached version is installed. If Brian is on an older cockpit, the fallback may not be there yet. The fallback commit is `e15e47d`, which is a dashboard-tabs WIP commit, and the CHANGELOG has no entry for it.\n\nTo narrow it down, tell me:\n1. Which command or feature you mean (`/handoff`, a subagent `fork`, or another mod's fork).\n2. The exact message you see after resuming, including whether it says `nothing-to-fork` or \"the model call failed\".\n3. The installed cockpit version (`claude plugin list` on your Windows machine).\n\nIf it's the `/handoff` fallback, the next step is to fix the Windows-path fixtures in `handoff.test.ts` so that test runs on Linux too.",
+ "turns": 8,
+ "cost_usd": 0.013712160000000001,
+ "duration_s": 160.515,
+ "diff": "",
+ "checks": {
+  "files_changed": []
+ }
+}

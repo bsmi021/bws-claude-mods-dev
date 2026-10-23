@@ -1,0 +1,15 @@
+{
+ "task": "fork-vague",
+ "arm": "raw",
+ "executor": "haiku",
+ "run": 0,
+ "prompt": "fork seems broken after resume?",
+ "result": "I couldn't reproduce a fork failure after resume, and I couldn't run the tests cleanly here. I read the code, and the likely weak spot is the cockpit copy of the resume fallback.\n\nI took \"fork\" to mean `$.model.fork` in the mods (the `/handoff` and classifier paths). If you meant the Agent tool's `fork` subagent or the sidechat `--fork-session` flow, tell me and I'll look there instead.\n\n**What the code does**\n\n- The shared kit, `bws-kit/classify-fork.ts` `runFork` (lines 108–129), handles a resumed session correctly on paper. When `$.model.fork` returns `nothing-to-fork`, it reads `$.session.messages()`, builds a transcript, and calls `$.model.complete` on the session model. Every step is bounded by a timeout and the abort signal, and the kit's tests cover the fallback.\n- The cockpit `/handoff` has its own copy (`bws-cockpit/hooks/register.tsx:676–683`). It also falls back on `nothing-to-fork`, but its `$.model.complete` call has no `timeoutMs` and no abort signal. That breaks the \"every call has a timeout and an AbortSignal\" rule in `docs/SPEC-VIDEO-MODS.md`. If a resumed `/handoff` hangs, this is where it would hang.\n- `bws-memory` (`register.tsx:204`) calls `$.model.complete` directly for `/dream`, and it also passes a timeout and signal there.\n\n**What I could not verify**\n\n- `python tools/mods-gate.py --plugin bws-kit` fails before the tests run. Its tsc path is hardcoded to a Windows pnpm location, so the gate can't run on this Linux box.\n- `bun test` can't find `claude-code/testing`, so the kit tests need `claude plugin test`.\n- I haven't exercised a live resumed session, so I can't confirm the user-visible symptom.\n\n**Next steps I'd suggest**\n\n1. Confirm which fork you mean and what you see (an error, an empty handoff, or a hang).\n2. Give the cockpit fallback the same timeout and signal as the kit, or switch it to `runFork`.\n3. Run `claude plugin test` in `bws-kit` and `bws-cockpit` to get real pass/fail output.\n\nI haven't changed any files.",
+ "turns": 11,
+ "cost_usd": 0.014568910000000001,
+ "duration_s": 44.334,
+ "diff": "",
+ "checks": {
+  "files_changed": []
+ }
+}

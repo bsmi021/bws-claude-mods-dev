@@ -1,0 +1,22 @@
+{
+ "task": "sort-vague",
+ "arm": "raw",
+ "executor": "haiku",
+ "run": 0,
+ "prompt": "the command list enhance sends to the model is in a weird order, sort it properly",
+ "result": "The command list `/enhance` sends to the model is now sorted A to Z within each group, with plugin and user commands first and built-ins last.\n\n**What was wrong:** `commandsText` in `bws-enhance/hooks/lib.ts` only split commands into two groups (built-in or not). Within each group it kept whatever order the host returned, so the list looked random.\n\n**The change:**\n- `bws-enhance/hooks/lib.ts`: the sort now orders by group, then by name with `localeCompare`.\n- `bws-enhance/tests/enhance.test.ts`: a new test feeds in an unsorted list and checks the output order: `/brief, /deploy, /verify, /clear, /compact`.\n\n**Verification:**\n- The new and existing command-list tests pass.\n- `tsc --noEmit` on `bws-enhance` reports no errors.\n- The full `mods-gate.py --plugin bws-enhance` run did not pass. Four bouncer and headless tests fail because they build paths like `C:/proj` and the Windows `tsc` path is missing. Those are Windows-path assumptions in the test setup, unrelated to this change. I did not re-run the suite on the untouched base to confirm that, so treat it as likely rather than proven.\n\nI did not commit, bump the version, or add a CHANGELOG entry. The release steps in AGENTS.md need a patch bump before the change reaches an installed copy.",
+ "turns": 13,
+ "cost_usd": 0.01653409,
+ "duration_s": 55.012,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..3dad6e1 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,13 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last. A to Z within each group.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n+  const order = (a: Command, b: Command) => rank(a) - rank(b) || a.name.localeCompare(b.name)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort(order)) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\ndiff --git a/bws-enhance/tests/enhance.test.ts b/bws-enhance/tests/enhance.test.ts\nindex 9c10fc4..8f22931 100644\n--- a/bws-enhance/tests/enhance.test.ts\n+++ b/bws-enhance/tests/enhance.test.ts\n@@ -123,6 +123,20 @@ describe('lib', () => {\n     expect(t).toBe('/interview — Interview the user\\n/clear — Clear')\n   })\n \n+  test('commands: A to Z within each group, whatever order the host lists them in', () => {\n+    const t = commandsText(\n+      [\n+        { name: 'compact', description: 'Compact', source: 'builtin' },\n+        { name: 'verify', description: 'Verify', source: 'plugin' },\n+        { name: 'clear', description: 'Clear', source: 'builtin' },\n+        { name: 'brief', description: 'Brief', source: 'user' },\n+        { name: 'deploy', description: 'Deploy', source: 'plugin' },\n+      ],\n+      'enhance',\n+    )\n+    expect(t.split('\\n').map(l => l.split(' — ')[0])).toEqual(['/brief', '/deploy', '/verify', '/clear', '/compact'])\n+  })\n+\n   test('mcp server names, conversation tail, reply cleanup', () => {\n     expect(mcpServers(['Bash', 'mcp__figma__a', 'mcp__figma__b', 'mcp__claude-in-chrome__nav'])).toEqual(['claude-in-chrome', 'figma'])\n     expect(conversationText([])).toMatch(/nothing said yet/)\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts",
+   "bws-enhance/tests/enhance.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 51,
+   "fail": 4
+  }
+ }
+}

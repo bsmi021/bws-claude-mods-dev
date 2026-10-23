@@ -1,7 +1,7 @@
 {
   "name": "bws-better",
-  "version": "0.2.1",
-  "description": "/better <rough prompt>: asks up to three quick multiple-choice questions, rewrites the prompt with a clear goal, audience, format and finish line, and shows the original and the upgrade side by side. Nothing runs until you press Run. /better on turns typed prompts into upgrades automatically.",
+  "version": "0.3.0",
+  "description": "/better <rough prompt>: asks up to three quick multiple-choice questions, rewrites the prompt as a goal-and-outcome request (what should be true when done and how to check it, with the approach left to Claude), and shows the original and the upgrade side by side. Nothing runs until you press Run. /better on turns typed prompts into upgrades automatically.",
   "author": {
     "name": "bsmi021",
     "url": "https://github.com/bsmi021"

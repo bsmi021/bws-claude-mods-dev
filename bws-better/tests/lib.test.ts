@@ -12,8 +12,10 @@ import {
   isShortReply,
   parseQuestions,
   parseRewrite,
+  QUESTIONS_SYSTEM,
   readHistory,
   restoreFill,
+  REWRITE_SYSTEM,
   rewritePrompt,
   segWidth,
   statsLine,
@@ -192,5 +194,23 @@ describe('the cockpit chip and the debug line', () => {
 
   test('the debug line names the step and the reason, never a prompt', () => {
     expect(failLine('rewrite', 'api-error')).toBe('bws-better: rewrite failed (api-error); your prompt is safe')
+  })
+})
+
+describe('outcome-first prompts', () => {
+  test('questions ask about the outcome, never the method', () => {
+    expect(QUESTIONS_SYSTEM).toMatch(/Ask about the outcome, never the method/)
+    expect(QUESTIONS_SYSTEM).toMatch(/what a vague word means/)
+    expect(QUESTIONS_SYSTEM).toMatch(/an answer or a change/)
+  })
+
+  test('the rewrite states the end state and leaves the way there to Claude', () => {
+    expect(REWRITE_SYSTEM).toMatch(/goal-and-outcome request/)
+    expect(REWRITE_SYSTEM).toMatch(/Open with the end state/)
+    expect(REWRITE_SYSTEM).toMatch(/Leave the method to Claude/)
+    expect(REWRITE_SYSTEM).toMatch(/A question stays a question/)
+    expect(REWRITE_SYSTEM).toMatch(/do not pick a meaning for them/)
+    expect(REWRITE_SYSTEM).toMatch(/Never say where the fix belongs/)
+    expect(REWRITE_SYSTEM).toMatch(/\[placeholder\]/)
   })
 })

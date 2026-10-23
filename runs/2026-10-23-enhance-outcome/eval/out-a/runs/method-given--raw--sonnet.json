@@ -1,0 +1,21 @@
+{
+ "task": "method-given",
+ "arm": "raw",
+ "executor": "sonnet",
+ "prompt": "in bws-enhance commandsText, sort with a single comparator that ranks by source then name instead of the current rank-only sort",
+ "result": "`commandsText` in `bws-enhance/hooks/lib.ts` now sorts with one comparator instead of the rank-only sort. It orders by rank (built-ins last), then by `source`, then by `name`, using `localeCompare`. I read \"ranks by source\" as built-in versus everything else, then plugin and user commands grouped by their source string, which puts plugin ones ahead of user ones. If you wanted something other than alphabetical source order, say so.\n\nI added a test in `bws-enhance/tests/enhance.test.ts`. It checks that order for five mixed commands: `zed` (plugin), `alpha` and `beta` (user), then `clear` and `help` (built-in). It passes, and the existing commands test still passes.\n\n- **Failing tests:** `claude plugin test` has 4 failures: three glossary tests in `bouncer` and the headless `/enhance` test. The same 4 fail with my change reverted, so they were already failing. I didn't look into why.\n- **Type-check not run:** `tools/mods-gate.py` failed at the tsc step. It looks for TypeScript at a hardcoded `C:/Users/...` path that doesn't exist on this Linux box, so strict type-checking didn't run. `claude plugin validate` wasn't run either.\n- **Not done:** I didn't bump the version or `CHANGELOG`, and I haven't committed.",
+ "turns": 9,
+ "cost_usd": 0.1617033,
+ "duration_s": 52.212,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..b3cd7c0 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,14 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, plugin and user ones first (grouped by source, then name); built-ins last.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n+  const byRank = (a: Command, b: Command) =>\n+    rank(a) - rank(b) || a.source.localeCompare(b.source) || a.name.localeCompare(b.name)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort(byRank)) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\ndiff --git a/bws-enhance/tests/enhance.test.ts b/bws-enhance/tests/enhance.test.ts\nindex 9c10fc4..1563ea8 100644\n--- a/bws-enhance/tests/enhance.test.ts\n+++ b/bws-enhance/tests/enhance.test.ts\n@@ -123,6 +123,20 @@ describe('lib', () => {\n     expect(t).toBe('/interview — Interview the user\\n/clear — Clear')\n   })\n \n+  test('commands: within a rank, ordered by source then name', () => {\n+    const t = commandsText(\n+      [\n+        { name: 'zed', description: 'z', source: 'plugin' },\n+        { name: 'help', description: 'h', source: 'builtin' },\n+        { name: 'beta', description: 'b', source: 'user' },\n+        { name: 'alpha', description: 'a', source: 'user' },\n+        { name: 'clear', description: 'c', source: 'builtin' },\n+      ],\n+      'none',\n+    )\n+    expect(t.split('\\n').map(l => l.split(' ')[0])).toEqual(['/zed', '/alpha', '/beta', '/clear', '/help'])\n+  })\n+\n   test('mcp server names, conversation tail, reply cleanup', () => {\n     expect(mcpServers(['Bash', 'mcp__figma__a', 'mcp__figma__b', 'mcp__claude-in-chrome__nav'])).toEqual(['claude-in-chrome', 'figma'])\n     expect(conversationText([])).toMatch(/nothing said yet/)\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts",
+   "bws-enhance/tests/enhance.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 51,
+   "fail": 4
+  }
+ }
+}

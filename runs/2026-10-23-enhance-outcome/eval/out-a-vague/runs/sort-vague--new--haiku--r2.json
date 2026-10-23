@@ -1,0 +1,22 @@
+{
+ "task": "sort-vague",
+ "arm": "new",
+ "executor": "haiku",
+ "run": 2,
+ "prompt": "Make the command list that bws-enhance sends to the model appear in a consistent, sensible order instead of the current arbitrary one. If the existing code already defines an intended order, follow it. Otherwise sort the list alphabetically by command name. Change only the order. The list's contents and the rest of the enhance behaviour stay as they are.\n\nDone when: the command list the model receives is in that order, confirmed by a test or by inspecting the generated text, and the bws-enhance tests and type check pass. Keep working until those checks pass, then stop and report. Don't add tests or docs beyond what that verification needs.",
+ "result": "The command list bws-enhance sends to the model is now sorted by name within each group. Plugin and user commands come first, then built-ins. The existing code already put built-ins last, so I kept that grouping and only added the name sort inside each group.\n\n**Change**\n- `bws-enhance/hooks/lib.ts`: `commandsText` sorts by `rank(a) - rank(b) || a.name.localeCompare(b.name)`. The list's contents and the 140-character and 12,000-character limits are unchanged.\n- `bws-enhance/tests/enhance.test.ts`: the existing commands test now has two commands per group, given out of order. It expects `/interview`, `/shell`, `/clear`, `/compact`. It passes.\n\n**Checks**\n- `claude plugin validate .` passes.\n- `tsc` passes with the pinned 5.8.3 (`npx -p typescript@5.8.3`).\n- `claude plugin test`: 50 pass, 4 fail. The same 4 fail on an unmodified copy of HEAD. They are bouncer glossary tests and a headless test that expect `C:/proj` and `C:/Users` paths. They fail because this environment is Linux.\n- `tools/mods-gate.py --plugin bws-enhance` reports FAIL for the same reasons. Its tsc step also fails here because it points at a Windows pnpm path, so I ran tsc directly.",
+ "turns": 14,
+ "cost_usd": 0.01588061,
+ "duration_s": 58.466,
+ "diff": "diff --git a/bws-enhance/hooks/lib.ts b/bws-enhance/hooks/lib.ts\nindex 1890b66..ac5e55b 100644\n--- a/bws-enhance/hooks/lib.ts\n+++ b/bws-enhance/hooks/lib.ts\n@@ -64,12 +64,12 @@ export function instructionsText(docs: readonly Doc[], perFile = PER_FILE, all =\n   return parts.length ? parts.join('\\n\\n') : '(none found)'\n }\n \n-// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last.\n+// Skills and slash commands the person has, one line each, plugin and user ones first; built-ins last; each group by name.\n export function commandsText(commands: readonly Command[], self: string, all = ALL_COMMANDS): string {\n   const rank = (c: Command) => (c.source === 'builtin' ? 1 : 0)\n   const lines: string[] = []\n   let left = all\n-  for (const c of [...commands].sort((a, b) => rank(a) - rank(b))) {\n+  for (const c of [...commands].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))) {\n     if (c.name === self) continue\n     const line = `/${c.name} — ${clip(c.description.replace(/\\s+/g, ' '), 140)}`\n     if (line.length > left) break\ndiff --git a/bws-enhance/tests/enhance.test.ts b/bws-enhance/tests/enhance.test.ts\nindex 9c10fc4..c4b35f9 100644\n--- a/bws-enhance/tests/enhance.test.ts\n+++ b/bws-enhance/tests/enhance.test.ts\n@@ -111,16 +111,18 @@ describe('lib', () => {\n     expect(instructionsText([])).toBe('(none found)')\n   })\n \n-  test('commands: user and plugin first, built-ins last, own command left out', () => {\n+  test('commands: user and plugin first, built-ins last, each group by name, own command left out', () => {\n     const t = commandsText(\n       [\n+        { name: 'compact', description: 'Compact', source: 'builtin' },\n         { name: 'clear', description: 'Clear', source: 'builtin' },\n+        { name: 'shell', description: 'Shell', source: 'plugin' },\n         { name: 'interview', description: 'Interview\\n the user', source: 'user' },\n         { name: 'enhance', description: 'self', source: 'plugin' },\n       ],\n       'enhance',\n     )\n-    expect(t).toBe('/interview — Interview the user\\n/clear — Clear')\n+    expect(t).toBe('/interview — Interview the user\\n/shell — Shell\\n/clear — Clear\\n/compact — Compact')\n   })\n \n   test('mcp server names, conversation tail, reply cleanup', () => {\n",
+ "checks": {
+  "files_changed": [
+   "bws-enhance/hooks/lib.ts",
+   "bws-enhance/tests/enhance.test.ts"
+  ],
+  "plugin_test": {
+   "pass": 50,
+   "fail": 4
+  }
+ }
+}

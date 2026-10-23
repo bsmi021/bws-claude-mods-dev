@@ -1,0 +1,662 @@
+[
+ {
+  "case": "typo",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A is a tight, outcome-focused prompt with a clear finish line; B invents an absolute path that was not in the context and adds padding and extra restrictions to a trivial typo fix."
+ },
+ {
+  "case": "typo",
+  "sample": 1,
+  "old": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 2,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "Both state the fix and a checkable finish line, but B invents an absolute path (/home/user/bws-claude-mods-dev/...) that was not in the context, while A sticks to the real repo path and stays tighter."
+ },
+ {
+  "case": "typo",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B states the end state tightly without prescribing a search procedure; A's grep check would also match legitimate words containing 'teh', so its finish line is fuzzier."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A keeps the focus on the Linux pass and leaves the approach to Claude, while B prescribes a search-and-diagnose procedure and invents facts: an absolute repo path, macOS as the working platform (bws-notify's .vbs/.ps1 files suggest Windows), and what /bounce does."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 4
+  },
+  "winner": "old",
+  "why": "B leaves the method to Claude and is tighter, but it invents a nonexistent `bws-bounce` folder and falsely says the tree was cut off when bounce.test.ts plainly lives in bws-enhance; A is more prescriptive but gives a more concrete, checkable finish line."
+ },
+ {
+  "case": "linux-tests",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and constraints and leaves the method to Claude. B prescribes search steps and a list of suspects, assumes the tests already pass on macOS, and wrongly says the bouncer code may be missing from the tree, though bws-enhance/hooks/bounce.ts and tests/bounce.test.ts are there."
+ },
+ {
+  "case": "it-ref",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A centres the end state and leaves the method to Claude, though it adds a light method hint and a conditional test addition; B adds a step list, presumes a width check exists, and pads with AGENTS.md boilerplate."
+ },
+ {
+  "case": "it-ref",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B leads with the end state, leaves the approach to Claude and stays tight, despite a small unsupported claim that the label already shortens at wider widths; A scripts the search steps and adds padding."
+ },
+ {
+  "case": "it-ref",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 1,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A states the end state and finish line and leaves the approach to Claude, while B prescribes a step list and assumes a width check that filters the button."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 0,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A centres the end state and ends on the gate passing while leaving the method to Claude; B scripts the investigation, suggests specific fixes, and swaps the known gate command (`python tools/mods-gate.py --plugin bws-board`) for a guessed tsc invocation, though it does usefully quote the error verbatim."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and finish line and leaves the fix to Claude; B lays out a step-by-step plan and sends Claude to look for the gate command in 'package scripts' when AGENTS.md already names it (`python tools/mods-gate.py --plugin bws-board`), though neither rewrite cites that command."
+ },
+ {
+  "case": "pasted-error",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A opens with the end state, leaves the method to Claude and gives a clear done-when that includes the gate; B lays out steps, suggests specific fixes and puts the gate aside for a tsc command it chose itself."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 1,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 3,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and checkable finish line without prescribing steps, while B adds a step list and reading order, cites a types/ directory not in the tree, and uses a vague validation command instead of the project's gate."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 5,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B centres the visible end state, leaves the approach to Claude, and gives clear checks with an escape hatch; A prescribes steps, adds an unrequested persistence requirement, and cites an invented `bws-cockpit/types` path."
+ },
+ {
+  "case": "dark-mode",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 3,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end result and how to check it without prescribing a method. B gets paths wrong (`bws-cockpit/types/` instead of the generated `.claude-plugin/types/`, plus nonexistent package scripts), adds a reload-persistence requirement nobody asked for, and dictates implementation choices."
+ },
+ {
+  "case": "method-given",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 5,
+   "intent": 3,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "old",
+  "why": "A drops the `commandsText` function the developer named and replaces it with a vague 'commands list'. B keeps that target and a sound stop-if-fields-missing guard, despite a prescribed opening step, an added tiebreak, and a hedged reference to the gate rather than naming `python tools/mods-gate.py --plugin bws-enhance`."
+ },
+ {
+  "case": "method-given",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 4,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 5,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "Both keep the developer's single source-then-name comparator. B states an observable 'done when' result (entries grouped by source, then name, with no rank ordering left). A leads with activities and adds more procedural and constraint padding."
+ },
+ {
+  "case": "method-given",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "winner": "new",
+  "why": "B states the end state clearly and leaves the approach to Claude. A adds a step list, file-hunting directions and an extra before/after report, and neither rewrite uses the project's mods-gate check."
+ },
+ {
+  "case": "perf",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B leads with the end state, leaves the approach to Claude and invents nothing, while A prescribes investigation steps, invents a `bws-enhance/types/` directory, package scripts and a `tsc` command, and omits the project's real gate."
+ },
+ {
+  "case": "perf",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A centres the end state and leaves the method to Claude, while B prescribes steps (which files to read, caching/matchers/deferral) and assumes a `tsc -p` command and README test instructions that the context does not confirm."
+ },
+ {
+  "case": "perf",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 5,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B centres the end state, leaves the method to Claude, and is concise, while A prescribes investigation steps, lists example fixes, and pads the prompt with restated AGENTS.md rules."
+ },
+ {
+  "case": "investigate",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A keeps the investigation-only scope, leaves the method to Claude and has a clear finish line with a fallback; B adds a prescriptive step list, steers toward a hypothesis, and demands quoted error text that may not be obtainable."
+ },
+ {
+  "case": "investigate",
+  "sample": 1,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B states the read-only end state and when it is done without dictating method. A prescribes investigation steps and adds a fix sketch the developer did not ask for."
+ },
+ {
+  "case": "investigate",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 5,
+   "grounded": 4,
+   "verifiable": 5,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 5,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "Both keep the read-only investigation scope, but B lays out a step-by-step search plan while A states the end result and an unchanged-tree check and leaves the approach to Claude."
+ },
+ {
+  "case": "new-mod",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A is built around the end state and a clear finish line and leaves the design to Claude, while B prescribes steps, a template mod, and how to store state."
+ },
+ {
+  "case": "new-mod",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 3,
+   "intent": 4,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 3,
+   "method_left": 4,
+   "intent": 3,
+   "grounded": 3,
+   "verifiable": 4,
+   "concise": 2
+  },
+  "winner": "old",
+  "why": "A opens with leaked meta-reasoning, invents a project name and `/reload-plugins`, and adds unrequested live-updating behaviour, while B is a clean prompt whose flaws are milder: a slightly prescriptive layout, a 'likely turn.complete' hint and a wrong `types/` folder."
+ },
+ {
+  "case": "new-mod",
+  "sample": 2,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "A centres the end state and leaves the approach to Claude, while B opens with a sequence of steps, picks which existing mods to copy, and repeats AGENTS.md rules at length."
+ },
+ {
+  "case": "docs",
+  "sample": 0,
+  "old": {
+   "outcome": 3,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 2,
+   "verifiable": 3,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "B states a checkable end state and leaves the approach to Claude. A prescribes reading steps, attributes a rule to AGENTS.md that it does not contain, and uses a tsc check that cannot verify a README edit."
+ },
+ {
+  "case": "docs",
+  "sample": 1,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 5,
+   "verifiable": 3,
+   "concise": 2
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 4,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 4,
+   "concise": 5
+  },
+  "winner": "new",
+  "why": "A states the end state and a checkable finish line concisely, while B adds a step list, adds a reporting requirement nobody asked for, and has vaguer, conditional done-criteria."
+ },
+ {
+  "case": "docs",
+  "sample": 2,
+  "old": {
+   "outcome": 4,
+   "method_left": 2,
+   "intent": 4,
+   "grounded": 4,
+   "verifiable": 4,
+   "concise": 3
+  },
+  "new": {
+   "outcome": 5,
+   "method_left": 5,
+   "intent": 5,
+   "grounded": 5,
+   "verifiable": 3,
+   "concise": 4
+  },
+  "winner": "new",
+  "why": "B states the end state (a documentation-only README that matches the current bws-kit source) and leaves the method to Claude, while A prescribes reading order, grep steps and test runs that are mostly irrelevant to a docs-only edit."
+ }
+]
