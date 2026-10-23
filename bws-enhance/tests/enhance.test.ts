@@ -142,6 +142,8 @@ describe('lib', () => {
     expect(SYSTEM).toMatch(/cut every sentence that tells Claude how/)
     expect(SYSTEM).toMatch(/Always end with a Done when/)
     expect(SYSTEM).toMatch(/Do not sequence the work/)
+    expect(SYSTEM).toMatch(/say when to stop and report/)
+    expect(SYSTEM).toMatch(/only when it is in the lists you were given/)
     expect(SYSTEM).not.toMatch(/Steps or Scope/)
   })
 
