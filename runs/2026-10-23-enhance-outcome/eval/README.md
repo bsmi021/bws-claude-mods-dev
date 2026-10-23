@@ -60,7 +60,7 @@ judgements are kept as `*-noagents*`).
 
 | Enhancer | new preferred | old mean (1–5) | new mean (1–5) | old words | new words |
 | --- | --- | --- | --- | --- | --- |
-| haiku (default) | 27/30 | 3.56 | 4.53 | 185 | 119 |
+| haiku (default) | 27/30 | 3.38 | 4.53 | 185 | 119 |
 | sonnet | 30/30 | 3.32 | 4.62 | 258 | 159 |
 | opus | 30/30 | 3.25 | 4.51 | 277 | 166 |
 
