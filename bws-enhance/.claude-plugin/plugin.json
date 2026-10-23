@@ -1,7 +1,7 @@
 {
   "name": "bws-enhance",
-  "version": "0.4.4",
-  "description": "/enhance <rough prompt>, or a chord on the draft in the box: rewrites a vague prompt into a specific, actionable one using this project's instructions, installed skills and commands, MCP servers, the recent conversation and Anthropic's prompting guidance for the session's model, puts it in the prompt box, and offers Send / Revert in a small pane. Optional prompt bouncer: holds a vague prompt before it is sent, with the reason and the project glossary.",
+  "version": "0.5.0",
+  "description": "/enhance <rough prompt>, or a chord on the draft in the box: rewrites a vague prompt into a goal-and-outcome one (what to achieve and how to check it, with the approach left to Claude) using this project's instructions, installed skills and commands, MCP servers, the recent conversation and Anthropic's prompting guidance for the session's model, puts it in the prompt box, and offers Send / Revert in a small pane. Optional prompt bouncer: holds a vague prompt before it is sent, with the reason and the project glossary.",
   "author": {
     "name": "bsmi021",
     "url": "https://github.com/bsmi021"

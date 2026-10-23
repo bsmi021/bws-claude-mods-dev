@@ -1,8 +1,9 @@
 # bws-enhance
 
-> Turns a vague prompt into a specific one Claude Code can act on, then lets you send it.
+> Turns a vague prompt into a goal-and-outcome one Claude Code can act on, then lets you send it.
 
-A rough prompt makes Claude guess. `/enhance` rewrites it using what this session already knows: the project's
+A rough prompt makes Claude guess at the goal. `/enhance` rewrites it to say what should be true when the work is done
+and how to check it, and leaves the approach to Claude. It uses what this session already knows: the project's
 instruction files, a file tree, installed skills and commands, connected MCP servers and the recent conversation. The
 rewrite lands in your prompt box, and you decide whether to send it. An optional prompt bouncer can also hold a vague
 prompt before it is sent and say what is missing.
@@ -74,6 +75,11 @@ The rewriter sees:
 - Anthropic's prompting best practices, plus notes for the model that will run the prompt (Opus: explicit, minimal scope; Sonnet: keep going until the checks pass, no extra tests or docs; Haiku: run the check before reporting done). Sources: the [prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices), the per-model prompting pages and [Claude Code best practices](https://code.claude.com/docs/en/best-practices).
 
 Each source is optional: if one cannot be read, that part is left out and the rewrite continues.
+
+The rewrite is outcome-first: one sentence with the goal, then only the Context, Constraints and Done when it needs.
+Done when names a check Claude can run. It does not list steps or pick files and functions to change unless you did or
+a project rule requires it, since the model running the prompt can read the code and choose the way there. It is
+usually 40–150 words; a trivial request stays one or two lines.
 
 The rewrite replaces the prompt box. Edit it there and press Enter to send it as your own words, or use **Send**. If you
 typed something else while it was working, the box is left alone and the tab offers **Put in box**. If the rewrite
