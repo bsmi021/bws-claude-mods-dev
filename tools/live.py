@@ -16,6 +16,7 @@ Steps, one per --step or per line of --steps (blank lines and # comments skipped
   say:TEXT         type TEXT, then Enter
   type:TEXT        type TEXT without Enter
   key:NAME[*N]     enter, tab, shift+tab, esc, up, down, left, right, backspace, space, ctrl+<letter>; N repeats
+  wheel:up|down[*N]@LABEL  N SGR wheel ticks over the lowest cell showing LABEL
   click:LABEL[@[first][+K]] SGR mouse press + release on LABEL, K columns right of its first letter; the lowest
                    line showing it by default, the topmost with `first` (a tab button whose label repeats as a heading)
   wait:REGEX[@SECS] wait until the rendered screen matches REGEX (default 30 s); text scrolled off screen won't match
@@ -163,6 +164,20 @@ def run_step(live, n, step):
         col = cell[1] + int(m.group(2) or 0)
         live.click(cell[0], col)
         return f'clicked ({cell[0]}, {col})'
+    elif kind == 'wheel':
+        # wheel:up|down[*N]@LABEL: N wheel ticks over the lowest cell showing LABEL
+        motion, _, label = arg.partition('@')
+        direction, _, times = motion.partition('*')
+        if direction.strip() not in ('up', 'down') or label == '':
+            raise Fail(f'bad wheel step {arg!r} (use wheel:up*N@LABEL or wheel:down*N@LABEL)')
+        cell = live.find_cell(label)
+        if cell is None:
+            raise Fail(f'no cell shows {label!r}')
+        button = 64 if direction.strip() == 'up' else 65
+        for _ in range(int(times or 1)):
+            live.write('%s[<%d;%d;%dM' % (ESC, button, cell[1], cell[0]))
+            time.sleep(0.08)
+        return f'wheel {direction.strip()} x{times or 1} at ({cell[0]}, {cell[1]})'
     elif kind == 'wait':
         m = re.fullmatch(r'(.*?)(?:@(\d+(?:\.\d+)?))?', arg, re.S)
         pattern, secs = m.group(1), float(m.group(2) or 30)

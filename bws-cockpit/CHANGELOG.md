@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.27.0
+- Mod tabs can draw markdown (a press on a link goes back to the mod) and pictures (a Raster on the terminal, an Svg on Desktop). The Side chat tab uses them.
+
 ## 0.26.2
 - Desktop starts a conversation's process only when the first message is sent, and an open at session start is unasked (placed only from 144 columns). The first prompt of a session now places the dashboard (unless you closed it) and fills the bar.
 - A start-up trace, `bws-cockpit-start.log` beside the shelf file: what each surface saw and whether the dashboard was placed.

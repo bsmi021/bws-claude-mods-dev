@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+- Redesigned Side chat tab: a card per message with its markdown drawn, brighter colours and emoji, tool runs folded into one line, the answer streaming in its own card.
+- No more up/down buttons: the whole chat is in the dashboard and scrolls with the wheel or the scroll keys. It follows the end only while an answer streams.
+- Documents, paths and URLs a message names get chips; a click opens them in your default web browser.
+- PNG pictures a message names are drawn in the chat.
+- Needs bws-cockpit 0.27.0 or later.
+
 ## 0.4.4
 - No behaviour change. Footer tests updated for Claude Code 2.1.307, where an engine node's `ref` is a number.
 

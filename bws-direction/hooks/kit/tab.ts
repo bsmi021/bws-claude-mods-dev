@@ -31,6 +31,10 @@ export type TabNode =
   | { kind: 'input'; id: string; placeholder: string; isFocused?: boolean } // isFocused: the ring starts here
   | { kind: 'raster'; columns: number; rows: number; cells: string }
   | { kind: 'card'; title: string; color?: TabColor; body: TabNode[] }
+  // Markdown drawn as a reply is: headings, lists, fences, links. A press on a link comes back as id `link`, value the href.
+  | { kind: 'markdown'; text: string; isDim?: boolean }
+  // A picture: `cells` (a Raster's packed cells) on the terminal, `svg` on Desktop and mobile; `alt` where neither draws.
+  | { kind: 'image'; alt: string; columns: number; rows: number; cells?: string; svg?: string }
 
 export type ModTab = {
   title: string // the tab's label: "Diagram"
@@ -50,6 +54,8 @@ const MAX_TITLE = 24
 const MAX_LABEL = 160 // a button's label: a whole row of a list, at most
 const MAX_BADGE = 16
 const MAX_TEXT = 2000
+const MAX_MARKDOWN = 20_000
+const MAX_SVG = 131_072
 const MAX_ID = 64
 const MAX_NODES = 200
 const MAX_CELLS = 400_000
@@ -71,6 +77,7 @@ export const makeTab = (title: string, body: TabNode[], o: { badge?: string; ton
 
 export const text = (t: string, o: { color?: TabColor; isDim?: boolean; isBold?: boolean; isClipped?: boolean } = {}): TabNode => ({ kind: 'text', text: t, ...o })
 export const buttons = (...items: TabButton[]): TabNode => ({ kind: 'buttons', items })
+export const markdown = (t: string, o: { isDim?: boolean } = {}): TabNode => ({ kind: 'markdown', text: t, ...o })
 export const card = (title: string, body: TabNode[], c?: TabColor): TabNode => (c ? { kind: 'card', title, color: c, body } : { kind: 'card', title, body })
 
 // Reads whatever another plugin wrote under `tab`. Anything malformed is dropped (a broken node is skipped, a broken
@@ -144,6 +151,28 @@ function parseNode(n: unknown, budget: { nodes: number; cells: number }, depth: 
     budget.cells -= cells.length
     return { kind: 'raster', columns: cols, rows, cells }
   }
+  if (n.kind === 'markdown') {
+    const node: TabNode = { kind: 'markdown', text: str(n.text, MAX_MARKDOWN) }
+    if (n.isDim === true) node.isDim = true
+    return node.text.trim() === '' ? null : node
+  }
+  if (n.kind === 'image') {
+    const cols = Number(n.columns)
+    const rows = Number(n.rows)
+    if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 1 || rows < 1 || cols > 400 || rows > 200) return null
+    const node: TabNode = { kind: 'image', alt: line(n.alt, 160) || 'picture', columns: cols, rows }
+    const cells = str(n.cells, MAX_CELLS)
+    const svg = str(n.svg, MAX_SVG)
+    if (cells !== '' && cells.length <= budget.cells) {
+      budget.cells -= cells.length
+      node.cells = cells
+    }
+    if (svg.startsWith('<svg') && svg.length <= budget.cells) {
+      budget.cells -= svg.length
+      node.svg = svg
+    }
+    return node
+  }
   if (n.kind === 'card' && depth === 0) {
     const node: TabNode = { kind: 'card', title: line(n.title, 80), body: parseNodes(n.body, budget, depth + 1) }
     const c = color(n.color)
@@ -173,6 +202,8 @@ function nodeLines(nodes: readonly TabNode[], indent: string): string[] {
     else if (n.kind === 'buttons') out.push(`${indent}[${n.items.map(b => b.label).join('] [')}]`)
     else if (n.kind === 'card') out.push(`${indent}${n.title}`, ...nodeLines(n.body, `${indent}  `))
     else if (n.kind === 'raster') out.push(`${indent}(picture ${n.columns}x${n.rows}, shown in the dashboard)`)
+    else if (n.kind === 'markdown') out.push(...n.text.split('\n').map(l => `${indent}${l}`))
+    else if (n.kind === 'image') out.push(`${indent}(picture: ${n.alt})`)
   }
   return out
 }

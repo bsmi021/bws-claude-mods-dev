@@ -1664,7 +1664,7 @@ export const register: Register = (on, options) => {
   // The dashboard: a tab strip, then the shown tab's body.
   on('ui.render', { component: 'Pane', requestId: DASH }, async ($, e, next) => {
     const table = $.ui.resolve(e)
-    const { Box, Text, Button, Link } = table
+    const { Box, Text, Button, Link, Markdown } = table
     // Mobile has neither (its table may still carry the names at runtime): fall back to text there.
     const isMobile = e.surface === 'mobile'
     const Select = !isMobile && 'Select' in table ? table.Select : null
@@ -1708,6 +1708,7 @@ export const register: Register = (on, options) => {
     const shown = mods.find(m => m.key === tab)
     if (shown !== undefined) {
       const Raster = !isMobile && 'Raster' in table ? table.Raster : null
+      const Svg = e.surface !== 'terminal' && 'Svg' in table ? table.Svg : null
       const name = shown.name
       const tone = shown.tab.tone
       const draw = (n: TabNode, k: string): RenderChildren => {
@@ -1754,6 +1755,15 @@ export const register: Register = (on, options) => {
         if (n.kind === 'raster') {
           if (Raster === null) return <Text key={k} dimColor>(a picture: open this tab in the terminal to see it)</Text>
           return <Raster key={k} columns={n.columns} rows={n.rows} cells={n.cells} />
+        }
+        // Markdown as a reply draws it; a press on one of its links goes back to the mod as `link`, the href its value.
+        if (n.kind === 'markdown') {
+          return <Markdown key={`${name}-md-${k}`} text={n.text} {...(n.isDim ? { dimColor: true } : {})} onLinkPress={(link: { href: string }) => void sendTabEvent($, name, 'link', link.href)} />
+        }
+        if (n.kind === 'image') {
+          if (Raster !== null && n.cells !== undefined) return <Raster key={k} columns={n.columns} rows={n.rows} cells={n.cells} />
+          if (Svg !== null && n.svg !== undefined) return <Svg key={k} source={n.svg} alt={n.alt} />
+          return <Text key={k} dimColor>{`🖼️ ${n.alt}`}</Text>
         }
         return (
           <Box key={k} flexDirection="column" width={width} borderStyle="round" borderColor={n.color ? TAB_COLOR[n.color] : 'subtle'} paddingX={1}>

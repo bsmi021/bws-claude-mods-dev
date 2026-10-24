@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { ROOM, STEP } from '../hooks/tab'
 import { lastTab, mountChat, recordTabs } from './tabview'
+import { PNG_2X2 } from './pngs'
 
 const NOW = Date.parse('2026-10-12T10:00:00')
 const NL = String.fromCharCode(10)
@@ -226,7 +226,7 @@ describe('keyboard focus', () => {
     const { clock } = world(on)
     const inputs = () => (lastTab()?.body ?? []).flatMap(n => (n.kind === 'input' ? [n] : []))
     await run($, 'fork')
-    expect(inputs()).toEqual([{ kind: 'input', id: 'ask-0', placeholder: 'ask in the side chat, Enter sends', isFocused: true }])
+    expect(inputs()).toEqual([{ kind: 'input', id: 'ask-0', placeholder: '💭 ask the side chat, Enter sends', isFocused: true }])
     await run($, 'btw', 'q')
     await clock.advance(200)
     expect(inputs().map(n => [n.id, n.isFocused])).toEqual([['ask-1', true]])
@@ -242,61 +242,48 @@ describe('keyboard focus', () => {
   })
 })
 
-describe('a long answer', () => {
-  test('never pushes the Ask box out of the pane', async ($, on) => {
+describe('the conversation', () => {
+  test('each message is a card with its markdown; a long answer is drawn whole, the Ask box last', async ($, on) => {
     const { clock } = world(on, { lines: LONG })
     await run($, 'btw', 'write an essay')
     await clock.advance(200)
-    const ui = await mountChat($ as never)
-    expect(await ui.find({ type: 'Input' })).toBeDefined()
-    expect(await ui.find({ key: 'older' })).toBeDefined()
-    expect(await ui.find({ key: 'newer' })).toBeUndefined()
-    // the header line and the model line, then at most ROOM transcript rows: nothing else draws as text
-    const texts = await ui.findAll({ type: 'Text' })
-    expect(texts.length).toBeLessThanOrEqual(ROOM + 2)
-    await ui.unmount()
+    const body = lastTab()?.body ?? []
+    const cards = body.flatMap(n => (n.kind === 'card' ? [n] : []))
+    expect(cards.map(c => c.title)).toEqual(['🧑 You', '🤖 Claude'])
+    const answer = cards[1]?.body[0]
+    expect(answer?.kind).toBe('markdown')
+    expect(answer?.kind === 'markdown' && answer.text.includes('Paragraph 1:') && answer.text.includes('Paragraph 40')).toBe(true)
+    expect(body.at(-1)?.kind).toBe('input')
   })
 
-  test('the newest rows show first', async ($, on) => {
-    const { clock } = world(on, { lines: LONG })
-    await run($, 'btw', 'write an essay')
+  test('no previous / next buttons: the dashboard scrolls; it is pinned to the end only while asked for or answering', async ($, on) => {
+    const { clock } = world(on, { hold: true })
+    await run($, 'btw', 'think hard')
     await clock.advance(200)
-    const ui = await mountChat($ as never)
-    expect(await ui.find({ type: 'Text', text: /Paragraph 40/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /Paragraph 1:/ })).toBeUndefined()
-    await ui.unmount()
-  })
-})
-
-describe('scroll buttons', () => {
-  test('step by rows: up shows older rows and a way back, down returns to the newest', async ($, on) => {
-    const { clock } = world(on, { lines: LONG })
-    await run($, 'btw', 'write an essay')
+    const ids = () => (lastTab()?.body ?? []).flatMap(n => (n.kind === 'buttons' ? n.items.map(b => b.id) : []))
+    expect(ids()).not.toContain('older')
+    expect(ids()).not.toContain('newer')
+    expect((lastTab() as { isPinnedEnd?: boolean }).isPinnedEnd).toBe(true)
+    await run($, 'side', '--stop')
     await clock.advance(200)
-    const ui = await mountChat($ as never)
-    const above = async () => Number(/(\d+) rows above/.exec(String((await ui.find({ key: 'older' }))?.props?.label))?.[1])
-    const first = await above()
-    expect(first).toBeGreaterThan(0)
-    await ui.press({ key: 'older' })
-    const second = await above()
-    // half the window a press: a small, even step and not a whole message
-    expect(first - second).toBe(STEP)
-    expect(String((await ui.find({ key: 'newer' }))?.props?.label)).toContain(`${STEP} rows below`)
-    await ui.press({ key: 'newer' })
-    expect(await ui.find({ key: 'newer' })).toBeUndefined()
-    expect(await above()).toBe(first)
-    await ui.unmount()
+    // read in peace: a later write (a model change, say) does not pull the dashboard to the end
+    await run($, 'side', '--model-opus')
+    expect((lastTab() as { isPinnedEnd?: boolean }).isPinnedEnd).toBeUndefined()
   })
 
-  test('pressing up far past the top stops at the first row', async ($, on) => {
-    const { clock } = world(on, { lines: LONG })
-    await run($, 'btw', 'write an essay')
+  test('tool runs fold into one dim line between the cards', async ($, on) => {
+    const lines = [
+      line({ type: 'system', subtype: 'init', session_id: 'side' }),
+      line({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { file_path: 'a.ts' } }] } }),
+      line({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Grep', input: { pattern: 'x' } }] } }),
+      line({ type: 'assistant', message: { content: [{ type: 'text', text: 'Found it.' }] } }),
+      line({ type: 'result', is_error: false, result: 'Found it.' }),
+    ]
+    const { clock } = world(on, { lines })
+    await run($, 'btw', 'where?')
     await clock.advance(200)
-    const ui = await mountChat($ as never)
-    for (let i = 0; i < 60 && (await ui.find({ key: 'older' })) !== undefined; i++) await ui.press({ key: 'older' })
-    expect(await ui.find({ key: 'older' })).toBeUndefined()
-    expect(await ui.find({ type: 'Text', text: 'You' })).toBeDefined()
-    await ui.unmount()
+    const texts = (lastTab()?.body ?? []).flatMap(n => (n.kind === 'text' ? [n.text] : []))
+    expect(texts).toContain('🔧 Read a.ts · Grep x')
   })
 })
 
@@ -325,7 +312,7 @@ describe('Stop', () => {
     await run($, 'btw', 'think hard')
     await clock.advance(200)
     const stop = (lastTab()?.body ?? []).flatMap(n => (n.kind === 'buttons' ? n.items : [])).find(b => b.id === 'stop')
-    expect(stop).toEqual({ id: 'stop', label: 'Stop' })
+    expect(stop).toEqual({ id: 'stop', label: '⏹ Stop' })
     const ui = await mountChat($ as never)
     await ui.press({ key: 'stop' })
     await ui.unmount()
@@ -514,5 +501,53 @@ describe('desktop', () => {
     await clock.advance(100)
     expect(sent).toEqual(['It is the side chat mod.'])
     await ui.unmount()
+  })
+})
+
+describe('links and pictures', () => {
+  const said = 'The guide is `docs/guide.md`; the chart is pics/dot.png. More at https://example.com/x'
+  const lines = [
+    line({ type: 'system', subtype: 'init', session_id: 'side' }),
+    line({ type: 'assistant', message: { content: [{ type: 'text', text: said }] } }),
+    line({ type: 'result', is_error: false, result: said }),
+  ]
+  const files = (on: On) => {
+    const there = ['C:/proj/docs/guide.md', 'C:/proj/pics/dot.png']
+    const norm = (p: string) => p.replace(/\\/g, '/')
+    on('session.cwd', () => ({ value: 'C:/proj' }))
+    on('fs.exists', ($, e) => ({ value: there.includes(norm(e.path)) }))
+    on('fs.stat', () => ({ value: { size: 100, mtimeMs: 0, isFile: true, isDirectory: false, isLink: false } as never }))
+    on('fs.read', ($, e) => ({ value: (norm(e.path).endsWith('.png') ? { base64: PNG_2X2 } : 'text') as never }))
+  }
+
+  test('each document and URL that resolves gets a chip that opens it; the PNG shows under the answer', async ($, on) => {
+    const { clock, seen } = world(on, { lines })
+    files(on)
+    on('session.start', ($, e) => ({ cwd: e.cwd }) as never)
+    on('command.register', () => ({ value: undefined }) as never)
+    await $.session.start({ cwd: 'C:/proj' } as never)
+    await run($, 'btw', 'where is it?')
+    await clock.advance(200)
+    const claude = (lastTab()?.body ?? []).flatMap(n => (n.kind === 'card' && n.title === '🤖 Claude' ? n.body : []))
+    const md = claude.find(n => n.kind === 'markdown')
+    expect(md?.kind === 'markdown' ? md.text : '').toBe(said)
+    const chips = claude.flatMap(n => (n.kind === 'buttons' ? n.items : [])).filter(b => b.id.startsWith('open-'))
+    expect(chips.map(b => b.label)).toEqual(['🌐 example.com/x', '📄 guide.md', '📷 dot.png'])
+    // a chip press opens its link: the file:/// URL of the path as written
+    await run($, 'side', `--${chips[1]?.id}`)
+    expect(seen.toasts.some(t => t.includes('Opened file:///C:/proj/docs/guide.md'))).toBe(true)
+    const pic = claude.find(n => n.kind === 'image') as { alt: string; columns: number; rows: number; cells?: string; svg?: string } | undefined
+    expect(pic?.alt).toBe('dot.png · 2×2')
+    expect([pic?.columns, pic?.rows]).toEqual([2, 1])
+    expect(pic?.cells !== undefined && pic.svg !== undefined).toBe(true)
+  })
+
+  test('a pressed link opens in the default browser, the URL passed beside the script, not inside it', async ($, on) => {
+    const { seen } = world(on)
+    await run($, 'side', '--link file:///C:/proj/docs/guide.md')
+    const runs = seen.kills.filter(a => a.includes('-EncodedCommand'))
+    expect(runs).toHaveLength(1)
+    expect(runs[0]?.join(' ')).not.toContain('guide.md')
+    expect(seen.toasts.some(t => t.includes('Opened file:///C:/proj/docs/guide.md'))).toBe(true)
   })
 })

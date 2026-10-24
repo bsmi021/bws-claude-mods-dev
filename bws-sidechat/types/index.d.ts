@@ -8,7 +8,6 @@ export type SideChat = {
   live: string // the answer streaming in
   isForked: boolean // the first turn has run, so the fork exists on disk
   isBusy: boolean
-  back: number // rows scrolled up from the newest
   asks: number // messages sent; the Ask box's key, so a send clears it
   isClosedByPerson: boolean
   model: string // the open side chat's model override; '' = the sideModel setting

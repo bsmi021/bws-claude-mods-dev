@@ -36,16 +36,19 @@ SSH key). It shares the prompt footer with [bws-enhance](../bws-enhance/README.m
 
 ### The Side chat tab
 
-- Buttons: **New fork**, **Refresh**, **Pull**, **Close**, **Stop** (while it is answering), and an **Ask** box.
+- The conversation reads as a chat: a card per message (🧑 You, 🤖 Claude) with its markdown drawn as a reply is, the tools Claude ran folded into one dim line, and the answer streaming in its own card.
+- Every document, file path and URL a message names that resolves gets a chip under it (📄 guide.md, 🌐 example.com, 📷 chart.png). A click opens it in your default web browser, a local file as a `file:///` URL.
+- PNG pictures a message names are drawn under it: as coloured half-block cells on the terminal, as an image on Desktop.
+- Buttons: **New fork**, **Refresh**, **Pull main**, **Close**, **Stop** (while it is answering), and an **Ask** box.
 - A `model` row: default, opus, sonnet, haiku. The one in use is marked. **New fork** keeps it, and the decision tree's forks follow it.
-- A `main:` status: `busy`, `N ahead` (main turns finished since the fork) or `in sync`.
+- A status line: what it was forked from, the model, and main: busy, N turns ahead, or in sync.
 - **Send to main** under every answer.
-- Up and down buttons scroll the transcript.
+- The whole chat is in the dashboard: scroll it with the wheel or the scroll keys. It follows the newest line while an answer streams in, and stays where you are otherwise. The newest messages that fit the dashboard's 200 elements are shown.
 - A command opens the tab with the keyboard on the Ask box, so you can type at once, during an answer and after it. A long answer never pushes the Ask box or Stop out of view.
 - **Decision tree** switches to the tree view once `/explain` has built one; **Side chat** switches back.
 
-The button ids behind the `/side --<id>` twins are `new`, `refresh`, `pull`, `end`, `older`, `newer`, `stop`,
-`model-<name>`, `send-<message index>`, `ask-<n> <text>` and `tree` in the chat view; and `chat`, `map`, `back`,
+The button ids behind the `/side --<id>` twins are `new`, `refresh`, `pull`, `end`, `stop`, `link <url>`,
+`open-<message>-<n>` (a link chip), `model-<name>`, `send-<message index>`, `ask-<n> <text>` and `tree` in the chat view; and `chat`, `map`, `back`,
 `decide`, `tree-close`, `older-t`, `newer-t`, `opt-<option>`, `node-<id>` and `answer-<n> <text>` in the tree view.
 
 ### The footer button
@@ -124,7 +127,9 @@ Decision-tree forks use `sideModel`, `sideTools`, `loadMcpServers` and `claudePa
 - **Writes** a session file for each fork, in Claude Code's usual session store. It writes the state dump file only if you set `treeDumpFile`.
 - **Ends processes**: Stop, New fork and Close kill the side chat's own child, found by its session id (`pkill -f` on macOS and Linux, a PowerShell `Stop-Process` on Windows).
 - **Sends to the main conversation** only when you press **Send to main**, **Decide**, or use `/side send-back` or `/explain decide`. It is sent as a message from you.
-- **Network**: only what the child's tools and model calls do. The mod makes no requests of its own.
+- **Reads files** a message names (to tell whether a path exists) and the PNGs among them (up to 8 MB each), to draw them.
+- **Opens your browser** when you click a link chip or a link: on Windows a PowerShell `Start-Process` of the browser registered for `https`, on macOS `open`, on Linux `xdg-open`.
+- **Network**: only what the child's tools and model calls do, and the pages you open. The mod makes no requests of its own.
 - **Never** changes the main conversation otherwise.
 
 ## Compatibility
@@ -135,7 +140,8 @@ commands, the transcript window, Stop, the footer button and the decision tree w
 
 - **Claude Code Desktop has its own native side chat.** There, `/side` opens the app's built-in fork and this mod's command never runs. Since 0.4.3 the footer `◨ side` button is drawn on Desktop and a click opens this mod's Side chat tab (automated tests; not yet checked live). The mod otherwise targets the terminal.
 - Not checked by hand: the Decision tree in a live terminal (the automated tests and a headless `/explain` probe cover it), the chord in a live terminal, clicks on the model buttons, narrow terminals.
-- The transcript is drawn as a fixed window of rows, laid out for 100 columns.
+- 0.5.0 was checked live on Claude Code 2.1.310 in a terminal (cards, the picture, wheel scrolling, a chip click opening Chrome). The Desktop drawing (Svg picture, link clicks there) has automated tests only.
+- Pictures: PNG only (no JPEG, no remote images), non-interlaced.
 
 ## License
 

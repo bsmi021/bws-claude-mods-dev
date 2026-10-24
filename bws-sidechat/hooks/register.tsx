@@ -4,11 +4,13 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { DecisionTree, SideChat, SideMsg, TreePane } from '../types'
 import { MAX_FORKS, crumbOf, explorePrompt, failLine, lastReply, mapPaneRows, nodeRows, parseOptions, parseReply, treeText } from './explain'
 import type { PaneRow } from './explain'
-import { MODEL_CHOICES, askKey, clampBack, exitNote, isModelName, killArgv, modelOf, nativeArgs, parseSide, reduceLine, replayPrefix, roomOf, scrollStep, sideArgs, splitLines, transcriptRows, windowRows } from './side'
+import { fileUrl, isImagePath, openArgv, refsOf } from './links'
+import { boxOf, decodePng, fromBase64, rasterCells, svgOf } from './png'
+import { MODEL_CHOICES, clampBack, exitNote, isModelName, killArgv, modelOf, nativeArgs, parseSide, reduceLine, replayPrefix, sideArgs, splitLines } from './side'
 import type { Draft, SideConfig } from './side'
 import { MAX_NODES, addOption, branch, childVia, currentOf, decisionParagraph, fillNode, goBack, goTo, mapText, newTree, nodeOf, treeSummary } from './tree'
 import { DASHBOARD, parseEvent } from './kit/tab'
-import { ROOM, STEP, TAB_COLS, pressOf, sideTab, type View } from './tab'
+import { ROOM, STEP, TAB_COLS, chipUrl, pressOf, sideTab, type Picture, type View } from './tab'
 
 // The dashboard pane (bws-cockpit) the Side chat tab is drawn in; this mod opens it itself so the open is the person's.
 const DASH_TITLE = 'Dashboard'
@@ -20,7 +22,6 @@ const EMPTY: SideChat = {
   live: '',
   isForked: false,
   isBusy: false,
-  back: 0,
   asks: 0,
   isClosedByPerson: false,
   model: '',
@@ -36,6 +37,8 @@ const tab = atom({ plugin: 'bws-sidechat', key: 'tab' } as const, null as unknow
 let view: View = 'chat'
 let showCount = 0
 let openCount = 0
+// The next write scrolls the dashboard to the chat's end (the tab was just asked for); while an answer streams it always does.
+let isPinNext = false
 
 // Module variables: the running child's identity and whether the person pressed Stop. A new fork or a close
 // bumps `runNo`, so the loop of a child that was left behind stops writing into the chat.
@@ -52,7 +55,9 @@ function publishTab($: EngineInterface): Promise<void> {
     .then(async () => {
       const c = await read($, chat)
       const st = await read($, treeState)
-      await update($, tab, () => sideTab(c, st, view, { show: showCount, open: openCount, exploring: exploring.size }))
+      const isPin = isPinNext
+      isPinNext = false
+      await update($, tab, () => sideTab(c, st, view, { show: showCount, open: openCount, exploring: exploring.size, media: { cwd, links, pictures }, isPin }))
     })
     .catch(() => undefined)
   return publishing
@@ -72,6 +77,7 @@ async function setChat($: EngineInterface, f: (old: SideChat) => SideChat): Prom
 // rows stay in view (cockpit scrolls to the end). Without the keys (a draft in the box) this mod only shows the tab.
 async function showTab($: EngineInterface, v: View, isCommand: boolean): Promise<{ isPlaced: true } | { isPlaced: false; reason: string }> {
   view = v
+  isPinNext = v === 'chat'
   const isFocus = isCommand || (await $.prompt.read()).text.trim() === ''
   if (isFocus) {
     openCount += 1
@@ -120,7 +126,6 @@ async function refresh($: EngineInterface) {
     isForked: false,
     isBusy: false,
     live: '',
-    back: 0,
     forkTurns: old.mainTurns,
     pendingReplay: true,
     msgs: [...old.msgs, { role: 'note', text: 'Refreshed from main: the next message forks it as it is now.' } as SideMsg],
@@ -207,7 +212,7 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
   const sent = isFirst && c.pendingReplay ? replayPrefix(c.msgs) + message : message
   const sideCfg = { ...cfg, model: modelOf(c.model, cfg.model) }
   let draft: Draft = { msgs: [...c.msgs, { role: 'user', text: typed ?? message }], live: '' }
-  await setChat($, old => ({ ...old, ...draft, isBusy: true, back: 0, asks: old.asks + 1, forkTurns: isFirst ? old.mainTurns : old.forkTurns }))
+  await setChat($, old => ({ ...old, ...draft, isBusy: true, asks: old.asks + 1, forkTurns: isFirst ? old.mainTurns : old.forkTurns }))
 
   let pending = ''
   let stderr = ''
@@ -253,6 +258,7 @@ async function send($: EngineInterface, text: string, cfg: SideConfig & { exe: s
     const isForked = old.isForked || isInitSeen || code === 0
     return { ...old, msgs: [...draft.msgs, ...shown, ...extra], live: '', isBusy: false, isForked, pendingReplay: isForked ? false : old.pendingReplay }
   })
+  await settle(findMedia($))
 }
 
 async function stop($: EngineInterface) {
@@ -269,6 +275,7 @@ async function stop($: EngineInterface) {
     pendingReplay: old.isForked || isInitSeen ? false : old.pendingReplay,
   }))
   await killChild($, c.sideId)
+  await settle(findMedia($))
 }
 
 async function settle<T>(p: Promise<T>): Promise<T | undefined> {
@@ -447,25 +454,83 @@ async function decide($: EngineInterface): Promise<string | null> {
   return text
 }
 
+// ---------- links and pictures ----------
+
+// The session's folder, the paths and URLs found in the chat that resolve (as written → the URL a click opens), and the
+// PNGs among them, read and drawn once (by absolute path). `checked` keeps a path from being looked up twice.
+let cwd = ''
+const links = new Map<string, string>()
+const pictures = new Map<string, Picture>()
+const checked = new Set<string>()
+const MAX_PNG_BYTES = 8 * 1024 * 1024
+
+async function pictureOf($: EngineInterface, path: string): Promise<Picture | null> {
+  const st = await settle($.fs.stat(path))
+  if (st === undefined || st.size > MAX_PNG_BYTES) return null
+  const file = await settle($.fs.read(path, { as: 'bytes' }))
+  if (file === undefined) return null
+  const img = decodePng(fromBase64(file.base64))
+  if (img === null) return null
+  const alt = `${path.split('/').pop() ?? path} · ${img.width}×${img.height}`
+  const box = boxOf(img, 72, 22)
+  return { alt, ...box, cells: rasterCells(img, box.columns, box.rows), svg: svgOf(img, file.base64, alt) }
+}
+
+// Looks up the paths and URLs the chat's messages name that were not looked up yet; then the tab is drawn again.
+async function findMedia($: EngineInterface) {
+  const c = await read($, chat)
+  let isNew = false
+  for (const m of c.msgs) {
+    if (m.role !== 'user' && m.role !== 'assistant') continue
+    for (const r of refsOf(m.text, cwd)) {
+      if (checked.has(r.written)) continue
+      checked.add(r.written)
+      if (/^https?:/i.test(r.target)) {
+        links.set(r.written, r.target)
+        isNew = true
+        continue
+      }
+      if (!(await settle($.fs.exists(r.target)))) continue
+      links.set(r.written, fileUrl(r.target))
+      isNew = true
+      if (isImagePath(r.target) && !pictures.has(r.target)) {
+        const pic = await settle(pictureOf($, r.target))
+        if (pic) pictures.set(r.target, pic)
+      }
+    }
+  }
+  if (isNew) await publishTab($)
+}
+
+// A link pressed in the chat: opened in the default web browser, a file:/// one included.
+async function openLink($: EngineInterface, url: string) {
+  const isWindows = (await $.env.get('OS')) === 'Windows_NT'
+  const isMac = !isWindows && ((await $.env.get('HOME')) ?? '').startsWith('/Users/')
+  const argv = openArgv(url.trim(), isWindows, isMac)
+  if (argv === null) return void $.ui.toast(`Side chat: not a link to open (${url.slice(0, 60)}).`)
+  const r = await settle($.process.run(argv, { env: { SC_URL: url.trim() }, timeoutMs: 15000 }))
+  if (r === undefined || r.exitCode !== 0) $.ui.toast('Side chat: the browser could not be started.')
+  else $.ui.toast(`🔗 Opened ${url.length > 70 ? `${url.slice(0, 69)}…` : url}`)
+}
+
 // A button or input in the Side chat tab, or its `/side --<id> [text]` twin: what the pane's controls did. The answers
 // and explorations run behind (they stream for a while), so a press never waits on them.
 async function act($: EngineInterface, id: string, value: string | undefined, cfg: SideConfig & { exe: string }) {
   const later = (p: Promise<unknown>) => void p.catch(() => $.ui.log(failLine('tab', 'error'), { to: 'debug' }))
-  const c = await read($, chat)
   const st = await read($, treeState)
   const t = st.tree
   const node = t === null ? undefined : (currentOf(t) ?? t.nodes[0])
   const treeRows = () => (t === null || node === undefined ? 0 : (st.view === 'map' ? mapPaneRows(t, TAB_COLS) : nodeRows(t, node, TAB_COLS)).length)
-  const chatRows = () => transcriptRows(c.msgs, c.live, TAB_COLS, true).length
   let m: RegExpExecArray | null
   if (id === 'new') await newFork($)
   else if (id === 'refresh') await refresh($)
   else if (id === 'pull') later(pull($, '', cfg))
   else if (id === 'end') await closePane($)
   else if (id === 'stop') await stop($)
-  else if (id === 'older' || id === 'newer') {
-    const back = clampBack(c.back, chatRows(), ROOM)
-    await setChat($, old => ({ ...old, back: clampBack(id === 'older' ? back + STEP : back - STEP, chatRows(), ROOM) }))
+  else if (id === 'link') await openLink($, value ?? '')
+  else if (/^open-\d+-\d+$/.test(id)) {
+    const url = chipUrl((await read($, chat)).msgs, id, { cwd, links, pictures })
+    if (url !== '') await openLink($, url)
   } else if ((m = /^model-(.+)$/.exec(id)) && m[1] !== undefined) {
     const text = await setModel($, m[1], cfg.model)
     if (text !== null) $.ui.toast(text)
@@ -498,6 +563,7 @@ export const register: Register = (on, options) => {
   treeDumpFile = typeof options.treeDumpFile === 'string' ? options.treeDumpFile.trim() : ''
 
   on('session.start', async ($, e, next) => {
+    cwd = (await settle($.session.cwd())) ?? ''
     await $.command.register({
       name: 'side',
       description: 'Side chat in the dashboard, forked from this conversation',

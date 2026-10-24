@@ -6,7 +6,7 @@
 import type { On } from 'claude-code'
 
 type Button = { id: string; label: string }
-type Node = { kind: 'text'; text: string } | { kind: 'buttons'; items: Button[] } | { kind: 'input'; id: string; placeholder: string; isFocused?: boolean } | { kind: 'card'; title: string; body: Node[] } | { kind: 'raster' }
+type Node = { kind: 'text'; text: string } | { kind: 'buttons'; items: Button[] } | { kind: 'input'; id: string; placeholder: string; isFocused?: boolean } | { kind: 'card'; title: string; body: Node[] } | { kind: 'raster' } | { kind: 'markdown'; text: string } | { kind: 'image'; alt: string }
 export type Tab = { title: string; badge: string; tone: string; raise: number; show?: number; open?: number; body: Node[] }
 export type Found = { key?: string; text?: string; props?: { label?: string } }
 
@@ -29,7 +29,10 @@ const matches = (want: string | RegExp | undefined, got: string) => (want === un
 
 function mount($: Dollar, isTree: boolean) {
   const idOf = (key: string) => (isTree ? (TREE_KEYS[key] ?? key) : key)
-  const body = () => lastTab()?.body ?? []
+  // Cards opened up: their title and body in order, a markdown node read as text.
+  const flat = (ns: Node[]): Node[] =>
+    ns.flatMap((n): Node[] => (n.kind === 'card' ? [{ kind: 'text', text: n.title }, ...flat(n.body)] : n.kind === 'markdown' ? [{ kind: 'text', text: n.text }] : [n]))
+  const body = () => flat(lastTab()?.body ?? [])
   const buttonsOf = () => body().flatMap(n => (n.kind === 'buttons' ? n.items : []))
   const asFound = (b: Button): Found => ({ key: b.id, text: b.label, props: { label: b.label } })
   const run = (args: string) => $.command.run({ command: 'side', args } as never)
