@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.2
+- No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
+
 ## 0.2.1
 - No behaviour change. Ships the 1.7.0 README, this CHANGELOG and the full manifest (author, homepage,
   repository, license, keywords) to installed copies: `claude plugin update` keeps files by version.

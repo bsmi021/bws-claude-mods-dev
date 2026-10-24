@@ -1,6 +1,6 @@
 {
   "name": "bws-interview",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Keeps every AskUserQuestion round (the question, the options, your answer) per project, pages through them in an Interview tab of the dashboard, and gives the agreed answers back to Claude with /qa send.",
   "author": {
     "name": "bsmi021",

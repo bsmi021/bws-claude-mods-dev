@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.2
+- No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
+
 ## 0.1.1
 - No code change. Version bumped with bws-mods 1.7.1 so every mod updates together.
 

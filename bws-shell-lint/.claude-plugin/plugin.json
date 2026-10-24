@@ -1,6 +1,6 @@
 {
   "name": "bws-shell-lint",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Refuses Bash commands that will fail on Windows Git Bash for quoting or length reasons (cut-off long commands, trailing-backslash paths, inline Python whose backslashes the shell halves), with the exact fix, so Claude retries correctly at once.",
   "author": {
     "name": "bsmi021",

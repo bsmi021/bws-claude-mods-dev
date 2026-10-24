@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.2
+- No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
+
 ## 0.1.1
 - Tell Claude works after /clear or /resume: it finds the verdict the tab shows (it looked under an empty session id and silently did nothing).
 - Every Tell Claude press now answers in the tab: sending, sent, not sent (with the reason when the prompt is held), or no drift to tell.

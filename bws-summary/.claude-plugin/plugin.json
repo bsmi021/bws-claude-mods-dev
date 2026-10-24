@@ -1,6 +1,6 @@
 {
   "name": "bws-summary",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Rolling conversation summary: each time Claude stops, Haiku updates a short summary of the whole conversation (goal, decisions, done, open items). The Summary tab of the dashboard shows it, with earlier summaries kept so a rollback never loses one. Session-only; never enters Claude's context.",
   "author": {
     "name": "bsmi021",

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.1
+- No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
+
 ## 0.3.0
 - Upgrades are outcome-first: the rewrite opens with what should be true when the work is done, ends with how to tell it is done, and leaves the way there to Claude (no steps, no order of work, no files or tools you did not name). A method you chose is kept.
 - It no longer guesses for you: a vague word your answers did not settle stays in your words for Claude to work out, a question stays a question, and it never says where a fix belongs unless you did.

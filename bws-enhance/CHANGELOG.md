@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.5
+- No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
+
 ## 0.4.4
 - No behaviour change. Footer tests updated for Claude Code 2.1.307, where an engine node's `ref` is a number.
 
