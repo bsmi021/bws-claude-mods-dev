@@ -41,25 +41,30 @@ The `every` option checks every Nth such turn. The turn never waits: the check r
 
 **Against what.**
 
-- **The task:** the first prompt you typed in the session, plus your latest few prompts.
+- **The opening request:** the first prompt you typed in the session. Drift means a step unrelated to it.
+- **The whole conversation:** every later prompt, with the files each turn edited and the head of its answer, so
+  follow-ups, confirmations, fixes and release steps toward the opening goal read as aligned. Over about 16,000
+  characters the middle turns are left out; the start and the newest turns always stay.
 - **The plan:** `PLAN.md` in the `runs/<date>-<slug>/` folder the session's tool calls named last (first 3,000 characters).
 - **The documents:** every `.md` under `docs/` at the project root (where the session started, not where a shell `cd` went) (4 levels, 300 files). The anchor documents send their heading outline
   on every check: the files named like a PRD, spec, requirements, design doc, GDD or vision; else architecture,
   technical design or `*-spec`; the shallowest ones, at most 3. `anchorDocs` names them yourself. Other sections are
   picked by the words they share with the turn (file paths, identifiers, your prompt), about 7,000 characters in all.
 
-**The verdict.** One small-model call (`haiku`, 20 s timeout) answers: `aligned` (75-100), `drifting` (40-74) or
+**The verdict.** One Sonnet call (`sonnet`, 45 s timeout) answers: `aligned` (75-100), `drifting` (40-74) or
 `off-course` (0-39), a one-sentence reason, the anchor it rests on (`docs/PRD.md § Goals`), a suggestion, and the cause:
 
 - **agent:** Claude did more or other than asked.
-- **user:** you widened the scope or asked for something the documents rule out. That still counts as drift: the point
-  is to make the widening visible, not to stop you.
+- **user:** you asked for work unrelated to the opening request. That still counts as drift: the point is to make it
+  visible, not to stop you.
+
+The plan and the documents only explain what the opening goal means; silence or a mismatch there is not drift by itself.
 
 **What you see.** The Direction tab shows the last verdict as a coloured card, `This session: ✓✓~✗ 4 checks, average
 63, ↓ worsening`, and `Project: 52 checks over 9 sessions, 81% aligned, average 79; last 7 days 74 (week before 83);
 3 sessions drifted.` A drifting or off-course verdict raises the tab and shows a toast. With `nudge` on (default),
-Claude's context carries the verdict until a later check finds the work aligned, asking it to get back on course or say
-why the work is in scope (or, when you widened it, to say so and offer to park it).
+Claude's context carries the verdict until a later check finds the work aligned, as a warning, not a stop: Claude keeps
+working and mentions in one line how the work serves the opening request, or that it does not.
 
 It fails open: a timeout, an API error or an unreadable answer records nothing and writes one debug line, such as
 `bws-direction: turn failed (timeout); nothing was changed`. The line never contains the prompt.
@@ -72,7 +77,7 @@ Set in `/plugin`, or under `pluginConfigs["bws-direction"].options` in `settings
 | --- | --- | --- |
 | `autoCheck` | `true` | Check working turns when they end. Off: `/direction check` only. |
 | `every` | `1` | Check every Nth working turn. |
-| `model` | `haiku` | Model for turn checks. |
+| `model` | `sonnet` | Model for turn checks. |
 | `overallModel` | `sonnet` | Model for `/direction overall`. |
 | `docsDir` | `docs` | The document corpus, relative to the project. |
 | `anchorDocs` | empty | Anchor documents, comma-separated paths relative to the project. Empty: found by name (above). |

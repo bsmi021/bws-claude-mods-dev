@@ -1,7 +1,7 @@
 {
   "name": "bws-direction",
-  "version": "0.1.2",
-  "description": "Drift detection: after a turn that edits files, a small model checks the work against the session's task, its run-folder PLAN.md and the project's docs/ corpus (specs, PRD, requirements, architecture or design docs first; a GDD for a game) and says aligned, drifting or off course, and whether the agent wandered or the scope was widened. Verdicts are kept per project, so the Direction tab of the dashboard shows drift within the session and across sessions; /direction overall judges recent commits as a whole.",
+  "version": "0.2.0",
+  "description": "Drift detection: after a turn that edits files, Sonnet checks the work against the session's opening request (reading the whole conversation), its run-folder PLAN.md and the project's docs/ corpus (specs, PRD, requirements, architecture or design docs first; a GDD for a game) and says aligned, drifting or off course, and whether the agent wandered or the scope was widened. Verdicts are kept per project, so the Direction tab of the dashboard shows drift within the session and across sessions; /direction overall judges recent commits as a whole.",
   "author": {
     "name": "bsmi021",
     "url": "https://github.com/bsmi021"
@@ -36,7 +36,7 @@
       "type": "string",
       "title": "Turn-check model",
       "description": "Model alias or id that judges a turn (haiku, sonnet, opus, or a full id).",
-      "default": "haiku"
+      "default": "sonnet"
     },
     "overallModel": {
       "type": "string",
@@ -59,7 +59,7 @@
     "nudge": {
       "type": "boolean",
       "title": "Tell Claude about drift",
-      "description": "While this session's last check found drift, Claude's context carries the verdict and is asked to get back on course or say why the work is in scope.",
+      "description": "While this session's last check found drift, Claude's context carries the verdict as a warning: it keeps working and mentions the drift in one line.",
       "default": true
     }
   }

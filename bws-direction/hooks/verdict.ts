@@ -6,7 +6,7 @@ export const VERDICTS: readonly Verdict[] = ['aligned', 'drifting', 'off-course'
 
 export type Judgement = { verdict: Verdict; score: number; reason: string; anchor: string; cause: Cause; suggestion: string }
 
-export const CHECK_TIMEOUT_MS = 20_000
+export const CHECK_TIMEOUT_MS = 45_000
 export const OVERALL_TIMEOUT_MS = 45_000
 
 const SHAPE =
@@ -18,26 +18,28 @@ const SHAPE =
   '"suggestion": "one short sentence: how to get back on course, or empty when aligned"}'
 
 export const CHECK_SYSTEM = [
-  'You check a coding session for drift: work that moves away from the original task, the plan or the project documents (specs, requirements, design docs), whoever asked for it.',
-  'aligned (score 75-100): the turn serves the original task and agrees with the plan and documents. Small necessary side work (a fix the task needs, a test, tooling it hit) is aligned.',
-  'drifting (40-74): the turn adds scope the original task and plan do not cover, starts a tangent, gold-plates, or bends a documented design.',
-  'off-course (0-39): the turn works on something unrelated, contradicts the plan or the anchor documents, or undoes agreed decisions.',
-  'Judge only what the turn did. Do not mark drift because documents are silent on an implementation detail.',
-  'A later prompt from the person does not make its work aligned: if it adds work outside the original task or plan, or goes against the documents, that is drift with cause "user". The person may have good reasons; your job is to make the widening visible. Flagging the conflict does not make the work aligned.',
-  'cause "agent": the agent did more or other than it was asked.',
+  'You check a coding session for drift. The yardstick is the opening request: the first thing the person asked for in this session. Drift is a step unrelated to that opening request.',
+  'Read the whole conversation first. Work toward the opening goal takes many turns: follow-ups, confirmations ("yes", "do it", "publish it"), fixes, tests, reviews, iterations, tuning passes, release and publish steps, run logs, and the tooling the work hits. All of that is aligned, however long the conversation runs.',
+  'aligned (score 75-100): the turn serves the opening request, directly or as a step it needs or implies.',
+  'drifting (40-74): the turn starts work the opening request does not call for: a tangent, an unrelated improvement, a different feature.',
+  'off-course (0-39): the turn works on something with no relation to the opening request.',
+  'The plan and the documents only help you understand what the opening goal means; a turn is not drift because they are silent on it.',
+  'A later prompt that continues or refines the opening goal is aligned. A later prompt that asks for unrelated work is drift with cause "user": say so plainly, the person may have good reasons.',
+  'cause "agent": the agent turned to unrelated work on its own.',
   SHAPE,
 ].join('\n')
 
-export type CheckInput = { task: { first: string; recent: string[] }; plan: string; planPath: string; corpus: string; turn: string }
+export type CheckInput = { task: { first: string; turns: string[]; omitted: number }; plan: string; planPath: string; corpus: string; turn: string }
 
 export function checkPrompt(i: CheckInput): string {
+  const later = i.task.omitted > 0 ? [...i.task.turns.slice(0, 3), `(${i.task.omitted} turns in between left out)`, ...i.task.turns.slice(3)] : i.task.turns
   const parts = [
-    `<task>\n${i.task.first || '(no typed prompt yet)'}\n</task>`,
-    i.task.recent.length > 0 ? `<later_prompts>\n${i.task.recent.map(p => `- ${p}`).join('\n')}\n</later_prompts>` : '',
+    `<opening_request>\n${i.task.first || '(no typed prompt yet)'}\n</opening_request>`,
+    later.length > 0 ? `<conversation>\nEvery later prompt from the person, in order, with what each turn did:\n${later.join('\n')}\n</conversation>` : '',
     i.plan ? `<plan path="${i.planPath}">\n${i.plan}\n</plan>` : '<plan>(no run-folder plan found)</plan>',
     i.corpus ? `<documents>\n${i.corpus}\n</documents>` : '<documents>(no docs/ folder found)</documents>',
     `<turn>\n${i.turn}\n</turn>`,
-    'Is this turn aligned with the task, the plan and the documents?',
+    'Does this turn serve the opening request, read in the light of the whole conversation?',
   ]
   return parts.filter(Boolean).join('\n\n')
 }

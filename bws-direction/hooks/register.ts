@@ -6,7 +6,7 @@ import type { EngineInterface, Register } from 'claude-code'
 import { bound } from './kit/classify-fork'
 import { DASHBOARD, parseEvent } from './kit/tab'
 import { corpusText, outline, parseAnchorDocs, pickAnchors, pickExcerpts, splitSections, terms, type Section } from './corpus'
-import { isWorking, lastAnswer, sessionRunDir, sessionTask, skipReason, turnDigest, turnNumber, turnQuery, turnText, type Row } from './turn'
+import { isWorking, lastAnswer, sessionConversation, sessionRunDir, skipReason, turnDigest, turnNumber, turnQuery, turnText, type Row } from './turn'
 import { CHECK_SYSTEM, CHECK_TIMEOUT_MS, checkPrompt, failLine, OVERALL_SYSTEM, OVERALL_TIMEOUT_MS, overallPrompt, parseJudgement } from './verdict'
 import { addCheck, directionSummary, directionTab, historyText, isDrift, lastOf, nudgeText, parseChecks, projectKey, statusText, type Check, type View } from './view'
 
@@ -16,7 +16,7 @@ const summary = atom({ plugin: 'bws-direction', key: 'summary' } as const, null)
 
 // Options, copied in by register on every load.
 let isAuto = true
-let model = 'haiku'
+let model = 'sonnet'
 let overallModel = 'sonnet'
 let every = 1
 let docsDir = 'docs'
@@ -184,7 +184,7 @@ async function check($: EngineInterface, scope: 'turn' | 'overall', answer?: str
   try {
     const r = await rows($)
     const p = await plan($, r)
-    const task = sessionTask(r)
+    const task = sessionConversation(r)
     let out
     let files: string[] = []
     if (scope === 'turn') {
@@ -333,7 +333,7 @@ async function directionCommand($: EngineInterface, args: string): Promise<strin
 
 export const register: Register = (on, options) => {
   isAuto = options.autoCheck !== false
-  model = String(options.model ?? '').trim() || 'haiku'
+  model = String(options.model ?? '').trim() || 'sonnet'
   overallModel = String(options.overallModel ?? '').trim() || 'sonnet'
   every = Math.max(1, Math.floor(Number(options.every) || 1))
   docsDir = String(options.docsDir ?? '').trim().replace(/\\/g, '/').replace(/^\.\/|\/+$/g, '') || 'docs'

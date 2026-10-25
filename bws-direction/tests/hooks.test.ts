@@ -114,8 +114,8 @@ describe('the automatic turn check', () => {
     await drain(w.clock)
     expect(w.seen.complete.length).toBe(1)
     const c = w.seen.complete[0]!
-    expect(c.model).toBe('haiku')
-    expect(c.prompt).toContain('<task>\nBuild the parry window per the GDD\n</task>')
+    expect(c.model).toBe('sonnet')
+    expect(c.prompt).toContain('<opening_request>\nBuild the parry window per the GDD')
     expect(c.prompt).toContain('<plan path="runs/2026-10-20-parry/PLAN.md">')
     expect(c.prompt).toContain('Anchor documents (the authority on what the project is): docs/GDD.md')
     expect(c.prompt).toContain('--- docs/GDD.md § Combat')

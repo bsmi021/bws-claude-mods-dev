@@ -5,22 +5,51 @@ export type Row = { role: string; text: string; toolUses: readonly { tool: strin
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}...` : s)
 const one = (s: string) => s.replace(/\s+/g, ' ').trim()
 
-// A prompt the person typed: a user row with text, not a tool result, not a slash command or a system/command tag.
+// A prompt the person typed: a user row with text, not a tool result, not a slash command, a system/command tag or a
+// skill's injected instructions.
 export const isTyped = (r: Row) => {
   if (r.role !== 'user' || r.hasToolResults) return false
   const t = r.text.trim()
-  return t.length > 0 && !t.startsWith('/') && !t.startsWith('<')
+  return t.length > 0 && !t.startsWith('/') && !t.startsWith('<') && !t.startsWith('Base directory for this skill:')
 }
 
 export const typedPrompts = (rows: readonly Row[]) => rows.filter(isTyped).map(r => r.text.trim())
 
-// The task: the session's first typed prompt, and the latest few after it (redirections the person made).
-export function sessionTask(rows: readonly Row[], recent = 3): { first: string; recent: string[] } {
-  const all = typedPrompts(rows)
-  return { first: clip(all[0] ?? '', 3000), recent: all.slice(1).slice(-recent).map(p => clip(p, 1200)) }
-}
-
 const EDITS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
+
+export type Conversation = { first: string; turns: string[]; omitted: number }
+
+// The whole conversation the check reads: the opening request in full, then every later prompt with a short line of
+// what that turn did (files edited, the head of its answer). Over `budget` characters the middle turns go first, so the
+// start and the newest turns always stay.
+export function sessionConversation(rows: readonly Row[], budget = 16_000): Conversation {
+  const starts = rows.flatMap((r, i) => (isTyped(r) ? [i] : []))
+  const turns: string[] = []
+  starts.forEach((s, k) => {
+    const seg = rows.slice(s + 1, starts[k + 1] ?? rows.length)
+    const files: string[] = []
+    let answer = ''
+    for (const r of seg) {
+      if (r.role !== 'assistant') continue
+      if (r.text.trim()) answer = r.text
+      for (const t of r.toolUses) {
+        const path = (str(t.input, 'file_path') || str(t.input, 'notebook_path')).replace(/\\/g, '/').split('/').slice(-2).join('/')
+        if (EDITS.has(t.tool) && path && !files.includes(path)) files.push(path)
+      }
+    }
+    const did = [files.length > 0 ? `edited ${files.slice(0, 6).join(', ')}` : '', answer ? `answered: ${clip(one(answer), 240)}` : ''].filter(Boolean).join('; ')
+    const prompt = rows[s]?.text.trim() ?? ''
+    turns.push(k === 0 ? (did ? `-> ${did}` : '') : `${k + 1}. ${clip(one(prompt), 700)}${did ? `\n   -> ${did}` : ''}`)
+  })
+  const first = clip(rows[starts[0] ?? -1]?.text.trim() ?? '', 4000)
+  const opening = turns.shift() ?? ''
+  const size = (xs: readonly string[]) => xs.reduce((n, x) => n + x.length + 1, 0)
+  const head = turns.slice(0, 3)
+  let tail = turns.slice(3)
+  while (tail.length > 0 && size(head) + size(tail) > budget) tail = tail.slice(1)
+  const omitted = turns.length - head.length - tail.length
+  return { first: opening ? `${first}\n${opening}` : first, turns: [...head, ...tail], omitted }
+}
 
 const str = (input: Record<string, unknown> | undefined, k: string) => {
   const v = input?.[k]

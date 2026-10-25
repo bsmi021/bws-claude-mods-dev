@@ -1,7 +1,7 @@
 import { test, expect, describe } from 'claude-code/testing'
 import { anchorRank, corpusText, outline, parseAnchorDocs, pickAnchors, pickExcerpts, splitSections, terms } from '../hooks/corpus'
-import { isWorking, lastAnswer, sessionRunDir, sessionTask, skipReason, turnDigest, turnNumber, type Row } from '../hooks/turn'
-import { checkPrompt, parseJudgement } from '../hooks/verdict'
+import { isWorking, lastAnswer, sessionConversation, sessionRunDir, skipReason, turnDigest, turnNumber, type Row } from '../hooks/turn'
+import { CHECK_SYSTEM, checkPrompt, parseJudgement } from '../hooks/verdict'
 import { addCheck, directionSummary, directionTab, nudgeText, parseChecks, projectKey, projectLine, sessionLine, statusText, trend, type Check, type View } from '../hooks/view'
 import { parseTab } from '../hooks/kit/tab'
 
@@ -92,9 +92,29 @@ const ROWS: Row[] = [
 ]
 
 describe('the turn', () => {
-  test('the task is the first typed prompt; later typed prompts are redirections; slash commands do not count', async () => {
-    expect(sessionTask(ROWS)).toEqual({ first: 'Build the parry system per the GDD. Plan in runs/2026-10-20-parry/PLAN.md', recent: ['also add a photo mode'] })
+  test('the conversation: the opening request in full with what its turn did, then every later prompt with its turn; slash commands do not count', async () => {
+    expect(sessionConversation(ROWS)).toEqual({
+      first: 'Build the parry system per the GDD. Plan in runs/2026-10-20-parry/PLAN.md\n-> edited 2026-10-20-parry/PLAN.md; answered: Plan written.',
+      turns: ['2. also add a photo mode\n   -> edited Source/PhotoMode.cpp; answered: Photo mode added.'],
+      omitted: 0,
+    })
     expect(turnNumber(ROWS)).toBe(2)
+    expect(turnNumber([...ROWS, R('user', 'Base directory for this skill: C:/s/drive-screen\n# Drive the screen')])).toBe(2)
+  })
+
+  test('a long conversation keeps the opening request, the first later turns and the newest ones; the middle goes first', async () => {
+    const rows: Row[] = [R('user', `Open ${'o'.repeat(5000)}`)]
+    for (let i = 2; i <= 60; i++) rows.push(R('user', `step ${i} ${'x'.repeat(600)}`), R('assistant', `done ${i}`))
+    const c = sessionConversation(rows, 8000)
+    expect(c.first.startsWith('Open ')).toBe(true)
+    expect(c.first.length).toBe(4003)
+    expect(c.turns[0]?.startsWith('2. step 2 ')).toBe(true)
+    expect(c.turns[2]?.startsWith('4. step 4 ')).toBe(true)
+    expect(c.turns[c.turns.length - 1]?.startsWith('60. step 60 ')).toBe(true)
+    expect(c.omitted > 0).toBe(true)
+    expect(c.turns.length + c.omitted).toBe(59)
+    expect(c.turns.reduce((n, s) => n + s.length + 1, 0) <= 8000).toBe(true)
+    expect(checkPrompt({ task: c, plan: '', planPath: '', corpus: '', turn: 't' })).toContain(`(${c.omitted} turns in between left out)`)
   })
 
   test('the digest covers the turn since the last typed prompt', async () => {
@@ -142,13 +162,20 @@ describe('the verdict', () => {
     expect(parseJudgement('[1,2]')).toBe(null)
   })
 
-  test('the check prompt carries the task, later prompts, plan, documents and the turn', async () => {
-    const p = checkPrompt({ task: { first: 'Build parry', recent: ['add photo mode'] }, plan: '- [ ] parry', planPath: 'runs/x/PLAN.md', corpus: 'Documents: docs/GDD.md', turn: 'Files edited: a.cpp' })
-    expect(p).toContain('<task>\nBuild parry\n</task>')
-    expect(p).toContain('- add photo mode')
+  test('the judge measures against the opening request: continuations are aligned, only unrelated steps are drift', async () => {
+    expect(CHECK_SYSTEM).toContain('Drift is a step unrelated to that opening request')
+    expect(CHECK_SYSTEM).toContain('release and publish steps')
+    expect(CHECK_SYSTEM).not.toContain('does not make its work aligned')
+  })
+
+  test('the check prompt carries the opening request, the conversation, plan, documents and the turn', async () => {
+    const p = checkPrompt({ task: { first: 'Build parry', turns: ['2. add photo mode'], omitted: 0 }, plan: '- [ ] parry', planPath: 'runs/x/PLAN.md', corpus: 'Documents: docs/GDD.md', turn: 'Files edited: a.cpp' })
+    expect(p).toContain('<opening_request>\nBuild parry\n</opening_request>')
+    expect(p).toContain('2. add photo mode')
+    expect(p).not.toContain('left out')
     expect(p).toContain('<plan path="runs/x/PLAN.md">')
     expect(p).toContain('Documents: docs/GDD.md')
-    expect(checkPrompt({ task: { first: '', recent: [] }, plan: '', planPath: '', corpus: '', turn: 't' })).toContain('(no docs/ folder found)')
+    expect(checkPrompt({ task: { first: '', turns: [], omitted: 0 }, plan: '', planPath: '', corpus: '', turn: 't' })).toContain('(no docs/ folder found)')
   })
 })
 
@@ -224,7 +251,7 @@ describe('the record and the view', () => {
     expect(s).toContain('Anchors: docs/GDD.md · 12 docs')
     expect(s).toContain('Drifting (50) · agent tangent')
     expect(s).toContain('Whole project')
-    expect(nudgeText(mk('drifting', 50))).toContain('say in one line why this work is in scope')
-    expect(nudgeText(mk('drifting', 50, { cause: 'user' }))).toContain('offer to park it as a follow-up')
+    expect(nudgeText(mk('drifting', 50))).toContain('This is a warning, not a stop: carry on')
+    expect(nudgeText(mk('drifting', 50, { cause: 'user' }))).toContain('keep doing what the person asked')
   })
 })

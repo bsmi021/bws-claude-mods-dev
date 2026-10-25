@@ -174,8 +174,8 @@ export function nudgeText(c: Check): string {
     c.anchor ? `It rests on: ${c.anchor}.` : '',
     c.suggestion ? `Suggested: ${c.suggestion}` : '',
     c.cause === 'user'
-      ? 'Before more work, say plainly that this widens the agreed scope and offer to park it as a follow-up.'
-      : 'Before more work, either get back to the agreed task and plan, or say in one line why this work is in scope.',
+      ? 'This is a warning, not a stop: keep doing what the person asked, and mention in one line that it is outside the opening request.'
+      : 'This is a warning, not a stop: carry on, and mention in one line how this work serves the opening request, or that it does not.',
   ]
     .filter(Boolean)
     .join(' ')
