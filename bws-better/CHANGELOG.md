@@ -3,6 +3,8 @@
 ## 0.4.0
 - Upgrades use the conversation when there is one: the last six turns go with the questions and the rewrite as background, so "fix it" or "that bug" is named in the upgrade and no question asks what the conversation already settled.
 - Only references are taken from it: no earlier tasks, method, files or constraints are carried over. Slash commands and the request itself are left out. A new session, or one whose transcript cannot be read, upgrades as before.
+- A fresh Better tab: a gold banner on top (title, AUTO ON, step pills in green, gold or red; on the review the word counts, details added and "Ready to run"), drawn as a picture on the terminal and an SVG on Desktop.
+- The review leads with your upgraded prompt, then the buttons, then what changed, with your original dimmed last. Answered questions turn green, and each step says what it needs from you.
 
 ## 0.3.1
 - No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).

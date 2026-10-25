@@ -3,7 +3,7 @@
 > Turns a rough prompt into a clear one before it is sent, by asking you a few quick questions first.
 
 A vague prompt gets a vague answer. `/better` asks up to three multiple-choice questions about the outcome you want,
-rewrites your prompt as a goal-and-outcome request, and shows your prompt and the upgrade side by side. Nothing runs
+rewrites your prompt as a goal-and-outcome request, and shows the upgrade above your original. Nothing runs
 until you press **Run it**.
 
 The upgrade says what should be true when the work is done and how to tell, and leaves the way there to Claude: no
@@ -36,10 +36,12 @@ asks nothing and grounds its rewrite in the project's instruction files, file tr
 
 ### The Better tab
 
-Four steps are shown across the top: **Your prompt, Questions, Rewrite, Review**.
+A gold banner tops the tab: the title, **AUTO ON** while automatic mode is on, and four step pills (**Prompt, Questions,
+Rewrite, Review**): done in green, the current step in gold, a failed one in red. It is a 56-column picture on the
+terminal and an SVG on Desktop.
 
-- **Questions.** Pick a chip, press **Other (type it)** to type your own answer, or press **Skip**. When every question is answered or skipped, the rewrite starts. **Skip the rest, upgrade now** starts it at once. When no question would help, the tab goes straight to the rewrite.
-- **Review.** Three tiles show words before, words after and details added. Under them are the buttons, then what was added, then the two prompts side by side.
+- **Questions.** Pick a chip, press **Other…** to type your own answer, or press **Skip**. Answered questions turn green. When every question is answered or skipped, the rewrite starts. **Upgrade now** starts it at once. When no question would help, the tab goes straight to the rewrite.
+- **Review.** The banner's pills show the word counts, the details added and that it is ready to run. Below them: your upgraded prompt, the buttons, what changed, and your original, dimmed, last.
 
 | Button | Key | What it does |
 | --- | --- | --- |

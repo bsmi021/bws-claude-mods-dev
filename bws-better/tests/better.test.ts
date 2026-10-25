@@ -99,7 +99,7 @@ describe('the full flow', () => {
 
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await mountTab($ as never)
-      expect(await ui.find({ type: 'Text', text: 'PROMPT UPGRADE' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^PROMPT UPGRADE · 1 Prompt · \[2 Questions\] · 3 Rewrite · 4 Review$/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /Who is the page for?/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: '0 of 3 answered' })).toBeDefined()
       expect(await ui.find({ key: 'upgrade' })).toBeDefined()
@@ -122,7 +122,7 @@ describe('the full flow', () => {
     expect(ask?.system).toMatch(/\[placeholder\]/)
 
     const review = await mountTab($ as never)
-    expect(await review.find({ type: 'Text', text: /words before/ })).toBeDefined()
+    expect(await review.find({ type: 'Text', text: /PROMPT UPGRADE · \d+ > \d+ words · 3 details added · Ready to run/ })).toBeDefined()
     expect(await review.find({ type: 'Text', text: '+ Audience: new players' })).toBeDefined()
     expect(await review.find({ type: 'Text', text: UPGRADED })).toBeDefined()
     expect(await review.find({ type: 'Text', text: ROUGH })).toBeDefined()
@@ -133,7 +133,7 @@ describe('the full flow', () => {
     await review.unmount()
     await clock.advance(50)
     expect(seen.sent).toEqual([{ text: UPGRADED, asUser: true, kind: 'plugin' }])
-    expect(lastTab()?.body.some(n => n.kind === 'text' && /Nothing to upgrade/.test(n.text))).toBe(true)
+    expect(lastTab()?.body.some(n => n.kind === 'text' && /Turn a rough prompt/.test(n.text))).toBe(true)
 
     // Saved to history; /better history reopens its review.
     expect((store.history as unknown[]).length).toBe(1)
@@ -216,7 +216,7 @@ describe('cancel and errors', () => {
     const ui = await mountTab($ as never)
     await ui.press({ key: 'cancel' })
     await ui.unmount()
-    expect(lastTab()?.body.some(n => n.kind === 'text' && /Nothing to upgrade/.test(n.text))).toBe(true)
+    expect(lastTab()?.body.some(n => n.kind === 'text' && /Turn a rough prompt/.test(n.text))).toBe(true)
     expect(box()).toBe(ROUGH)
     expect(seen.sent).toEqual([])
   })
@@ -348,7 +348,7 @@ describe('commands and widths', () => {
     expect(box()).toBe(ROUGH)
     await clock.advance(50)
     expect(seen.asks).toEqual([])
-    expect(lastTab()?.body.some(n => n.kind === 'text' && /Nothing to upgrade/.test(n.text))).toBe(true)
+    expect(lastTab()?.body.some(n => n.kind === 'text' && /Turn a rough prompt/.test(n.text))).toBe(true)
   })
 
   for (const surface of SURFACES) test(`/better alone opens a box to type one on ${surface}`, async ($, on) => {
@@ -383,7 +383,7 @@ describe('commands and widths', () => {
       await clock.advance(50)
       const ui = await mountTab($ as never)
       expect(await ui.find({ key: 'run' })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /words before/ })).toBeDefined() // laid out for 100 columns, whatever the dashboard's width
+      expect(await ui.find({ type: 'Text', text: /PROMPT UPGRADE · \d+ > \d+ words · 3 details added · Ready to run/ })).toBeDefined() // a fixed-width banner, whatever the dashboard's width
       await ui.unmount()
     })
   }

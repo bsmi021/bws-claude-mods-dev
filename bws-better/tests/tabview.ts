@@ -11,6 +11,7 @@ type Node =
   | { kind: 'input'; id: string; placeholder: string }
   | { kind: 'card'; title: string; body: Node[] }
   | { kind: 'raster' }
+  | { kind: 'image'; alt: string }
 export type Tab = { title: string; badge: string; tone: string; raise: number; show?: number; body: Node[] }
 
 let tabs: Tab[] = []
@@ -25,7 +26,9 @@ export function recordTabs(on: On) {
 
 export const lastTab = () => tabs[tabs.length - 1]
 
-const flat = (nodes: readonly Node[]): Node[] => nodes.flatMap(n => (n.kind === 'card' ? [{ kind: 'text', text: n.title } as Node, ...flat(n.body)] : [n]))
+// A card's title and a picture's alt text read as text.
+const flat = (nodes: readonly Node[]): Node[] =>
+  nodes.flatMap(n => (n.kind === 'card' ? [{ kind: 'text', text: n.title } as Node, ...flat(n.body)] : n.kind === 'image' ? [{ kind: 'text', text: n.alt } as Node] : [n]))
 
 type Dollar = { command: { run: (i: never) => Promise<unknown> } }
 const matches = (want: string | RegExp | undefined, got: string) => (want === undefined ? true : typeof want === 'string' ? want === got : want.test(got))
