@@ -7,11 +7,13 @@ import {
   bigDigits,
   cardWidths,
   classify,
+  conversationText,
   heading,
   historyRow,
   isShortReply,
   parseQuestions,
   parseRewrite,
+  questionsPrompt,
   QUESTIONS_SYSTEM,
   readHistory,
   restoreFill,
@@ -122,6 +124,31 @@ describe('reading the rewrite', () => {
     expect(p).toContain('<request>\nlanding page\n</request>')
     expect(p).not.toContain('Tone?')
     expect(rewritePrompt('x', [], [])).toContain('(none)')
+  })
+
+  test('the conversation: last few turns, commands and the request itself left out, clipped', () => {
+    const said = [
+      { role: 'user', text: 'old one' },
+      ...Array.from({ length: 6 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', text: `turn ${i}` })),
+      { role: 'assistant', text: '' },
+      { role: 'system', text: 'not said' },
+      { role: 'user', text: '<command-name>/better</command-name>' },
+      { role: 'user', text: '/better fix it' },
+      { role: 'user', text: 'fix it' },
+    ]
+    const c = conversationText(said, 'fix it')
+    expect(c.split('\n')).toEqual(['user: turn 0', 'assistant: turn 1', 'user: turn 2', 'assistant: turn 3', 'user: turn 4', 'assistant: turn 5'])
+    expect(conversationText([], 'x')).toBe('')
+    expect(conversationText([{ role: 'user', text: 'fix it' }], 'fix it')).toBe('')
+    expect(conversationText([{ role: 'user', text: 'a  long\n\ntext' }], '', 6, 7)).toBe('user: a long…')
+  })
+
+  test('the conversation goes in front of the request only when there is one', () => {
+    expect(questionsPrompt('fix it')).toBe('<request>\nfix it\n</request>')
+    expect(questionsPrompt('fix it', 'user: the login loop')).toBe('<conversation>\nuser: the login loop\n</conversation>\n\n<request>\nfix it\n</request>')
+    expect(rewritePrompt('fix it', [], [], 'user: the login loop')).toMatch(/^<conversation>[\s\S]*<request>\nfix it[\s\S]*<answers>/)
+    expect(QUESTIONS_SYSTEM).toMatch(/conversation/)
+    expect(REWRITE_SYSTEM).toMatch(/Carry nothing else over/)
   })
 })
 

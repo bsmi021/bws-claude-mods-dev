@@ -75,6 +75,37 @@ export function classify(e: Submitted, s: { auto: boolean; armed: boolean }): Ve
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// The recent conversation, as background for both model calls.
+
+export type Message = { role: string; text: string }
+
+export const LAST_MESSAGES = 6
+export const PER_MESSAGE = 600
+
+// A slash command or the engine's own wrapper of one: not something the person said about the work.
+const COMMAND_TURN = /^(\/|<command-|<local-command)/
+
+// The last few things said, one line each; '' when there is nothing usable, so the prompt carries no block at all.
+// The request itself is left out when it is the last thing the person said.
+export function conversationText(messages: readonly Message[], original = '', n = LAST_MESSAGES, per = PER_MESSAGE): string {
+  const said = messages.filter(m => {
+    if (m.role !== 'user' && m.role !== 'assistant') return false
+    const t = m.text.trim()
+    return t !== '' && !(m.role === 'user' && COMMAND_TURN.test(t))
+  })
+  const last = said[said.length - 1]
+  if (last && last.role === 'user' && last.text.trim() === original.trim()) said.pop()
+  return said
+    .slice(-n)
+    .map(m => `${m.role}: ${clipWords(m.text, per)}`)
+    .join('\n')
+}
+
+function withConversation(conversation: string, rest: string): string {
+  return conversation.trim() === '' ? rest : `<conversation>\n${conversation}\n</conversation>\n\n${rest}`
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // The two model calls.
 
 export const QUESTIONS_SYSTEM = `You help a person sharpen a rough request before they send it to Claude Code, an AI assistant that works in their project and works out for itself how to do the work.
@@ -86,13 +117,15 @@ Pick at most three multiple-choice questions whose answers would most change the
 - whether they want an answer or a change, when the request could be read either way.
 Do not ask how to do it (steps, files, tools or design): Claude decides that from the project. Do not ask about anything the request already says.
 
+The recent conversation, when given, is background only: use it to understand what the request refers to, and do not ask about anything it already settles. Never ask about earlier tasks the request does not point to.
+
 Each question is short (under 70 characters) and has two to four short options (under 28 characters each) that are real, distinct choices. Never ask the person to type facts such as names, numbers or prices: those become placeholders later. If no question would clearly help, return no questions.
 
 Reply with JSON only, no other text:
 {"questions":[{"q":"...","options":["...","..."]}]}`
 
-export function questionsPrompt(original: string): string {
-  return `<request>\n${original}\n</request>`
+export function questionsPrompt(original: string, conversation = ''): string {
+  return withConversation(conversation, `<request>\n${original}\n</request>`)
 }
 
 export const REWRITE_SYSTEM = `You rewrite a person's rough request into a goal-and-outcome request for Claude Code, an AI assistant that works in their project. It says what to achieve and how to tell it is achieved, and leaves the way there to Claude, which reads the project and chooses its own approach.
@@ -102,6 +135,7 @@ Rules:
 - Open with the end state, what should be true when it is done, not the activity. Add why it matters when they said.
 - Use the answers they gave. Leave out anything they skipped. Where the request is vague and no answer settles it, keep their words and let Claude find out what they mean; do not pick a meaning for them.
 - Leave the method to Claude: no steps, no order of work, and no files, tools or design they did not name. A method they chose stays.
+- The recent conversation, when given, is background only: use it to work out what the request refers to ("it", "that bug", "the page from before") and name that thing plainly; a reference resolved this way counts as something they named. Carry nothing else over from it: no earlier tasks, no method, files or tools from earlier turns, no constraints the request does not point to.
 - Include a constraint only when they gave it, such as what must not change or who it is for. Never say where the fix belongs unless they did.
 - End with what done looks like in observable terms, and how to check it.
 - When the goal depends on something unknown that could make it impossible, say to stop and report instead of guessing.
@@ -110,7 +144,7 @@ Rules:
 
 Reply with JSON only, no other text:
 {"prompt":"the upgraded request","added":["each thing you added, under 60 characters"]}
-The "added" list names two to six concrete additions, such as "Audience: new players" or "Done when the tests pass".`
+The "added" list names two to six concrete additions, such as "Audience: new players", "Done when the tests pass" or "'it' is the login page loop".`
 
 // The answers that count: picked or typed. Skipped and unanswered questions are left out.
 export function answerLines(questions: readonly Question[], answers: readonly Answer[]): string[] {
@@ -122,10 +156,10 @@ export function answerLines(questions: readonly Question[], answers: readonly An
   return lines
 }
 
-export function rewritePrompt(original: string, questions: readonly Question[], answers: readonly Answer[]): string {
+export function rewritePrompt(original: string, questions: readonly Question[], answers: readonly Answer[], conversation = ''): string {
   const lines = answerLines(questions, answers)
   const given = lines.length === 0 ? '(none)' : lines.map(l => `- ${l}`).join('\n')
-  return `<request>\n${original}\n</request>\n\n<answers>\n${given}\n</answers>`
+  return withConversation(conversation, `<request>\n${original}\n</request>\n\n<answers>\n${given}\n</answers>`)
 }
 
 // The first JSON object in a reply, fences and chatter around it ignored; undefined when there is none.

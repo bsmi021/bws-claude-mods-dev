@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+- Upgrades use the conversation when there is one: the last six turns go with the questions and the rewrite as background, so "fix it" or "that bug" is named in the upgrade and no question asks what the conversation already settled.
+- Only references are taken from it: no earlier tasks, method, files or constraints are carried over. Slash commands and the request itself are left out. A new session, or one whose transcript cannot be read, upgrades as before.
+
 ## 0.3.1
 - No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
 

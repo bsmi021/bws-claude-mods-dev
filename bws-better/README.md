@@ -88,14 +88,16 @@ Set in `/plugin`, or under `pluginConfigs["bws-better"].options` in `settings.js
 | --- | --- | --- |
 | `model` | `haiku` | Model alias or id that writes the questions and the rewrite (`haiku`, `sonnet`, `opus` or a full id). |
 
-Each upgrade makes two model calls: one for the questions and one for the rewrite.
+Each upgrade makes two model calls: one for the questions and one for the rewrite. When the session already has a
+conversation, the last six turns go with both calls as background, so "fix it" or "that bug" can be named in the
+upgrade. Slash commands and your request itself are left out, and nothing else from those turns is carried over.
 
 ## Permissions and data
 
-- **Reads** the prompt box and the session's surfaces (to tell a terminal from a headless run).
+- **Reads** the prompt box, the session's surfaces (to tell a terminal from a headless run) and the last six turns of the conversation.
 - **Writes** no files. Automatic mode and the last 20 upgrades (your original prompts and their upgrades) are kept in the mod's own store, which lives on your machine.
 - **Runs** no processes and opens no network connections of its own.
-- **Model calls** go through the session's own client, to the configured model only. Your prompt and your answers are sent there, and to no one else.
+- **Model calls** go through the session's own client, to the configured model only. Your prompt, your answers and the recent conversation are sent there, and to no one else. The conversation is never logged or kept in the history.
 - **Sends** a prompt to Claude only when you press **Run it**, **Send my original** or Enter on an edited upgrade, or send an untouched prompt through in the cases listed under automatic mode. When a model call fails, it writes one debug line with no prompt text in it.
 
 ## Compatibility

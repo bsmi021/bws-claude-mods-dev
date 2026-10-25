@@ -15,7 +15,9 @@ const REWRITE = JSON.stringify({ prompt: UPGRADED, added: ['Audience: new player
 
 type Reply = { isAnswered: true; text: string } | { isAnswered: false; reason: 'api-error'; status: number }
 
-type World = { surfaces?: string[]; box?: string; replies?: Reply[]; isPlaced?: boolean; store?: Record<string, unknown> }
+type Said = { role: 'user' | 'assistant'; text: string }
+
+type World = { surfaces?: string[]; box?: string; replies?: Reply[]; isPlaced?: boolean; store?: Record<string, unknown>; messages?: Said[] | 'throw' }
 
 // Stubs every outside call the mod makes and records what reached the engine.
 function world(on: On, w: World = {}) {
@@ -39,6 +41,10 @@ function world(on: On, w: World = {}) {
   }
   let box = w.box ?? ''
   on('command.register', () => ({ value: undefined }) as never)
+  on('session.messages', () => {
+    if (w.messages === 'throw') throw new Error('no transcript')
+    return { value: (w.messages ?? []).map(m => ({ ...m, toolUses: [] })) as never }
+  })
   on('session.surfaces', () => ({ value: (w.surfaces ?? ['terminal']) as never }))
   on('model.complete', ($, e) => {
     seen.asks.push({ system: String(e.system), prompt: String(e.prompt) })
@@ -151,6 +157,40 @@ describe('the full flow', () => {
     expect(await ui.find({ key: 'run' })).toBeDefined()
     await ui.unmount()
   })
+
+  test('the recent conversation reaches both calls, without the /better turn or the request itself', async ($, on) => {
+    const messages: Said[] = [
+      { role: 'user', text: 'the login page loops forever after sign-in' },
+      { role: 'assistant', text: 'The redirect in auth.ts sends you back to /login.' },
+      { role: 'user', text: `/better ${ROUGH}` },
+      { role: 'user', text: ROUGH },
+    ]
+    const { seen, clock } = world(on, { messages, replies: [{ isAnswered: true, text: '{"questions":[]}' }, { isAnswered: true, text: REWRITE }] })
+    await $.command.run({ command: 'better', args: ROUGH } as never)
+    await clock.advance(50)
+    await clock.advance(50)
+    expect(seen.asks.length).toBe(2)
+    for (const ask of seen.asks) {
+      expect(ask.prompt).toContain('<conversation>\nuser: the login page loops forever after sign-in\nassistant: The redirect in auth.ts')
+      expect(ask.prompt).not.toContain('/better')
+      expect(ask.prompt.split(ROUGH).length).toBe(2) // the request once, in <request>
+    }
+    expect(seen.logs.some(l => l.includes('login'))).toBe(false)
+  })
+
+  for (const messages of [[], 'throw'] as const) {
+    test(`no conversation (${messages === 'throw' ? 'unreadable' : 'new session'}): no block, the upgrade still runs`, async ($, on) => {
+      const { seen, clock } = world(on, { messages: messages === 'throw' ? 'throw' : [], replies: [{ isAnswered: true, text: '{"questions":[]}' }, { isAnswered: true, text: REWRITE }] })
+      await $.command.run({ command: 'better', args: ROUGH } as never)
+      await clock.advance(50)
+      await clock.advance(50)
+      expect(seen.asks.length).toBe(2)
+      for (const ask of seen.asks) expect(ask.prompt).not.toContain('<conversation>')
+      const ui = await mountTab($ as never)
+      expect(await ui.find({ key: 'run' })).toBeDefined()
+      await ui.unmount()
+    })
+  }
 
   test('Edit puts the upgrade in the box and the next Enter sends it untouched', async ($, on) => {
     const { seen, clock } = world(on, { replies: [{ isAnswered: true, text: '{"questions":[]}' }, { isAnswered: true, text: REWRITE }] })

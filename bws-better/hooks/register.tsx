@@ -4,7 +4,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 import type { Answer, Entry, Flow } from '../types'
-import { addEntry, betterSummary, classify, failLine, parseQuestions, parseRewrite, QUESTIONS_SYSTEM, questionsPrompt, readHistory, restoreFill, REWRITE_SYSTEM, rewritePrompt } from './lib'
+import { addEntry, betterSummary, classify, conversationText, failLine, parseQuestions, parseRewrite, QUESTIONS_SYSTEM, questionsPrompt, readHistory, restoreFill, REWRITE_SYSTEM, rewritePrompt } from './lib'
 import { DASHBOARD, parseEvent } from './kit/tab'
 import { betterTab, pressOf, type Press } from './tab'
 
@@ -112,6 +112,17 @@ async function begin($: EngineInterface, original: string): Promise<number> {
   return attempt
 }
 
+// The recent conversation for the model calls; '' when there is none or it cannot be read. It goes to the model and
+// nowhere else: never to the debug log or the history.
+async function recent($: EngineInterface, original: string): Promise<string> {
+  try {
+    const messages = await $.session.messages()
+    return Array.isArray(messages) ? conversationText(messages.map(m => ({ role: m.role, text: m.text ?? '' })), original) : ''
+  } catch {
+    return ''
+  }
+}
+
 function later($: EngineInterface, work: () => Promise<void>) {
   $.clock.after(10, () => void work().catch(() => $.ui.log(failLine('step', 'error'), { to: 'debug' })))
 }
@@ -125,9 +136,10 @@ async function current($: EngineInterface, attempt: number, step: Flow['step']):
 async function askQuestions($: EngineInterface, attempt: number) {
   const v = await current($, attempt, 'reading')
   if (!v) return
+  const conversation = await recent($, v.original)
   stop = new AbortController()
   const r = await $.model.complete(
-    { model, system: QUESTIONS_SYSTEM, prompt: questionsPrompt(v.original), maxTokens: 800, timeoutMs: TIMEOUT_MS },
+    { model, system: QUESTIONS_SYSTEM, prompt: questionsPrompt(v.original, conversation), maxTokens: 800, timeoutMs: TIMEOUT_MS },
     { signal: stop.signal },
   )
   if (!(await current($, attempt, 'reading'))) return
@@ -162,9 +174,10 @@ async function startRewrite($: EngineInterface) {
 async function doRewrite($: EngineInterface, attempt: number) {
   const v = await current($, attempt, 'rewrite')
   if (!v) return
+  const conversation = await recent($, v.original)
   stop = new AbortController()
   const r = await $.model.complete(
-    { model, system: REWRITE_SYSTEM, prompt: rewritePrompt(v.original, v.questions, v.answers), maxTokens: 2000, timeoutMs: TIMEOUT_MS },
+    { model, system: REWRITE_SYSTEM, prompt: rewritePrompt(v.original, v.questions, v.answers, conversation), maxTokens: 2000, timeoutMs: TIMEOUT_MS },
     { signal: stop.signal },
   )
   if (!(await current($, attempt, 'rewrite'))) return
@@ -267,7 +280,7 @@ async function composed($: EngineInterface, text: string) {
 
 // Headless (claude -p): no dashboard, so no questions: the rewrite alone, as text.
 async function headless($: EngineInterface, original: string): Promise<{ text: string; exitCode?: number }> {
-  const r = await $.model.complete({ model, system: REWRITE_SYSTEM, prompt: rewritePrompt(original, [], []), maxTokens: 2000, timeoutMs: TIMEOUT_MS })
+  const r = await $.model.complete({ model, system: REWRITE_SYSTEM, prompt: rewritePrompt(original, [], [], await recent($, original)), maxTokens: 2000, timeoutMs: TIMEOUT_MS })
   if (!r.isAnswered) return { text: `Prompt Upgrade could not write the upgrade. ${callNote(r)}`, exitCode: 1 }
   const out = parseRewrite(r.text)
   if (!out) return { text: 'Prompt Upgrade could not read the reply.', exitCode: 1 }
