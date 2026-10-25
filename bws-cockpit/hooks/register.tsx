@@ -137,6 +137,9 @@ const cacheBar = atom({ plugin: 'bws-cockpit', key: 'cacheBar' } as const, null)
 
 const DASH = 'dashboard'
 const DASH_TITLE = 'Dashboard'
+// The dock width every open asks for: the engine caps it at 45% of the terminal, so this means as wide as allowed. A
+// width the person dragged the dock to still wins.
+const DASH_COLUMNS = 120
 const TABS: DashTab[] = ['assumptions', 'shelf', 'board', 'loop']
 const TAB_LABEL: Record<DashTab, string> = { assumptions: 'Assumptions', shelf: 'Shelf', board: 'Board', loop: 'Loop' }
 const ASSUMPTION_TOOL = `mcp__bws-cockpit__${TOOL_NAME}`
@@ -982,7 +985,7 @@ async function openForMod($: EngineInterface, tab: string) {
   if (pane?.isFocused) return
   // Closed whoever opened it: a pane another plugin opened is not in this plugin's list, and only a fresh open is ours.
   await settle($.ui.close({ id: DASH }))
-  const r = await $.ui.open({ id: DASH, title: DASH_TITLE, focus: true })
+  const r = await $.ui.open({ id: DASH, title: DASH_TITLE, columns: DASH_COLUMNS, focus: true })
   if (!r.isPlaced) $.ui.toast(`Dashboard not shown (${r.reason}).`)
 }
 
@@ -993,7 +996,7 @@ async function openDash($: EngineInterface, tab: string | null) {
   const isEmpty = (await $.prompt.read()).text.trim() === ''
   const isOpen = (await $.ui.panes()).some(p => p.id === DASH)
   if (isEmpty && isOpen) await $.ui.close({ id: DASH })
-  const r = await $.ui.open(isEmpty ? { id: DASH, title: DASH_TITLE, focus: true } : { id: DASH, title: DASH_TITLE })
+  const r = await $.ui.open(isEmpty ? { id: DASH, title: DASH_TITLE, columns: DASH_COLUMNS, focus: true } : { id: DASH, title: DASH_TITLE, columns: DASH_COLUMNS })
   if (!r.isPlaced) $.ui.toast(`Dashboard not shown (${r.reason}). /assumptions, /shelf and /board print as text headless.`)
 }
 
@@ -1011,7 +1014,7 @@ async function raise($: EngineInterface, tab: string) {
   if (pane?.isFocused) return
   if (d.tab !== tab) await update($, dash, old => ({ ...old, tab }))
   if (pane && pane.isShown) return
-  const r = await $.ui.open({ id: DASH, title: DASH_TITLE })
+  const r = await $.ui.open({ id: DASH, title: DASH_TITLE, columns: DASH_COLUMNS })
   await trace($, r.isPlaced ? 'raise: dashboard placed' : `raise: dashboard waits undrawn: ${r.reason}`)
 }
 
@@ -1027,7 +1030,7 @@ async function openAtFirstPrompt($: EngineInterface, o: Options) {
   if (pane?.isPlaced) return
   if (pane) await settle($.ui.close({ id: DASH }))
   if ((await read($, dash)).tab === null) await update($, dash, d => ({ ...d, tab: 'assumptions' }))
-  const r = await $.ui.open({ id: DASH, title: DASH_TITLE })
+  const r = await $.ui.open({ id: DASH, title: DASH_TITLE, columns: DASH_COLUMNS })
   await trace($, r.isPlaced ? 'first prompt: dashboard placed' : `first prompt: dashboard waits undrawn: ${r.reason}`)
 }
 
@@ -1739,17 +1742,19 @@ export const register: Register = (on, options) => {
           const draftKey = `${name}:${n.id}`
           if (Input === null) return <Text key={k} dimColor>{`${n.placeholder} (type it in the terminal)`}</Text>
           return (
-            <Input
-              key={`${name}-${n.id}`}
-              {...(n.isFocused ? { autoFocus: true as const } : {})}
-              placeholder={n.placeholder}
-              value={tabDrafts.get(draftKey) ?? ''}
-              onInput={(v: string) => void tabDrafts.set(draftKey, v)}
-              onSubmit={(v: string) => {
-                tabDrafts.delete(draftKey)
-                void sendTabEvent($, name, n.id, v)
-              }}
-            />
+            <Box key={k} width={width}>
+              <Input
+                key={`${name}-${n.id}`}
+                {...(n.isFocused ? { autoFocus: true as const } : {})}
+                placeholder={n.placeholder}
+                value={tabDrafts.get(draftKey) ?? ''}
+                onInput={(v: string) => void tabDrafts.set(draftKey, v)}
+                onSubmit={(v: string) => {
+                  tabDrafts.delete(draftKey)
+                  void sendTabEvent($, name, n.id, v)
+                }}
+              />
+            </Box>
           )
         }
         if (n.kind === 'raster') {

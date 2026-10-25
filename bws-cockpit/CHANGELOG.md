@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.27.1
+- The dashboard asks for a wider dock (as wide as the engine allows, 45% of the terminal), so the Side chat has room. A width you dragged it to still wins.
+- A mod tab's text input spans the pane's width instead of shrinking to its placeholder.
+
 ## 0.27.0
 - Mod tabs can draw markdown (a press on a link goes back to the mod) and pictures (a Raster on the terminal, an Svg on Desktop). The Side chat tab uses them.
 
