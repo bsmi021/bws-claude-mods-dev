@@ -32,6 +32,8 @@ let raiseCount = 0
 let showCount = 0
 // /direction pause: for this session only, not written to settings.
 let isPaused = false
+// The `at` of the drift verdict Claude was last given, so each verdict reaches it once.
+let nudged = 0
 
 // The running-check guard and the conversation it belongs to (as bws-diagram): `generation` moves on /clear, /resume
 // and a changed session id, so a check that started before cannot land in the new conversation.
@@ -217,12 +219,11 @@ async function check($: EngineInterface, scope: 'turn' | 'overall', answer?: str
   }
 }
 
-// Drift found: bring the tab up, say it in a toast, and (nudge) give Claude the note from its next prompt on.
+// Drift found: bring the tab up and say it in a toast. With nudge on, the next prompt carries the note to Claude.
 async function alert($: EngineInterface, c: Check) {
   raiseCount += 1
   const isHeadless = (await $.session.surfaces()).length === 0
   if (!isHeadless) $.ui.toast(`Direction: ${c.verdict} (${c.score}) · ${c.reason}`.slice(0, 160), { timeoutMs: 8000 })
-  if (isNudge && c.scope === 'turn') $.ui.invalidate('prompt.context')
 }
 
 // ---------- the session ----------
@@ -282,6 +283,7 @@ async function tell($: EngineInterface): Promise<string> {
   }
   if (!isDrift(last) || !last) return said('The last check found no drift; nothing to tell Claude.')
   const text = nudgeText(last)
+  nudged = last.at
   $.clock.after(10, () => {
     void $.prompt
       .submit({ text, asUser: true })
@@ -363,12 +365,14 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // nudge: while this session's last check found drift, Claude's context carries the verdict.
-  on('prompt.context', async ($, e, next) => {
-    const result = await next(e)
-    if (!isNudge || !lastSession) return result
+  // nudge: the first prompt after a drift verdict carries it to Claude as context. Not prompt.context: a plugin block
+  // there reaches the model once per conversation, so a verdict that lands mid-session never would.
+  on('prompt.submit', async ($, e, next) => {
+    if (!isNudge || !lastSession) return next(e)
     const last = lastOf(cache?.log ?? [], 'turn', lastSession)
-    return last && isDrift(last) ? { ...result, blocks: [...result.blocks, { name: 'bwsDirection', text: nudgeText(last) }] } : result
+    if (!last || !isDrift(last) || last.at === nudged) return next(e)
+    nudged = last.at
+    return next({ ...e, context: [...(e.context ?? []), nudgeText(last)] })
   })
 
   // /clear and /resume: work for the old conversation stops (its checks stay in the project record), and its drift

@@ -77,9 +77,8 @@ function world(on: On, w: W = {}) {
   on('ui.open', () => ({ value: { isPlaced: true } as never }))
   on('prompt.submit', ($, e) => {
     seen.submitted.push(e.text)
-    return (w.drop ? { drop: w.drop } : { text: e.text }) as never
+    return (w.drop ? { drop: w.drop } : { text: e.text, context: e.context }) as never
   })
-  on('prompt.context', ($, e) => ({ blocks: e.blocks }))
   on('state.set', { plugin: 'bws-direction', key: 'tab' }, ($, e, next) => {
     seen.tabs.push(JSON.parse(JSON.stringify(e.value)))
     return next(e)
@@ -99,7 +98,11 @@ async function drain(clock: { advance: (ms: number) => Promise<unknown> }) {
 const TURN = { answer: 'Parry window added.', durationMs: 30_000, isAborted: false, turnId: 't1', reason: 'answer' }
 const turn = ($: { turn: { complete: (i: never) => Promise<unknown> } }, o: object = {}) => $.turn.complete({ ...TURN, ...o } as never)
 const run = async ($: { command: { run: (i: never) => Promise<unknown> } }, args = '') => ((await $.command.run({ command: 'direction', args } as never)) as { text: string }).text
-const block = (r: unknown) => (r as { blocks: { name: string; text: string }[] }).blocks.find(b => b.name === 'bwsDirection')?.text
+// The context bws-direction attached to the next typed prompt, or undefined.
+const say = async ($: { prompt: { submit: (i: never) => Promise<unknown> } }) => {
+  const r = (await $.prompt.submit({ text: 'next step', origin: { kind: 'composer' } } as never)) as { context?: string[] }
+  return r.context && r.context.length > 0 ? r.context : undefined
+}
 const last = <T>(xs: T[]) => xs[xs.length - 1]
 // The note line of the last published tab: the first text node right after the optional "Checking" line.
 const noteOf = (w: { seen: { tabs: { body: { kind: string; text?: string }[] }[] } }) =>
@@ -129,27 +132,30 @@ describe('the automatic turn check', () => {
     expect(stored[0]?.files).toEqual(['C:/proj/runs/2026-10-20-parry/PLAN.md', 'C:/proj/Source/Parry.cpp'])
   })
 
-  test('nudge: the drift verdict rides in the context until an aligned check replaces it', async ($, on) => {
+  test('nudge: the first prompt after a drift verdict carries it as context, once; an aligned check adds nothing', async ($, on) => {
     const w = world(on)
     await $.session.start({ cwd: CWD } as never)
-    expect(block(await $.prompt.context({ blocks: [] } as never))).toBeUndefined()
+    expect(await say($)).toBeUndefined()
     await turn($)
     await drain(w.clock)
-    expect(block(await $.prompt.context({ blocks: [] } as never))).toContain('Direction check (bws-direction) on turn 1: drifting, score 48')
+    const note = await say($)
+    expect(note?.[0]).toContain('Direction check (bws-direction) on turn 1: drifting, score 48')
+    expect(note?.[0]).toContain('This is a warning, not a stop')
+    expect(await say($)).toBeUndefined()
     w.who.answer = OK
     await turn($)
     await drain(w.clock)
-    expect(block(await $.prompt.context({ blocks: [] } as never))).toBeUndefined()
+    expect(await say($)).toBeUndefined()
     expect(w.seen.toasts.length).toBe(1)
   })
 
-  test('nudge off: no context block', { options: { nudge: false } }, async ($, on) => {
+  test('nudge off: no context on the next prompt', { options: { nudge: false } }, async ($, on) => {
     const w = world(on)
     await $.session.start({ cwd: CWD } as never)
     await turn($)
     await drain(w.clock)
     expect(w.seen.complete.length).toBe(1)
-    expect(block(await $.prompt.context({ blocks: [] } as never))).toBeUndefined()
+    expect(await say($)).toBeUndefined()
   })
 
   test('skipped: a chat turn, a subagent turn, an aborted turn, headless, autoCheck off', async ($, on) => {

@@ -63,7 +63,7 @@ The plan and the documents only explain what the opening goal means; silence or 
 **What you see.** The Direction tab shows the last verdict as a coloured card, `This session: ✓✓~✗ 4 checks, average
 63, ↓ worsening`, and `Project: 52 checks over 9 sessions, 81% aligned, average 79; last 7 days 74 (week before 83);
 3 sessions drifted.` A drifting or off-course verdict raises the tab and shows a toast. With `nudge` on (default),
-Claude's context carries the verdict until a later check finds the work aligned, as a warning, not a stop: Claude keeps
+your next prompt carries the verdict to Claude once, as a warning, not a stop: Claude keeps
 working and mentions in one line how the work serves the opening request, or that it does not.
 
 It fails open: a timeout, an API error or an unreadable answer records nothing and writes one debug line, such as
@@ -81,7 +81,7 @@ Set in `/plugin`, or under `pluginConfigs["bws-direction"].options` in `settings
 | `overallModel` | `sonnet` | Model for `/direction overall`. |
 | `docsDir` | `docs` | The document corpus, relative to the project. |
 | `anchorDocs` | empty | Anchor documents, comma-separated paths relative to the project. Empty: found by name (above). |
-| `nudge` | `true` | Give Claude the drift verdict in its context until the work is aligned again. |
+| `nudge` | `true` | Give Claude each drift verdict once, with your next prompt, as a warning. |
 
 ## Permissions and data
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.1
+- The drift note now reaches Claude. It rode in a session-start context block, which the engine sends once per conversation, so a verdict that landed mid-session never arrived (since 0.1.0). It now goes with your next prompt, once per verdict. Checked live: Claude quoted the note, kept working and named the drift in one line.
+
 ## 0.2.0
 - Drift is judged against the opening request: the first thing you asked for in the session. Only steps unrelated to it are drift; follow-ups, confirmations, fixes, release and publish steps toward that goal are aligned, however long the conversation runs.
 - The check reads the whole conversation: every later prompt with the files its turn edited and the head of its answer (about 16,000 characters; the middle turns go first, the start and the newest always stay). Before it saw only the first prompt and the latest three.
