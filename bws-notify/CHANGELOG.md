@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+- Finished turns, finished subagents and errors are heard through the native `turn.complete` event instead of the
+  classic `Stop`, `SubagentStop` and `StopFailure` hooks. The turn length is the engine's own (`durationMs`).
+- Errors toast as `error: API` with the first line of the error text, since the native event carries no error kind.
+  A refused turn now toasts too, as `error: refused`.
+- Interrupted turns toast nothing. A finished turn waits for background agents (not background shells) before toasting.
+- Permission asks still come from `classic.Notification`: no native event hears them.
+
 ## 0.2.2
 - No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
 

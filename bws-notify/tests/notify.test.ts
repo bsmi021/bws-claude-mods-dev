@@ -10,15 +10,14 @@ const decode = (b64: string) => {
 }
 
 // The test's hooks stand for the engine: a clock, one terminal surface, and a process.run that records the toast launches.
-function world(on: On, surfaces: string[] = ['terminal']) {
+function world(on: On, surfaces: string[] = ['terminal'], agents: { id: string; type: string; status: string }[] = []) {
   const launches: string[][] = []
   const clock = mock.clock(on, { now: 5_000_000 })
   on('session.surfaces', () => ({ value: surfaces as never }))
-  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('session.cwd', () => ({ value: CWD }))
+  on('agent.list', () => ({ value: agents as never }))
   on('classic.Notification', () => ({}))
-  on('classic.Stop', () => ({}))
-  on('classic.SubagentStop', () => ({}))
-  on('classic.StopFailure', () => ({}))
+  on('turn.complete', (_$, e) => ({ text: e.answer }))
   on('process.run', (_$, e) => {
     launches.push([...e.argv].map(String))
     return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
@@ -26,8 +25,8 @@ function world(on: On, surfaces: string[] = ['terminal']) {
   return { launches, clock }
 }
 
-const stop = (extra: Record<string, unknown> = {}) =>
-  ({ stop_hook_active: false, cwd: CWD, last_assistant_message: '**Done.** The parser is in.\nMore detail.', background_tasks: [], session_crons: [], ...extra }) as never
+const end = (extra: Record<string, unknown> = {}) =>
+  ({ answer: '**Done.** The parser is in.\nMore detail.', durationMs: 60_000, isAborted: false, turnId: 't1', reason: 'answer', ...extra }) as never
 
 test('firstLine strips markup, takes the first non-empty line and cuts it', () => {
   expect(firstLine('\n\n**Done.** See [the log](http://x/y).\nsecond', 80)).toBe('Done. See the log.')
@@ -70,27 +69,29 @@ test('a permission ask launches a hidden toast with the project and the ask', as
 
 test('a finished turn names the duration and the reply, a short turn is skipped', async ($, on) => {
   const w = world(on)
-  await $.prompt.submit({ text: 'do it' } as never)
-  await w.clock.advance(60_000)
-  await $.classic.Stop(stop())
+  await $.turn.complete(end())
   expect(decode(w.launches[0]?.[4] ?? '')).toEqual({ title: 'my-game · done (1m 0s)', body: 'Done. The parser is in.' })
-  await $.prompt.submit({ text: 'again' } as never)
-  await w.clock.advance(5_000)
-  await $.classic.Stop(stop({ last_assistant_message: 'quick' }))
+  await $.turn.complete(end({ answer: 'quick', durationMs: 5_000 }))
   expect(w.launches.length).toBe(1)
 })
 
-test('a stop with background work pending is not a finished turn', async ($, on) => {
-  const w = world(on)
-  await $.classic.Stop(stop({ background_tasks: [{ id: 'b1' }] }))
+test('an interrupted turn and a turn with background agents at work are not finished turns', async ($, on) => {
+  const w = world(on, ['terminal'], [{ id: 'a1', type: 'Explore', status: 'running' }])
+  await $.turn.complete(end())
+  await $.turn.complete(end({ reason: 'aborted', isAborted: true }))
   expect(w.launches.length).toBe(0)
 })
 
-test('a subagent finish and an error each toast', async ($, on) => {
-  const w = world(on)
-  await $.classic.SubagentStop({ cwd: CWD, agent_type: 'Explore', last_assistant_message: 'Found 3 callers.' } as never)
-  await $.classic.StopFailure({ cwd: CWD, error: 'rate_limit', error_details: 'Usage limit reached' } as never)
-  expect(w.launches.map(l => decode(l[4] ?? '').title)).toEqual(['my-game · Explore finished', 'my-game · error: rate_limit'])
+test('a subagent finish, an API error and a refusal each toast', async ($, on) => {
+  const w = world(on, ['terminal'], [{ id: 'a1', type: 'Explore', status: 'completed' }])
+  await $.turn.complete(end({ agentId: 'a1', answer: 'Found 3 callers.' }))
+  await $.turn.complete(end({ reason: 'error', answer: 'API Error: Usage limit reached' }))
+  await $.turn.complete(end({ reason: 'refusal', answer: '', refusal: { category: 'cyber', explanation: null } }))
+  expect(w.launches.map(l => decode(l[4] ?? ''))).toEqual([
+    { title: 'my-game · Explore finished', body: 'Found 3 callers.' },
+    { title: 'my-game · error: API', body: 'API Error: Usage limit reached' },
+    { title: 'my-game · error: refused', body: 'cyber' },
+  ])
 })
 
 test('the same toast twice within a few seconds is sent once', async ($, on) => {
@@ -113,9 +114,9 @@ test('no surface (headless) sends nothing', async ($, on) => {
 test('switches turn the events off', { options: { needsInput: false, turnDone: false, subagentDone: false, errors: false } }, async ($, on) => {
   const w = world(on)
   await $.classic.Notification({ cwd: CWD, message: 'x', notification_type: 'permission_prompt' } as never)
-  await $.classic.Stop(stop())
-  await $.classic.SubagentStop({ cwd: CWD, agent_type: 'Explore' } as never)
-  await $.classic.StopFailure({ cwd: CWD, error: 'e' } as never)
+  await $.turn.complete(end())
+  await $.turn.complete(end({ agentId: 'a1' }))
+  await $.turn.complete(end({ reason: 'error' }))
   expect(w.launches.length).toBe(0)
 })
 
@@ -124,8 +125,9 @@ test('prompt-suggestion forks are not subagent reports', async ($, on) => {
   expect(isReport(undefined, 'Found 3 callers.')).toBe(false)
   expect(isReport('Explore', '[{"label":"Do it","prompt":"x"}]')).toBe(false)
   expect(isReport('Explore', 'Found 3 callers.')).toBe(true)
-  const w = world(on)
-  await $.classic.SubagentStop({ cwd: CWD, agent_type: '', last_assistant_message: '[{"label":"Go","prompt":"go"}]' } as never)
+  const w = world(on, ['terminal'], [{ id: 'a1', type: 'Explore', status: 'completed' }])
+  await $.turn.complete(end({ agentId: 'fork', answer: 'Found 3 callers.' }))
+  await $.turn.complete(end({ agentId: 'a1', answer: '[{"label":"Go","prompt":"go"}]' }))
   expect(w.launches.length).toBe(0)
 })
 

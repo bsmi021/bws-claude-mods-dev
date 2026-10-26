@@ -22,7 +22,7 @@ No commands. Toasts appear by themselves.
 | Permission ask, question or idle prompt | `<project> · needs you` (`waiting for you` when idle) | the text Claude is waiting on |
 | Turn finished | `<project> · done (1m 35s)` | first line of Claude's last reply |
 | Subagent finished | `<project> · <agent type> finished` | first line of its report |
-| API error ended the turn | `<project> · error: <kind>` | the error details |
+| API error or refusal ended the turn | `<project> · error: API` (`error: refused`) | first line of the error text (the refusal's explanation) |
 
 `<project>` is the last folder of the session's working directory. Markdown in the reply is stripped, and the body is cut to `maxBodyChars`.
 
@@ -32,10 +32,11 @@ No commands. Toasts appear by themselves.
 
 It sends nothing for:
 - turns shorter than `minTurnSeconds`
-- a stop while background tasks are pending
+- an interrupted turn
+- a finished turn while background agents are still at work
 - the same toast within 8 seconds
 - headless sessions (`claude -p`, SDK)
-- internal forks such as prompt suggestions (a subagent stop with no agent type, or a JSON suggestion body)
+- internal forks such as prompt suggestions (a turn end of no listed agent, or a JSON suggestion body)
 
 Toasts show as "Windows PowerShell". Windows Do Not Disturb and Focus rules apply to them. Do Not Disturb turns on by itself while an app is fullscreen, so a terminal in OS fullscreen (F11) shows no banner. The toast is still in Action Center (Win+N). To get banners in fullscreen, untick "When I'm using an app in full-screen mode" under Settings, System, Notifications, "Turn on do not disturb automatically".
 
@@ -65,6 +66,7 @@ Set these in `/plugin`, or under `pluginConfigs["bws-notify"].options` in settin
 ## Compatibility
 
 - Checked on Claude Code 2.1.289 and later, Windows 11, in a fullscreen terminal layout. Toasts and Action Center entries were seen for a permission wait, a finished turn and subagent stops.
+- 0.3.0 (turn ends heard through `turn.complete`) passed static validation and tests on 2.1.310; not yet checked live.
 - Windows only. The desktop app, VS Code and mobile were not tried; the toast is a Windows feature and does not use the mod's pane or bar drawing.
 
 ## License
