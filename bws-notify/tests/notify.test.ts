@@ -10,7 +10,7 @@ const decode = (b64: string) => {
 }
 
 // The test's hooks stand for the engine: a clock, one terminal surface, and a process.run that records the toast launches.
-function world(on: On, surfaces: string[] = ['terminal'], agents: { id: string; type: string; status: string }[] = []) {
+function world(on: On, surfaces: string[] = ['terminal'], agents: { id: string; type: string; status: string; teammateId?: string }[] = []) {
   const launches: string[][] = []
   const clock = mock.clock(on, { now: 5_000_000 })
   on('session.surfaces', () => ({ value: surfaces as never }))
@@ -83,12 +83,14 @@ test('an interrupted turn and a turn with background agents at work are not fini
 })
 
 test('a subagent finish, an API error and a refusal each toast', async ($, on) => {
-  const w = world(on, ['terminal'], [{ id: 'a1', type: 'Explore', status: 'completed' }])
+  const w = world(on, ['terminal'], [{ id: 'a1', type: 'Explore', status: 'completed' }, { id: 'a2', type: 'teammate', status: 'idle', teammateId: 'scout@crew' }])
   await $.turn.complete(end({ agentId: 'a1', answer: 'Found 3 callers.' }))
+  await $.turn.complete(end({ agentId: 'a2', answer: 'Scouted.' }))
   await $.turn.complete(end({ reason: 'error', answer: 'API Error: Usage limit reached' }))
   await $.turn.complete(end({ reason: 'refusal', answer: '', refusal: { category: 'cyber', explanation: null } }))
   expect(w.launches.map(l => decode(l[4] ?? ''))).toEqual([
     { title: 'my-game · Explore finished', body: 'Found 3 callers.' },
+    { title: 'my-game · scout finished', body: 'Scouted.' },
     { title: 'my-game · error: API', body: 'API Error: Usage limit reached' },
     { title: 'my-game · error: refused', body: 'cyber' },
   ])

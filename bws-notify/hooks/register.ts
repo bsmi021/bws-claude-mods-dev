@@ -72,7 +72,9 @@ export const register: Register = (on, options) => {
     if (e.agentId !== undefined) {
       // Internal forks (prompt suggestions) are no listed agent and return a JSON body: not a subagent report.
       if (flag('subagentDone')) {
-        const type = (await $.agent.list()).find(a => a.id === e.agentId)?.type
+        // A teammate is named by its address (`<name>@<team>`), as the classic hook named it.
+        const a = (await $.agent.list()).find(x => x.id === e.agentId)
+        const type = a === undefined ? undefined : (a.teammateId?.split('@')[0] ?? a.type)
         if (type !== undefined && isReport(type, e.answer)) await send($, subagentDone(cwd, type, e.answer, max))
       }
       return next(e)
