@@ -170,6 +170,7 @@ declare module 'claude-code' {
     'bws-direction': { summary: ModSummary | null; tab: unknown }
     'bws-summary': { summary: ModSummary | null; tab: unknown }
     'bws-agents': { summary: ModSummary | null; tab: unknown }
+    'bws-inventory': { summary: ModSummary | null; tab: unknown }
   }
   interface PluginState {
     'bws-cockpit': {

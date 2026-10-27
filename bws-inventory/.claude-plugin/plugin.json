@@ -1,0 +1,20 @@
+{
+  "name": "bws-inventory",
+  "version": "0.1.0",
+  "description": "Inventory tab: what this conversation has used, as coloured cards in the dashboard: its todos (TodoWrite, the Task tools, the Desktop task list) with progress, the connectors (MCP servers) it called with call and error counts, the files it read, edited or wrote, and the skills it ran. /inventory opens it.",
+  "author": {
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
+  },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-inventory#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "inventory",
+    "todos",
+    "dashboard"
+  ],
+  "types": "./types/index.d.ts"
+}

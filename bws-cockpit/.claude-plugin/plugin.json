@@ -166,8 +166,8 @@
     "modSummaries": {
       "type": "string",
       "title": "Mod tabs",
-      "description": "Mods that get a dashboard tab while loaded, in this order, comma-separated. Known: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-interview, bws-direction, bws-summary, bws-agents.",
-      "default": "bws-memory,bws-diagram,bws-enhance,bws-better,bws-sidechat,bws-secrets,bws-skillgate,bws-notify,bws-shell-lint,bws-interview,bws-direction,bws-summary,bws-agents"
+      "description": "Mods that get a dashboard tab while loaded, in this order, comma-separated. Known: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-interview, bws-direction, bws-summary, bws-agents, bws-inventory.",
+      "default": "bws-memory,bws-diagram,bws-enhance,bws-better,bws-sidechat,bws-secrets,bws-skillgate,bws-notify,bws-shell-lint,bws-interview,bws-direction,bws-summary,bws-agents,bws-inventory"
     },
     "dashboardOnStart": {
       "type": "boolean",

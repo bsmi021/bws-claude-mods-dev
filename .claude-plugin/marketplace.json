@@ -43,6 +43,10 @@
       "source": "./bws-interview"
     },
     {
+      "name": "bws-inventory",
+      "source": "./bws-inventory"
+    },
+    {
       "name": "bws-memory",
       "source": "./bws-memory"
     },
