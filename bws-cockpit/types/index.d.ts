@@ -102,7 +102,7 @@ export type ShelfView = {
   count: number
 }
 
-export type DashTab = 'assumptions' | 'shelf' | 'board' | 'loop'
+export type DashTab = 'assumptions' | 'shelf' | 'board' | 'loop' | 'mods'
 
 export type DashView = {
   // The tab shown: a DashTab, or a mod's `mod:<plugin>`; null until something picks one.
@@ -169,6 +169,7 @@ declare module 'claude-code' {
     'bws-interview': { tab: unknown }
     'bws-direction': { summary: ModSummary | null; tab: unknown }
     'bws-summary': { summary: ModSummary | null; tab: unknown }
+    'bws-agents': { summary: ModSummary | null; tab: unknown }
   }
   interface PluginState {
     'bws-cockpit': {
@@ -192,6 +193,15 @@ declare module 'claude-code' {
       cacheClock: { startedAt: number; lastAt: number; turns: number; autoHandoffAt: number | null } | null
       // the chip the bar draws from it
       cacheBar: { text: string; state: 'fresh' | 'low' | 'expired' } | null
+      // The Mods tab (hooks/switchboard.ts Board): installed bws mods as `claude plugin list` last said (null until it
+      // answered), tabs the person hid, mods switched since the last /reload-plugins, a note, and a switch in flight
+      switchboard: {
+        installed: Record<string, { version: string; isEnabled: boolean }> | null
+        hidden: string[]
+        pending: string[]
+        note: string
+        isBusy: boolean
+      }
     }
   }
 }

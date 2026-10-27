@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.27.1",
-  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop tabs) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
+  "version": "0.28.0",
+  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop and Mods tabs, the Mods tab a switchboard that turns each bws mod on or off and hides or shows its tab) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "bsmi021",
     "url": "https://github.com/bsmi021"
@@ -166,8 +166,8 @@
     "modSummaries": {
       "type": "string",
       "title": "Mod tabs",
-      "description": "Mods that get a dashboard tab while loaded, in this order, comma-separated. Known: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-interview, bws-direction, bws-summary.",
-      "default": "bws-memory,bws-diagram,bws-enhance,bws-better,bws-sidechat,bws-secrets,bws-skillgate,bws-notify,bws-shell-lint,bws-interview,bws-direction,bws-summary"
+      "description": "Mods that get a dashboard tab while loaded, in this order, comma-separated. Known: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-interview, bws-direction, bws-summary, bws-agents.",
+      "default": "bws-memory,bws-diagram,bws-enhance,bws-better,bws-sidechat,bws-secrets,bws-skillgate,bws-notify,bws-shell-lint,bws-interview,bws-direction,bws-summary,bws-agents"
     },
     "dashboardOnStart": {
       "type": "boolean",

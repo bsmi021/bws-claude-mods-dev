@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.0
+- Mods tab, the switchboard: a coloured card per bws mod (✅ on, ⛔ off, ➖ not installed, 🔄 waiting for /reload-plugins) with Enable/Disable (`claude plugin enable|disable <mod>@bws-mods`) and Hide tab/Show tab (kept across sessions). `/switchboard` opens it; `/switchboard text|refresh|--enable|--disable|--hide|--show <mod>`.
+- bws-agents gets a dashboard tab (Agents) and is in the default `modTabs`.
+
 ## 0.27.1
 - The dashboard asks for a wider dock (as wide as the engine allows, 45% of the terminal), so the Side chat has room. A width you dragged it to still wins.
 - A mod tab's text input spans the pane's width instead of shrinking to its placeholder.

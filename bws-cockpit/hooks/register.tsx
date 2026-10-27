@@ -48,6 +48,8 @@ import { parseTab, tabText } from './kit/tab'
 import type { TabNode } from './kit/tab'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from './cacheclock'
+import { EMPTY_BOARD, MARKETPLACE, boardText, counts as switchCounts, hiddenAfter, parseList, parseSwitch, pendingAfter, rowLines, rowTone, rows as switchRows } from './switchboard'
+import type { Board, SwitchRow, SwitchVerb } from './switchboard'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
 
 import {
@@ -114,6 +116,7 @@ const notifySummary = atom({ plugin: 'bws-notify', key: 'summary' } as const, nu
 const shellLintSummary = atom({ plugin: 'bws-shell-lint', key: 'summary' } as const, null)
 const directionSummary = atom({ plugin: 'bws-direction', key: 'summary' } as const, null)
 const summarySummary = atom({ plugin: 'bws-summary', key: 'summary' } as const, null)
+const agentsSummary = atom({ plugin: 'bws-agents', key: 'summary' } as const, null)
 // Each mod's dashboard tab (bws-kit/tab.ts), drawn after the built-in tabs; checked by parseTab, so typed unknown.
 const memoryTab = atom({ plugin: 'bws-memory', key: 'tab' } as const, null as unknown)
 const diagramTab = atom({ plugin: 'bws-diagram', key: 'tab' } as const, null as unknown)
@@ -127,6 +130,9 @@ const shellLintTab = atom({ plugin: 'bws-shell-lint', key: 'tab' } as const, nul
 const interviewTab = atom({ plugin: 'bws-interview', key: 'tab' } as const, null as unknown)
 const directionTab = atom({ plugin: 'bws-direction', key: 'tab' } as const, null as unknown)
 const summaryTab = atom({ plugin: 'bws-summary', key: 'tab' } as const, null as unknown)
+const agentsTab = atom({ plugin: 'bws-agents', key: 'tab' } as const, null as unknown)
+// The Mods tab, the switchboard (hooks/switchboard.ts); `hidden` is also kept in $.store across sessions.
+const switchboard = atom({ plugin: 'bws-cockpit', key: 'switchboard' } as const, EMPTY_BOARD as Board)
 // A press or submitted input in a mod's tab, for that mod to act on (it watches this with a state.set hook).
 const tabEvent = atom({ plugin: 'bws-cockpit', key: 'tabEvent' } as const, null)
 // The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
@@ -140,8 +146,8 @@ const DASH_TITLE = 'Dashboard'
 // The dock width every open asks for: the engine caps it at 45% of the terminal, so this means as wide as allowed. A
 // width the person dragged the dock to still wins.
 const DASH_COLUMNS = 120
-const TABS: DashTab[] = ['assumptions', 'shelf', 'board', 'loop']
-const TAB_LABEL: Record<DashTab, string> = { assumptions: 'Assumptions', shelf: 'Shelf', board: 'Board', loop: 'Loop' }
+const TABS: DashTab[] = ['assumptions', 'shelf', 'board', 'loop', 'mods']
+const TAB_LABEL: Record<DashTab, string> = { assumptions: 'Assumptions', shelf: 'Shelf', board: 'Board', loop: 'Loop', mods: 'Mods' }
 const ASSUMPTION_TOOL = `mcp__bws-cockpit__${TOOL_NAME}`
 const TOOL_SHELVE = 'mcp__bws-cockpit__shelve_idea'
 const TOOL_LIST = 'mcp__bws-cockpit__list_ideas'
@@ -906,7 +912,10 @@ function pickTab(picked: string | null, tabs: readonly string[], counts: Record<
 }
 
 // Every configured mod's tab, from one literal read per atom (the validator lists what a module reads).
-async function readModTabs($: EngineInterface, names: readonly KnownMod[]): Promise<ModTabView[]> {
+async function readModTabs($: EngineInterface, configured: readonly KnownMod[]): Promise<ModTabView[]> {
+  // A tab the person hid on the Mods tab is left out.
+  const hidden = (await read($, switchboard)).hidden
+  const names = configured.filter(n => !hidden.includes(n))
   const has = (n: KnownMod) => names.includes(n)
   const tabs: Partial<Record<KnownMod, unknown>> = {
     'bws-memory': has('bws-memory') ? await read($, memoryTab) : null,
@@ -921,6 +930,7 @@ async function readModTabs($: EngineInterface, names: readonly KnownMod[]): Prom
     'bws-interview': has('bws-interview') ? await read($, interviewTab) : null,
     'bws-direction': has('bws-direction') ? await read($, directionTab) : null,
     'bws-summary': has('bws-summary') ? await read($, summaryTab) : null,
+    'bws-agents': has('bws-agents') ? await read($, agentsTab) : null,
   }
   const summaries: Partial<Record<KnownMod, unknown>> = {
     'bws-memory': has('bws-memory') ? await read($, memorySummary) : null,
@@ -934,6 +944,7 @@ async function readModTabs($: EngineInterface, names: readonly KnownMod[]): Prom
     'bws-shell-lint': has('bws-shell-lint') ? await read($, shellLintSummary) : null,
     'bws-direction': has('bws-direction') ? await read($, directionSummary) : null,
     'bws-summary': has('bws-summary') ? await read($, summarySummary) : null,
+    'bws-agents': has('bws-agents') ? await read($, agentsSummary) : null,
   }
   return modTabs(names, tabs, summaries)
 }
@@ -1144,6 +1155,66 @@ async function tabOfWord($: EngineInterface, mods: readonly KnownMod[], word: st
   const w = word.replace(/^bws-/, '')
   const hit = (await readModTabs($, mods)).find(v => v.tab.title.toLowerCase().replace(/\s+/g, '-').startsWith(w) || v.name.slice(4).startsWith(w))
   return hit ? hit.key : null
+}
+
+// ---------- Mods tab: the switchboard (hooks/switchboard.ts) ----------
+
+const HIDDEN_KEY = 'switchboard.hidden'
+let isSwitchboardAsked = false
+
+// The bws plugins loaded in this session: those with a command, those drawing a tab here, and cockpit itself.
+async function loadedMods($: EngineInterface, mods: readonly KnownMod[]): Promise<{ loaded: string[]; tabs: string[] }> {
+  const fromCommands = (await $.command.list()).map(c => (c.plugin ?? '').split('@')[0] ?? '').filter(p => p.startsWith('bws-'))
+  const tabs = (await readModTabs($, mods)).map(m => m.name as string)
+  return { loaded: [...new Set([...fromCommands, ...tabs, 'bws-cockpit'])], tabs }
+}
+
+async function switchRowsNow($: EngineInterface, mods: readonly KnownMod[]): Promise<SwitchRow[]> {
+  const { loaded, tabs } = await loadedMods($, mods)
+  return switchRows(await read($, switchboard), loaded, tabs)
+}
+
+// What is installed and enabled, from `claude plugin list --json` (a second or two).
+async function refreshSwitchboard($: EngineInterface) {
+  isSwitchboardAsked = true
+  await update($, switchboard, b => ({ ...b, isBusy: true }))
+  const ran = await settle($.process.run(['claude', 'plugin', 'list', '--json'], { timeoutMs: 30_000 }))
+  if (ran === undefined || ran.exitCode !== 0) {
+    const why = ran === undefined ? 'claude could not be started' : (ran.stderr.trim().split('\n')[0] ?? `exit ${ran.exitCode}`)
+    await update($, switchboard, b => ({ ...b, isBusy: false, note: `⚠️ Could not read the installed mods: ${why}` }))
+    return
+  }
+  const installed = Object.fromEntries(parseList(ran.stdout))
+  await update($, switchboard, b => ({ ...b, installed, isBusy: false }))
+}
+
+// One switch: enable or disable a mod (applied by /reload-plugins), or hide or show its dashboard tab.
+async function switchMod($: EngineInterface, verb: SwitchVerb, name: string): Promise<string> {
+  if (verb === 'hide' || verb === 'show') {
+    const hidden = hiddenAfter((await read($, switchboard)).hidden, verb, name)
+    await settle($.store.set(HIDDEN_KEY, hidden))
+    const note = `${verb === 'hide' ? '🙈' : '👁️'} ${name}: tab ${verb === 'hide' ? 'hidden' : 'shown'}.`
+    await update($, switchboard, b => ({ ...b, hidden, note }))
+    return note
+  }
+  if (name === 'bws-cockpit') return 'The switchboard cannot switch cockpit itself off: use /plugin.'
+  await update($, switchboard, b => ({ ...b, isBusy: true, note: `${verb === 'enable' ? 'Enabling' : 'Disabling'} ${name}…` }))
+  const ran = await settle($.process.run(['claude', 'plugin', verb, `${name}@${MARKETPLACE}`], { timeoutMs: 60_000 }))
+  if (ran === undefined || ran.exitCode !== 0) {
+    const why = ran === undefined ? 'claude could not be started' : (`${ran.stderr}\n${ran.stdout}`.trim().split('\n')[0] ?? `exit ${ran.exitCode}`)
+    const note = `⚠️ ${verb} ${name} failed: ${why}`
+    await update($, switchboard, b => ({ ...b, isBusy: false, note }))
+    return note
+  }
+  const note = `${verb === 'enable' ? '✅ Enabled' : '⛔ Disabled'} ${name}. Run /reload-plugins to apply.`
+  await update($, switchboard, b => ({ ...b, pending: pendingAfter(b.pending, name), note }))
+  await refreshSwitchboard($)
+  return note
+}
+
+// A press on the Mods tab: `<verb>:<mod>`.
+function pressSwitch($: EngineInterface, verb: SwitchVerb, name: string) {
+  void switchMod($, verb, name).catch(err => $.ui.toast(`Switchboard: ${String(err)}`))
 }
 
 export const register: Register = (on, options) => {
@@ -1357,6 +1428,14 @@ export const register: Register = (on, options) => {
     // ---------- Dashboard: its commands and the tools of the Assumptions and Shelf tabs ----------
     await $.command.register({ name: 'dashboard', description: 'Open the dashboard: Assumptions, Shelf, Board, Loop, and a tab per loaded mod', argumentHint: '[assumptions|shelf|board|loop|<mod>]', immediate: true })
     await $.command.register({ name: 'assumptions', description: 'Show the assumptions Claude made in this session, to confirm or correct them', immediate: true })
+    await $.command.register({
+      name: 'switchboard',
+      description: 'Mods tab: turn each bws mod on or off, hide or show its dashboard tab',
+      argumentHint: '[text|refresh|--enable|--disable|--hide|--show <mod>]',
+      immediate: true,
+    })
+    const storedHidden = await settle($.store.get(HIDDEN_KEY))
+    if (Array.isArray(storedHidden)) await update($, switchboard, b => ({ ...b, hidden: storedHidden.filter((x): x is string => typeof x === 'string') }))
     await $.command.register({ name: 'idea', description: 'Shelve an idea for later without sending it to Claude', argumentHint: '<idea>', immediate: true })
     await $.command.register({
       name: 'shelf',
@@ -1499,6 +1578,27 @@ export const register: Register = (on, options) => {
     await settle(refreshShelf($))
     if (tab === 'loop') await refreshLoops($, o)
     openDashSoon($, tab)
+    return {}
+  })
+
+  on('command.run', { command: 'switchboard' }, async ($, e) => {
+    const c = parseSwitch(e.args)
+    if ('error' in c) return { text: c.error }
+    if (c.verb === 'refresh' || c.verb === 'text') {
+      await refreshSwitchboard($)
+      if (c.verb === 'text') return { text: boardText(await switchRowsNow($, o.mods), await read($, switchboard)) }
+      return {}
+    }
+    if (c.verb === 'open') {
+      if ((await $.session.surfaces()).length === 0) {
+        await refreshSwitchboard($)
+        return { text: boardText(await switchRowsNow($, o.mods), await read($, switchboard)) }
+      }
+      void settle(refreshSwitchboard($))
+      openDashSoon($, 'mods')
+      return {}
+    }
+    if ('name' in c) return { text: await switchMod($, c.verb, c.name) }
     return {}
   })
 
@@ -1663,6 +1763,10 @@ export const register: Register = (on, options) => {
     await noteModTab($, o, 'bws-summary', e.value).catch(() => undefined)
     return next(e)
   })
+  on('state.set', { plugin: 'bws-agents', key: 'tab' }, async ($, e, next) => {
+    await noteModTab($, o, 'bws-agents', e.value).catch(() => undefined)
+    return next(e)
+  })
 
   // The dashboard: a tab strip, then the shown tab's body.
   on('ui.render', { component: 'Pane', requestId: DASH }, async ($, e, next) => {
@@ -1682,7 +1786,8 @@ export const register: Register = (on, options) => {
     const bs = await read($, boardSummary)
     const lines = await read($, boardLines)
     const pane = await read($, boardPane)
-    const counts: Record<DashTab, number> = { assumptions: active(list).length, shelf: sv.count, board: bs?.askedOfMe ?? 0, loop: loopCount(lp) }
+    const sb = await read($, switchboard)
+    const counts: Record<DashTab, number> = { assumptions: active(list).length, shelf: sv.count, board: bs?.askedOfMe ?? 0, loop: loopCount(lp), mods: sb.pending.length }
     // Loop: while any loop is live, or the person picked the tab (/loop-watch) for a quiet one.
     const hasLoop = lp !== null && (all.some(l => isLoopLive(l, now)) || d.tab === 'loop')
     const builtin = TABS.filter(t => t !== 'loop' || hasLoop)
@@ -1696,7 +1801,10 @@ export const register: Register = (on, options) => {
         label={label}
         {...(i < 9 ? { hotkey: String(i + 1) } : {})}
         {...(t === tab ? { variant: 'primary' as const } : { plain: true as const, dimColor: true })}
-        onPress={() => update($, dash, old => ({ ...old, tab: t }))}
+        onPress={() => {
+          if (t === 'mods') void settle(refreshSwitchboard($))
+          return update($, dash, old => ({ ...old, tab: t }))
+        }}
       />
     )
     const strip = (
@@ -1785,6 +1893,68 @@ export const register: Register = (on, options) => {
           </Text>
           {shown.tab.body.map((n, i) => draw(n, `mod-${name}-${i}`))}
           {shown.tab.body.length === 0 && <Text dimColor>{`${MOD_TITLE[name]} has nothing to show yet.`}</Text>}
+        </Box>
+      )
+    }
+
+    if (tab === 'mods') {
+      const rs = await switchRowsNow($, o.mods)
+      const c = switchCounts(rs)
+      if (sb.installed === null && !sb.isBusy && !isSwitchboardAsked) $.clock.after(10, () => void settle(refreshSwitchboard($)))
+      const TONE: Record<ReturnType<typeof rowTone>, Color> = { pending: 'warning', on: 'success', off: 'error', missing: 'subtle' }
+      // One bordered card per mod, coloured by its state. Each glyph opens its line: a wide emoji mid-line can push a
+      // round border out of line.
+      const modCard = (r: SwitchRow) => {
+        const l = rowLines(r)
+        return (
+          <Box key={`sw-${r.name}`} flexDirection="column" width={width} borderStyle="round" borderColor={TONE[rowTone(r)]} paddingX={1}>
+            <Text bold wrap="truncate-end">
+              {l.title}
+              <Text dimColor bold={false}>{` · ${r.name}`}</Text>
+            </Text>
+            <Text dimColor wrap="truncate-end">{`   ${l.blurb}`}</Text>
+            <Text wrap="truncate-end" color={r.isPending ? 'warning' : r.state === 'off' ? 'error' : r.state === 'on' ? 'success' : undefined}>
+              {l.state}
+            </Text>
+            {(r.canSwitch || r.isTab || r.isHidden) && (
+              <Box flexDirection="row" gap={1}>
+                {r.canSwitch &&
+                  (r.state === 'on' ? (
+                    <Button key={`sw-dis-${r.name}`} plain label="⛔ Disable" onPress={() => pressSwitch($, 'disable', r.name)} />
+                  ) : (
+                    <Button key={`sw-en-${r.name}`} plain label="✅ Enable" onPress={() => pressSwitch($, 'enable', r.name)} />
+                  ))}
+                {(r.isTab || r.isHidden) &&
+                  (r.isHidden ? (
+                    <Button key={`sw-show-${r.name}`} plain label="👁️ Show tab" onPress={() => pressSwitch($, 'show', r.name)} />
+                  ) : (
+                    <Button key={`sw-hide-${r.name}`} plain label="🙈 Hide tab" onPress={() => pressSwitch($, 'hide', r.name)} />
+                  ))}
+              </Box>
+            )}
+          </Box>
+        )
+      }
+      return (
+        <Box flexDirection="column">
+          {strip}
+          <Box flexDirection="column" width={width} borderStyle="round" borderColor={c.pending > 0 ? 'warning' : 'claude'} paddingX={1}>
+            <Text bold>🧩 Switchboard</Text>
+            <Text bold>{`✅ ${c.on} on · ${c.off} off · ${c.missing} not installed`}</Text>
+            {c.pending > 0 && <Text color="warning" bold>{`🔄 ${c.pending} switched: run /reload-plugins to apply`}</Text>}
+            {sb.isBusy && <Text dimColor>⏳ Asking Claude Code which mods are installed…</Text>}
+            {sb.installed === null && !sb.isBusy && <Text dimColor>⏳ Installed mods not read yet: press Refresh.</Text>}
+          </Box>
+          {sb.note !== '' && (
+            <Text wrap="wrap" color={sb.note.startsWith('⚠️') ? 'warning' : undefined}>
+              {sb.note}
+            </Text>
+          )}
+          {rs.map(modCard)}
+          <Box flexDirection="row" gap={1}>
+            <Button key="sw-refresh" label="🔄 Refresh" hotkey="r" onPress={() => void settle(refreshSwitchboard($))} />
+          </Box>
+          {e.props.isFocused && <Text dimColor>Enable/Disable switches the plugin (applies at /reload-plugins) · Hide tab keeps it running</Text>}
         </Box>
       )
     }

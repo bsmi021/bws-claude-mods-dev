@@ -1,0 +1,28 @@
+{
+  "name": "bws-agents",
+  "version": "0.1.0",
+  "description": "Agents tab: every subagent of this session as a live, coloured card in the dashboard (status, type, model, task, elapsed, tool count, last tools, tokens, final answer), running ones first, with a summary strip and a stall flag when an agent makes no tool call for a while. /subagents opens it.",
+  "author": {
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
+  },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-agents#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "subagents",
+    "agents",
+    "dashboard"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "stallMinutes": {
+      "type": "number",
+      "title": "Stall after (minutes)",
+      "description": "Flag a running subagent that has made no tool call for this many minutes. 0 turns the flag off.",
+      "default": 2
+    }
+  }
+}

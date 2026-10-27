@@ -62,6 +62,13 @@ One pane, `Dashboard`, docked right of the transcript in fullscreen from 110 col
   - If you close it (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's counts still show. Opening it again clears that.
 - **Headless:** `claude -p "/dashboard"` prints every tab as text.
 
+### Mods tab (the switchboard)
+`/switchboard` opens it. One coloured card per bws mod: ✅ on (green), ⛔ off (red), ➖ not installed (grey), 🔄 switched and waiting for `/reload-plugins` (amber), with its version, whether it is loaded here and whether its tab shows.
+
+- **⛔ Disable / ✅ Enable** runs `claude plugin disable|enable <mod>@bws-mods` (user settings); it applies at `/reload-plugins`. Cockpit cannot switch itself off here, and a mod loaded only from a source folder has no switch.
+- **🙈 Hide tab / 👁️ Show tab** keeps the mod running but leaves its tab out of the dashboard, across sessions (`$.store`).
+- Command twins: `/switchboard --enable|--disable|--hide|--show <mod>` (`bws-` may be left off), `/switchboard refresh`, `/switchboard text` (also what headless prints).
+
 ### Action bar
 Above the prompt, in the terminal and in Desktop. Three rows, each wrapping when narrow:
 

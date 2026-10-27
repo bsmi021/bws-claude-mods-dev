@@ -25,6 +25,9 @@ type World = {
   commands?: string[]
   // other mods' atoms by plugin: their dashboard `tab` and `summary`
   mods?: Record<string, { tab?: unknown; summary?: unknown }>
+  // answers $.process.run by argv (the switchboard's `claude plugin ...`); absent: no processes
+  run?: (argv: readonly string[]) => { exitCode: number; stdout: string; stderr: string }
+  store?: Record<string, unknown>
 }
 
 // Stubs every outside call the dashboard makes; the shelf file lives in `files`, panes in `panes`.
@@ -65,8 +68,17 @@ function world(on: On, w: World = {}) {
   on('fs.list', ($, e) => {
     throw new Error(`ENOENT ${norm(e.path)}`)
   })
-  on('process.run', () => {
-    throw new Error('no processes here')
+  const runs: string[][] = []
+  on('process.run', ($, e) => {
+    runs.push([...e.argv])
+    if (w.run === undefined) throw new Error('no processes here')
+    return { value: w.run(e.argv) as never }
+  })
+  const store: Record<string, unknown> = { ...(w.store ?? {}) }
+  on('store.get', ($, e) => ({ value: store[e.key] as never }))
+  on('store.set', ($, e) => {
+    store[e.key] = e.value
+    return { value: undefined as never }
   })
   on('prompt.submit', ($, e) => {
     seen.sent.push({ text: e.text, asUser: (e.origin as { asUser?: boolean } | undefined)?.asUser })
@@ -128,7 +140,7 @@ function world(on: On, w: World = {}) {
   const setBox = (text: string) => {
     box = text
   }
-  return { seen, clock, files, shelf, panes, setBox, usage }
+  return { seen, clock, files, shelf, panes, setBox, usage, runs, store }
 }
 
 const seeded = () => {
@@ -1134,3 +1146,73 @@ describe('footer cockpit button', () => {
     expect(seen.closed.at(-1)).toBe('dashboard')
   })
 })
+
+describe('switchboard', () => {
+  const LIST = JSON.stringify([
+    { id: 'bws-agents@bws-mods', version: '0.1.0', enabled: true },
+    { id: 'bws-notify@bws-mods', version: '0.3.0', enabled: false },
+    { id: 'bws-cockpit@bws-mods', version: '0.28.0', enabled: true },
+    { id: 'other@elsewhere', version: '1', enabled: true },
+  ])
+  const agentsTabValue = { title: 'Agents', badge: '🟢1', tone: 'busy', raise: 0, body: [{ kind: 'card', title: '🟢 Explore · Scan', color: 'accent', body: [{ kind: 'text', text: '🔎 running 5s' }] }] }
+  const plugins = (argv: readonly string[]) =>
+    argv[2] === 'list' ? { exitCode: 0, stdout: LIST, stderr: '' } : { exitCode: 0, stdout: `${argv[2]}d ${argv[3]}`, stderr: '' }
+
+  test('the Agents tab draws as cards; the Mods tab lists every mod with its state and switches', async ($, on) => {
+    const { clock, runs } = world(on, { run: plugins, mods: { 'bws-agents': { tab: agentsTabValue } } })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.command.run({ command: 'dashboard', args: 'agents' } as never)
+    await clock.advance(50)
+    let ui = await $.ui.mount(PANE)
+    expect((await ui.find({ key: 'tab-bws-agents' }))?.props?.label).toBe('Agents 🟢1')
+    expect((await ui.find({ key: 'mod-bws-agents-0' }))?.props?.borderColor).toBe('claude')
+    expect(await ui.find({ type: 'Text', text: /🟢 Explore · Scan/ })).toBeDefined()
+    await ui.unmount()
+    await $.command.run({ command: 'switchboard', args: '' } as never)
+    await clock.advance(50)
+    ui = await $.ui.mount(PANE)
+    expect(runs.some(r => r.join(' ') === 'claude plugin list --json')).toBe(true)
+    expect((await ui.find({ key: 'tab-mods' }))?.props?.variant).toBe('primary')
+    expect((await ui.find({ key: 'sw-bws-agents' }))?.props?.borderColor).toBe('success')
+    expect((await ui.find({ key: 'sw-bws-notify' }))?.props?.borderColor).toBe('error')
+    expect((await ui.find({ key: 'sw-bws-memory' }))?.props?.borderColor).toBe('subtle')
+    expect(await ui.find({ key: 'sw-dis-bws-cockpit' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /^✅ 0\.1\.0|✅ on · v0\.1\.0 · loaded · tab shown$/ })).toBeDefined()
+    await ui.press({ key: 'sw-dis-bws-agents' })
+    await clock.advance(50)
+    expect(runs.some(r => r.join(' ') === 'claude plugin disable bws-agents@bws-mods')).toBe(true)
+    await ui.unmount()
+    ui = await $.ui.mount(PANE)
+    expect((await ui.find({ key: 'sw-bws-agents' }))?.props?.borderColor).toBe('warning')
+    expect(await ui.find({ type: 'Text', text: /run \/reload-plugins to apply/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('hide keeps a tab out of the dashboard across sessions; show brings it back', async ($, on) => {
+    const { clock, store } = world(on, { run: plugins, mods: { 'bws-agents': { tab: agentsTabValue } } })
+    await $.session.start({ cwd: ROOT } as never)
+    expect((await $.command.run({ command: 'switchboard', args: '--hide agents' } as never)).text).toContain('bws-agents: tab hidden')
+    expect(store['switchboard.hidden']).toEqual(['bws-agents'])
+    await $.command.run({ command: 'dashboard', args: '' } as never)
+    await clock.advance(50)
+    let ui = await $.ui.mount(PANE)
+    expect(await ui.find({ key: 'tab-bws-agents' })).toBeUndefined()
+    await ui.unmount()
+    await $.command.run({ command: 'switchboard', args: '--show bws-agents' } as never)
+    ui = await $.ui.mount(PANE)
+    expect(await ui.find({ key: 'tab-bws-agents' })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('headless /switchboard prints the board; bad args print usage; cockpit cannot switch itself off', async ($, on) => {
+    world(on, { surfaces: [], run: plugins, commands: [] })
+    await $.session.start({ cwd: ROOT } as never)
+    const r = await $.command.run({ command: 'switchboard', args: 'text' } as never)
+    expect(r.text).toContain('Mods: ')
+    expect(r.text).toContain('🤖 Agents (bws-agents): on · v0.1.0')
+    expect(r.text).toContain('🔔 Notify (bws-notify): off · v0.3.0')
+    expect((await $.command.run({ command: 'switchboard', args: '--disable' } as never)).text).toMatch(/^Usage/)
+    expect((await $.command.run({ command: 'switchboard', args: '--disable cockpit' } as never)).text).toContain('cannot switch cockpit')
+  })
+})
+

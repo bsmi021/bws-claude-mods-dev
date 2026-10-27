@@ -7,6 +7,10 @@
   "description": "Claude Code mods for game and app development on Windows.",
   "plugins": [
     {
+      "name": "bws-agents",
+      "source": "./bws-agents"
+    },
+    {
       "name": "bws-better",
       "source": "./bws-better"
     },
