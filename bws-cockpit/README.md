@@ -167,9 +167,10 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 - **Nudge.** Once per session, when the context passes `handoffNudgePercent`, a toast says it is time for a handoff and `h` is highlighted until one is written.
 
 ### Cache clock
-- **The chip.** On the bar, `cache 42m`: the time left on the main thread's prompt cache, counted from the end of its last turn for `cacheTtlMinutes`. It turns warning under `cacheLowMinutes`, and reads `cache cold` once the window has ended. It is hidden before the first turn and after `/clear`.
+- **The chip.** On the bar, `cache 42m`: the time left on the main thread's prompt cache, counted from the end of its last turn for the cache's TTL. It turns warning under `cacheLowMinutes` (at most a fifth of the TTL), and reads `cache cold` once the window has ended. It is hidden before the first turn and after `/clear`.
+- **The TTL.** After each main-thread turn, `bin/ttl.py` (run with `python`, else `python3`) reads the last 2 MB of the session's transcript for the cache length Anthropic wrote the newest replies with: 1 hour, or 5 minutes (a session in usage overage drops to 5m). A reply that wrote both counts as 5m. Until a reply is read, or without Python, `cacheTtlMinutes` is used. `/cacheclock` says which.
 - **What counts.** Only main-thread turns; a sub-agent's turn does not restart it. After a resume the chip stays hidden until the next turn ends. A handoff's own request can re-read the cache without the clock counting it, so the chip can read cold while the cache is warm (the safe side).
-- **Auto handoff** (`autoHandoff`, on). When the cache drops under the low threshold while the session is idle, and a turn has ended since the last handoff, it writes `HANDOFF.md` once for that window, as `/handoff` does but without copying the start prompt. It never runs mid-turn and never after expiry, because a request then would re-cache the whole context at full price. A manual `/handoff` counts as the window's handoff. A failed attempt is not retried in that window.
+- **Auto handoff** (`autoHandoff`, on). When the cache drops under the low threshold while the session is idle, and a turn has ended since the last handoff, it writes `HANDOFF.md` once for that window, as `/handoff` does but without copying the start prompt. It waits while the TTL is under 15 minutes (a 5m cache would write one every idle pause). It never runs mid-turn and never after expiry, because a request then would re-cache the whole context at full price. A manual `/handoff` counts as the window's handoff. A failed attempt is not retried in that window.
 
 ### Worker model pin
 With `workerModel` set (for example `claude-sonnet-5-5`), subagents of the types in `workerAgentTypes` run on that model whenever the Agent call names none. An explicit `model` in the call wins. Forks always inherit, and other types (Explore, Plan, plugin agents with their own model) are not touched. Off by default. A toast names the model on each pinned spawn.
@@ -206,7 +207,7 @@ Set these in `/plugin`, or under `pluginConfigs["bws-cockpit"].options` in setti
 | `modSummaries` | every known mod (see Mod tabs) | Mods that get a dashboard tab while loaded, in this order, comma-separated. Other names are ignored. |
 | `dashboardOnStart` | `true` | Open the dashboard when a session starts, on the first tab with something waiting (else Assumptions). Needs a terminal 144 columns wide or Desktop. |
 | `handoffNudgePercent` | `70` | Once per session, when the context passes this percentage, toast and highlight Handoff on the bar. `0` turns it off. |
-| `cacheTtlMinutes` | `60` | How long the main thread's prompt cache lasts after its last request (sub-agents about 5; not counted here). |
+| `cacheTtlMinutes` | `60` | The TTL until a reply's cache length is read from the transcript, or without Python (sub-agents about 5; not counted here). |
 | `cacheLowMinutes` | `5` | The cache chip turns warning, and auto handoff fires, when under this many minutes are left. |
 | `autoHandoff` | `true` | When the cache drops under the low threshold while idle, after at least one new turn, write `HANDOFF.md` once for that window. |
 

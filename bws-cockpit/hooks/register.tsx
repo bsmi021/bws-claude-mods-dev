@@ -47,7 +47,7 @@ import type { KnownMod, ModTabView } from './modtabs'
 import { parseTab, tabText } from './kit/tab'
 import type { TabNode } from './kit/tab'
 import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
-import { cacheChip, cacheStatus, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from './cacheclock'
+import { cacheChip, cacheStatus, cacheTiming, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText, ttlFromCacheCreation } from './cacheclock'
 import { EMPTY_BOARD, MARKETPLACE, boardText, counts as switchCounts, hiddenAfter, parseList, parseSwitch, pendingAfter, rowLines, rowTone, rows as switchRows } from './switchboard'
 import type { Board, SwitchRow, SwitchVerb } from './switchboard'
 import type { Assumption, DashTab, DashView, ShelfView } from '../types'
@@ -142,6 +142,8 @@ const tabEvent = atom({ plugin: 'bws-cockpit', key: 'tabEvent' } as const, null)
 // The cache clock (hooks/cacheclock.ts): the window's last main-loop turn end, and the chip the bar draws from it.
 const cacheClock = atom({ plugin: 'bws-cockpit', key: 'cacheClock' } as const, null)
 const cacheBar = atom({ plugin: 'bws-cockpit', key: 'cacheBar' } as const, null)
+// The TTL the transcript says Anthropic wrote the cache with (bin/ttl.py); null until read, then the option is the fallback.
+const cacheTtl = atom({ plugin: 'bws-cockpit', key: 'cacheTtl' } as const, null)
 
 // ---------- Dashboard: one pane with its own tabs (Assumptions, Shelf, Board, Loop while one is live) ----------
 
@@ -752,8 +754,32 @@ async function stampTurn($: EngineInterface, o: Options) {
 async function cacheText($: EngineInterface, o: Options) {
   const startedAt = (await $.session.usage()).startedAt
   const rec = await read($, cacheClock)
-  const status = cacheStatus(rec, startedAt, await $.clock.now(), o.cache.ttlMs, o.cache.lowMs)
-  return statusText(status, o.cache.ttlMs, o.cache.lowMs, { isOn: o.cache.isAutoHandoff, at: liveRecord(rec, startedAt)?.autoHandoffAt ?? null })
+  const timing = cacheTiming(await read($, cacheTtl), o.cache.ttlMs, o.cache.lowMs)
+  const status = cacheStatus(rec, startedAt, await $.clock.now(), timing.ttlMs, timing.lowMs)
+  return statusText(status, timing, { isOn: o.cache.isAutoHandoff, at: liveRecord(rec, startedAt)?.autoHandoffAt ?? null })
+}
+
+// After a main-thread Stop: which TTL the newest replies wrote the cache with, read by bin/ttl.py from the transcript's
+// tail (mods read only whole files). `python`, then `python3`: a missing one throws. Nothing read keeps the last value.
+// At Stop the newest reply may not be in the file yet (a session's first is not), so an empty answer tries again later.
+const TTL_RETRY_MS = [3_000, 10_000]
+
+async function detectTtl($: EngineInterface, o: Options, transcriptPath: string, attempt = 0) {
+  if (transcriptPath === '') return
+  const script = `${$.plugin.root}/bin/ttl.py`
+  let ran = await settle($.process.run(['python', script, transcriptPath], { timeoutMs: 10_000 }))
+  if (ran === undefined || ran.exitCode !== 0) ran = (await settle($.process.run(['python3', script, transcriptPath], { timeoutMs: 10_000 }))) ?? ran
+  const ttl = ran !== undefined && ran.exitCode === 0 ? ttlFromCacheCreation(ran.stdout) : null
+  if (ttl === null) {
+    const wait = TTL_RETRY_MS[attempt]
+    if (ran?.exitCode === 0 && wait !== undefined) $.clock.after(wait, () => void settle(detectTtl($, o, transcriptPath, attempt + 1)))
+    return
+  }
+  const prev = await read($, cacheTtl)
+  if (prev?.ttl === ttl) return
+  const at = await $.clock.now()
+  await update($, cacheTtl, () => ({ ttl, at }))
+  await syncCache($, o)
 }
 
 // Redraws the chip, and only when its text changed, so the minute tick re-renders the bar about once a minute.
@@ -762,12 +788,13 @@ async function syncCache($: EngineInterface, o: Options) {
   const startedAt = (await $.session.usage()).startedAt
   const now = await $.clock.now()
   const rec = await read($, cacheClock)
-  const status = cacheStatus(rec, startedAt, now, o.cache.ttlMs, o.cache.lowMs)
+  const timing = cacheTiming(await read($, cacheTtl), o.cache.ttlMs, o.cache.lowMs)
+  const status = cacheStatus(rec, startedAt, now, timing.ttlMs, timing.lowMs)
   const chip = cacheChip(status)
   const prev = await read($, cacheBar)
   if (prev?.text !== chip?.text || prev?.state !== chip?.state) await update($, cacheBar, () => chip)
   const turns = liveRecord(rec, startedAt)?.turns ?? 0
-  if (!shouldAutoHandoff({ isOn: o.cache.isAutoHandoff, status, isTurnActive, turns })) return
+  if (!shouldAutoHandoff({ isOn: o.cache.isAutoHandoff && timing.isAutoAllowed, status, isTurnActive, turns })) return
   // The turn count resets before the write, so a failed attempt is not retried every minute.
   await update($, cacheClock, r => noteHandoff(r, startedAt, now, false))
   const line = (await writeHandoff($, '', { isAuto: true })).split('\n')[0] ?? ''
@@ -1356,6 +1383,8 @@ export const register: Register = (on, options) => {
   })
 
   on('classic.Stop', async ($, e, next) => {
+    // The cache clock's TTL, from the transcript this Stop names; in the background, before the finish line's checks.
+    void settle(detectTtl($, o, e.transcript_path ?? ''))
     if (!o.finish.isOn) return next(e)
     if (!o.finish.isHeadless && (await $.session.surfaces()).length === 0) return next(e)
     const fl = await sessionFinishLine($, o.finish.owner)

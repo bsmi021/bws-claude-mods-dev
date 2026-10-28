@@ -6,6 +6,49 @@
 
 export type CacheState = 'fresh' | 'low' | 'expired'
 
+// The TTL Anthropic wrote the main thread's cache with, read from the transcript (bin/ttl.py): the engine's usage has
+// only cache_creation_input_tokens, the transcript keeps the 5m / 1h split. The `cacheTtl` atom; outlives a /clear.
+export type CacheTtl = '1h' | '5m'
+export type TtlRecord = { ttl: CacheTtl; at: number }
+export const TTL_MS: Record<CacheTtl, number> = { '1h': 60 * 60_000, '5m': 5 * 60_000 }
+
+// bin/ttl.py's output: one `cache_creation` object per line, newest first. The newest that wrote anything decides; one
+// that wrote both counts as 5m, so the clock warns early rather than late.
+export const ttlFromCacheCreation = (out: string): CacheTtl | null => {
+  for (const line of out.split(/\r?\n/)) {
+    let cc: unknown
+    try {
+      cc = JSON.parse(line)
+    } catch {
+      continue
+    }
+    if (cc === null || typeof cc !== 'object') continue
+    const c = cc as Record<string, unknown>
+    const m5 = Number(c.ephemeral_5m_input_tokens ?? 0) || 0
+    const h1 = Number(c.ephemeral_1h_input_tokens ?? 0) || 0
+    if (m5 > 0) return '5m'
+    if (h1 > 0) return '1h'
+  }
+  return null
+}
+
+// Under this TTL the auto handoff waits: a 5m cache would write one every idle pause.
+export const AUTO_HANDOFF_MIN_TTL_MS = 15 * 60_000
+
+// The clock's TTL and low threshold: the detected TTL, else the option. The low threshold is at most a fifth of the
+// TTL, so a 5m cache is not low the moment a turn ends.
+export type CacheTiming = { ttlMs: number; lowMs: number; source: 'detected' | 'option'; isAutoAllowed: boolean }
+
+export const cacheTiming = (detected: TtlRecord | null, optionTtlMs: number, optionLowMs: number): CacheTiming => {
+  const ttlMs = detected !== null ? TTL_MS[detected.ttl] : optionTtlMs
+  return {
+    ttlMs,
+    lowMs: Math.min(optionLowMs, Math.floor(ttlMs / 5)),
+    source: detected !== null ? 'detected' : 'option',
+    isAutoAllowed: ttlMs >= AUTO_HANDOFF_MIN_TTL_MS,
+  }
+}
+
 // The `cacheClock` atom: the window, the last main-loop turn end, the turns since the last handoff (an auto handoff
 // needs one, so it runs once per cache window), and when the last auto handoff was written.
 export type CacheRecord = { startedAt: number; lastAt: number; turns: number; autoHandoffAt: number | null }
@@ -65,14 +108,9 @@ export const clockText = (ms: number) => {
 }
 
 // The /cacheclock reply. Plain text, so headless runs print it too.
-export const statusText = (
-  status: CacheStatus | null,
-  ttlMs: number,
-  lowMs: number,
-  auto: { isOn: boolean; at: number | null },
-): string => {
-  const ttl = Math.round(ttlMs / 60_000)
-  const low = Math.round(lowMs / 60_000)
+export const statusText = (status: CacheStatus | null, timing: CacheTiming, auto: { isOn: boolean; at: number | null }): string => {
+  const ttl = Math.round(timing.ttlMs / 60_000)
+  const low = Math.round(timing.lowMs / 60_000)
   const lines: string[] = []
   if (status === null) lines.push('Cache clock: no request yet in this session, so nothing to count from. It starts at the first reply.')
   else if (status.state === 'expired') {
@@ -81,7 +119,14 @@ export const statusText = (
     const mark = status.state === 'low' ? `low, under ${low}m` : 'fresh'
     lines.push(`Cache clock: ${minutesText(status.remainingMs)} left of ${ttl}m (${mark}); the window ends at ${clockText(status.expiresAt)}.`)
   }
+  lines.push(
+    timing.source === 'detected'
+      ? `TTL: ${ttl}m, as Anthropic's last reply wrote the cache.`
+      : `TTL: ${ttl}m from the cacheTtlMinutes option (no reply's cache length read yet).`,
+  )
   const last = auto.at === null ? 'none this session' : `last written ${clockText(auto.at)}`
-  lines.push(`Auto handoff: ${auto.isOn ? last : `off (${last})`}.`)
+  if (!auto.isOn) lines.push(`Auto handoff: off (${last}).`)
+  else if (!timing.isAutoAllowed) lines.push(`Auto handoff: waits while the cache lasts under ${AUTO_HANDOFF_MIN_TTL_MS / 60_000}m (${last}).`)
+  else lines.push(`Auto handoff: ${last}.`)
   return lines.join('\n')
 }

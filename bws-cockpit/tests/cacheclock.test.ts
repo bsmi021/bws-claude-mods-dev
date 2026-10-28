@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { cacheChip, cacheStatus, chipText, clockText, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText } from '../hooks/cacheclock'
+import { cacheChip, cacheStatus, cacheTiming, chipText, clockText, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText, ttlFromCacheCreation } from '../hooks/cacheclock'
 import type { CacheRecord, CacheStatus } from '../hooks/cacheclock'
 
 const MIN = 60_000
@@ -8,6 +8,8 @@ const TTL = 60 * MIN
 const LOW = 5 * MIN
 const START = 1_000_000 // the session window's startedAt
 const T0 = 5_000_000 // the last main-loop turn end
+
+const OPT = cacheTiming(null, TTL, LOW) // the option's 60m / 5m
 
 const rec = (over: Partial<CacheRecord> = {}): CacheRecord => ({ startedAt: START, lastAt: T0, turns: 1, autoHandoffAt: null, ...over })
 
@@ -125,24 +127,59 @@ describe('cache clock: auto handoff decision', () => {
 
 describe('cache clock: /cacheclock text', () => {
   test('no request yet: says so, and the auto handoff line', () => {
-    const text = statusText(null, TTL, LOW, { isOn: true, at: null })
+    const text = statusText(null, OPT, { isOn: true, at: null })
     expect(text).toContain('no request yet in this session')
     expect(text).toContain('Auto handoff: none this session.')
   })
 
   test('fresh, low and cold, with the auto handoff time or off', () => {
     const fresh: CacheStatus = { state: 'fresh', remainingMs: 42 * MIN, expiresAt: T0 + TTL }
-    const shown = statusText(fresh, TTL, LOW, { isOn: true, at: T0 })
+    const shown = statusText(fresh, OPT, { isOn: true, at: T0 })
     expect(shown).toContain('42m left of 60m (fresh)')
     expect(shown).toContain(`window ends at ${clockText(T0 + TTL)}`)
     expect(shown).toContain(`Auto handoff: last written ${clockText(T0)}.`)
 
     const low: CacheStatus = { state: 'low', remainingMs: 4 * MIN, expiresAt: T0 + TTL }
-    const off = statusText(low, TTL, LOW, { isOn: false, at: null })
+    const off = statusText(low, OPT, { isOn: false, at: null })
     expect(off).toContain('4m left of 60m (low, under 5m)')
     expect(off).toContain('Auto handoff: off (none this session).')
 
     const cold: CacheStatus = { state: 'expired', remainingMs: 0, expiresAt: T0 + TTL }
-    expect(statusText(cold, TTL, LOW, { isOn: true, at: null })).toContain(`cold. The 60m window ended at ${clockText(T0 + TTL)}`)
+    expect(statusText(cold, OPT, { isOn: true, at: null })).toContain(`cold. The 60m window ended at ${clockText(T0 + TTL)}`)
+  })
+})
+
+describe('cache clock: TTL from the transcript', () => {
+  const cc = (m5: number, h1: number) => JSON.stringify({ ephemeral_5m_input_tokens: m5, ephemeral_1h_input_tokens: h1 })
+
+  test('the newest line that wrote anything decides', () => {
+    expect(ttlFromCacheCreation(`${cc(0, 2300)}\n${cc(1422, 0)}`)).toBe('1h')
+    expect(ttlFromCacheCreation(`${cc(1422, 0)}\r\n${cc(0, 2300)}`)).toBe('5m')
+    expect(ttlFromCacheCreation(`${cc(0, 0)}\n${cc(0, 9)}`)).toBe('1h')
+  })
+
+  test('both written counts as 5m; nothing, junk or no writes is null', () => {
+    expect(ttlFromCacheCreation(cc(10, 10))).toBe('5m')
+    expect(ttlFromCacheCreation('')).toBe(null)
+    expect(ttlFromCacheCreation('not json\nnull\n42')).toBe(null)
+    expect(ttlFromCacheCreation(cc(0, 0))).toBe(null)
+  })
+
+  test('timing: the detected TTL wins over the option; the low mark is at most a fifth of it', () => {
+    expect(cacheTiming(null, TTL, LOW)).toEqual({ ttlMs: TTL, lowMs: LOW, source: 'option', isAutoAllowed: true })
+    expect(cacheTiming({ ttl: '1h', at: 0 }, 30 * MIN, LOW)).toEqual({ ttlMs: TTL, lowMs: LOW, source: 'detected', isAutoAllowed: true })
+    expect(cacheTiming({ ttl: '5m', at: 0 }, TTL, LOW)).toEqual({ ttlMs: 5 * MIN, lowMs: MIN, source: 'detected', isAutoAllowed: false })
+    expect(cacheTiming(null, 5 * MIN, LOW).isAutoAllowed).toBe(false) // the option alone can set a short TTL too
+  })
+
+  test('/cacheclock names where the TTL came from and why the auto handoff waits', () => {
+    const t5 = cacheTiming({ ttl: '5m', at: 0 }, TTL, LOW)
+    const s: CacheStatus = { state: 'fresh', remainingMs: 4 * MIN, expiresAt: T0 + 5 * MIN }
+    const text = statusText(s, t5, { isOn: true, at: null })
+    expect(text).toContain('4m left of 5m (fresh)')
+    expect(text).toContain("TTL: 5m, as Anthropic's last reply wrote the cache.")
+    expect(text).toContain('Auto handoff: waits while the cache lasts under 15m (none this session).')
+    expect(statusText(s, OPT, { isOn: true, at: null })).toContain('TTL: 60m from the cacheTtlMinutes option')
+    expect(statusText(s, t5, { isOn: false, at: null })).toContain('Auto handoff: off (none this session).')
   })
 })

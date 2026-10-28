@@ -5,6 +5,7 @@
 - bws-agents gets a dashboard tab (Agents) and is in the default `modTabs`.
 - bws-inventory gets a dashboard tab (Inventory) and a switchboard card, and is in the default `modTabs`.
 - bws-mask gets a dashboard tab (Mask) and a switchboard card, and is in the default `modTabs`.
+- Cache clock TTL detection: after each main-thread turn, `bin/ttl.py` reads the transcript's tail for the cache length Anthropic wrote (1h or 5m, as in usage overage) and the clock counts from it; `cacheTtlMinutes` is the fallback. `/cacheclock` names the source. The low threshold is at most a fifth of the TTL, and the auto handoff waits while the TTL is under 15 minutes.
 
 ## 0.27.1
 - The dashboard asks for a wider dock (as wide as the engine allows, 45% of the terminal), so the Side chat has room. A width you dragged it to still wins.

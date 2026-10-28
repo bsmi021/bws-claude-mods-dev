@@ -1017,6 +1017,72 @@ describe('cache clock: /cacheclock', () => {
     expect(r.text).toContain('4m left of 60m (low, under 5m)')
     expect(r.text).toMatch(/Auto handoff: last written \d\d:\d\d\./)
   })
+
+  // bin/ttl.py's output for a transcript whose newest replies wrote a 5m cache
+  const FIVE = '{"ephemeral_1h_input_tokens": 0, "ephemeral_5m_input_tokens": 1422}\n'
+  const STOP = { stop_hook_active: false, transcript_path: 'C:/t/s1.jsonl', last_assistant_message: 'ok', background_tasks: [], session_crons: [] } as never
+
+  test('a Stop reads the TTL from the transcript: 5m drives the clock, the low mark and the auto handoff', async ($, on) => {
+    const { clock } = world(on, { run: argv => ({ exitCode: 0, stdout: argv[0] === 'python' ? FIVE : '', stderr: '' }) })
+    on('classic.Stop', () => ({}))
+    const forks: string[] = []
+    on('model.fork', () => {
+      forks.push('fork')
+      return { value: { isAnswered: true, text: '# Handoff: test', usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } as never }
+    })
+    await $.session.start({ cwd: ROOT } as never)
+    await $.turn.complete(TURN)
+    await $.classic.Stop(STOP)
+    await clock.settle()
+    let r = await $.command.run({ command: 'cacheclock', args: '' } as never)
+    expect(r.text).toContain('5m left of 5m (fresh)')
+    expect(r.text).toContain("TTL: 5m, as Anthropic's last reply wrote the cache.")
+    expect(r.text).toContain('Auto handoff: waits while the cache lasts under 15m')
+    await clock.advance(4.5 * MIN) // under the 1m low mark (a fifth of 5m), not yet cold
+    await clock.settle()
+    r = await $.command.run({ command: 'cacheclock', args: '' } as never)
+    expect(r.text).toContain('<1m left of 5m (low, under 1m)')
+    expect(forks.length).toBe(0)
+  })
+
+  test('the script gets the transcript the Stop names; without python the option stays', async ($, on) => {
+    const runs: string[][] = []
+    world(on, {
+      run: argv => {
+        runs.push([...argv])
+        throw new Error('not found')
+      },
+    })
+    on('classic.Stop', () => ({}))
+    await $.turn.complete(TURN)
+    await $.classic.Stop(STOP)
+    const r = await $.command.run({ command: 'cacheclock', args: '' } as never)
+    const py = runs.filter(a => norm(a[1]).endsWith('/bin/ttl.py'))
+    expect(py.map(a => a[0])).toEqual(['python', 'python3'])
+    expect(py[0]?.[2]).toBe('C:/t/s1.jsonl')
+    expect(r.text).toContain('60m left of 60m (fresh)')
+    expect(r.text).toContain('TTL: 60m from the cacheTtlMinutes option')
+  })
+
+  test('a reply not yet in the transcript at Stop is read on a retry', async ($, on) => {
+    let calls = 0
+    const { clock } = world(on, {
+      run: argv => {
+        if (!norm(argv[1]).endsWith('/bin/ttl.py')) throw new Error('not here')
+        calls += 1
+        return { exitCode: 0, stdout: calls >= 2 ? FIVE : '', stderr: '' }
+      },
+    })
+    on('classic.Stop', () => ({}))
+    await $.turn.complete(TURN)
+    await $.classic.Stop(STOP)
+    await clock.settle()
+    expect((await $.command.run({ command: 'cacheclock', args: '' } as never)).text).toContain('TTL: 60m from the cacheTtlMinutes option')
+    await clock.advance(3_000)
+    await clock.settle()
+    expect(calls).toBe(2)
+    expect((await $.command.run({ command: 'cacheclock', args: '' } as never)).text).toContain("TTL: 5m, as Anthropic's last reply wrote the cache.")
+  })
 })
 
 // ---------- the action bar's buttons ----------

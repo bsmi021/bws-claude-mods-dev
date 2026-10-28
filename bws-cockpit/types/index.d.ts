@@ -195,6 +195,8 @@ declare module 'claude-code' {
       cacheClock: { startedAt: number; lastAt: number; turns: number; autoHandoffAt: number | null } | null
       // the chip the bar draws from it
       cacheBar: { text: string; state: 'fresh' | 'low' | 'expired' } | null
+      // The TTL Anthropic last wrote the main thread's cache with, read from the transcript (bin/ttl.py), and when
+      cacheTtl: { ttl: '1h' | '5m'; at: number } | null
       // The Mods tab (hooks/switchboard.ts Board): installed bws mods as `claude plugin list` last said (null until it
       // answered), tabs the person hid, mods switched since the last /reload-plugins, a note, and a switch in flight
       switchboard: {

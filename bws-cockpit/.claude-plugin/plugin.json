@@ -184,7 +184,7 @@
     "cacheTtlMinutes": {
       "type": "number",
       "title": "Cache clock: TTL (minutes)",
-      "description": "How long the main thread's prompt cache lasts after its last request (about 60; sub-agents about 5).",
+      "description": "Used until the cache length Anthropic wrote (1h or 5m) is read from the transcript after a turn, or when Python is missing.",
       "default": 60
     },
     "cacheLowMinutes": {
