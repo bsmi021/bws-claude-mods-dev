@@ -4,6 +4,7 @@
     python supervise.py run <jobdir> <turn>          run turn-<turn>.json's argv; write status.json; commit; write diff.patch
     python supervise.py wait <jobdir> <turn> <secs>  block until that turn ends or secs pass; print status.json
     python supervise.py cancel <jobdir>              stop the running turn; print status.json
+    python supervise.py reap <folder>                remove a folder in the background, retrying for 30 minutes
 
 The mod (hooks/register.ts) sends job.json, turn-<n>.json and turn-<n>.prompt.txt to `launch`, and reads only small files back:
 status.json (atomic), turn-<n>.events.jsonl (Codex's --json stream with long fields cut) and turn-<n>.last.txt.
@@ -332,6 +333,24 @@ def cancel(jobdir):
     print(json.dumps(st, ensure_ascii=False))
 
 
+def reap(folder):
+    """Starts reap-run detached: a dropped worktree's folder can stay held by Codex's sandbox helper for minutes."""
+    flags = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW if IS_WIN else 0
+    p = subprocess.Popen([sys.executable, os.path.abspath(__file__), "reap-run", folder],
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         close_fds=True, creationflags=flags, start_new_session=not IS_WIN)
+    print(p.pid)
+
+
+def reap_run(folder, secs=1800):
+    import shutil
+    end = time.time() + secs
+    while os.path.exists(folder) and time.time() < end:
+        shutil.rmtree(folder, ignore_errors=True)
+        if os.path.exists(folder):
+            time.sleep(15)
+
+
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
     if cmd == "launch":
@@ -342,5 +361,9 @@ if __name__ == "__main__":
         wait(*args)
     elif cmd == "cancel":
         cancel(*args)
+    elif cmd == "reap":
+        reap(*args)
+    elif cmd == "reap-run":
+        reap_run(*args)
     else:
         raise SystemExit(f"unknown command {cmd}")

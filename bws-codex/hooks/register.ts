@@ -288,7 +288,14 @@ async function cancelJob($: EngineInterface, o: Options, id: string, drop: boole
   watched.delete(id)
   if (drop) {
     const gone = await settle($.process.run(['git', '-C', job.repo, 'worktree', 'remove', '--force', job.worktree], { timeoutMs: GIT_MS }))
-    lines.push(gone?.exitCode === 0 ? `Removed the worktree ${job.worktree}.` : `The worktree ${job.worktree} was not removed: ${tail(gone?.stderr) || 'git did not run'}.`)
+    const listed = await settle($.process.run(['git', '-C', job.repo, 'worktree', 'list', '--porcelain'], { timeoutMs: GIT_MS }))
+    const isListed = listed === undefined || listed.stdout.split(/\r?\n/).some(l => l.startsWith('worktree ') && samePath(l.slice(9), job.worktree))
+    if (gone?.exitCode === 0) lines.push(`Removed the worktree ${job.worktree}.`)
+    else if (!isListed) {
+      // Git emptied and unregistered it, but Codex's sandbox helper can hold the folder itself for minutes.
+      await settle(supervise($, o, ['reap', job.worktree], 30_000))
+      lines.push(`Removed the worktree ${job.worktree} from git; its emptied folder is still held by a Codex helper and is deleted in the background.`)
+    } else lines.push(`The worktree ${job.worktree} was not removed: ${tail(gone?.stderr) || 'git did not run'}.`)
     const threadId = job.threadId ?? (await threadOf($, job))
     const codex = await codexOf($, o)
     if (threadId !== null && codex !== undefined) {

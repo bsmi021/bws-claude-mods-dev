@@ -157,4 +157,14 @@ describe('results and the wake', () => {
     expect(w.seen.runs).toContainEqual(['git', '-C', TOP, 'branch', '-d', `codex/${id}`])
     expect((await $.tool.call({ tool: 'mcp__bws-codex__codex_result', id } as never)).deny).toBe(`bws-codex: no Codex job ${id} (codex_status lists them)`)
   })
+
+  test('drop while a Codex helper holds the emptied worktree folder: unregistered, folder reaped in the background', { options: {} }, async ($, on) => {
+    const w = world(on, { isRemoveHeld: true })
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    const id = idOf(await $.tool.call(DELEGATE as never))
+    finishTurn(w.files, dirOf(id), 1, w.clock.now(), 'Fixed add().')
+    const r = await $.tool.call({ tool: 'mcp__bws-codex__codex_cancel', id, drop: true } as never)
+    expect(text(r)).toContain(`Removed the worktree C:/src/app.codex-worktrees/${id} from git; its emptied folder is still held by a Codex helper and is deleted in the background.`)
+    expect(w.seen.runs.some(a => a[2] === 'reap' && a[3] === `C:/src/app.codex-worktrees/${id}`)).toBe(true)
+  })
 })

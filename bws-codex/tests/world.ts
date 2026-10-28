@@ -16,7 +16,7 @@ export const NOT_GRANTED = { isError: true, result: undefined, text: "Claude req
 
 export const norm = (p: unknown) => String(p).replace(/\\/g, '/')
 
-export type World = { bottom?: unknown; now?: number }
+export type World = { bottom?: unknown; now?: number; isRemoveHeld?: boolean }
 
 export function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: w.now ?? 1_800_000_000_000 })
@@ -51,6 +51,7 @@ export function world(on: On, w: World = {}) {
     if (e.init?.stdin) seen.stdins.push(e.init.stdin)
     const ok = (stdout = '') => ({ value: { exitCode: 0, stdout, stderr: '' } as never })
     if (argv.includes('rev-parse') && argv.includes('--show-toplevel')) return ok(`${TOP}\n${COMMON}\n${HEAD}\n`)
+    if (w.isRemoveHeld && argv.includes('remove')) return { value: { exitCode: 255, stdout: '', stderr: 'error: failed to delete: Permission denied' } as never }
     if (argv[1]?.endsWith('/bin/supervise.py') && argv[2] === 'launch') return ok('4242\n')
     if (argv[1]?.endsWith('/bin/supervise.py')) return ok(files.get(`${argv[3]}/status.json`) ?? '{}')
     return ok()
