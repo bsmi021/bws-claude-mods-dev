@@ -1,0 +1,58 @@
+{
+  "name": "bws-codex",
+  "version": "0.1.0",
+  "description": "Claude delegates coding work to OpenAI Codex on your ChatGPT plan: codex_delegate starts a Codex job in its own git worktree on branch codex/<id>, sandboxed (workspace-write, no internet by default) behind Claude Code's permission prompt; the mod commits each turn, Claude reviews and merges the branch, and an idle Claude is woken when a job ends.",
+  "author": {
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
+  },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-codex#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "codex",
+    "delegation",
+    "worktree"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Codex model",
+      "description": "The model Codex jobs run (passed with -m; jobs ignore ~/.codex/config.toml).",
+      "default": "gpt-6.1-sol"
+    },
+    "effort": {
+      "type": "string",
+      "title": "Default reasoning effort",
+      "description": "low, medium, high or xhigh. A codex_delegate call can pass its own.",
+      "default": "medium"
+    },
+    "timeoutMinutes": {
+      "type": "number",
+      "title": "Turn time limit (minutes)",
+      "description": "A Codex turn still running after this is stopped; its edits so far are committed.",
+      "default": 30
+    },
+    "wake": {
+      "type": "boolean",
+      "title": "Wake Claude when a job ends",
+      "description": "On: when a job's turn ends while Claude is idle, the mod sends Claude a prompt with the result (at most one every 30 seconds). Off: Claude finds out from codex_result.",
+      "default": true
+    },
+    "codexPath": {
+      "type": "string",
+      "title": "codex.exe",
+      "description": "Path to the native codex.exe. Empty: the one npm installed under %APPDATA%. Never the npm .cmd shim.",
+      "default": ""
+    },
+    "pythonPath": {
+      "type": "string",
+      "title": "Python",
+      "description": "The Python that runs the job supervisor (bin/supervise.py, standard library only).",
+      "default": "python"
+    }
+  }
+}

@@ -23,6 +23,10 @@
       "source": "./bws-cockpit"
     },
     {
+      "name": "bws-codex",
+      "source": "./bws-codex"
+    },
+    {
       "name": "bws-design-picker",
       "source": "./bws-design-picker"
     },
