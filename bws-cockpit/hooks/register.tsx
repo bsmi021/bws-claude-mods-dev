@@ -46,7 +46,7 @@ import { DEFAULT_MODS, MOD_TITLE, focusKeyOf, isRaised, modKey, modOfKey, modTab
 import type { KnownMod, ModTabView } from './modtabs'
 import { parseTab, tabText } from './kit/tab'
 import type { TabNode } from './kit/tab'
-import { handoffFolder, handoffPrompt, keptName, parseTypes, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
+import { handoffFolder, handoffPrompt, keptName, parseTypes, pickupCommand, pinnedModel, startPrompt, transcriptPrompt, transcriptText, words } from './handoff'
 import { cacheChip, cacheStatus, cacheTiming, liveRecord, noteHandoff, noteTurn, shouldAutoHandoff, statusText, ttlFromCacheCreation } from './cacheclock'
 import { EMPTY_BOARD, MARKETPLACE, boardText, counts as switchCounts, hiddenAfter, parseList, parseSwitch, pendingAfter, rowLines, rowTone, rows as switchRows } from './switchboard'
 import type { Board, SwitchRow, SwitchVerb } from './switchboard'
@@ -89,6 +89,8 @@ import {
   slash,
 } from './shelf'
 import type { By, Idea, Shelf, Status } from './shelf'
+import { noHandoffText, parseHandoff, pickHandoff, pickupPrompt, pickupText } from './pickup'
+import type { HandoffFile } from './pickup'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
@@ -683,6 +685,26 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
 
 // ---------- /handoff ----------
 
+// Every runs/<name>/HANDOFF.md among the 40 newest folder names.
+async function handoffFiles($: EngineInterface): Promise<HandoffFile[]> {
+  const runsDir = joinPath(await $.session.cwd(), 'runs')
+  const dirs = ((await settle($.fs.list(runsDir))) ?? []).filter(d => d.kind === 'dir').map(d => d.name).sort().reverse().slice(0, 40)
+  const out: HandoffFile[] = []
+  for (const name of dirs) {
+    const f = ((await settle($.fs.list(joinPath(runsDir, name)))) ?? []).find(x => x.kind === 'file' && x.name.toLowerCase() === 'handoff.md')
+    if (f) out.push({ folder: `runs/${name}`, mtime: f.mtimeMs })
+  }
+  return out
+}
+
+async function submitPickup($: EngineInterface, folder: string) {
+  try {
+    await $.prompt.submit({ text: pickupPrompt(folder), asUser: true })
+  } catch {
+    $.ui.toast(`bws-cockpit: could not queue the pickup prompt for ${folder}`)
+  }
+}
+
 // Writes HANDOFF.md into this session's run folder (as the Finish-Line Guard sees it), never one a worker freshened.
 const WRITTEN = 'Handoff written:' // the first words of a successful writeHandoff reply
 
@@ -714,12 +736,13 @@ async function writeHandoff($: EngineInterface, focus: string, how: { isAuto?: b
   const at = await $.clock.now()
   await update($, cacheClock, rec => noteHandoff(rec, startedAt, at, how.isAuto === true))
   const start = startPrompt(folder)
+  const pickup = pickupCommand(folder)
   const surfaces = await $.session.surfaces()
-  const copied = how.isAuto !== true && surfaces.length > 0 && (await settle($.ui.copy({ text: start })))?.isCopied === true
+  const copied = how.isAuto !== true && surfaces.length > 0 && (await settle($.ui.copy({ text: pickup })))?.isCopied === true
   return (
     `${WRITTEN} ${folder}/HANDOFF.md (${words(body)} words)` +
     (kept !== null ? `; the previous one is kept as ${folder}/${kept}` : '') +
-    `.\nStart the next session with this prompt${copied ? ' (copied to the clipboard)' : ''}:\n${start}`
+    `.\nStart the next session with ${pickup}${copied ? ' (copied to the clipboard)' : ''}, or, without cockpit, this prompt:\n${start}`
   )
 }
 
@@ -1303,6 +1326,18 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'handoff' }, async ($, e, next) => ({ text: await writeHandoff($, e.args.trim()) }))
 
+  // ---------- /pickup ----------
+
+  on('command.run', { command: 'pickup' }, async ($, e, next) => {
+    const hit = pickHandoff(await handoffFiles($), e.args)
+    if (hit === null) return { text: noHandoffText(e.args) }
+    const body = (await settle($.fs.read(joinPath(await $.session.cwd(), `${hit.folder}/HANDOFF.md`)))) ?? ''
+    const now = await $.clock.now()
+    // A submit from inside command.run would wait on this very dispatch: queue it just after.
+    $.clock.after(50, () => void submitPickup($, hit.folder))
+    return { text: pickupText(hit.folder, parseHandoff(body), now - hit.mtime) }
+  })
+
   // ---------- Cache clock ----------
 
   on('command.run', { command: 'cacheclock' }, async ($, e, next) => ({ text: await cacheText($, o) }))
@@ -1443,7 +1478,8 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'cockpit', description: 'Show the active run and editor/device status' })
     await $.command.register({ name: 'resume-run', description: 'Resume the newest run folder (RUNLOG, PLAN, TASKS)' })
     await $.command.register({ name: 'loop-watch', description: "Watch this project's harness loop: units, sessions, cost, stalls, needs" })
-    await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy its start prompt', argumentHint: '[focus]' })
+    await $.command.register({ name: 'handoff', description: 'Write HANDOFF.md for a fresh agent and copy /pickup for the next session', argumentHint: '[focus]' })
+    await $.command.register({ name: 'pickup', description: 'Pick up the newest HANDOFF.md (or the named run): re-check its live state, then continue', argumentHint: '[run folder]' })
     await $.command.register({ name: 'cacheclock', description: 'Show the prompt cache clock: time left, state, and the last auto handoff', argumentHint: '[status]', immediate: true })
     if (o.projects.isOn) {
       await $.command.register({ name: 'projects', description: 'List the projects under the configured roots (/projects refresh rebuilds the index)', argumentHint: '[refresh]' })

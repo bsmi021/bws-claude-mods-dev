@@ -24,11 +24,12 @@ export const handoffPrompt = (folder: string, focus: string) =>
     'Write a handoff for a fresh agent that will continue this work and has none of this conversation.',
     `It will be saved as ${folder}/HANDOFF.md, beside the run folder's RUNLOG.md, PLAN.md and TASKS.md if they exist.`,
     focus ? `Focus the handoff on: ${focus}.` : '',
-    'Output only the handoff, in Markdown, under about 450 words, written to the next agent. Use these sections:',
+    'Output only the handoff, in Markdown, under about 500 words, written to the next agent. Use these sections:',
     '# Handoff: <short title>',
     '## Objective (one or two sentences)',
     '## Finish line (the agreed checklist, each item marked done or open)',
     '## Done so far (what is finished, with the receipts that prove it: test counts, file paths, commit hashes)',
+    '## Live state (a Markdown table, | Claim | How to check |: each fact about the world the next agent relies on and must re-check before trusting, such as a branch and its last commit, a passing test run, a running process, a file that exists, with the exact command that checks it)',
     '## Next step (the single next action, concrete enough to start without asking)',
     '## Open items (anything else not done, and anything waiting on the user)',
     '## Key files and commands (exact paths and command lines)',
@@ -42,6 +43,9 @@ export const handoffPrompt = (folder: string, focus: string) =>
 export const startPrompt = (folder: string) =>
   `Read ${folder}/HANDOFF.md first, then the RUNLOG.md, PLAN.md and TASKS.md beside it if they exist. ` +
   'Restate the finish line and the next step in two lines, check what is actually done against the receipts, then continue from the next step.'
+
+// What the new session types: cockpit's /pickup reads the handoff and re-checks its live state.
+export const pickupCommand = (folder: string) => `/pickup ${folder.replace(/^runs\//, '')}`
 
 export const words = (text: string) => text.split(/\s+/).filter(Boolean).length
 

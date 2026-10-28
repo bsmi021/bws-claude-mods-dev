@@ -27,6 +27,7 @@ Then `/reload-plugins`. Requires Claude Code 2.1.296 or later and a trusted work
 | `/cockpit [show\|hide]` | Print the run, devices, loop and guard as text. `show` brings the action bar back, `hide` hides it. |
 | `/resume-run` | Queue a prompt that resumes the newest run folder. |
 | `/handoff [focus]` | Write `HANDOFF.md` for a fresh agent. |
+| `/pickup [run folder]` | In the new session: pick up the newest `HANDOFF.md` (or the named run's), re-check its live state, continue. |
 | `/cacheclock [status]` | Print the time left on the prompt cache. |
 | `/projects [refresh]` | List the projects found under your project roots; `refresh` rebuilds the index. |
 
@@ -161,10 +162,16 @@ Stops Claude from searching the whole disk for a project. A Glob over a big proj
 ### /handoff
 - Writes a handoff for a fresh agent into this session's run folder as `HANDOFF.md`. With no run folder, it goes in a new `runs/<date>-handoff/`.
 - The session's own model writes it from the conversation, using the prompt cache. In a resumed session there is nothing to fork before the first request, so it is built from the transcript instead.
-- Sections: objective, finish line, what is done with receipts, the next step, open items, key files and commands, decisions and constraints, traps. Optional focus text steers it.
+- Sections: objective, finish line, what is done with receipts, a live-state table (each claim the next agent relies on, with the command that checks it), the next step, open items, key files and commands, decisions and constraints, traps. Optional focus text steers it.
 - An existing `HANDOFF.md` is kept as `HANDOFF.<yyyymmdd-hhmm>.md`.
-- The reply shows a short start prompt for the next session and copies it to the clipboard where there is one. The bar's `h` writes the handoff the same way (no focus text) and toasts the first line.
+- The reply names `/pickup <run>` for the next session and copies it to the clipboard where there is one; it also shows the full start prompt for an agent without cockpit. The bar's `h` writes the handoff the same way (no focus text) and toasts the first line.
 - **Nudge.** Once per session, when the context passes `handoffNudgePercent`, a toast says it is time for a handoff and `h` is highlighted until one is written.
+
+### /pickup
+- The new session's side of `/handoff`. With no argument it takes the newest `runs/*/HANDOFF.md` (by file time, among the 40 newest run folders); `/pickup <name>` takes that run folder, or the newest whose name contains the text.
+- The reply shows what is being picked up: 📥 the file and its age, 🏷️ the title, 🏁 the finish line's done and open items, 🔍 how many live-state claims there are, ➡️ the next step, and ⚠️ when the handoff is over 3 days old.
+- Then it queues a prompt: read the handoff and the RUNLOG, PLAN and TASKS beside it, re-check every live-state claim with its command and list each as confirmed or stale (stale whenever the check does not show it exactly as written), restate the finish line and next step, and continue.
+- With no handoff it says so and sends nothing.
 
 ### Cache clock
 - **The chip.** On the bar, `cache 42m`: the time left on the main thread's prompt cache, counted from the end of its last turn for the cache's TTL. It turns warning under `cacheLowMinutes` (at most a fifth of the TTL), and reads `cache cold` once the window has ended. It is hidden before the first turn and after `/clear`.
