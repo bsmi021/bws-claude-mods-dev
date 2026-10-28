@@ -60,5 +60,5 @@ Set in `/plugin` → bws-codex → configure, or `pluginConfigs` in settings.
 
 ## Tested
 
-Claude Code 2.1.311 on Windows 11, terminal UI and headless `claude -p`, with Codex CLI 0.160.1 on a ChatGPT plan.
+Claude Code 2.1.311 (headless `claude -p`) and 2.1.312 (terminal UI) on Windows 11, with Codex CLI 0.160.1 on a ChatGPT plan.
 Not tested in Claude Code Desktop or VS Code.
