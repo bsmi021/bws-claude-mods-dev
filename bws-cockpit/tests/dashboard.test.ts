@@ -282,6 +282,74 @@ describe('shelf lib', () => {
 
 // ---------- Assumptions tab ----------
 
+describe('assumptions deck', () => {
+  const DECK = 'assumption-deck'
+  const edit = (on: On) => on('tool.call', { tool: 'Edit' }, () => ({ result: 'ok' }) as never)
+
+  test('edits made while an assumption stands are its blast radius, named in the review', async ($, on) => {
+    const { seen, clock } = world(on)
+    edit(on)
+    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:\\Projects\\game\\src\\weather.py', old_string: 'a', new_string: 'b' } as never)
+    await $.tool.call({ tool: TOOL, assumption: 'City from argv' } as never)
+    await $.tool.call({ tool: 'Edit', file_path: 'C:/Projects/game/src/cli.py', old_string: 'a', new_string: 'b' } as never)
+    const ui = await $.ui.mount(PANE)
+    // A1 carries both edits, so it leads the deck.
+    expect(await ui.find({ type: 'Text', text: 'Use wttr.in', in: DECK })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'src/weather.py  src/cli.py', in: DECK })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /built on it$/, in: DECK })).toBeDefined()
+    // ← marks A1 wrong and opens the Instead line; typed keys fill it; Enter flies it off.
+    await ui.key({ key: 'left', in: DECK })
+    for (const k of ['e', 'n', 'v']) await ui.key({ key: k, in: DECK })
+    expect(await ui.find({ type: 'Text', text: 'Instead: env▌', in: DECK })).toBeDefined()
+    await ui.key({ key: 'return', in: DECK })
+    await ui.advance(600)
+    // A2 is up next; → marks it right.
+    expect(await ui.find({ type: 'Text', text: 'City from argv', in: DECK })).toBeDefined()
+    await ui.key({ key: 'right', in: DECK })
+    await ui.advance(600)
+    expect(await ui.find({ type: 'Text', text: /0 to judge · 2 judged/, in: DECK })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '✓ All judged: 1 right, 1 wrong', in: DECK })).toBeDefined()
+    await ui.key({ key: 's', in: DECK })
+    await ui.unmount()
+    await clock.advance(50)
+    expect(seen.sent.length).toBe(1)
+    expect(seen.sent[0]?.text).toContain('A1 is WRONG: "Use wttr.in". Instead: env Built on it since: 2 edits in src/weather.py, src/cli.py.')
+    expect(seen.sent[0]?.text).toContain('A2 is right')
+  })
+
+  test('a drag past the threshold judges; a short one does nothing', async ($, on) => {
+    world(on)
+    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
+    const ui = await $.ui.mount(PANE)
+    await ui.pointer({ type: 'down', x: 30, y: 2, button: 'left' })
+    await ui.pointer({ type: 'move', x: 27, y: 2, button: 'left' })
+    await ui.pointer({ type: 'up', x: 27, y: 2, button: 'left' })
+    expect(await ui.find({ type: 'Text', text: /1 to judge/, in: DECK })).toBeDefined()
+    await ui.pointer({ type: 'down', x: 30, y: 2, button: 'left' })
+    await ui.pointer({ type: 'move', x: 40, y: 2, button: 'left' })
+    expect(await ui.find({ type: 'Text', text: 'RIGHT →', in: DECK })).toBeDefined()
+    await ui.pointer({ type: 'up', x: 40, y: 2, button: 'left' })
+    await ui.advance(600)
+    expect(await ui.find({ type: 'Text', text: /0 to judge · 1 judged/, in: DECK })).toBeDefined()
+    // u takes it back.
+    await ui.key({ key: 'u', in: DECK })
+    expect(await ui.find({ type: 'Text', text: /1 to judge/, in: DECK })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('an empty deck says so; mobile gets the list', async ($, on) => {
+    world(on)
+    const ui = await $.ui.mount(PANE)
+    expect(await ui.find({ type: 'Text', text: /Nothing to judge/, in: DECK })).toBeDefined()
+    await ui.unmount()
+    await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
+    const phone = await $.ui.mount({ ...PANE, surface: 'mobile' })
+    expect(await phone.find({ type: 'Text', text: 'A1 Use wttr.in' })).toBeDefined()
+    await phone.unmount()
+  })
+})
+
 describe('assumptions', () => {
   test('the tool records and numbers, and raises the dashboard on Assumptions', async ($, on) => {
     const { seen } = world(on)
@@ -294,7 +362,10 @@ describe('assumptions', () => {
     const ui = await $.ui.mount(PANE)
     expect((await ui.find({ key: 'tab-assumptions' }))?.props?.label).toBe('Assumptions 2')
     expect((await ui.find({ key: 'tab-assumptions' }))?.props?.variant).toBe('primary')
+    expect(await ui.find({ type: 'Text', text: 'Use wttr.in', in: 'assumption-deck' })).toBeDefined()
+    await ui.press({ key: 'view-list' })
     expect(await ui.find({ type: 'Text', text: 'A1 Use wttr.in' })).toBeDefined()
+    await ui.press({ key: 'view-deck' })
     await ui.unmount()
   })
 
@@ -309,6 +380,7 @@ describe('assumptions', () => {
     await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
     await $.tool.call({ tool: TOOL, assumption: 'City from argv' } as never)
     const desk = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    await desk.press({ key: 'view-list' })
     expect(await desk.find({ type: 'Text', text: /2 assumptions · 2 to review/ })).toBeDefined()
     expect(await desk.find({ key: 'fix-2' })).toBeUndefined()
     await desk.press({ key: 'right-1' })
@@ -332,6 +404,7 @@ describe('assumptions', () => {
     await ui.unmount()
     ui = await $.ui.mount(PANE)
     expect(await ui.find({ type: 'Text', text: /sent:/ })).toBeUndefined()
+    await ui.press({ key: 'view-deck' })
     await ui.unmount()
   })
 

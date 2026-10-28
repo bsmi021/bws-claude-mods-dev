@@ -89,7 +89,9 @@ Under the prompt, at the right of the footer (terminal and Desktop), `◧ cockpi
 
 ### Assumptions tab
 - Claude records each assumption it makes with `record_assumption` (`assumption`, optional `why`). A short system-prompt section, added only where the tool is offered, tells it to call the tool for choices you did not specify and keep going.
-- The tab lists each `A<n>` with its reason and **Right** / **Wrong** buttons. Wrong opens an `Instead:` field for the correction (Enter saves it; text typed but not saved is still sent). Pressing a verdict again clears it.
+- **Blast radius:** every Edit, Write or NotebookEdit Claude makes lands on each unsent assumption (Bash writes are not counted). Each one keeps its edit count and the files (last two path parts, eight at most); a Wrong item's review line names them (`Built on it since: 3 edits in src/a.ts, src/b.ts`).
+- **Deck** (terminal and Desktop, the default view): a card per assumption, still-to-judge first and the heaviest first, with its reason, a weight bar, the files built on it and the cards still under it peeking out below. Click the card for keys: `←` marks it Wrong and opens an `Instead:` line on the card (type, Enter sends it flying off left; empty means Claude asks you), `→` marks it Right and flies it off right, `↑`/`↓` browse, `u` takes a verdict back, `s` sends. Or drag the card six columns either way. A card glows while an edit lands on it. Dots in the header show every card's verdict. `v` (or **☰ List**) switches to the list.
+- **List** (mobile and VS Code always): each `A<n>` with its reason and **Right** / **Wrong** buttons. Wrong opens an `Instead:` field for the correction (Enter saves it; text typed but not saved is still sent). Pressing a verdict again clears it.
 - **Send N to Claude** (`s`) submits one prompt headed `Assumption review` as your own message: each wrong item with its correction (or "ask me what it should be"), then the confirmed ones, then "apply each correction now". If Claude is busy it runs when the turn ends. **Clear sent** (`c`) removes sent items.
 - The list belongs to the session and survives a hot reload. Numbers never repeat. Mobile has no text field: Wrong there sends "ask me what it should be".
 
@@ -232,7 +234,7 @@ Set these in `/plugin`, or under `pluginConfigs["bws-cockpit"].options` in setti
 
 ## Compatibility
 
-- Checked on Claude Code 2.1.296 and later (the Mod tabs on 2.1.302, the footer button on 2.1.307 in the terminal, start-up open on 2.1.309 in the terminal), Windows 11, with Git Bash and PowerShell 7.
+- Checked on Claude Code 2.1.296 and later (the Mod tabs on 2.1.302, the footer button on 2.1.307 in the terminal, start-up open on 2.1.309 in the terminal, the Assumptions deck on 2.1.311 in the terminal), Windows 11, with Git Bash and PowerShell 7.
 - The dashboard and bar were checked live in a terminal (Windows Terminal and tmux). Desktop is covered by automated tests only and has not been tried in the app; mobile has not been tried. Headless runs (`claude -p`) get text for `/dashboard`, `/cockpit`, `/loop-watch` and `/handoff`, and the guards apply.
 - Not verified live: an unreal-mcp block with the port down, and a running or paused harness loop (tests cover both).
 - The Editor & Device Guard and the process probes are Windows-oriented (PowerShell, `nvidia-smi`).

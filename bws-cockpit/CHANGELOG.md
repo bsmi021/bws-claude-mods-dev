@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.29.0
+- Assumptions tab becomes a deck: a `Client` module (`hooks/deck.ts`) on the terminal and Desktop draws one card at a time with a weight bar, the files built on it and the stack under it. `←`/`→` or a drag judges it with a fly-off animation; Wrong opens an inline `Instead:` line; `↑↓` browse, `u` undo, `s` send. The list stays as a view (`v`) and on mobile and VS Code.
+- Blast radius: each Edit/Write/NotebookEdit counts against every unsent assumption (edits, files); the deck sorts heaviest first and glows a card while an edit lands; the review prompt names the edits and files behind each Wrong item.
+
 ## 0.28.0
 - `/pickup [run folder]`: the new session's side of `/handoff`. Shows the newest (or named) `HANDOFF.md` as emoji lines (age, title, finish line, live-state claims, next step, a stale warning), then queues a prompt that re-checks each live-state claim before continuing. `/handoff` now asks for a Live state table (claim | how to check) and copies `/pickup <run>` instead of the long start prompt, which stays in the reply.
 - Mods tab, the switchboard: a coloured card per bws mod (✅ on, ⛔ off, ➖ not installed, 🔄 waiting for /reload-plugins) with Enable/Disable (`claude plugin enable|disable <mod>@bws-mods`) and Hide tab/Show tab (kept across sessions). `/switchboard` opens it; `/switchboard text|refresh|--enable|--disable|--hide|--show <mod>`.

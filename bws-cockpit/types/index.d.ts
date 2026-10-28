@@ -78,6 +78,11 @@ export type Assumption = {
   correction: string
   // True once its verdict went to Claude.
   isSent: boolean
+  // Its blast radius: file edits Claude made while it was unsent, the files (short paths, newest last), and when the
+  // last one landed (epoch ms; the deck glows the card for a moment). Absent on items recorded before 0.29.0.
+  edits?: number
+  files?: string[]
+  bumped?: number
 }
 
 // An idea on the shelf, as hooks/shelf.ts writes it to the shelf file.

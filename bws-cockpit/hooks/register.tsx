@@ -60,8 +60,12 @@ import {
   active,
   add as addAssumption,
   clip,
+  deckProps,
+  judge as judgeAssumption,
   listText as assumptionsText,
   markSent,
+  noteEdit,
+  parseDeckPost,
   ready,
   sent,
   setCorrection,
@@ -172,6 +176,10 @@ const handoffNudge = atom({ plugin: 'bws-cockpit', key: 'handoffNudge' } as cons
 
 // Corrections typed but not yet saved with Enter, so Send still carries them. Lost on a reload, by design.
 const drafts = new Map<number, string>()
+// The Assumptions tab's view where a Client draws: the card deck, or the plain list (`v` switches). The list is the
+// only view elsewhere (mobile, VS Code).
+let assumptionView: 'deck' | 'list' = 'deck'
+const DECK_KEY = 'assumption-deck'
 // Text typed in a mod tab's input and not yet submitted, by `<plugin>:<input id>`. Lost on a reload, by design.
 const tabDrafts = new Map<string, string>()
 // Counts this process's tab events, so a mod sees each press as a new write.
@@ -910,6 +918,22 @@ async function markAssumption($: EngineInterface, n: number, verdict: 'right' | 
   await update($, assumptions, list => setVerdict(list, n, verdict))
 }
 
+// A file edit lands on every unsent assumption (its blast radius). No write while none is open.
+async function noteAssumptionEdit($: EngineInterface, path: string) {
+  if (active(await read($, assumptions)).length === 0) return
+  const at = await $.clock.now()
+  await update($, assumptions, list => noteEdit(list, path, at))
+}
+
+// What the deck posted: a verdict set outright, a correction, or Send.
+async function deckPost($: EngineInterface, data: unknown) {
+  const p = parseDeckPost(data)
+  if (p === null) return
+  if (p.op === 'send') return sendReview($)
+  if (p.op === 'judge') return update($, assumptions, list => judgeAssumption(list, p.n, p.verdict))
+  return saveCorrection($, p.n, p.text)
+}
+
 async function saveCorrection($: EngineInterface, n: number, text: string) {
   drafts.delete(n)
   await update($, assumptions, list => setCorrection(list, n, text))
@@ -1414,6 +1438,10 @@ export const register: Register = (on, options) => {
   on('tool.call', { tool: ['Edit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'] }, async ($, e, next) => {
     const folders = writtenRunFolders(e.tool, e as unknown as Record<string, unknown>)
     if (folders.length > 0) await noteTouched($, folders)
+    // The Assumptions deck's blast radius: which files were built while each assumption stood.
+    const input = e as unknown as { file_path?: unknown; notebook_path?: unknown }
+    const path = e.tool === 'Bash' || e.tool === 'PowerShell' ? '' : String(input.file_path ?? input.notebook_path ?? '')
+    if (path !== '') await settle(noteAssumptionEdit($, path))
     return next(e)
   })
 
@@ -1718,6 +1746,13 @@ export const register: Register = (on, options) => {
     const r = await next(e)
     if (!e.tools.includes(ASSUMPTION_TOOL)) return r
     return { sections: [...r.sections, { id: 'bws-cockpit:assumptions', text: GUIDE, scope: 'session' as const }] }
+  })
+
+  // The Assumptions deck (hooks/deck.ts) posts its verdicts, corrections and Send here.
+  on('ui.message', { requestId: DASH }, async ($, e, next) => {
+    if (e.element !== DECK_KEY) return next(e)
+    await settle(deckPost($, e.data))
+    return {}
   })
 
   on('tool.call', { tool: 'mcp__bws-cockpit__record_assumption' }, async ($, e) => {
@@ -2045,6 +2080,31 @@ export const register: Register = (on, options) => {
       const open = active(list)
       const done = sent(list)
       const toSend = ready(list).length
+      const canDeck = (e.surface === 'terminal' || e.surface === 'desktop') && 'Client' in table
+      const viewButton = canDeck && (
+        <Button
+          key={assumptionView === 'deck' ? 'view-list' : 'view-deck'}
+          label={assumptionView === 'deck' ? '☰ List' : '🂠 Deck'}
+          hotkey="v"
+          onPress={() => {
+            assumptionView = assumptionView === 'deck' ? 'list' : 'deck'
+            $.ui.invalidate('ui.render')
+          }}
+        />
+      )
+      if (canDeck && assumptionView === 'deck') {
+        return (
+          <Box flexDirection="column">
+            {strip}
+            <table.Client key={DECK_KEY} module="./deck.ts" props={deckProps(list)} width={width} />
+            <Box flexDirection="row" gap={1}>
+              {open.length > 0 && <Button key="send" variant="primary" label={`Send ${toSend} to Claude`} hotkey="s" onPress={() => sendReview($)} />}
+              {done.length > 0 && <Button key="clear" label="Clear sent" hotkey="c" onPress={() => clearSent($)} />}
+              {viewButton}
+            </Box>
+          </Box>
+        )
+      }
       return (
         <Box flexDirection="column">
           {strip}
@@ -2084,6 +2144,7 @@ export const register: Register = (on, options) => {
           <Box flexDirection="row" gap={1}>
             {open.length > 0 && <Button key="send" variant="primary" label={`Send ${toSend} to Claude`} hotkey="s" onPress={() => sendReview($)} />}
             {done.length > 0 && <Button key="clear" label="Clear sent" hotkey="c" onPress={() => clearSent($)} />}
+            {viewButton}
           </Box>
         </Box>
       )

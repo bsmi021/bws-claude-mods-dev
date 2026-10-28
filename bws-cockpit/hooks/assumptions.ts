@@ -1,5 +1,6 @@
 // Pure helpers for the dashboard's Assumptions tab (moved from bws-assumptions): the list, the lines it draws, the verdict prompt.
 import type { Assumption, Verdict } from '../types'
+import type { DeckPost, DeckProps } from './deck'
 
 export const TOOL_NAME = 'record_assumption'
 export const MAX_ITEMS = 200
@@ -48,7 +49,54 @@ export function setCorrection(list: readonly Assumption[], n: number, correction
   return list.map(a => (a.n !== n || a.isSent ? a : { ...a, correction: clip(correction, 400) }))
 }
 
-export const unreviewed = (list: readonly Assumption[]) => list.filter(a => !a.isSent && a.verdict === 'open')
+// What the deck module gets per card: plain data, the blast-radius fields filled in.
+export function deckProps(list: readonly Assumption[]): DeckProps {
+  const cards = deckOrder(list)
+    .slice(0, 60)
+    .map(a => ({ n: a.n, text: a.text, why: a.why, verdict: a.verdict, correction: a.correction, edits: a.edits ?? 0, files: a.files ?? [], bumped: a.bumped ?? 0 }))
+  return { cards, sent: sent(list).length }
+}
+
+// A post from the deck, checked: it came from code, so nothing in it is trusted.
+export function parseDeckPost(data: unknown): DeckPost | null {
+  if (typeof data !== 'object' || data === null) return null
+  const d = data as Record<string, unknown>
+  if (d.op === 'send') return { op: 'send' }
+  if (typeof d.n !== 'number' || !Number.isInteger(d.n)) return null
+  if (d.op === 'judge' && (d.verdict === 'open' || d.verdict === 'right' || d.verdict === 'wrong')) return { op: 'judge', n: d.n, verdict: d.verdict }
+  if (d.op === 'fix' && typeof d.text === 'string') return { op: 'fix', n: d.n, text: d.text }
+  return null
+}
+
+// Sets the verdict outright (the deck judges; it never toggles). 'open' takes a verdict back.
+export function judge(list: readonly Assumption[], n: number, verdict: Verdict): Assumption[] {
+  return list.map(a => (a.n !== n || a.isSent ? a : { ...a, verdict }))
+}
+
+export const MAX_FILES = 8
+
+// A path as the deck shows it: its last two parts.
+export function shortPath(path: string): string {
+  return path.replace(/\\/g, '/').split('/').filter(Boolean).slice(-2).join('/')
+}
+
+// One file edit lands on every unsent assumption: each was in force while Claude made it.
+export function noteEdit(list: readonly Assumption[], path: string, at: number): Assumption[] {
+  const file = shortPath(path)
+  return list.map(a => {
+    if (a.isSent) return a
+    const files = file === '' ? (a.files ?? []) : [...(a.files ?? []).filter(f => f !== file), file].slice(-MAX_FILES)
+    return { ...a, edits: (a.edits ?? 0) + 1, files, bumped: at }
+  })
+}
+
+// The deck's order: still to judge first, the heaviest (most built on it) first within each, then oldest first.
+export function deckOrder(list: readonly Assumption[]): Assumption[] {
+  const rank = (a: Assumption) => (a.verdict === 'open' ? 0 : 1)
+  return active(list).sort((a, b) => rank(a) - rank(b) || (b.edits ?? 0) - (a.edits ?? 0) || a.n - b.n)
+}
+
+export const unreviewed =(list: readonly Assumption[]) => list.filter(a => !a.isSent && a.verdict === 'open')
 export const ready = (list: readonly Assumption[]) => list.filter(a => !a.isSent && a.verdict !== 'open')
 export const active = (list: readonly Assumption[]) => list.filter(a => !a.isSent)
 export const sent = (list: readonly Assumption[]) => list.filter(a => a.isSent)
@@ -78,7 +126,12 @@ export function verdictPrompt(items: readonly Assumption[], corrections: Readonl
   const lines = ['Assumption review (from the dashboard):']
   for (const a of wrong) {
     const c = fix(a)
-    lines.push(c ? `- A${a.n} is WRONG: "${a.text}". Instead: ${c}` : `- A${a.n} is WRONG: "${a.text}". No correction given: ask me what it should be before changing it.`)
+    const built = (a.edits ?? 0) > 0 ? ` Built on it since: ${plural(a.edits ?? 0, 'edit')} in ${(a.files ?? []).join(', ')}.` : ''
+    lines.push(
+      c
+        ? `- A${a.n} is WRONG: "${a.text}". Instead: ${c}${built}`
+        : `- A${a.n} is WRONG: "${a.text}". No correction given: ask me what it should be before changing it.${built}`,
+    )
   }
   for (const a of right) lines.push(`- A${a.n} is right: "${a.text}". Keep it.`)
   lines.push('')
