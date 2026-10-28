@@ -13,6 +13,7 @@ export const MODS: Record<string, ModInfo> = {
   'bws-agents': { emoji: '🤖', title: 'Agents', blurb: 'Live card per subagent: status, tools, tokens, stalls' },
   'bws-inventory': { emoji: '📦', title: 'Inventory', blurb: 'Todos, connectors, files and skills this conversation used' },
   'bws-mask': { emoji: '🙈', title: 'Mask', blurb: 'Hides emails, phones, amounts, keys and your terms on screen for recordings' },
+  'bws-codex': { emoji: '🧰', title: 'Codex', blurb: 'Delegate jobs to Codex in their own worktrees, and chat with Codex on the side' },
   'bws-board': { emoji: '📋', title: 'Board', blurb: 'Sessions in one repo: claims, asks, git lease' },
   'bws-summary': { emoji: '📝', title: 'Summary', blurb: 'Rolling summary of the conversation' },
   'bws-direction': { emoji: '🧭', title: 'Direction', blurb: 'Drift check of each turn against the plan and docs' },

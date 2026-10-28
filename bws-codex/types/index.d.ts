@@ -1,6 +1,18 @@
-// bws-codex keeps no $.state in M1: its job index is in $.store (hooks/job.ts Job, one `job:<id>` key per job).
+// bws-codex's job index is in $.store (hooks/job.ts Job, one `job:<id>` key per job). Its $.state: the Codex tab
+// bws-cockpit draws (bws-kit/tab.ts ModTab, read there as unknown and checked), the summary chip (bws-kit/summary.ts)
+// and the chat (hooks/chat.ts Chat, parsed on read, so typed unknown here).
 
 declare module 'claude-code' {
+  interface PluginState {
+    'bws-codex': {
+      tab: unknown
+      summary: { state: 'idle' | 'busy' | 'ok' | 'warn' | 'bad'; label: string; detail?: string } | null
+      chat: unknown
+    }
+    // bws-cockpit's last press in a mod tab (bws-kit/tab.ts TabEvent), watched for this plugin's own.
+    'bws-cockpit': { tabEvent: { seq: number; plugin: string; id: string; value?: string } | null }
+  }
+
   // The tools' inputs, here because the generated MCP types list only the tools the engine saw at its last
   // interactive load, and a test run regenerates them.
   interface McpToolInputs {

@@ -48,7 +48,11 @@ export type Job = {
   error: string | null
   // The last turn whose end Claude was told about (a wake or a result); 0 for none.
   delivered: number
+  // A Codex tab chat thread on the codex engine: its turns end in the chat, never in a wake.
+  kind?: 'chat'
 }
+
+export const isChat = (j: Pick<Job, 'kind'>) => j.kind === 'chat'
 
 // ---------- ids ----------
 

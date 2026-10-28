@@ -22,6 +22,7 @@ describe('mod tabs', () => {
       'bws-agents',
       'bws-inventory',
       'bws-mask',
+      'bws-codex',
     ])
     expect(parseMods(' BWS-Secrets ; bws-memory, nope, bws-memory ')).toEqual(['bws-secrets', 'bws-memory'])
     expect(parseMods('')).toEqual([])

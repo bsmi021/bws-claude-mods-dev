@@ -177,6 +177,7 @@ declare module 'claude-code' {
     'bws-agents': { summary: ModSummary | null; tab: unknown }
     'bws-inventory': { summary: ModSummary | null; tab: unknown }
     'bws-mask': { summary: ModSummary | null; tab: unknown }
+    'bws-codex': { summary: ModSummary | null; tab: unknown }
   }
   interface PluginState {
     'bws-cockpit': {

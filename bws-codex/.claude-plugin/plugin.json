@@ -1,7 +1,7 @@
 {
   "name": "bws-codex",
-  "version": "0.1.0",
-  "description": "Claude delegates coding work to OpenAI Codex on your ChatGPT plan: codex_delegate starts a Codex job in its own git worktree on branch codex/<id>, sandboxed (workspace-write, no internet by default) behind Claude Code's permission prompt; the mod commits each turn, Claude reviews and merges the branch, and an idle Claude is woken when a job ends.",
+  "version": "0.2.0",
+  "description": "Claude delegates coding work to OpenAI Codex on your ChatGPT plan, and you chat with Codex on the side. codex_delegate starts a Codex job in its own git worktree on branch codex/<id>, sandboxed (workspace-write, no internet by default) behind Claude Code's permission prompt; the mod commits each turn, Claude reviews and merges the branch, and an idle Claude is woken when a job ends. The Codex tab in the cockpit dashboard lists the jobs (diff, follow-up, cancel, merge hint) and holds a side chat on the OpenAI API (with your key) or on Codex CLI, with a git capsule each turn, Pull from Claude and Send back.",
   "author": {
     "name": "bsmi021",
     "url": "https://github.com/bsmi021"
@@ -14,7 +14,8 @@
     "mod",
     "codex",
     "delegation",
-    "worktree"
+    "worktree",
+    "chat"
   ],
   "types": "./types/index.d.ts",
   "userConfig": {
@@ -53,6 +54,13 @@
       "title": "Python",
       "description": "The Python that runs the job supervisor (bin/supervise.py, standard library only).",
       "default": "python"
+    },
+    "openaiApiKey": {
+      "type": "string",
+      "title": "OpenAI API key",
+      "description": "Turns on the api chat engine (OpenAI Responses API, billed to this key; answers are stored at OpenAI so turns can chain). Empty: the chat runs on Codex CLI.",
+      "sensitive": true,
+      "required": false
     }
   }
 }

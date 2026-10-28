@@ -16,7 +16,25 @@ export const NOT_GRANTED = { isError: true, result: undefined, text: "Claude req
 
 export const norm = (p: unknown) => String(p).replace(/\\/g, '/')
 
-export type World = { bottom?: unknown; now?: number; isRemoveHeld?: boolean }
+// The git output Claude's working tree gives the capsule.
+export const STATUS = '## main...origin/main [ahead 1]\n M src/calc.py\n?? notes.md\n'
+export const SHORTSTAT = ' 1 file changed, 2 insertions(+), 1 deletion(-)\n'
+export const LOG = '0123456 add calc (2 hours ago)\n'
+
+export type Fetch = { url: string; method: string; headers: Record<string, string>; body: Record<string, unknown> | undefined }
+// Answers one $.http.fetch: status and body text (an object is sent as JSON). Throwing stands for a transport failure.
+export type Api = (f: Fetch) => { status: number; body: unknown }
+
+export type World = { bottom?: unknown; now?: number; isRemoveHeld?: boolean; api?: Api; messages?: { role: 'user' | 'assistant'; text: string }[]; box?: string }
+
+// A tab as published (bws-kit/tab.ts ModTab), loosely typed for reading.
+export type TabNode = { kind: string; text?: string; id?: string; title?: string; isFocused?: boolean; items?: { id: string; label: string; isFocused?: boolean }[]; body?: TabNode[] }
+export type Tab = { title: string; badge: string; tone: string; raise: number; open?: number; isPinnedEnd?: boolean; body: TabNode[] }
+
+// Every node of a tab, cards opened up.
+export const flat = (ns: readonly TabNode[]): TabNode[] => ns.flatMap(n => (n.kind === 'card' ? [n, ...flat(n.body ?? [])] : [n]))
+export const buttonIds = (t: Tab | undefined) => flat(t?.body ?? []).flatMap(n => (n.items ?? []).map(b => b.id))
+export const texts = (t: Tab | undefined) => flat(t?.body ?? []).flatMap(n => [n.text ?? '', n.title ?? '']).filter(s => s !== '')
 
 export function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: w.now ?? 1_800_000_000_000 })
@@ -31,7 +49,39 @@ export function world(on: On, w: World = {}) {
     statuses: [] as (string | undefined)[],
     toasts: [] as string[],
     registered: [] as string[],
+    commands: [] as string[],
+    fetches: [] as Fetch[],
+    fills: [] as { text: string; mode?: string }[],
+    tabs: [] as Tab[],
+    logs: [] as string[],
   }
+  on('state.set', { plugin: 'bws-codex', key: 'tab' }, ($, e, next) => {
+    seen.tabs.push(JSON.parse(JSON.stringify(e.value)) as Tab)
+    return next(e)
+  })
+  on('command.register', ($, e) => {
+    seen.commands.push(e.name)
+    return { value: undefined as never }
+  })
+  on('session.surfaces', () => ({ value: ['terminal'] as never }))
+  on('session.messages', () => ({ value: (w.messages ?? []).map(m => ({ ...m, toolUses: [] })) as never }))
+  on('prompt.read', () => ({ value: { text: w.box ?? '', cursor: 0 } as never }))
+  on('prompt.fill', ($, e) => {
+    seen.fills.push({ text: e.text, ...(e.mode ? { mode: e.mode } : {}) })
+    return { isFilled: true } as never
+  })
+  on('http.fetch', ($, e) => {
+    const init = e.init ?? {}
+    const f: Fetch = { url: e.url, method: init.method ?? 'GET', headers: init.headers ?? {}, body: init.body ? (JSON.parse(init.body) as Record<string, unknown>) : undefined }
+    seen.fetches.push(f)
+    const r = (w.api ?? (() => ({ status: 404, body: { error: { message: 'no api in this world' } } })))(f)
+    const text = typeof r.body === 'string' ? r.body : JSON.stringify(r.body)
+    return { value: { status: r.status, ok: r.status < 400, headers: {}, text } as never }
+  })
+  on('ui.log', ($, e) => {
+    seen.logs.push(String(e.text))
+    return { value: undefined as never }
+  })
   on('session.start', () => ({ cwd: TOP }) as never)
   on('session.cwd', () => ({ value: TOP }))
   on('session.id', () => ({ value: 'session-1' }))
@@ -51,6 +101,9 @@ export function world(on: On, w: World = {}) {
     if (e.init?.stdin) seen.stdins.push(e.init.stdin)
     const ok = (stdout = '') => ({ value: { exitCode: 0, stdout, stderr: '' } as never })
     if (argv.includes('rev-parse') && argv.includes('--show-toplevel')) return ok(`${TOP}\n${COMMON}\n${HEAD}\n`)
+    if (argv[0] === 'git' && argv.includes('status') && argv.includes('--branch')) return ok(STATUS)
+    if (argv[0] === 'git' && argv.includes('--shortstat') && !argv.includes('codex/')) return ok(SHORTSTAT)
+    if (argv[0] === 'git' && argv.includes('log')) return ok(LOG)
     if (w.isRemoveHeld && argv.includes('remove')) return { value: { exitCode: 255, stdout: '', stderr: 'error: failed to delete: Permission denied' } as never }
     if (argv[1]?.endsWith('/bin/supervise.py') && argv[2] === 'launch') return ok('4242\n')
     if (argv[1]?.endsWith('/bin/supervise.py')) return ok(files.get(`${argv[3]}/status.json`) ?? '{}')

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.29.1
+- bws-codex gets a dashboard tab (Codex: its jobs and a side chat with Codex) and a switchboard card, and is in the default `modTabs`.
+
 ## 0.29.0
 - Assumptions tab becomes a deck: a `Client` module (`hooks/deck.ts`) on the terminal and Desktop draws one card at a time with a weight bar, the files built on it and the stack under it. `←`/`→` or a drag judges it with a fly-off animation; Wrong opens an inline `Instead:` line; `↑↓` browse, `u` undo, `s` send. The list stays as a view (`v`) and on mobile and VS Code.
 - Blast radius: each Edit/Write/NotebookEdit counts against every unsent assumption (edits, files); the deck sorts heaviest first and glows a card while an edit lands; the review prompt names the edits and files behind each Wrong item.
