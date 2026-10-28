@@ -1,6 +1,6 @@
 # bws-codex
 
-> Claude hands coding work to OpenAI Codex on your ChatGPT plan. Each job runs in its own git worktree and branch; Claude reviews and merges it.
+> Claude hands coding work to OpenAI Codex on your ChatGPT plan. Each job runs in its own git worktree and branch; Claude reviews and merges it. A Codex tab in the cockpit dashboard lists the jobs and holds a side chat with Codex.
 
 Claude calls `codex_delegate` with a complete task. After Claude Code's normal permission prompt, the mod makes a git
 worktree on a new branch `codex/<id>` from Claude's current commit and starts `codex exec` there in a detached process.
@@ -17,7 +17,8 @@ claude plugin install bws-codex@bws-mods
 
 Then `/reload-plugins`. Needs Claude Code 2.1.311 or later, Codex CLI 0.160.1 (`npm i -g @openai/codex`, signed in
 with `codex login`), git, and Python 3 on PATH (the job supervisor uses the standard library only). Windows is the
-tested platform.
+tested platform. The Codex tab needs bws-cockpit 0.29.1 or later; without it the tools still work, but the tab has
+nowhere to draw. Headless, `/codex` answers with the job list as text.
 
 ## Tools Claude calls
 
@@ -45,6 +46,40 @@ tested platform.
 - Network: off unless the call passes `network: true`. Localhost stays reachable either way.
 - Commits on the job branch run with the repository's git hooks off. The merge Claude runs uses them as usual.
 
+## The Codex tab
+
+`/codex` (or `/cx`, where Desktop takes `/codex`) opens the Codex tab in the bws-cockpit dashboard. It has two views.
+
+**Jobs**: this repository's jobs, newest first, each with its state, branch, diff stat and age.
+
+- 🔍 **Diff** shows git's stat for the branch, Codex's last message and the patch file.
+- 💬 **Follow up** opens an input for the next turn on the same Codex thread.
+- 🔀 **Merge** puts the merge steps in Claude's prompt box, with a stash warning when the job carried edits. Merging stays Claude's, through its own shell.
+- ⏹ **Cancel** stops a running turn; 🗑 **Drop** removes the worktree, archives the thread and deletes the branch if it is merged.
+
+**Chat**: a side chat with Codex that never touches Claude's conversation.
+
+- Each message starts with a small `<workspace>` block from git: Claude's branch, last commit, uncommitted diff stat and dirty files.
+- 📥 **Pull Claude** attaches Claude's latest reply to your next message; **Pull turns** attaches its last six messages.
+- 📤 **Send back** puts Codex's answer in Claude's prompt box, after any draft; you press Enter.
+- ✨ **New thread** starts over. ⏹ **Stop** cancels the answer being waited for.
+
+The chat runs on one of two engines:
+
+| Engine | What it is | A turn |
+| --- | --- | --- |
+| `api` (the default when a key is set) | The OpenAI Responses API with your `openaiApiKey`: `gpt-6.1-sol` at effort low, or ⚡ fast `gpt-6.1-terra` at none. Background requests, polled every second, up to 5 minutes. | 3-15 s |
+| `codex` | Codex CLI in its own worktree on branch `codex/chat-<id>`, one job turn per message (effort low). It can read files and run commands; anything it changes is committed on that branch like a job's. It never wakes Claude. | 40-135 s |
+
+API turns are stored at OpenAI (`store: true`), so each turn chains on the last one with `previous_response_id`; the
+partner brief goes with every turn. A capsule holds your branch and file names, and pulled text holds Claude's words.
+Leave the key empty to keep everything on Codex CLI.
+
+Every button has a command twin, `/codex --<id> [text]` (`--jobs`, `--chat`, `--new`, `--pull`, `--send-back`,
+`--engine-codex`, `--ask-<n> <text>`, `--diff-<job>`, `--merge-<job>`, ...). The words `/codex jobs`, `new [message]`,
+`pull [turns] [question]`, `send-back`, `engine api|codex`, `fast on|off` and `stop` work too; anything else is sent
+as a chat message.
+
 ## Options
 
 Set in `/plugin` → bws-codex → configure, or `pluginConfigs` in settings.
@@ -57,8 +92,11 @@ Set in `/plugin` → bws-codex → configure, or `pluginConfigs` in settings.
 | `wake` | on | Prompt an idle Claude when a turn ends (at most once per 30 s). Headless runs are never woken. |
 | `codexPath` | the npm-installed `codex.exe` | Path to the native binary. |
 | `pythonPath` | `python` | The Python that runs `bin/supervise.py`. |
+| `openaiApiKey` | empty | Sensitive. Turns on the api chat engine. Claude Code keeps it in its credentials file (plain JSON on Windows). The mod sends it only in the `Authorization` header and strips anything key-shaped from errors. |
 
 ## Tested
 
 Claude Code 2.1.311 (headless `claude -p`) and 2.1.312 (terminal UI) on Windows 11, with Codex CLI 0.160.1 on a ChatGPT plan.
-Not tested in Claude Code Desktop or VS Code.
+The Codex tab (0.2.0) was checked live in the terminal UI with bws-cockpit 0.29.1: both views, an api turn answering
+from the capsule, a codex-engine turn, Send back, Merge, Drop, and a delegated job updating in Jobs. Not tested in
+Claude Code Desktop (including whether it takes `/codex`), VS Code or mobile.

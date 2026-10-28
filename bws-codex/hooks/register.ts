@@ -34,7 +34,7 @@ import {
 import type { Carry, Effort, Job, SupervisorStatus } from './job'
 import { makeSummary } from './kit/summary'
 import { parseEvent } from './kit/tab'
-import { diffText, duration, listText, resultText, startedText, statusLine, wakeText } from './result'
+import { diffText, duration, listText, resultText, startedText, wakeText } from './result'
 import { codexSummary, codexTab, mergeHint } from './view'
 import type { JobDetail, View } from './view'
 
@@ -71,7 +71,6 @@ const phases: Record<string, string> = {}
 let isBusy = false
 let isInteractive = false
 let lastWakeAt = 0
-let lastStatus: string | undefined
 let poll: { cancel: () => void } | undefined
 let isTicking = false
 let codexExe: string | undefined
@@ -406,19 +405,13 @@ function startPoll($: EngineInterface, o: Options) {
   if (poll === undefined) poll = $.clock.every(POLL_MS, () => void settle(tick($, o)))
 }
 
-function setStatus($: EngineInterface, text: string | undefined) {
-  if (text === lastStatus) return
-  lastStatus = text
-  $.ui.status(text)
-}
-
-// Reads the watched jobs' folders: the status line, a toast and a pending report when a turn ends.
+// Reads the watched jobs' folders: the tab and chip (progress shows there: $.ui.status draws as a warning line), a
+// toast and a pending report when a turn ends.
 async function tick($: EngineInterface, o: Options) {
   if (isTicking) return
   isTicking = true
   try {
     const now = await $.clock.now()
-    const live: Job[] = []
     for (const id of [...watched]) {
       const stored = await loadJob($, id)
       if (stored === undefined) {
@@ -440,10 +433,8 @@ async function tick($: EngineInterface, o: Options) {
       } else {
         if (summary) phases[id] = summary.phase
         if (isChat(job)) await chatPhase($, job.id, summary?.phase ?? '')
-        else live.push(job)
       }
     }
-    setStatus($, statusLine(live, now, phases))
     await publishTab($, true)
     await wake($, o, now)
     if (watched.size === 0 && pending.size === 0 && poll !== undefined) {
@@ -483,6 +474,7 @@ async function wake($: EngineInterface, o: Options, now: number) {
 const NO_KEY = 'bws-codex: the api engine needs the openaiApiKey option (/plugin, bws-codex, configure). The codex engine needs no key.'
 
 const note = (text: string): ChatMsg => ({ role: 'note', text })
+const info = (text: string): ChatMsg => ({ role: 'note', text, isInfo: true })
 const kTokens = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : String(n))
 
 function later($: EngineInterface, p: Promise<unknown>) {
@@ -515,13 +507,13 @@ function publishTab($: EngineInterface, isJobs = false): Promise<void> {
       const now = await $.clock.now()
       const isPin = isPinNext
       isPinNext = false
-      const tab = codexTab({ view, chat, jobs: jobsSeen, now, hasKey, repo: repoRoot, expanded, following, detail, follows, show: 0, open: openCount, raise: raiseCount, isPin })
+      const tab = codexTab({ view, chat, jobs: jobsSeen, now, hasKey, repo: repoRoot, phases, expanded, following, detail, follows, show: 0, open: openCount, raise: raiseCount, isPin })
       const json = JSON.stringify(tab)
       if (json !== lastTabJson) {
         lastTabJson = json
         await update($, tabAtom, () => tab)
       }
-      const s = codexSummary(jobsSeen, chat, now)
+      const s = codexSummary(jobsSeen, chat, now, phases)
       const chip = s === null ? null : makeSummary(s.state, s.label, s.detail)
       const chipJson = JSON.stringify(chip)
       if (chipJson !== lastSummaryJson) {
@@ -724,7 +716,7 @@ async function chatPhase($: EngineInterface, id: string, phase: string) {
 async function stopChat($: EngineInterface, o: Options) {
   const p = (await readChat($)).pending
   if (p === null) return
-  await setChat($, c => ({ ...withMsgs(c, note('Stopped.')), pending: null }))
+  await setChat($, c => ({ ...withMsgs(c, info('Stopped.')), pending: null }))
   if (p.id === '') return
   if (p.engine === 'api') {
     stopApiPoll(p.id)
@@ -737,7 +729,7 @@ async function newThread($: EngineInterface, o: Options) {
   await stopChat($, o)
   const c = await readChat($)
   const old = c.engine === 'codex' && c.thread !== null ? await loadJob($, c.thread) : undefined
-  const said = old ? [note(`New thread. The last one's worktree and branch ${old.branch} stay: Drop it in Jobs when you are done with it.`)] : []
+  const said = old ? [info(`New thread. The last one's worktree and branch ${old.branch} stay: Drop it in Jobs when you are done with it.`)] : []
   await setChat($, x => ({ ...emptyChat(x.engine), choice: x.choice, asks: x.asks + 1, msgs: said }))
 }
 
@@ -746,7 +738,7 @@ async function setEngine($: EngineInterface, o: Options, engine: Engine) {
   if ((await readChat($)).engine === engine) return
   await stopChat($, o)
   const name = engine === 'api' ? 'OpenAI API' : 'Codex CLI in its own worktree'
-  await setChat($, c => ({ ...withMsgs(c, note(`Engine: ${name}. The next message starts a new thread.`)), engine, thread: null, pending: null }))
+  await setChat($, c => ({ ...withMsgs(c, info(`Engine: ${name}. The next message starts a new thread.`)), engine, thread: null, pending: null }))
 }
 
 // Claude's latest reply or recent turns: attached to the next message, or sent at once with a question.
@@ -817,7 +809,7 @@ async function cancelFromTab($: EngineInterface, o: Options, id: string, drop: b
   // The chat's own job: its turn is over, and a dropped one is no thread to continue.
   await setChat($, c => {
     const pendingNow = c.pending?.id === id ? null : c.pending
-    const msgs = c.pending?.id === id ? withMsgs(c, note('Stopped from Jobs.')).msgs : c.msgs
+    const msgs = c.pending?.id === id ? withMsgs(c, info('Stopped from Jobs.')).msgs : c.msgs
     return { ...c, msgs, pending: pendingNow, thread: drop && c.thread === id ? null : c.thread }
   })
   $.ui.toast(said.split('\n')[0] ?? said)

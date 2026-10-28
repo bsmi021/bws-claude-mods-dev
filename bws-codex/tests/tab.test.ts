@@ -144,7 +144,7 @@ describe('the api engine', () => {
     await run($, '--stop')
     await w.clock.advance(100)
     expect(w.seen.fetches.at(-1)?.url).toBe('https://api.openai.com/v1/responses/resp_1/cancel')
-    expect(texts(last(w))).toContain('❗ Stopped.')
+    expect(texts(last(w))).toContain('ℹ️ Stopped.')
     expect(buttonIds(last(w))).not.toContain('stop')
     const n = w.seen.fetches.length
     await w.clock.advance(3000)

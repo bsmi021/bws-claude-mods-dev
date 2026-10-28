@@ -89,14 +89,16 @@ describe('results and the wake', () => {
     const id = idOf(await $.tool.call(DELEGATE as never))
     await $.turn.complete({} as never)
     await w.clock.advance(8_000)
-    expect(w.seen.statuses.at(-1)).toMatch(new RegExp(`^codex: ${id} \\d+s`))
+    // Progress is in the tab and the chip, never a status line ($.ui.status draws as a warning).
+    expect(w.seen.tabs.at(-1)?.badge).toBe('1▶')
 
     finishTurn(w.files, dirOf(id), 1, w.clock.now(), 'Fixed add().')
     await w.clock.advance(4_000)
     expect(w.seen.submits.length).toBe(1)
     expect(w.seen.submits[0]).toContain(`bws-codex: codex job ${id} "Fix calc": done in`)
     expect(w.seen.submits[0]).toContain(`codex_result {"id": "${id}"}`)
-    expect(w.seen.statuses.at(-1)).toBeUndefined()
+    expect(w.seen.tabs.at(-1)?.badge).toBe('1')
+    expect(w.seen.statuses).toEqual([])
     expect(w.seen.toasts).toEqual([`codex: job ${id} done (1 file +1 -1)`])
     await $.turn.complete({} as never)
     await w.clock.advance(60_000)

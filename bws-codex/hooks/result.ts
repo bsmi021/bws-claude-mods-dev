@@ -127,7 +127,7 @@ export function wakeText(jobs: { job: Job; message: string | null }[], now: numb
   return [`bws-codex: ${jobs.length} Codex jobs finished:`, ...jobs.map(j => `- ${one(j)}`)].join('\n')
 }
 
-// The pinned status line while jobs run; undefined clears it.
+// One line on the running jobs (the summary chip's detail); undefined when none run.
 export function statusLine(jobs: Job[], now: number, phases: Record<string, string>): string | undefined {
   const live = jobs.filter(j => !isTerminal(j.state))
   if (live.length === 0) return undefined

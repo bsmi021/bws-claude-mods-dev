@@ -13,7 +13,7 @@ import { buttons, card, makeTab, markdown, text } from './kit/tab'
 import type { ModTab, TabButton, TabColor, TabNode } from './kit/tab'
 import type { Job, JobState } from './job'
 import { isChat, isTerminal, patchFileOf } from './job'
-import { carryWarning, diffText, duration } from './result'
+import { carryWarning, diffText, duration, statusLine } from './result'
 
 export type View = 'chat' | 'jobs'
 
@@ -27,6 +27,8 @@ export type TabView = {
   now: number
   hasKey: boolean
   repo: string
+  // What each running job is doing, from its events (`editing files`), for the jobs this process watches.
+  phases: Readonly<Record<string, string>>
   expanded: string | null
   following: string | null
   detail: JobDetail | null
@@ -89,8 +91,9 @@ function jobCard(job: Job, v: TabView): TabNode[] {
   const isDone = isTerminal(job.state)
   const isOpen = v.expanded === job.id
   const ago = isDone && job.endedAt !== null ? ` · ${duration(v.now - job.endedAt)} ago` : ''
+  const phase = !isDone && v.phases[job.id] ? ` · ${v.phases[job.id]}` : ''
   const body: TabNode[] = [
-    text(`${stateText(job, v.now)} · ${job.branch} · ${diffText(job.diffstat)}${ago}`, { isDim: true, isClipped: true }),
+    text(`${stateText(job, v.now)}${phase} · ${job.branch} · ${diffText(job.diffstat)}${ago}`, { isDim: true, isClipped: true }),
   ]
   if (job.error) body.push(text(`❗ ${clip(job.error, 300)}`, { color: 'warn' }))
   if (job.carry?.commit) body.push(text(`📦 carried uncommitted edits in (${short(job.carry.commit)}): stash before merging`, { color: 'warn', isClipped: true }))
@@ -141,7 +144,7 @@ function jobsNodes(v: TabView): TabNode[] {
 // ---------- chat ----------
 
 function messageNodes(m: ChatMsg, i: number): TabNode[] {
-  if (m.role === 'note') return [text(`❗ ${m.text}`, { color: 'warn' })]
+  if (m.role === 'note') return [m.isInfo ? text(`ℹ️ ${m.text}`, { isDim: true }) : text(`❗ ${m.text}`, { color: 'warn' })]
   if (m.role === 'user') return [card('🧑 You', [markdown(m.text)], 'ok')]
   const body: TabNode[] = [markdown(m.text)]
   if (m.meta) body.push(text(m.meta, { isDim: true, isClipped: true }))
@@ -230,12 +233,13 @@ export function codexTab(v: TabView): ModTab {
   return makeTab('Codex', body, { badge, tone, raise: v.raise, show: v.show, open: v.open, isPinnedEnd: v.view === 'chat' && (v.chat.pending !== null || v.isPin) })
 }
 
-// The chip and bws-board's line: what is running, else nothing.
-export function codexSummary(jobs: readonly Job[], chat: Chat, now: number): { state: 'busy' | 'warn'; label: string; detail?: string } | null {
+// The chip and bws-board's line: what is running (the old status line as its detail), else nothing.
+export function codexSummary(jobs: readonly Job[], chat: Chat, now: number, phases: Readonly<Record<string, string>> = {}): { state: 'busy'; label: string; detail?: string } | null {
   const live = jobs.filter(j => !isTerminal(j.state) && !isChat(j))
   if (live.length > 0) {
     const label = live.length === 1 && live[0] ? `codex ${live[0].id} ${stateText(live[0], now)}` : `codex: ${live.length} jobs running`
-    return { state: 'busy', label, detail: live.map(j => `${j.id} ${stateText(j, now)}`).join(' · ') }
+    const detail = statusLine(live, now, phases)
+    return detail ? { state: 'busy', label, detail } : { state: 'busy', label }
   }
   if (chat.pending !== null) return { state: 'busy', label: 'codex chat thinking' }
   return null

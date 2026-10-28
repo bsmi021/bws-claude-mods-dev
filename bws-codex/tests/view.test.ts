@@ -20,6 +20,7 @@ const v = (o: Partial<TabView> = {}): TabView => ({
   now: NOW,
   hasKey: true,
   repo: 'C:/src/app',
+  phases: {},
   expanded: null,
   following: null,
   detail: null,
@@ -57,14 +58,20 @@ describe('the Chat view', () => {
 
   test('messages: your cards, Codex\'s cards with a Send back button each, notes; a pending answer and Stop', () => {
     const chat: Chat = {
-      ...withMsgs(emptyChat('api'), { role: 'user', text: 'is it safe?' }, { role: 'codex', text: 'Yes.', meta: 'api · gpt-6.1-sol · 9s' }, { role: 'note', text: 'Stopped.' }),
+      ...withMsgs(
+        emptyChat('api'),
+        { role: 'user', text: 'is it safe?' },
+        { role: 'codex', text: 'Yes.', meta: 'api · gpt-6.1-sol · 9s' },
+        { role: 'note', text: 'OpenAI 500: x' },
+        { role: 'note', text: 'Stopped.', isInfo: true },
+      ),
       thread: 'resp_0123456789abcdef',
       asks: 2,
       pending: { id: 'resp_2', engine: 'api', startedAt: NOW - 7000, turn: 0, phase: 'in progress' },
       pulled: { label: "Claude's latest reply", text: 'abc' },
     }
     const t = tab({ chat })
-    expect(texts(t)).toEqual(expect.arrayContaining(['🧑 You', '🤖 Codex', 'api · gpt-6.1-sol · 9s', '❗ Stopped.', '🤔 Codex is thinking… 7s · in progress']))
+    expect(texts(t)).toEqual(expect.arrayContaining(['🧑 You', '🤖 Codex', 'api · gpt-6.1-sol · 9s', '❗ OpenAI 500: x', 'ℹ️ Stopped.', '🤔 Codex is thinking… 7s · in progress']))
     expect(texts(t)).toContain("📎 attached to the next message: Claude's latest reply (3 characters)")
     expect(texts(t).some(s => s.startsWith('🌐 api · gpt-6.1-sol · low · chained on resp_012345678'))).toBe(true)
     expect(buttonIds(t)).toEqual(expect.arrayContaining(['send-1', 'unpull', 'stop']))
@@ -94,9 +101,9 @@ describe('the Chat view', () => {
 
 describe('the Jobs view', () => {
   test('a running job: state, branch, diff stat; Diff and Cancel', () => {
-    const t = tab({ view: 'jobs', jobs: [{ ...JOB, turnStartedAt: NOW - 100_000 }] })
+    const t = tab({ view: 'jobs', jobs: [{ ...JOB, turnStartedAt: NOW - 100_000 }], phases: { 'fix-calc-3f2a1c': 'editing files' } })
     expect(texts(t)).toContain('⚙️ Fix calc · fix-calc-3f2a1c')
-    expect(texts(t)).toContain('running 1m40s · codex/fix-calc-3f2a1c · no changes')
+    expect(texts(t)).toContain('running 1m40s · editing files · codex/fix-calc-3f2a1c · no changes')
     expect(buttonIds(t)).toEqual(['chat', 'refresh', 'diff-fix-calc-3f2a1c', 'cancel-fix-calc-3f2a1c'])
     expect(t.badge).toBe('1▶')
     expect(t.tone).toBe('busy')
@@ -137,7 +144,11 @@ describe('the merge hint and the chip', () => {
   })
 
   test('the chip says what runs, and nothing when nothing does', () => {
-    expect(codexSummary([{ ...JOB, turnStartedAt: NOW - 5000 }], emptyChat('api'), NOW)).toEqual({ state: 'busy', label: 'codex fix-calc-3f2a1c running 5s', detail: 'fix-calc-3f2a1c running 5s' })
+    expect(codexSummary([{ ...JOB, turnStartedAt: NOW - 5000 }], emptyChat('api'), NOW, { 'fix-calc-3f2a1c': 'thinking' })).toEqual({
+      state: 'busy',
+      label: 'codex fix-calc-3f2a1c running 5s',
+      detail: 'codex: fix-calc-3f2a1c 5s thinking',
+    })
     expect(codexSummary([DONE, CHAT_JOB], emptyChat('api'), NOW)).toBeNull()
     expect(codexSummary([], { ...emptyChat('api'), pending: { id: 'r', engine: 'api', startedAt: NOW, turn: 0, phase: '' } }, NOW)?.label).toBe('codex chat thinking')
   })

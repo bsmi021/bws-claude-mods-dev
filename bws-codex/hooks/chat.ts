@@ -6,8 +6,8 @@ import type { ApiChoice } from './api'
 export type Engine = 'api' | 'codex'
 export const ENGINES: readonly Engine[] = ['api', 'codex']
 
-// `meta`: the dim line under an answer (model, time, tokens, what Codex changed).
-export type ChatMsg = { role: 'user' | 'codex' | 'note'; text: string; meta?: string }
+// `meta`: the dim line under an answer (model, time, tokens, what Codex changed). A note is an error unless `isInfo`.
+export type ChatMsg = { role: 'user' | 'codex' | 'note'; text: string; meta?: string; isInfo?: boolean }
 
 // What rides with the next message, pulled from Claude's side of the session.
 export type Pulled = { label: string; text: string }
