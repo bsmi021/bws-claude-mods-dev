@@ -1,0 +1,28 @@
+{
+  "name": "bws-mask",
+  "version": "0.1.0",
+  "description": "Screen-share masking for recordings and demos: /mask draws emails, phone numbers, money amounts, keys and tokens, your account name and your own terms as same-length bars in the transcript. Only the screen changes; Claude still reads the real data. A Mask tab in the dashboard shows the mode, what is hidden and what is not covered.",
+  "author": {
+    "name": "bsmi021",
+    "url": "https://github.com/bsmi021"
+  },
+  "homepage": "https://github.com/bsmi021/bws-claude-mods/tree/main/bws-mask#readme",
+  "repository": "https://github.com/bsmi021/bws-claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mod",
+    "privacy",
+    "screen-share",
+    "recording"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "terms": {
+      "type": "string",
+      "title": "Terms to hide",
+      "description": "Names, codenames or anything else to hide while masking is on, separated by commas. Matched whole, any case.",
+      "default": ""
+    }
+  }
+}

@@ -47,6 +47,10 @@
       "source": "./bws-inventory"
     },
     {
+      "name": "bws-mask",
+      "source": "./bws-mask"
+    },
+    {
       "name": "bws-memory",
       "source": "./bws-memory"
     },

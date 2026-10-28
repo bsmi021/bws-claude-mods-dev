@@ -23,6 +23,7 @@ export const KNOWN_MODS = [
   'bws-summary',
   'bws-agents',
   'bws-inventory',
+  'bws-mask',
 ] as const
 export type KnownMod = (typeof KNOWN_MODS)[number]
 
@@ -44,6 +45,7 @@ export const MOD_TITLE: Record<KnownMod, string> = {
   'bws-summary': 'Summary',
   'bws-agents': 'Agents',
   'bws-inventory': 'Inventory',
+  'bws-mask': 'Mask',
 }
 
 // `modSummaries` option (the mods that get a tab): names separated by , or ;. Unknown names and repeats are dropped.

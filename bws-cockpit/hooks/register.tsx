@@ -118,6 +118,7 @@ const directionSummary = atom({ plugin: 'bws-direction', key: 'summary' } as con
 const summarySummary = atom({ plugin: 'bws-summary', key: 'summary' } as const, null)
 const agentsSummary = atom({ plugin: 'bws-agents', key: 'summary' } as const, null)
 const inventorySummary = atom({ plugin: 'bws-inventory', key: 'summary' } as const, null)
+const maskSummary = atom({ plugin: 'bws-mask', key: 'summary' } as const, null)
 // Each mod's dashboard tab (bws-kit/tab.ts), drawn after the built-in tabs; checked by parseTab, so typed unknown.
 const memoryTab = atom({ plugin: 'bws-memory', key: 'tab' } as const, null as unknown)
 const diagramTab = atom({ plugin: 'bws-diagram', key: 'tab' } as const, null as unknown)
@@ -133,6 +134,7 @@ const directionTab = atom({ plugin: 'bws-direction', key: 'tab' } as const, null
 const summaryTab = atom({ plugin: 'bws-summary', key: 'tab' } as const, null as unknown)
 const agentsTab = atom({ plugin: 'bws-agents', key: 'tab' } as const, null as unknown)
 const inventoryTab = atom({ plugin: 'bws-inventory', key: 'tab' } as const, null as unknown)
+const maskTab = atom({ plugin: 'bws-mask', key: 'tab' } as const, null as unknown)
 // The Mods tab, the switchboard (hooks/switchboard.ts); `hidden` is also kept in $.store across sessions.
 const switchboard = atom({ plugin: 'bws-cockpit', key: 'switchboard' } as const, EMPTY_BOARD as Board)
 // A press or submitted input in a mod's tab, for that mod to act on (it watches this with a state.set hook).
@@ -934,6 +936,7 @@ async function readModTabs($: EngineInterface, configured: readonly KnownMod[]):
     'bws-summary': has('bws-summary') ? await read($, summaryTab) : null,
     'bws-agents': has('bws-agents') ? await read($, agentsTab) : null,
     'bws-inventory': has('bws-inventory') ? await read($, inventoryTab) : null,
+    'bws-mask': has('bws-mask') ? await read($, maskTab) : null,
   }
   const summaries: Partial<Record<KnownMod, unknown>> = {
     'bws-memory': has('bws-memory') ? await read($, memorySummary) : null,
@@ -949,6 +952,7 @@ async function readModTabs($: EngineInterface, configured: readonly KnownMod[]):
     'bws-summary': has('bws-summary') ? await read($, summarySummary) : null,
     'bws-agents': has('bws-agents') ? await read($, agentsSummary) : null,
     'bws-inventory': has('bws-inventory') ? await read($, inventorySummary) : null,
+    'bws-mask': has('bws-mask') ? await read($, maskSummary) : null,
   }
   return modTabs(names, tabs, summaries)
 }
@@ -1773,6 +1777,11 @@ export const register: Register = (on, options) => {
   })
   on('state.set', { plugin: 'bws-inventory', key: 'tab' }, async ($, e, next) => {
     await noteModTab($, o, 'bws-inventory', e.value).catch(() => undefined)
+    return next(e)
+  })
+
+  on('state.set', { plugin: 'bws-mask', key: 'tab' }, async ($, e, next) => {
+    await noteModTab($, o, 'bws-mask', e.value).catch(() => undefined)
     return next(e)
   })
 
