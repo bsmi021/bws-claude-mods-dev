@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
+import { JOB } from './fixtures'
 import { ALLOWED, CODEX, COMMON, DENIED, HEAD, NOT_GRANTED, TOP, finishTurn, world } from './world'
 
 const DELEGATE = { tool: 'mcp__bws-codex__codex_delegate', prompt: 'Fix add() in src/calc.py and run python -m unittest.', title: 'Fix calc', effort: 'low' }
@@ -117,6 +118,47 @@ describe('results and the wake', () => {
     await $.turn.complete({} as never)
     await w.clock.advance(2_000)
     expect(w.seen.submits.length).toBe(1)
+  })
+
+  test('a prompt another hook drops starts no turn: the wake is not held for it', { options: {} }, async ($, on) => {
+    const w = world(on, { submitDrop: 'kept by another mod' })
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    const id = idOf(await $.tool.call(DELEGATE as never))
+    await $.prompt.submit({ text: 'keep working', wait: false, origin: { kind: 'composer' } } as never)
+    w.seen.submits.length = 0
+    finishTurn(w.files, dirOf(id), 1, w.clock.now(), 'Fixed add().')
+    await w.clock.advance(8_000)
+    expect(w.seen.submits.length).toBe(1)
+    expect(w.seen.submits[0]).toContain(`bws-codex: codex job ${id} "Fix calc": done in`)
+  })
+
+  test('a refused wake leaves the turn unreported and frees the next wake', { options: {} }, async ($, on) => {
+    const w = world(on, { submitDrop: 'a Stop stands' })
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    const id = idOf(await $.tool.call(DELEGATE as never))
+    finishTurn(w.files, dirOf(id), 1, w.clock.now(), 'Fixed add().')
+    await w.clock.advance(8_000)
+    expect(w.seen.submits.length).toBe(1)
+    expect(w.seen.toasts).toContain('bws-codex: Claude was not woken (a Stop stands); codex_status lists the unreported jobs.')
+    expect(text(await $.tool.call({ tool: 'mcp__bws-codex__codex_status' } as never))).toContain('not yet reported')
+
+    // Not stuck busy: a second job's end is offered to Claude after the wake gap.
+    const id2 = idOf(await $.tool.call({ ...DELEGATE, title: 'Second' } as never))
+    finishTurn(w.files, dirOf(id2), 1, w.clock.now(), 'Done too.')
+    await w.clock.advance(40_000)
+    expect(w.seen.submits.length).toBe(2)
+    expect(w.seen.submits[1]).toContain(`codex job ${id2} "Second"`)
+  })
+
+  test('a turn that ended during a hot reload still wakes Claude', { options: {} }, async ($, on) => {
+    const ended = { ...JOB, state: 'done', endedAt: JOB.turnStartedAt + 60_000, delivered: 0 }
+    // This session's job, and one of another session's that is not this process's to report.
+    const w = world(on, { store: { 'job:fix-calc-3f2a1c': ended, 'job:other-000001': { ...ended, id: 'other-000001', owner: 'session-0' } } })
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    await w.clock.advance(8_000)
+    expect(w.seen.submits.length).toBe(1)
+    expect(w.seen.submits[0]).toContain('bws-codex: codex job fix-calc-3f2a1c "Fix calc": done in 1m00s')
+    expect(w.seen.submits[0]).not.toContain('other-000001')
   })
 
   test('headless: no wake', { options: {} }, async ($, on) => {

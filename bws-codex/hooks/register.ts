@@ -463,10 +463,21 @@ async function wake($: EngineInterface, o: Options, now: number) {
   pending.clear()
   if (items.length === 0) return
   lastWakeAt = now
-  for (const { job } of items) await saveJob($, { ...job, delivered: job.turn })
-  // The wake starts a turn of its own; turn.complete frees the next one.
+  // The wake starts a turn of its own; turn.complete frees the next one. The turns count as reported once the prompt
+  // is in: a refused one (a hook's drop, a Stop that stands) starts no turn and leaves them for codex_result.
   isBusy = true
-  void $.prompt.submit({ text: wakeText(items, now) }).catch(() => undefined)
+  void $.prompt.submit({ text: wakeText(items, now) }).then(
+    async r => {
+      if (r.drop !== undefined) return wakeRefused($, r.drop)
+      for (const { job } of items) await saveJob($, { ...job, delivered: job.turn })
+    },
+    err => wakeRefused($, errText(err)),
+  )
+}
+
+function wakeRefused($: EngineInterface, why: string) {
+  isBusy = false
+  $.ui.toast(`bws-codex: Claude was not woken (${why}); codex_status lists the unreported jobs.`, { timeoutMs: 8000 })
 }
 
 // ---------- the Codex tab ----------
@@ -1042,12 +1053,13 @@ export const register: Register = (on, options) => {
         required: ['id', 'prompt'],
       },
     })
-    // After a hot reload: keep watching the jobs this session started.
+    // After a hot reload: keep watching the jobs this session started, and report a turn that ended during the reload
+    // (the next tick finds it ended: a wake, or its chat answer).
     const me = await settle($.session.id())
     for (const key of (await settle($.store.keys())) ?? []) {
       if (!key.startsWith(STORE_PREFIX)) continue
       const job = parseJob(await settle($.store.get(key)))
-      if (job !== undefined && job.owner === me && !isTerminal(job.state)) watched.add(job.id)
+      if (job !== undefined && job.owner === me && (!isTerminal(job.state) || job.delivered < job.turn)) watched.add(job.id)
     }
     if (watched.size > 0) startPoll($, o)
     const repo = await settle(repoOf($, await $.session.cwd()))
@@ -1072,10 +1084,14 @@ export const register: Register = (on, options) => {
     return next(e)
   }).catch(($, e, next) => next(e))
 
-  // A prompt starts a turn: hold wakes until it ends.
+  // A prompt starts a turn: hold wakes until it ends. One that never entered (a hook dropped it) starts none, so no
+  // turn.complete would free them.
   on('prompt.submit', async ($, e, next) => {
+    const was = isBusy
     isBusy = true
-    return next(e)
+    const r = await next(e)
+    if (r.drop !== undefined) isBusy = was
+    return r
   }).catch(($, e, next) => next(e))
 
   on('turn.complete', async ($, e, next) => {

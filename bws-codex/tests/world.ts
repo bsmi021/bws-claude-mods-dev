@@ -25,7 +25,18 @@ export type Fetch = { url: string; method: string; headers: Record<string, strin
 // Answers one $.http.fetch: status and body text (an object is sent as JSON). Throwing stands for a transport failure.
 export type Api = (f: Fetch) => { status: number; body: unknown }
 
-export type World = { bottom?: unknown; now?: number; isRemoveHeld?: boolean; api?: Api; messages?: { role: 'user' | 'assistant'; text: string }[]; box?: string }
+// `submitDrop`: every prompt is refused beneath with that reason (another hook's drop, a Stop that stands). `store`: what
+// $.store holds at the start (a reload).
+export type World = {
+  bottom?: unknown
+  now?: number
+  isRemoveHeld?: boolean
+  api?: Api
+  messages?: { role: 'user' | 'assistant'; text: string }[]
+  box?: string
+  submitDrop?: string
+  store?: Record<string, unknown>
+}
 
 // A tab as published (bws-kit/tab.ts ModTab), loosely typed for reading.
 export type TabNode = { kind: string; text?: string; id?: string; title?: string; isFocused?: boolean; items?: { id: string; label: string; isFocused?: boolean }[]; body?: TabNode[] }
@@ -38,7 +49,7 @@ export const texts = (t: Tab | undefined) => flat(t?.body ?? []).flatMap(n => [n
 
 export function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: w.now ?? 1_800_000_000_000 })
-  mock.store(on)
+  mock.store(on, w.store)
   mock.env(on, { APPDATA })
   const files = new Map<string, string>()
   const seen = {
@@ -123,7 +134,7 @@ export function world(on: On, w: World = {}) {
   })
   on('prompt.submit', ($, e) => {
     seen.submits.push(e.text)
-    return { text: e.text } as never
+    return (w.submitDrop !== undefined ? { drop: w.submitDrop } : { text: e.text }) as never
   })
   on('turn.complete', () => ({ text: '' }) as never)
   return { clock, files, seen }

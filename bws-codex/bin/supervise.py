@@ -24,6 +24,11 @@ LINGER_S = 30  # codex.exe lingers after turn.completed; kill it after this
 BEAT_S = 15  # status.json heartbeat while a turn runs
 OUTPUT_MAX = 300  # chars kept of a command's aggregated_output in the events file
 TEXT_MAX = 8000  # chars kept of an agent message
+# Build junk a repo without a .gitignore would otherwise get committed: new files under these are never staged. They
+# are pathspecs, so the repo's .gitignore, info/exclude and the user's global excludes still apply, no git config is
+# touched, and a file the repo already tracks still commits.
+JUNK = ("**/__pycache__/**", "**/*.py[co]", "**/.pytest_cache/**", "**/.mypy_cache/**", "**/.ruff_cache/**",
+        "**/.tox/**", "**/.venv/**", "**/node_modules/**", "**/.DS_Store", "**/Thumbs.db")
 
 
 def now_ms():
@@ -187,6 +192,14 @@ class Pump:
                 fh.write("\n".join(out) + "\n")
 
 
+def stage(wt):
+    """Stages the turn's changes: every change to a tracked file, and new files that are not build junk (JUNK)."""
+    rc, out, err = git(wt, "add", "-u")
+    if rc != 0:
+        return rc, out, err
+    return git(wt, "add", "-A", "--", ".", *(f":(exclude,glob){p}" for p in JUNK))
+
+
 def commit(spec, jobdir, status):
     """Commits the worktree's changes on the job branch (repo hooks off) and refreshes diff.patch vs the base."""
     wt, base = spec["cwd"], spec["base"]
@@ -194,7 +207,11 @@ def commit(spec, jobdir, status):
     if rc != 0:
         status["commitError"] = (err or out).strip()[-400:]
     elif out.strip():
-        git(wt, "add", "-A")
+        rc, out, err = stage(wt)
+        if rc != 0:
+            status["commitError"] = (err or out).strip()[-400:]
+    # Nothing staged (no changes, or only junk): no commit.
+    if status.get("commitError") is None and git(wt, "diff", "--cached", "--quiet")[0] != 0:
         msg = spec.get("commitMessage") or "codex: job turn"
         if status["state"] != "done":
             msg += f" ({status['state']})"
