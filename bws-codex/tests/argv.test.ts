@@ -59,8 +59,8 @@ describe('codex argv', () => {
   })
 
   test('codex.exe candidates are the native binaries under %APPDATA%, never the .cmd shim', () => {
-    const c = codexCandidates('C:\\Users\\me\\AppData\\Roaming')
-    expect(c[0]).toBe('C:/Users/me/AppData/Roaming/npm/node_modules/@openai/codex/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe')
+    const c = codexCandidates('C:\\Users\\you\\AppData\\Roaming')
+    expect(c[0]).toBe('C:/Users/you/AppData/Roaming/npm/node_modules/@openai/codex/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe')
     expect(c.every(p => p.endsWith('/codex.exe'))).toBe(true)
     expect(codexCandidates(undefined)).toEqual([])
   })

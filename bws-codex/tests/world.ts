@@ -6,7 +6,7 @@ import type { On } from 'claude-code'
 export const TOP = 'C:/src/app'
 export const COMMON = 'C:/src/app/.git'
 export const HEAD = '0123456789abcdef0123456789abcdef01234567'
-export const APPDATA = 'C:/Users/me/AppData/Roaming'
+export const APPDATA = 'C:/Users/you/AppData/Roaming'
 export const CODEX = `${APPDATA}/npm/node_modules/@openai/codex/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe`
 
 // What core answers beneath the gate: the stub error of an allowed call, a rule's deny, and an ask nobody answered.
