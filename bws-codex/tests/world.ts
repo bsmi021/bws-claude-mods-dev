@@ -49,7 +49,23 @@ export const texts = (t: Tab | undefined) => flat(t?.body ?? []).flatMap(n => [n
 
 export function world(on: On, w: World = {}) {
   const clock = mock.clock(on, { now: w.now ?? 1_800_000_000_000 })
-  mock.store(on, w.store)
+  // $.store in memory (mock.store's behaviour), with every write recorded in `stored`.
+  const store = new Map<string, unknown>(Object.entries(w.store ?? {}))
+  const stored: { key: string; value: unknown }[] = []
+  on('store.get', ($, e) => ({ value: store.get(e.key) }))
+  on('store.set', ($, e) => {
+    const value = JSON.parse(JSON.stringify(e.value)) as unknown
+    store.set(e.key, value)
+    stored.push({ key: e.key, value })
+    return { value: undefined }
+  })
+  on('store.delete', ($, e) => {
+    store.delete(e.key)
+    return { value: undefined }
+  })
+  on('store.keys', () => ({ value: [...store.keys()] }))
+  // The session's id; /clear gives it a new one.
+  const session = { id: 'session-1' }
   mock.env(on, { APPDATA })
   const files = new Map<string, string>()
   const seen = {
@@ -95,7 +111,7 @@ export function world(on: On, w: World = {}) {
   })
   on('session.start', () => ({ cwd: TOP }) as never)
   on('session.cwd', () => ({ value: TOP }))
-  on('session.id', () => ({ value: 'session-1' }))
+  on('session.id', () => ({ value: session.id }))
   on('tool.register', ($, e) => {
     seen.registered.push(`${e.name}${e.isDeferred === false ? ' (pinned)' : ''}`)
     return { value: { tool: `mcp__bws-codex__${e.name}` } as never }
@@ -137,7 +153,7 @@ export function world(on: On, w: World = {}) {
     return (w.submitDrop !== undefined ? { drop: w.submitDrop } : { text: e.text }) as never
   })
   on('turn.complete', () => ({ text: '' }) as never)
-  return { clock, files, seen }
+  return { clock, files, seen, stored, session }
 }
 
 // The job folder after a turn ended, as the supervisor leaves it.

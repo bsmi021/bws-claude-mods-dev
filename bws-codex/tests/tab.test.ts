@@ -267,4 +267,22 @@ describe('the Jobs view', () => {
     expect(w.seen.toasts.at(-1)).toBe(`Removed the worktree C:/src/app.codex-worktrees/${id}.`)
     expect(texts(last(w))).toContain('👋 No Codex jobs in this repository yet')
   })
+
+  test('Cancel, then Follow up: the new turn does not show the cancelled turn\'s phase', { options: {} }, async ($, on) => {
+    const w = world(on)
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    const r = await $.tool.call({ tool: 'mcp__bws-codex__codex_delegate', prompt: 'Fix add() in src/calc.py.', title: 'Fix calc', effort: 'low' } as never)
+    const id = /codex job ([a-z0-9-]+)/.exec(String(r.result))?.[1] ?? ''
+    const events = [{ type: 'thread.started', thread_id: 'thread-1' }, { type: 'turn.started' }].map(e => JSON.stringify(e)).join('\n')
+    w.files.set(`${dirOf(id)}/turn-1.events.jsonl`, `${events}\n`)
+    await w.clock.advance(4000)
+    await run($, 'jobs')
+    expect(texts(last(w)).some(s => s.startsWith('starting · thinking'))).toBe(true)
+
+    await run($, `--cancel-${id}`)
+    await run($, `--follow-${id} Finish it.`)
+    await w.clock.advance(20)
+    const line = texts(last(w)).find(s => s.startsWith('starting (turn 2)'))
+    expect(line).toBe(`starting (turn 2) · codex/${id} · no changes`)
+  })
 })

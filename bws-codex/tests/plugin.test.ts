@@ -161,6 +161,21 @@ describe('results and the wake', () => {
     expect(w.seen.submits[0]).not.toContain('other-000001')
   })
 
+  test('after /clear (a new session id) the running job follows the session, so a reload still watches it', { options: {} }, async ($, on) => {
+    const w = world(on)
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    const id = idOf(await $.tool.call(DELEGATE as never))
+    const owners = () => w.stored.filter(s => s.key === `job:${id}`).map(s => (s.value as { owner: string }).owner)
+    expect(owners().at(-1)).toBe('session-1')
+    w.session.id = 'session-2'
+    await w.clock.advance(4_000)
+    expect(owners().at(-1)).toBe('session-2')
+    // Still this process's job: its end wakes the cleared conversation.
+    finishTurn(w.files, dirOf(id), 1, w.clock.now(), 'Fixed add().')
+    await w.clock.advance(4_000)
+    expect(w.seen.submits.length).toBe(1)
+  })
+
   test('headless: no wake', { options: {} }, async ($, on) => {
     const w = world(on)
     await $.session.start({ cwd: TOP, isInteractive: false } as never)

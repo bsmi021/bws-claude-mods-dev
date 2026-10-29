@@ -53,14 +53,23 @@ def plugins() -> list[Path]:
 
 
 def bootstrap_types(plugin: Path) -> None:
-    if (plugin / ".claude-plugin" / "types").is_dir():
+    """The plugin's gitignored generated types: from the main checkout, or, for a plugin no session has loaded there
+    yet (a new one), a sibling's (bws-board's), as AGENTS.md says to copy by hand. The tsconfig extends them: without
+    them tsc runs on the default lib and fails."""
+    dst = plugin / ".claude-plugin" / "types"
+    if dst.is_dir():
         return
-    src_root = main_tree()
-    if src_root is None:
+    main = main_tree()
+    if main is not None and (main / plugin.name / ".claude-plugin" / "types").is_dir():
+        shutil.copytree(main / plugin.name / ".claude-plugin" / "types", dst)
         return
-    src = src_root / plugin.name / ".claude-plugin" / "types"
-    if src.is_dir():
-        shutil.copytree(src, plugin / ".claude-plugin" / "types")
+    board = plugin.parent / MCP_TYPES_REFERENCE
+    if plugin.resolve() != board.resolve():
+        bootstrap_types(board)
+        src = board / ".claude-plugin" / "types"
+        if src.is_dir():
+            shutil.copytree(src, dst)
+            print(f"types {plugin.name}: none generated yet; copied {MCP_TYPES_REFERENCE}'s")
 
 
 MCP_TYPES = Path(".claude-plugin") / "types" / "claude-code-mcp" / "index.d.ts"

@@ -216,6 +216,8 @@ async function launchTurn($: EngineInterface, o: Options, job: Job, prompt: stri
     return { error: `${failed.error}. The worktree ${job.worktree} is kept; codex_cancel {"id": "${job.id}", "drop": true} removes it.` }
   }
   await saveJob($, job)
+  // The last turn's phase is not this one's.
+  delete phases[job.id]
   watched.add(job.id)
   startPoll($, o)
   return { job }
@@ -335,6 +337,7 @@ async function cancelJob($: EngineInterface, o: Options, id: string, drop: boole
   }
   pending.delete(id)
   watched.delete(id)
+  delete phases[id]
   if (drop) {
     const gone = await settle($.process.run(['git', '-C', job.repo, 'worktree', 'remove', '--force', job.worktree], { timeoutMs: GIT_MS }))
     const listed = await settle($.process.run(['git', '-C', job.repo, 'worktree', 'list', '--porcelain'], { timeoutMs: GIT_MS }))
@@ -412,13 +415,21 @@ async function tick($: EngineInterface, o: Options) {
   isTicking = true
   try {
     const now = await $.clock.now()
+    const me = await settle($.session.id())
     for (const id of [...watched]) {
       const stored = await loadJob($, id)
       if (stored === undefined) {
         watched.delete(id)
         continue
       }
-      const { job, summary } = await refresh($, stored)
+      const fresh = await refresh($, stored)
+      const { summary } = fresh
+      let job = fresh.job
+      // /clear gives this session a new id: the job follows it, so a reload after it still watches the job.
+      if (me !== undefined && job.owner !== me) {
+        job = { ...job, owner: me }
+        await saveJob($, job)
+      }
       if (isTerminal(job.state)) {
         watched.delete(id)
         delete phases[id]
