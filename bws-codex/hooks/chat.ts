@@ -1,6 +1,8 @@
 // The Codex chat: its state, the text a turn sends, what Pull from Claude brings in and what Send back hands Claude.
 // Pure: register.ts runs the engines (api: the Responses API; codex: a chat job with follow-ups).
 
+import type { PromptOrigin } from 'claude-code'
+
 import type { ApiChoice } from './api'
 
 export type Engine = 'api' | 'codex'
@@ -133,3 +135,22 @@ export function pressOf(args: string): { id: string; value?: string } | null {
   if (!m || m[1] === undefined) return null
   return m[2] === undefined ? { id: m[1] } : { id: m[1], value: m[2] }
 }
+
+// ---------- who may run what ----------
+
+// The person at the keyboard: Enter in the composer, or their own message through Remote Control. Anything else (another
+// plugin, a peer session, a channel, a schedule, an origin the engine could not attest or one this build does not know)
+// is not.
+export const isPerson = (origin: PromptOrigin | undefined) => origin?.kind === 'composer' || origin?.kind === 'bridge'
+
+// What `/codex` does for anyone: open the tab, list the jobs, show a job's diff, say the engine. Everything else starts,
+// follows up, stops or drops Codex work, sends text to Codex or OpenAI, or writes into Claude's prompt box.
+export function isViewOnly(args: string): boolean {
+  const press = pressOf(args)
+  if (press !== null) return press.id === 'chat' || press.id === 'jobs' || press.id === 'refresh' || press.id.startsWith('diff-')
+  const cmd = parseCodex(args)
+  return cmd.kind === 'open' || cmd.kind === 'jobs' || (cmd.kind === 'engine' && cmd.engine === null)
+}
+
+export const NOT_PERSON =
+  'bws-codex: this /codex command was not typed by the person, so it is refused. Codex work goes through the permission-gated tools: codex_delegate, codex_followup, codex_cancel.'

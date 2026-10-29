@@ -11,7 +11,9 @@ const MASKED = ['sk', 'test', '**********Vv5'].join('-')
 const WITH_KEY = { options: { openaiApiKey: KEY } }
 
 type Dollar = { command: { run: (i: never) => Promise<unknown> } }
-const run = ($: Dollar, args: string) => $.command.run({ command: 'codex', args } as never) as Promise<{ text?: string }>
+// The person's own `/codex` (typed at the composer); `from` stands for another origin.
+const run = ($: Dollar, args: string, from: { kind: string; name?: string } = { kind: 'composer' }) =>
+  $.command.run({ command: 'codex', args, origin: from } as never) as Promise<{ text?: string }>
 const last = (w: { seen: { tabs: Tab[] } }) => w.seen.tabs.at(-1)
 const dirOf = (id: string) => `${COMMON}/bws-codex/jobs/${id}`
 const idOfDir = (dir: string | undefined) => (dir ?? '').split('/').pop() ?? ''
@@ -69,6 +71,47 @@ describe('the Codex tab', () => {
     await run($, '--engine-api')
     expect(w.seen.toasts.at(-1)).toContain('the api engine needs the openaiApiKey option')
     expect(texts(last(w))).toContain('🧰 codex exec · new thread (its own worktree)')
+  })
+})
+
+describe('who may run /codex', () => {
+  const REFUSED = { text: 'bws-codex: this /codex command was not typed by the person, so it is refused. Codex work goes through the permission-gated tools: codex_delegate, codex_followup, codex_cancel.' }
+  const OTHER = { kind: 'plugin', name: 'bws-other' }
+
+  test('from another origin, every action is refused and does nothing; the views still open', WITH_KEY, async ($, on) => {
+    const w = world(on, { api: openai(['ok']) })
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    const r = await $.tool.call({ tool: 'mcp__bws-codex__codex_delegate', prompt: 'Fix add() in src/calc.py.', title: 'Fix calc', effort: 'low' } as never)
+    const id = /codex job ([a-z0-9-]+)/.exec(String(r.result))?.[1] ?? ''
+    finishTurn(w.files, dirOf(id), 1, w.clock.now(), 'Fixed add().')
+    const runs = w.seen.runs.length
+    const actions = [
+      'is the lock safe?', 'new start over', 'pull what do you think?', 'pull turns', 'send-back', 'stop', 'engine codex', 'fast on',
+      '--ask-0 is the lock safe?', '--new', '--pull', '--send-back', '--send-0', '--stop', '--engine-codex', '--model-fast',
+      `--follow-${id} more tests`, `--fu-${id}-0 more tests`, `--cancel-${id}`, `--drop-${id}`, `--merge-${id}`,
+    ]
+    for (const args of actions) expect(await run($, args, OTHER)).toEqual(REFUSED)
+    // A peer session, a channel, an origin the engine could not attest or one this build does not know: not the person.
+    for (const from of [{ kind: 'peer' }, { kind: 'channel' }, { kind: 'unclassified' }, { kind: 'sdk' }, { kind: 'some-new-kind' }])
+      expect(await run($, `--drop-${id}`, from)).toEqual(REFUSED)
+    expect(await $.command.run({ command: 'cx', args: `--drop-${id}` } as never)).toEqual(REFUSED)
+    await w.clock.advance(2000)
+    expect(w.seen.fetches).toEqual([])
+    expect(w.seen.fills).toEqual([])
+    expect(w.seen.runs.length).toBe(runs)
+    expect(w.seen.submits).toEqual([])
+
+    for (const args of ['', 'chat', 'jobs', 'engine', '--chat', '--jobs', '--refresh', `--diff-${id}`]) expect(await run($, args, OTHER)).not.toEqual(REFUSED)
+    expect(texts(last(w))).toContain('Fixed add().')
+    expect(texts(last(w)).some(s => s.includes(`⏳ Fix calc · ${id}`) || s.includes(`✅ Fix calc · ${id}`))).toBe(true)
+  })
+
+  test('the person at the composer or through Remote Control acts', WITH_KEY, async ($, on) => {
+    const w = world(on, { api: openai(['ok']) })
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    expect(await run($, 'is the lock safe?', { kind: 'bridge' })).toEqual({})
+    await w.clock.advance(100)
+    expect(w.seen.fetches[0]?.method).toBe('POST')
   })
 })
 

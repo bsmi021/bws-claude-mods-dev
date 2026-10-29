@@ -5,6 +5,7 @@
 - A wake that Claude Code refuses (a hook drops it, a Stop stands) no longer counts as reported: `codex_status` still lists the job as not reported, a toast says Claude was not woken, and later wakes are not held. A prompt another mod drops no longer holds wakes either.
 - A job's turn that ends during a reload still wakes Claude, and a job keeps waking the conversation after `/clear` even if the mod reloads later.
 - After Cancel and Follow up in the Jobs view, the new turn no longer shows the cancelled turn's phase.
+- `/codex` and `/cx` act only when you type them (or send them through Remote Control). From another plugin, a peer session, a channel or any other origin, only the views run (open the tab, list jobs, show a diff); anything that starts, follows up, stops or drops Codex work, sends text to Codex or OpenAI, or fills Claude's prompt box is refused with a note pointing at the permission-gated `codex_*` tools.
 
 ## 0.2.0
 - The Codex tab in the bws-cockpit dashboard (cockpit 0.29.1): `/codex`, or `/cx` where Desktop takes `/codex`. Every button has a `/codex --<id> [text]` twin.

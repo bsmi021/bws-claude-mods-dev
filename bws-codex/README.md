@@ -78,7 +78,9 @@ Leave the key empty to keep everything on Codex CLI.
 Every button has a command twin, `/codex --<id> [text]` (`--jobs`, `--chat`, `--new`, `--pull`, `--send-back`,
 `--engine-codex`, `--ask-<n> <text>`, `--diff-<job>`, `--merge-<job>`, ...). The words `/codex jobs`, `new [message]`,
 `pull [turns] [question]`, `send-back`, `engine api|codex`, `fast on|off` and `stop` work too; anything else is sent
-as a chat message.
+as a chat message. These act only when you type them (or send them through Remote Control): from another plugin, a
+peer session or a channel, `/codex` only opens views (the tab, the job list, a diff), and Codex work has to go through
+the tools and their permission prompt.
 
 ## Options
 

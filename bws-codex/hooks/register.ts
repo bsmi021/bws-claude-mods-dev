@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, PromptOrigin, Register } from 'claude-code'
 
 import { API_MODELS, API_URL, API_WAIT_MS, POLL_MS as API_POLL_MS, apiError, bodyFor, isPollDue, isTerminal as isApiTerminal, outcomeOf, stripKeys, usageOf } from './api'
 import { parseCancel, parseDelegate, parseFollowup, parseResult } from './args'
@@ -7,7 +7,7 @@ import type { DelegateArgs } from './args'
 import { codexCandidates, execArgv, firstPrompt, followupPrompt, resumeArgv, turnSpec } from './argv'
 import type { CodexRun } from './argv'
 import { capsuleArgv, capsuleText, partnerBrief } from './capsule'
-import { answerAt, codexFirstPrompt, emptyChat, parseChat, parseCodex, pressOf, pullOf, sendBackText, turnInput, withMsgs } from './chat'
+import { NOT_PERSON, answerAt, codexFirstPrompt, emptyChat, isPerson, isViewOnly, parseChat, parseCodex, pressOf, pullOf, sendBackText, turnInput, withMsgs } from './chat'
 import type { Chat, ChatMsg, Engine, Pulled } from './chat'
 import { reduceEvents } from './events'
 import type { TurnSummary } from './events'
@@ -879,12 +879,15 @@ async function act($: EngineInterface, o: Options, id: string, value: string | u
   else if ((m = /^merge-(.+)$/.exec(id)) && m[1] !== undefined) await mergeFromTab($, m[1])
 }
 
-// `/codex` and `/cx`: open the tab, chat, or press one of its buttons (`--<id> [text]`).
-async function codexCommand($: EngineInterface, o: Options, args: string): Promise<{ text?: string }> {
+// `/codex` and `/cx`: open the tab, chat, or press one of its buttons (`--<id> [text]`). Only the person's own command
+// acts; from anyone else (a plugin's $.command.run, a peer, a channel) only the views run: Codex work from there goes
+// through the tools and their permission prompt.
+async function codexCommand($: EngineInterface, o: Options, args: string, origin: PromptOrigin | undefined): Promise<{ text?: string }> {
   if (!(await isDrawn($))) {
     const jobs = repoRoot === '' ? [] : await listJobs($, repoRoot)
     return { text: `${listText(jobs, repoRoot || 'this folder', await $.clock.now())}\nThe Codex tab needs a terminal or Desktop window to draw in.` }
   }
+  if (!isPerson(origin) && !isViewOnly(args)) return { text: NOT_PERSON }
   const press = pressOf(args)
   if (press !== null) {
     await act($, o, press.id, press.value)
@@ -1088,8 +1091,8 @@ export const register: Register = (on, options) => {
   })
 
   // /codex and its fallback name: one handler.
-  on('command.run', { command: 'codex' }, async ($, e) => codexCommand($, o, e.args)).catch(($, e, next) => ({ text: `bws-codex: /codex failed: ${stripKeys(errText(next.error))}` }))
-  on('command.run', { command: 'cx' }, async ($, e) => codexCommand($, o, e.args)).catch(($, e, next) => ({ text: `bws-codex: /cx failed: ${stripKeys(errText(next.error))}` }))
+  on('command.run', { command: 'codex' }, async ($, e) => codexCommand($, o, e.args, e.origin)).catch(($, e, next) => ({ text: `bws-codex: /codex failed: ${stripKeys(errText(next.error))}` }))
+  on('command.run', { command: 'cx' }, async ($, e) => codexCommand($, o, e.args, e.origin)).catch(($, e, next) => ({ text: `bws-codex: /cx failed: ${stripKeys(errText(next.error))}` }))
 
   // A press or a submitted input in the Codex tab (bws-cockpit writes it). Acted on just after: this mod's own state
   // changes from inside a state.set dispatch would read the old values.
