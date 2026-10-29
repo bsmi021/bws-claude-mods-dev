@@ -1,6 +1,6 @@
 {
   "name": "bws-codex",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Claude delegates coding work to OpenAI Codex on your ChatGPT plan, and you chat with Codex on the side. codex_delegate starts a Codex job in its own git worktree on branch codex/<id>, sandboxed (workspace-write, no internet by default) behind Claude Code's permission prompt; the mod commits each turn, Claude reviews and merges the branch, and an idle Claude is woken when a job ends. The Codex tab in the cockpit dashboard lists the jobs (diff, follow-up, cancel, merge hint) and holds a side chat on the OpenAI API (with your key) or on Codex CLI, with a git capsule each turn, Pull from Claude and Send back.",
   "author": {
     "name": "bsmi021",
