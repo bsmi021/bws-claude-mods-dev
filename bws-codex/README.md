@@ -98,5 +98,8 @@ Set in `/plugin` → bws-codex → configure, or `pluginConfigs` in settings.
 
 Claude Code 2.1.311 (headless `claude -p`) and 2.1.312 (terminal UI) on Windows 11, with Codex CLI 0.160.1 on a ChatGPT plan.
 The Codex tab (0.2.0) was checked live in the terminal UI with bws-cockpit 0.29.1: both views, an api turn answering
-from the capsule, a codex-engine turn, Send back, Merge, Drop, and a delegated job updating in Jobs. Not tested in
-Claude Code Desktop (including whether it takes `/codex`), VS Code or mobile.
+from the capsule, a codex-engine turn, Send back, Merge, Drop, and a delegated job updating in Jobs. 0.2.1 was checked
+live on 2.1.312 by an independent validation: No in the permission dialog, plan mode refusing the tool, cancelling a
+running turn from Jobs, Follow up from the tab, a resumed turn still sandboxed, `/clear` then the wake, Pull turns,
+the fast model, Stop, a bad key's masked error, `/cx`, and one session where Claude delegated, was woken and merged.
+Not tested in Claude Code Desktop (including whether it takes `/codex`), VS Code or mobile.
