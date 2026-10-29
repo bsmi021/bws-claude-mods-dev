@@ -480,7 +480,11 @@ async function wake($: EngineInterface, o: Options, now: number) {
   void $.prompt.submit({ text: wakeText(items, now) }).then(
     async r => {
       if (r.drop !== undefined) return wakeRefused($, r.drop)
-      for (const { job } of items) await saveJob($, { ...job, delivered: job.turn })
+      // Read again: before the prompt went in, Claude may have moved the job on (a follow-up) or dropped it.
+      for (const { job } of items) {
+        const live = await loadJob($, job.id)
+        if (live !== undefined && live.turn === job.turn) await saveJob($, { ...live, delivered: live.turn })
+      }
     },
     err => wakeRefused($, errText(err)),
   )

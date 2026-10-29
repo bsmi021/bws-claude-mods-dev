@@ -35,6 +35,8 @@ export type World = {
   messages?: { role: 'user' | 'assistant'; text: string }[]
   box?: string
   submitDrop?: string
+  // Every prompt waits to go in until the test calls `held`'s functions (a plugin prompt waits for idle).
+  isSubmitHeld?: boolean
   store?: Record<string, unknown>
 }
 
@@ -148,12 +150,14 @@ export function world(on: On, w: World = {}) {
     seen.reached.push(String(e.tool))
     return (w.bottom ?? ALLOWED) as never
   })
+  const held: (() => void)[] = []
   on('prompt.submit', ($, e) => {
     seen.submits.push(e.text)
-    return (w.submitDrop !== undefined ? { drop: w.submitDrop } : { text: e.text }) as never
+    const r = (w.submitDrop !== undefined ? { drop: w.submitDrop } : { text: e.text }) as never
+    return w.isSubmitHeld ? new Promise<never>(resolve => held.push(() => resolve(r))) : r
   })
   on('turn.complete', () => ({ text: '' }) as never)
-  return { clock, files, seen, stored, session }
+  return { clock, files, seen, stored, session, held }
 }
 
 // The job folder after a turn ended, as the supervisor leaves it.

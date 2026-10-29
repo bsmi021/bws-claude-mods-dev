@@ -150,6 +150,22 @@ describe('results and the wake', () => {
     expect(w.seen.submits[1]).toContain(`codex job ${id2} "Second"`)
   })
 
+  test('a wake still waiting to go in never overwrites the turn Claude started meanwhile', { options: {} }, async ($, on) => {
+    const w = world(on, { isSubmitHeld: true })
+    await $.session.start({ cwd: TOP, isInteractive: true } as never)
+    const id = idOf(await $.tool.call(DELEGATE as never))
+    finishTurn(w.files, dirOf(id), 1, w.clock.now(), 'Fixed add().')
+    await w.clock.advance(4_000)
+    expect(w.seen.submits.length).toBe(1)
+    // The person's own prompt went in first: Claude follows the job up before the wake does.
+    expect(text(await $.tool.call({ tool: 'mcp__bws-codex__codex_followup', id, prompt: 'Rename add.' } as never))).toContain(`Sent follow-up turn 2 to codex job ${id}`)
+    for (const release of w.held) release()
+    await w.clock.advance(100)
+    const last = w.stored.filter(s => s.key === `job:${id}`).at(-1)?.value as { turn: number; state: string }
+    expect(last.turn).toBe(2)
+    expect(last.state).toBe('starting')
+  })
+
   test('a turn that ended during a hot reload still wakes Claude', { options: {} }, async ($, on) => {
     const ended = { ...JOB, state: 'done', endedAt: JOB.turnStartedAt + 60_000, delivered: 0 }
     // This session's job, and one of another session's that is not this process's to report.
