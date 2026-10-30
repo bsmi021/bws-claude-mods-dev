@@ -481,6 +481,7 @@ describe('action bar', () => {
     const items = ['look', 'plan', 'build', 'test', 'ship'].map((content, i) => ({ content, status: i === 0 ? 'in_progress' : 'pending' }))
     await $.tool.call({ tool: 'mcp__ccd_turn__update_plan', items } as never)
     await $.tool.call({ tool: 'mcp__ccd_turn__update_plan', advance: true } as never)
+    await $.tool.call({ tool: 'TodoWrite', agentId: 'sub-1', todos: [{ content: 'a subagent step', status: 'pending' }] } as never) // not the bar's
     let ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
     expect((await ui.find({ key: 'meter-tasks' }))?.text).toMatch(/^tasks █+░+ 1\/5 +▸ plan$/)
     await ui.unmount()

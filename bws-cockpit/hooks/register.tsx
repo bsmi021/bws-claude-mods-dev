@@ -1454,10 +1454,11 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // The bar's task progress: the session's task list, once each call answered. A denied or failed call counts for nothing.
+  // The bar's task progress: the main loop's task list, once each call answered. A denied or failed call, or a
+  // subagent's own list, counts for nothing.
   on('tool.call', { tool: /^(TodoWrite|TaskCreate|TaskUpdate|mcp__ccd_turn__update_plan|mcp__ccd_turn__wrap_up)$/ }, async ($, e, next) => {
     const r = await next(e)
-    if (('deny' in r && r.deny !== undefined) || r.isError === true) return r
+    if (e.agentId !== undefined || ('deny' in r && r.deny !== undefined) || r.isError === true) return r
     await (async () => {
       const res = r.result as { task?: { id?: unknown } } | undefined
       const taskId = typeof res?.task?.id === 'string' ? res.task.id : undefined
