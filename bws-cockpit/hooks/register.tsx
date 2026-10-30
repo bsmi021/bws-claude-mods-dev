@@ -1091,20 +1091,22 @@ async function openForMod($: EngineInterface, tab: string) {
   if (!r.isPlaced) $.ui.toast(`Dashboard not shown (${r.reason}).`)
 }
 
-// Opened by the person (a command, a bar button): placed at any width. Focus is granted only to a fresh open over an
-// empty box, so an open pane is closed first, as /shelf did.
-async function openDash($: EngineInterface, tab: string | null) {
+// Opened by the person (a command, a bar button): placed at any width only while their command or press is still
+// running, so callers await it there. Focus is granted only to a fresh open over an empty box, so an open pane is
+// closed first, as /shelf did. A command's own text has left the box by then, so a command always asks for the keys.
+async function openDash($: EngineInterface, tab: string | null, isCommand = false) {
   await update($, dash, d => ({ tab: tab ?? d.tab, isClosedByPerson: false }))
-  const isEmpty = (await $.prompt.read()).text.trim() === ''
+  const isEmpty = isCommand || (await $.prompt.read()).text.trim() === ''
   const isOpen = (await $.ui.panes()).some(p => p.id === DASH)
   if (isEmpty && isOpen) await $.ui.close({ id: DASH })
   const r = await $.ui.open(isEmpty ? { id: DASH, title: DASH_TITLE, columns: DASH_COLUMNS, focus: true } : { id: DASH, title: DASH_TITLE, columns: DASH_COLUMNS })
   if (!r.isPlaced) $.ui.toast(`Dashboard not shown (${r.reason}). /assumptions, /shelf and /board print as text headless.`)
 }
 
-// After the command has returned, when the composer is clear.
-function openDashSoon($: EngineInterface, tab: string | null) {
-  $.clock.after(10, () => void openDash($, tab).catch(err => $.ui.toast(`Dashboard: could not open (${String(err)})`)))
+// From a dashboard command, awaited inside its hook: an open after the command has answered is unasked, and below
+// 144 columns (110 once asked) the engine leaves it undrawn after openDash has closed the one on screen.
+async function openDashFromCommand($: EngineInterface, tab: string | null) {
+  await openDash($, tab, true).catch(err => $.ui.toast(`Dashboard: could not open (${String(err)})`))
 }
 
 // News for the person: bring its tab up unless they closed the dashboard, or are using it (the tab counts tell them).
@@ -1173,7 +1175,9 @@ async function showBar($: EngineInterface, o: Options) {
 
 // The bar's dash button: open it, or close it as the person's close (news then only lights the bar).
 async function toggleDash($: EngineInterface) {
-  if ((await $.ui.panes()).some(p => p.id === DASH)) {
+  // Only a drawn pane is the person's to close: one opened unasked on a narrow window waits undrawn, and closing it
+  // would make the press do nothing they can see.
+  if ((await $.ui.panes()).some(p => p.id === DASH && p.isPlaced)) {
     await update($, dash, d => ({ ...d, isClosedByPerson: true }))
     await $.ui.close({ id: DASH })
     return
@@ -1688,7 +1692,7 @@ export const register: Register = (on, options) => {
     await update($, dash, (d): DashView => ({ ...d, tab: 'loop' }))
     const surfaces = await $.session.surfaces()
     if (surfaces.length === 0) return { text: loopText(lp, now) }
-    openDashSoon($, 'loop')
+    await openDashFromCommand($, 'loop')
     return { text: `Loop Watch: ${lp.name} ${loopState(lp).word}` }
   })
 
@@ -1701,7 +1705,7 @@ export const register: Register = (on, options) => {
     if ((await $.session.surfaces()).length === 0) return { text: await dashText($, o.mods) }
     await settle(refreshShelf($))
     if (tab === 'loop') await refreshLoops($, o)
-    openDashSoon($, tab)
+    await openDashFromCommand($, tab)
     return {}
   })
 
@@ -1719,7 +1723,7 @@ export const register: Register = (on, options) => {
         return { text: boardText(await switchRowsNow($, o.mods), await read($, switchboard)) }
       }
       void settle(refreshSwitchboard($))
-      openDashSoon($, 'mods')
+      await openDashFromCommand($, 'mods')
       return {}
     }
     if ('name' in c) return { text: await switchMod($, c.verb, c.name) }
@@ -1728,7 +1732,7 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'assumptions' }, async $ => {
     if ((await $.session.surfaces()).length === 0) return { text: assumptionsText(await read($, assumptions)) }
-    openDashSoon($, 'assumptions')
+    await openDashFromCommand($, 'assumptions')
     return {}
   })
 
@@ -1755,7 +1759,7 @@ export const register: Register = (on, options) => {
         return { text: ideas.length === 0 ? 'The shelf is empty.' : ideasText(ideas, await $.clock.now(), isAll, true) }
       }
       await refreshShelf($, isAll)
-      openDashSoon($, 'shelf')
+      await openDashFromCommand($, 'shelf')
       return {}
     } catch (err) {
       return { text: `Shelf: could not read (${String(err)})`, exitCode: 1 }
@@ -2479,7 +2483,7 @@ export const register: Register = (on, options) => {
     )
     // The badge is the dashboard's switch, so the bar needs no button per tab. No hotkey: its `2:` prefix would crowd it.
     const badge = (
-      <Button key="dash" plain onPress={() => void toggleDash($)}>
+      <Button key="dash" plain onPress={() => toggleDash($)}>
         <Text backgroundColor="claude" color="inverseText" bold>
           {' ◆ cockpit '}
         </Text>
@@ -2523,7 +2527,7 @@ export const register: Register = (on, options) => {
       ))
     // Signals: each one is the press that opens its dashboard tab, shown only while it has something to say.
     const loopBox = loopChip ? (
-      <Button key="loop" plain hotkey="4" onPress={() => void showTab($, 'loop')}>
+      <Button key="loop" plain hotkey="4" onPress={() => showTab($, 'loop')}>
         <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
           {loopChip.state === 'off' ? '○ ' : '● '}
         </Text>
@@ -2533,7 +2537,7 @@ export const register: Register = (on, options) => {
     // bws-board: shown once another session is live or an ask is open; warning while one waits on us.
     const boardChip =
       bs !== null && (bs.agents > 1 || bs.openAsks > 0) ? (
-        <Button key="tab-board" plain hotkey="b" onPress={() => void showTab($, 'board')}>
+        <Button key="tab-board" plain hotkey="b" onPress={() => showTab($, 'board')}>
           <Text color={bs.askedOfMe > 0 ? 'warning' : 'success'}>{'⇄ '}</Text>
           <Text color={bs.askedOfMe > 0 ? 'warning' : undefined} bold={bs.askedOfMe > 0}>
             {`${bs.agents} live · ${bs.openAsks} open${bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}`}
@@ -2543,7 +2547,7 @@ export const register: Register = (on, options) => {
     const toReview = unreviewed(list).length
     const asmChip =
       active(list).length > 0 ? (
-        <Button key="tab-assumptions" plain hotkey="a" onPress={() => void showTab($, 'assumptions')}>
+        <Button key="tab-assumptions" plain hotkey="a" onPress={() => showTab($, 'assumptions')}>
           <Text color={toReview > 0 ? 'warning' : 'success'}>{toReview > 0 ? '⚑ ' : '✓ '}</Text>
           <Text color={toReview > 0 ? 'warning' : undefined} dimColor={toReview === 0}>
             {toReview > 0 ? `${toReview} to review` : `${active(list).length} assumptions`}
@@ -2552,7 +2556,7 @@ export const register: Register = (on, options) => {
       ) : null
     const shelfChip =
       sv.count > 0 ? (
-        <Button key="tab-shelf" plain hotkey="s" onPress={() => void showTab($, 'shelf')}>
+        <Button key="tab-shelf" plain hotkey="s" onPress={() => showTab($, 'shelf')}>
           <Text color="remember">{`💡 ${sv.count} ${sv.count === 1 ? 'idea' : 'ideas'}`}</Text>
         </Button>
       ) : null
@@ -2616,7 +2620,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="row" gap={1}>
         {other ?? (e.props.modes.length > 0 ? <Text dimColor>{e.props.modes.join(' & ')}</Text> : null)}
-        <Button key="cockpit" plain dimColor label="◧ cockpit" onPress={() => void pressCockpit($)} />
+        <Button key="cockpit" plain dimColor label="◧ cockpit" onPress={() => pressCockpit($)} />
       </Box>
     )
   })

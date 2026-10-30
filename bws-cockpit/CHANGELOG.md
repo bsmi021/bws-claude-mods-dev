@@ -4,6 +4,8 @@
 - The action bar is redrawn: a `◆ cockpit` badge (opens or closes the dashboard), then progress bars in colour: `tasks` (this session's task list from TodoWrite, the Task tools or the Desktop task list, with the current step), `run` (the run folder's `[x]` against `[ ]` items) and `loop` (a live loop's units), green when full.
 - No more buttons that repeat the dashboard's tabs (`dash`, `asm`, `shelf`, `board`, `loop`): each signal (`⚑ 2 to review`, `💡 3 ideas`, `⇄ 2 live · 1 open`, the loop chip) is the press that opens its tab, and shows only when it has something to say. The `do` / `open` labels are gone; the cache clock gets a `⏱`. The `2` hotkey for the dashboard is gone too: use the badge, the footer `◧ cockpit` or `/dashboard`.
 
+- Fix: the dashboard no longer vanishes on a window under 144 columns (Desktop is often about 107). `/dashboard`, `/assumptions`, `/shelf`, `/switchboard` and `/loop-watch` open it inside the command, and the bar and footer buttons inside the press, so the engine counts the open as yours and places it at any width. Before, the open came after, was refused below 110 columns, and the visible pane had already been closed. A press over a dashboard that was opened but never drawn now opens it instead of closing it.
+
 ## 0.29.1
 - bws-codex gets a dashboard tab (Codex: its jobs and a side chat with Codex) and a switchboard card, and is in the default `modTabs`.
 

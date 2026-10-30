@@ -717,13 +717,33 @@ describe('dashboard', () => {
 
   test('news with the pane open but not in use switches its tab', async ($, on) => {
     const { clock, panes } = world(on, { shelf: seeded(), box: 'draft' })
-    await $.command.run({ command: 'shelf', args: '' } as never) // text in the box: opened without the keys
+    await withBar($)
+    const band = await $.ui.mount(BAND)
+    await band.press({ key: 'dash' }) // text in the box: opened without the keys
+    await band.unmount()
     await clock.advance(50)
     expect(panes[0]?.isFocused).toBe(false)
     await $.tool.call({ tool: TOOL, assumption: 'Use wttr.in' } as never)
     const ui = await $.ui.mount(PANE)
     expect((await ui.find({ key: 'tab-assumptions' }))?.props?.variant).toBe('primary')
     await ui.unmount()
+  })
+
+  test('a dashboard command opens it inside its own hook, with the keys (an open after it answers is unasked)', async ($, on) => {
+    const { seen } = world(on, { shelf: seeded() })
+    await $.command.run({ command: 'shelf', args: '' } as never)
+    expect(seen.opened).toEqual([{ id: 'dashboard', focus: true }])
+  })
+
+  test('the dash press over an undrawn dashboard opens it instead of closing what cannot be seen', async ($, on) => {
+    const { seen, panes } = world(on)
+    await withBar($)
+    panes.push({ id: 'dashboard', title: 'Dashboard', isShown: false, isFocused: false, isPlaced: false } as never)
+    const band = await $.ui.mount(BAND)
+    await band.press({ key: 'dash' })
+    await band.unmount()
+    expect(seen.opened.at(-1)).toEqual({ id: 'dashboard', focus: true })
+    expect(panes[0]?.isPlaced).toBe(true)
   })
 
   test('closed from the bar: news only lights the bar; an asked open brings it back', async ($, on) => {
