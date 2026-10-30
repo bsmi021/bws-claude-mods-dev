@@ -739,7 +739,7 @@ describe('dashboard', () => {
     await $.tool.call({ tool: TOOL, assumption: 'City from argv' } as never)
     expect(seen.opened.length).toBe(1) // not reopened
     band = await $.ui.mount(BAND)
-    const chip = await band.find({ type: 'Text', text: '⚑ 2' })
+    const chip = await band.find({ type: 'Text', text: '2 to review' })
     expect(chip?.props?.color).toBe('warning')
     await band.unmount()
     await $.command.run({ command: 'assumptions', args: '' } as never)
@@ -1205,27 +1205,27 @@ describe('bar buttons', () => {
     expect(seen.toasts.at(-1)).toBe('Enhance: bws-enhance is not loaded')
   })
 
-  test('tab buttons open the dashboard on their tab; dash opens, then closes', async ($, on) => {
+  test('the badge opens, then closes the dashboard; a signal opens it on its tab', async ($, on) => {
     const { seen, clock } = world(on, { shelf: seeded() })
     await withBar($)
     let band = await $.ui.mount(BAND)
-    await band.press({ key: 'tab-shelf' })
+    await band.press({ key: 'dash' })
     await clock.settle()
     await band.unmount()
     expect(seen.opened.map(o => o.id)).toEqual(['dashboard'])
-    const ui = await $.ui.mount(PANE)
-    expect((await ui.find({ key: 'tab-shelf' }))?.props?.variant).toBe('primary')
-    await ui.unmount()
     band = await $.ui.mount(BAND)
     await band.press({ key: 'dash' })
     await clock.settle()
     await band.unmount()
     expect(seen.closed.at(-1)).toBe('dashboard')
     band = await $.ui.mount(BAND)
-    await band.press({ key: 'dash' })
+    await band.press({ key: 'tab-shelf' }) // the ideas signal
     await clock.settle()
     await band.unmount()
     expect(seen.opened.length).toBe(2)
+    const ui = await $.ui.mount(PANE)
+    expect((await ui.find({ key: 'tab-shelf' }))?.props?.variant).toBe('primary')
+    await ui.unmount()
   })
 })
 

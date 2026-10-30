@@ -39,9 +39,10 @@ The action bar has buttons. Digits answer from an empty prompt box; letters need
 | `h` | Write a handoff. |
 | `i` | Shelve the prompt box's draft as an idea and clear the box. |
 | `e` | Run [bws-enhance](../bws-enhance/README.md)'s `/enhance` on the draft (queued until the turn ends if Claude is busy). |
-| `2` | Open or close the dashboard. |
-| `a`, `s`, `b`, `4` | Show the Assumptions, Shelf, Board (with bws-board) or Loop (with a loop) tab. |
+| `a`, `s`, `b`, `4` | Press a signal: show the Assumptions, Shelf, Board or Loop tab (each only while its signal shows). |
 | `3` | Hide the bar. |
+
+The `◆ cockpit` badge at the bar's left opens or closes the dashboard.
 
 In the dashboard, `1` to `9` switch to the first nine tabs and `Tab` then `Enter` reach the rest. Each tab has its own keys, shown on its buttons.
 
@@ -60,7 +61,7 @@ One pane, `Dashboard`, docked right of the transcript in fullscreen from 110 col
   - A loop alert (needs you, stalled, driver dead, all done): Loop.
   - A session starts with unsent assumptions or open ideas for the project: that tab. With nothing waiting it opens on Assumptions (`dashboardOnStart`). On Desktop, which starts the session with your first message, it opens on that message. `bws-cockpit-start.log` beside the shelf file traces each start-up open. Headless sessions open nothing, and `/clear`, `/resume` and `/branch` do not reopen it.
   - It opens or switches only while you are not using the pane. Opened unasked, it needs a terminal 144 columns wide; one you opened yourself needs 110.
-  - If you close it (its mark, `ctrl+x x`, or `2` on the bar), it stays closed for news; the bar's counts still show. Opening it again clears that.
+  - If you close it (its mark, `ctrl+x x`, or the bar's badge), it stays closed for news; the bar's counts still show. Opening it again clears that.
 - **Headless:** `claude -p "/dashboard"` prints every tab as text.
 
 ### Mods tab (the switchboard)
@@ -73,9 +74,18 @@ One pane, `Dashboard`, docked right of the transcript in fullscreen from 110 col
 ### Action bar
 Above the prompt, in the terminal and in Desktop. Three rows, each wrapping when narrow:
 
-- **Status:** the run folder with its open count (`- [ ]` items in PLAN.md and TASKS.md), devices that are up or in trouble (Unreal Editor and its unreal-mcp port, Unity, Blender, adb, VRAM used and total, warning on pressure), the loop state while a loop is live, and the cache clock.
-- **Signals** (only when there is one): the bws-board chip (`board 3 · 2 open · 1 for you`), `N assumptions` unsent, `N ideas` open.
-- **Actions:** the buttons above, grouped `do`, `open`, then hide.
+```text
+ ◆ cockpit   bar-redesign  ⏱ cache 57m  ● UE  ● VRAM 5.8/8.0 GB
+tasks █████████░░░ 3/4  ▸ Write tests   run ███████░░░░░ 3/5
+⚑ 2 to review  💡 3 ideas  ⇄ 2 live · 1 open  │  h: handoff i: idea e: enhance 1: resume 3: hide
+```
+
+- **Status:** the badge (opens the dashboard), the run folder, the cache clock, devices that are up or in trouble (Unreal Editor and its unreal-mcp port, Unity, Blender, adb, VRAM used and total, warning on pressure) and the loop state while a loop is live (press it for the Loop tab).
+- **Progress** (only when there is something to count), each bar in its own colour and green when full:
+  - `tasks`: this session's task list (TodoWrite, the Task tools, or the Desktop app's task list, checked off by its wrap-up), with the current step. `/clear` empties it.
+  - `run`: the run folder's checklist, `- [x]` against `- [ ]` items in PLAN.md and TASKS.md.
+  - `loop`: a live loop's units done.
+- **Signals and actions:** each signal shows only when it has something to say and is the press that opens its tab: `⚑ N to review` (or `✓ N assumptions`), `💡 N ideas`, the bws-board chip (`⇄ 3 live · 2 open · 1 for you`). Then the actions.
 
 Other details:
 - The guard's last action shows on a row under the bar for ten minutes.

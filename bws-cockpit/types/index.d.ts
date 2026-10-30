@@ -3,6 +3,7 @@ export type CockpitRun = {
   next?: string
   finish?: string
   open: number
+  done: number // checked items, so the bar can draw open + done
 }
 
 // good: up and usable; warn: needs attention; bad: down; off: not running.
@@ -203,6 +204,8 @@ declare module 'claude-code' {
       cacheBar: { text: string; state: 'fresh' | 'low' | 'expired' } | null
       // The TTL Anthropic last wrote the main thread's cache with, read from the transcript (bin/ttl.py), and when
       cacheTtl: { ttl: '1h' | '5m'; at: number } | null
+      // The session's task list (hooks/tasks.ts TaskList) from TodoWrite, the Task tools and the Desktop plan
+      taskList: { startedAt: number; items: { id: string; text: string; status: 'pending' | 'in_progress' | 'completed' }[] } | null
       // The Mods tab (hooks/switchboard.ts Board): installed bws mods as `claude plugin list` last said (null until it
       // answered), tabs the person hid, mods switched since the last /reload-plugins, a note, and a switch in flight
       switchboard: {

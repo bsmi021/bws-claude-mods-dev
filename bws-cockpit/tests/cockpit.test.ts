@@ -370,14 +370,18 @@ describe('cockpit', () => {
         props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 120, scroll: { offset: 0, bodyRows: 8 }, view: {} },
       })
       expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /^ 2 open$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /cockpit/ })).toBeDefined() // the badge
+      expect((await ui.find({ key: 'meter-run' }))?.text).toMatch(/^run █+░+ 1\/3$/) // 1 of 3 checked
       for (const label of ['Blender', 'VRAM']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeDefined()
       // Off devices say nothing.
       for (const label of ['UE', 'Unity', 'adb']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeUndefined()
       expect(await ui.find({ type: 'Text', text: /1\.0\/8\.0 GB/ })).toBeDefined()
-      const keys: [string, string][] = [['resume', '1'], ['dash', '2'], ['tab-assumptions', 'a'], ['tab-shelf', 's'], ['handoff', 'h'], ['idea', 'i'], ['enhance', 'e'], ['hide', '3']]
+      expect(await ui.find({ key: 'dash' })).toBeDefined() // the badge
+      const keys: [string, string][] = [['resume', '1'], ['handoff', 'h'], ['idea', 'i'], ['enhance', 'e'], ['hide', '3']]
       for (const [key, hotkey] of keys) expect((await ui.find({ key }))?.props?.hotkey).toBe(hotkey)
-      expect(await ui.find({ key: 'tab-board' })).toBeUndefined() // bws-board not loaded
+      // No button per tab: the signals open their tabs, and there is nothing to signal here.
+      for (const key of ['tab-assumptions', 'tab-shelf', 'tab-board']) expect(await ui.find({ key })).toBeUndefined()
+      expect(await ui.find({ key: 'meter-tasks' })).toBeUndefined() // no task list yet
       expect(await ui.find({ key: 'loop' })).toBeUndefined() // no loop here
       expect(await ui.find({ key: 'refresh' })).toBeUndefined()
       expect(await ui.find({ key: 'tile-run' })).toBeUndefined()
@@ -404,23 +408,23 @@ describe('action bar', () => {
     await $.command.run({ command: 'cockpit', args: '' } as never)
     const mount = async (cols: number) => $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: cols } })
     let ui = await mount(120)
-    expect(await ui.find({ key: 'chip-board' })).toBeUndefined() // bws-board not loaded
+    expect(await ui.find({ key: 'tab-board' })).toBeUndefined() // bws-board not loaded
     await ui.unmount()
     summary.value = { agents: 1, openAsks: 0, askedOfMe: 0 }
     ui = await mount(120)
-    expect(await ui.find({ key: 'chip-board' })).toBeUndefined() // alone, nothing open
-    expect((await ui.find({ key: 'tab-board' }))?.props?.hotkey).toBe('b') // loaded: the tab button shows
+    expect(await ui.find({ key: 'tab-board' })).toBeUndefined() // alone, nothing open: nothing to say
     await ui.unmount()
     summary.value = { agents: 3, openAsks: 2, askedOfMe: 1 }
     ui = await mount(120)
-    expect(await ui.find({ type: 'Text', text: /^board 3 · 2 open · 1 for you$/ })).toBeDefined()
-    const chip = await ui.find({ key: 'chip-board' })
+    expect(await ui.find({ type: 'Text', text: /^3 live · 2 open · 1 for you$/ })).toBeDefined()
+    const chip = await ui.find({ key: 'tab-board' })
+    expect(chip?.props?.hotkey).toBe('b') // the signal is the press that opens the Board tab
     const dot = chip?.children[0] as { props?: { color?: string } } | undefined
     expect(dot?.props?.color).toBe('warning')
     await ui.unmount()
     summary.value = { agents: 2, openAsks: 0, askedOfMe: 0 }
     ui = await mount(89)
-    expect(await ui.find({ type: 'Text', text: /^board 2 · 0 open$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^2 live · 0 open$/ })).toBeDefined()
     await ui.unmount()
   })
 
@@ -455,19 +459,34 @@ describe('action bar', () => {
     }
   })
 
-  test('status row, then the actions grouped do / open / hide; rows wrap when narrow, on desktop too', async ($, on) => {
+  test('status row, progress row, then the actions; rows wrap when narrow, on desktop too', async ($, on) => {
     world(on, { ...RUN_WORLD, procs: '' })
     await $.command.run({ command: 'cockpit', args: '' } as never)
     const ui = await $.ui.mount({ ...BAND, surface: 'desktop', props: { ...BAND.props, bodyColumns: 60 } })
-    for (const key of ['bar', 'actions']) {
+    for (const key of ['bar', 'meters', 'actions']) {
       const row = await ui.find({ key })
       expect(row?.props?.flexDirection).toBe('row')
       expect(row?.props?.flexWrap).toBe('wrap')
     }
-    expect(await ui.find({ key: 'signals' })).toBeUndefined() // nothing to signal here
     expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
     const actions = await ui.find({ key: 'actions' })
-    expect(actions?.text).toMatch(/^do.*resume.*handoff.*idea.*enhance.*open.*dash.*asm.*shelf.*hide$/)
+    expect(actions?.text).toMatch(/^handoff.*idea.*enhance.*resume.*hide$/) // nothing to signal here
+    expect(actions?.text).not.toMatch(/dash|asm|shelf|board|loop/)
+    await ui.unmount()
+  })
+
+  test('the task list draws a progress bar: update_plan, advance, then wrap_up fills it', async ($, on) => {
+    world(on, { ...RUN_WORLD, procs: '' })
+    await $.command.run({ command: 'cockpit', args: '' } as never)
+    const items = ['look', 'plan', 'build', 'test', 'ship'].map((content, i) => ({ content, status: i === 0 ? 'in_progress' : 'pending' }))
+    await $.tool.call({ tool: 'mcp__ccd_turn__update_plan', items } as never)
+    await $.tool.call({ tool: 'mcp__ccd_turn__update_plan', advance: true } as never)
+    let ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
+    expect((await ui.find({ key: 'meter-tasks' }))?.text).toMatch(/^tasks █+░+ 1\/5 +▸ plan$/)
+    await ui.unmount()
+    await $.tool.call({ tool: 'mcp__ccd_turn__wrap_up', recap: 'done' } as never)
+    ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
+    expect((await ui.find({ key: 'meter-tasks' }))?.text).toMatch(/^tasks █+ 5\/5 ✓$/)
     await ui.unmount()
   })
 
@@ -480,7 +499,7 @@ describe('action bar', () => {
     const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 120 } })
     const cut = await ui.find({ type: 'Text', text: /^a-very-long/ })
     expect(cut?.text.endsWith('...')).toBe(true)
-    expect((cut?.text.length ?? 99) <= 28).toBe(true)
+    expect((cut?.text.length ?? 99) <= 32).toBe(true)
     await ui.unmount()
   })
 

@@ -4,6 +4,7 @@ import type { Color, EngineInterface, Register, RenderChildren } from 'claude-co
 import type { BoardAskCard, BoardSessionCard, CockpitChip, CockpitDevices, CockpitRun, CockpitState } from '../types'
 import {
   LOW_VRAM_CVARS,
+  countDone,
   countOpen,
   isBlender,
   isUeGui,
@@ -95,6 +96,7 @@ import {
 import type { By, Idea, Shelf, Status } from './shelf'
 import { noHandoffText, parseHandoff, pickHandoff, pickupPrompt, pickupText } from './pickup'
 import type { HandoffFile } from './pickup'
+import { barCells, taskProgress, taskSeen } from './tasks'
 
 const dialectOf = (tool: string): Dialect => (tool === 'PowerShell' ? 'powershell' : 'bash')
 
@@ -152,6 +154,8 @@ const cacheClock = atom({ plugin: 'bws-cockpit', key: 'cacheClock' } as const, n
 const cacheBar = atom({ plugin: 'bws-cockpit', key: 'cacheBar' } as const, null)
 // The TTL the transcript says Anthropic wrote the cache with (bin/ttl.py); null until read, then the option is the fallback.
 const cacheTtl = atom({ plugin: 'bws-cockpit', key: 'cacheTtl' } as const, null)
+// The session's task list (hooks/tasks.ts), for the bar's progress row; keyed by the session's start, so /clear empties it.
+const taskList = atom({ plugin: 'bws-cockpit', key: 'taskList' } as const, null)
 
 // ---------- Dashboard: one pane with its own tabs (Assumptions, Shelf, Board, Loop while one is live) ----------
 
@@ -351,6 +355,7 @@ async function findRun($: EngineInterface): Promise<CockpitRun | null> {
     next: parseNext(r.runlog) ?? parseNext(r.tasks) ?? parseNext(r.plan),
     finish: parseFinish(r.plan) ?? parseFinish(r.runlog),
     open: countOpen(r.plan) + countOpen(r.tasks),
+    done: countDone(r.plan) + countDone(r.tasks),
   }
 }
 
@@ -1449,6 +1454,19 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
+  // The bar's task progress: the session's task list, once each call answered. A denied or failed call counts for nothing.
+  on('tool.call', { tool: /^(TodoWrite|TaskCreate|TaskUpdate|mcp__ccd_turn__update_plan|mcp__ccd_turn__wrap_up)$/ }, async ($, e, next) => {
+    const r = await next(e)
+    if (('deny' in r && r.deny !== undefined) || r.isError === true) return r
+    await (async () => {
+      const res = r.result as { task?: { id?: unknown } } | undefined
+      const taskId = typeof res?.task?.id === 'string' ? res.task.id : undefined
+      const startedAt = (await settle($.session.usage()))?.startedAt ?? 0
+      await update($, taskList, t => taskSeen(t !== null && t.startedAt === startedAt ? t : { startedAt, items: [] }, e.tool, e as unknown as Record<string, unknown>, taskId))
+    })().catch(err => $.ui.log(`bws-cockpit: task list not noted (${String(err)})`, { to: 'debug' }))
+    return r
+  })
+
   on('classic.Stop', async ($, e, next) => {
     // The cache clock's TTL, from the transcript this Stop names; in the background, before the finish line's checks.
     void settle(detectTtl($, o, e.transcript_path ?? ''))
@@ -2441,21 +2459,57 @@ export const register: Register = (on, options) => {
     const cacheBox =
       cache !== null ? (
         <Box key="chip-cache" flexDirection="row">
-          <Text color={cache.state === 'fresh' ? undefined : 'warning'}>{cache.text}</Text>
+          <Text color={cache.state === 'fresh' ? 'success' : 'warning'}>{'⏱ '}</Text>
+          <Text color={cache.state === 'fresh' ? undefined : 'warning'} dimColor={cache.state === 'fresh'}>
+            {cache.text}
+          </Text>
         </Box>
       ) : null
 
     const runName = run ? run.folder.replace(/^runs\//, '').replace(/^\d{4}-\d{2}-\d{2}-/, '') : ''
     const runChip = run ? (
-      <Box key="chip-run" flexDirection="row">
-        <Text bold>{fit(runName, Math.max(12, Math.min(28, width - 30)))}</Text>
-        <Text color={run.open > 0 ? 'warning' : 'success'}>{run.open > 0 ? ` ${run.open} open` : ' done'}</Text>
-      </Box>
+      <Text key="chip-run" color="suggestion" bold>
+        {fit(runName, Math.max(12, Math.min(32, width - 30)))}
+      </Text>
     ) : (
       <Text key="chip-run" dimColor>
         no run
       </Text>
     )
+    // The badge is the dashboard's switch, so the bar needs no button per tab. No hotkey: its `2:` prefix would crowd it.
+    const badge = (
+      <Button key="dash" plain onPress={() => void toggleDash($)}>
+        <Text backgroundColor="claude" color="inverseText" bold>
+          {' ◆ cockpit '}
+        </Text>
+      </Button>
+    )
+
+    // Progress: the session's task list, the run folder's checklist and a live loop's units, each a bar of its own tint.
+    const tl = await read($, taskList)
+    const startedAt = tl !== null ? (await settle($.session.usage()))?.startedAt : undefined
+    const tp = taskProgress(tl !== null && (startedAt === undefined || tl.startedAt === startedAt) ? tl.items : [])
+    const barW = width >= 110 ? 12 : width >= 70 ? 9 : 6
+    const meter = (key: string, label: string, done: number, total: number, tint: Color, tail?: string) => {
+      const { fill, empty } = barCells(done, total, barW)
+      const isFull = done >= total
+      return (
+        <Box key={key} flexDirection="row">
+          <Text color={tint} bold>{`${label} `}</Text>
+          <Text color={isFull ? 'success' : tint}>{'█'.repeat(fill)}</Text>
+          <Text dimColor>{'░'.repeat(empty)}</Text>
+          <Text color={isFull ? 'success' : undefined} bold={isFull}>{` ${done}/${total}${isFull ? ' ✓' : ''}`}</Text>
+          {tail ? <Text dimColor>{`  ▸ ${fit(tail, Math.max(14, Math.min(44, width - 24 - barW)))}`}</Text> : null}
+        </Box>
+      )
+    }
+    const runTotal = run ? run.open + run.done : 0
+    const unitsDone = lp ? lp.units.filter(u => u.status === 'DONE').length : 0
+    const meters = [
+      tp.total > 0 ? meter('meter-tasks', 'tasks', tp.done, tp.total, 'claude', tp.current ?? undefined) : null,
+      run && runTotal > 0 ? meter('meter-run', 'run', run.done, runTotal, 'suggestion') : null,
+      lp && loopChip && lp.units.length > 0 ? meter('meter-loop', 'loop', unitsDone, lp.units.length, 'merged') : null,
+    ].filter(m => m !== null)
     // Devices that are up or in trouble; the ones off say nothing.
     const deviceChips = (v.devices?.chips ?? [])
       .filter(c => c.state !== 'off')
@@ -2466,41 +2520,44 @@ export const register: Register = (on, options) => {
           {c.detail ? <Text dimColor>{` ${c.detail}`}</Text> : null}
         </Box>
       ))
+    // Signals: each one is the press that opens its dashboard tab, shown only while it has something to say.
     const loopBox = loopChip ? (
-      <Box key="chip-loop" flexDirection="row">
+      <Button key="loop" plain hotkey="4" onPress={() => void showTab($, 'loop')}>
         <Text color={STATE_COLOR[loopChip.state]} dimColor={loopChip.state === 'off'}>
           {loopChip.state === 'off' ? '○ ' : '● '}
         </Text>
         <Text dimColor={loopChip.state === 'off'}>{`loop ${loopChip.word}`}</Text>
-      </Box>
+      </Button>
     ) : null
     // bws-board: shown once another session is live or an ask is open; warning while one waits on us.
     const boardChip =
       bs !== null && (bs.agents > 1 || bs.openAsks > 0) ? (
-        <Box key="chip-board" flexDirection="row">
-          <Text color={bs.askedOfMe > 0 ? 'warning' : 'success'}>{'● '}</Text>
-          <Text dimColor={bs.askedOfMe === 0}>
-            {`board ${bs.agents} · ${bs.openAsks} open${bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}`}
+        <Button key="tab-board" plain hotkey="b" onPress={() => void showTab($, 'board')}>
+          <Text color={bs.askedOfMe > 0 ? 'warning' : 'success'}>{'⇄ '}</Text>
+          <Text color={bs.askedOfMe > 0 ? 'warning' : undefined} bold={bs.askedOfMe > 0}>
+            {`${bs.agents} live · ${bs.openAsks} open${bs.askedOfMe > 0 ? ` · ${bs.askedOfMe} for you` : ''}`}
           </Text>
-        </Box>
+        </Button>
       ) : null
     const toReview = unreviewed(list).length
     const asmChip =
       active(list).length > 0 ? (
-        <Text key="chip-assumptions" color={toReview > 0 ? 'warning' : undefined} dimColor={toReview === 0}>
-          {`⚑ ${active(list).length} assumptions`}
-        </Text>
+        <Button key="tab-assumptions" plain hotkey="a" onPress={() => void showTab($, 'assumptions')}>
+          <Text color={toReview > 0 ? 'warning' : 'success'}>{toReview > 0 ? '⚑ ' : '✓ '}</Text>
+          <Text color={toReview > 0 ? 'warning' : undefined} dimColor={toReview === 0}>
+            {toReview > 0 ? `${toReview} to review` : `${active(list).length} assumptions`}
+          </Text>
+        </Button>
       ) : null
     const shelfChip =
       sv.count > 0 ? (
-        <Text key="chip-shelf" dimColor>
-          {`💡 ${sv.count} ${sv.count === 1 ? 'idea' : 'ideas'}`}
-        </Text>
+        <Button key="tab-shelf" plain hotkey="s" onPress={() => void showTab($, 'shelf')}>
+          <Text color="remember">{`💡 ${sv.count} ${sv.count === 1 ? 'idea' : 'ideas'}`}</Text>
+        </Button>
       ) : null
 
-    // Actions in three groups, each led by a dim word: do (act on this session), open (a dashboard tab), and hide.
+    // Actions on this session; Handoff lights once the context passes the nudge.
     const doButtons = [
-      run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null,
       isHandoffDue ? (
         <Button key="handoff" variant="primary" label="handoff" hotkey="h" onPress={() => void pressHandoff($)} />
       ) : (
@@ -2508,15 +2565,10 @@ export const register: Register = (on, options) => {
       ),
       <Button key="idea" plain dimColor label="idea" hotkey="i" onPress={() => void pressIdea($)} />,
       <Button key="enhance" plain dimColor label="enhance" hotkey="e" onPress={() => void pressEnhance($)} />,
+      run ? <Button key="resume" plain dimColor label="resume" hotkey="1" onPress={() => void resume($)} /> : null,
+      <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => void hideBar($)} />,
     ]
-    const openButtons = [
-      <Button key="dash" plain dimColor label="dash" hotkey="2" onPress={() => void toggleDash($)} />,
-      <Button key="tab-assumptions" plain dimColor label="asm" hotkey="a" onPress={() => void showTab($, 'assumptions')} />,
-      <Button key="tab-shelf" plain dimColor label="shelf" hotkey="s" onPress={() => void showTab($, 'shelf')} />,
-      bs !== null ? <Button key="tab-board" plain dimColor label="board" hotkey="b" onPress={() => void showTab($, 'board')} /> : null,
-      lp ? <Button key="loop" plain dimColor label="loop" hotkey="4" onPress={() => void showTab($, 'loop')} /> : null,
-    ]
-    const hasSignals = boardChip !== null || asmChip !== null || shelfChip !== null
+    const signals = [asmChip, shelfChip, boardChip].filter(s => s !== null)
     const guardRow = showGuard ? (
       <Box flexDirection="row">
         <Text color="warning">{'⚑ '}</Text>
@@ -2529,25 +2581,23 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         <Box key="bar" flexDirection="row" columnGap={2} flexWrap="wrap">
+          {badge}
           {runChip}
+          {cacheBox}
           {deviceChips}
           {loopBox}
-          {cacheBox}
         </Box>
-        {hasSignals ? (
-          <Box key="signals" flexDirection="row" columnGap={2} flexWrap="wrap">
-            {boardChip}
-            {asmChip}
-            {shelfChip}
+        {meters.length > 0 ? (
+          <Box key="meters" flexDirection="row" columnGap={3} flexWrap="wrap">
+            {meters}
           </Box>
         ) : null}
-        <Box key="actions" flexDirection="row" columnGap={1} flexWrap="wrap">
-          <Text dimColor>do</Text>
-          {doButtons}
-          <Text dimColor>{'  open'}</Text>
-          {openButtons}
-          <Text dimColor>{'  '}</Text>
-          <Button key="hide" plain dimColor label="hide" hotkey="3" onPress={() => void hideBar($)} />
+        <Box key="actions" flexDirection="row" columnGap={2} flexWrap="wrap">
+          {signals}
+          {signals.length > 0 ? <Text dimColor>│</Text> : null}
+          <Box key="do" flexDirection="row" columnGap={1} flexWrap="wrap">
+            {doButtons}
+          </Box>
         </Box>
         {guardRow}
         {belowBox}

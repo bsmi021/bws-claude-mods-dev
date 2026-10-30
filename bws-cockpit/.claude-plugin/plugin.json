@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.29.1",
-  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop and Mods tabs, the Mods tab a switchboard that turns each bws mod on or off and hides or shows its tab) with a one-row action bar above the prompt, Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
+  "version": "0.30.0",
+  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop and Mods tabs, the Mods tab a switchboard that turns each bws mod on or off and hides or shows its tab) with a colour action bar above the prompt (progress bars for the session's tasks, the run checklist and a live loop), Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
   "author": {
     "name": "bsmi021",
     "url": "https://github.com/bsmi021"

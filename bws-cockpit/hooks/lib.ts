@@ -16,6 +16,7 @@ export type RunInfo = {
   next?: string
   finish?: string
   open: number
+  done: number
 }
 
 export const LOW_VRAM_CVARS: readonly string[] = [
@@ -92,6 +93,7 @@ export const isBlender = (p: Proc) => p.name === 'blender.exe'
 // ---------- run folder ----------
 
 export const countOpen = (text: string) => (text.match(/^\s*[-*]\s+\[ \]/gm) ?? []).length
+export const countDone = (text: string) => (text.match(/^\s*[-*]\s+\[[xX]\]/gm) ?? []).length
 
 const clean = (s: string) => s.replace(/\*\*/g, '').replace(/`/g, '').trim()
 
