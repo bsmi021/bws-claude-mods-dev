@@ -3,13 +3,15 @@
     python tools/publish.py                                    # verify: publish tip matches main for every published mod
     python tools/publish.py bws-board bws-cockpit --version 1.8.0          # dry run a release (default)
     python tools/publish.py bws-board bws-cockpit --version 1.8.0 --push   # the same, then commit, push, tag, release
+    python tools/publish.py --version 1.8.1                    # a release that only removes retired mods
 
 A release, in order (any failure stops it and removes the scratch worktree):
   1. each named mod's plugin.json version on main is above its version on the publish tip, and its CHANGELOG.md
      has a `## <version>` entry; the marketplace version on main equals --version and is above the publish tip's;
      a published mod that changed on main but is not named stops the release
   2. a scratch worktree on `publish` gets `git restore --source=<main> --staged --worktree` of the named mod
-     folders and .claude-plugin/marketplace.json (restore, not checkout, so files main dropped go too)
+     folders and .claude-plugin/marketplace.json (restore, not checkout, so files main dropped go too); any plugin
+     folder on publish that main's marketplace no longer lists is deleted with `git rm` (a retired mod)
   3. the restored paths match main exactly: `git ls-files` = `git ls-tree -r <main>`, `git diff --cached --quiet <main>`
   4. privacy scan of every line the release adds vs the publish tip (names, project and game names, serials,
      Windows user paths, keys); any hit stops the release (--allow REGEX waives a reviewed line)
@@ -18,8 +20,8 @@ A release, in order (any failure stops it and removes the scratch worktree):
   6. the commit, push, tag and `gh release create` commands are printed; --push runs them
 
 Never pushes main to `mods`: the publish branch goes to mods' main by an explicit refspec. Verify mode (no mods
-named) restores every published mod folder and the marketplace and reports whether publish is current; it
-needs no version bump and skips the gate.
+named, no --version) restores every published mod folder and the marketplace and reports whether publish is
+current, counting a retired mod still on publish as behind; it needs no version bump and skips the gate.
 """
 import argparse
 import json
@@ -88,6 +90,13 @@ def market_mods(m: dict) -> list[str]:
     return [p["source"].removeprefix("./").rstrip("/") for p in m.get("plugins", [])]
 
 
+def retired_mods(root: Path, ref: str, listed: list[str]) -> list[str]:
+    """Plugin folders in ref's tree (`<dir>/.claude-plugin/plugin.json`) that the marketplace no longer lists."""
+    files = git(root, "ls-tree", "-r", "-z", "--name-only", ref).stdout.split("\0")
+    found = (m.group(1) for m in (re.fullmatch(r"([^/]+)/\.claude-plugin/plugin\.json", f) for f in files) if m)
+    return sorted(set(found) - set(listed))
+
+
 def changelog_entry(text: str, version: str) -> str | None:
     """The body under `## <version>` (up to the next `## `), or None when there is no such heading."""
     m = re.search(rf"^##\s+v?{re.escape(version)}\b[^\n]*\n(.*?)(?=^##\s|\Z)", text, re.M | re.S)
@@ -144,11 +153,13 @@ def copy_types(root: Path, wt: Path, mods: list[str]) -> list[str]:
     return notes
 
 
-def release_notes(version: str, rows: list[tuple[str, str, str]]) -> str:
-    out = [f"| Mod | Version |", "|---|---|"]
+def release_notes(version: str, rows: list[tuple[str, str, str]], retired: list[str] = []) -> str:
+    out = [f"| Mod | Version |", "|---|---|"] if rows else []
     out += [f"| {mod} | {ver} |" for mod, ver, _ in rows]
     for mod, ver, entry in rows:
         out += ["", f"## {mod} {ver}", entry or "(no CHANGELOG text)"]
+    if retired:
+        out += ["", "## Removed", *[f"- {mod}: no longer in the marketplace. `claude plugin uninstall {mod}@bws-mods`" for mod in retired]]
     first = rows[0][0] if rows else "bws-cockpit"
     out += ["", "## Update", "```bash", "claude plugin marketplace update bws-mods",
             f"claude plugin update {first}@bws-mods", "```",
@@ -170,12 +181,13 @@ def run_release(a: argparse.Namespace) -> int:
     pub_ver = str(pub_market.get("metadata", {}).get("version", ""))
     changed = [m for m in published if tree_differs(root, pub_sha, main_sha, m)]
     market_changed = tree_differs(root, pub_sha, main_sha, MARKET)
+    retired = retired_mods(root, pub_sha, published)
     print(f"source {a.source} {main_sha[:7]} (marketplace {main_ver}), {a.branch} tip {pub_sha[:7]} (marketplace {pub_ver})")
 
-    verify = not a.mods
+    verify = not a.mods and not a.version
     if verify:
-        if changed or market_changed:
-            what = changed + ([MARKET] if market_changed else [])
+        if changed or market_changed or retired:
+            what = changed + [f"{m} (retired)" for m in retired] + ([MARKET] if market_changed else [])
             print(f"publish is behind {a.source}: {', '.join(what)}")
             print("name the mods to release and pass --version")
             return 1
@@ -184,6 +196,8 @@ def run_release(a: argparse.Namespace) -> int:
         if not a.version:
             raise Stop("--version is required when releasing mods")
         mods = list(dict.fromkeys(a.mods))
+        if not mods and not retired:
+            raise Stop("no mods named and none to retire")
         unknown = [m for m in mods if m not in published]
         if unknown:
             raise Stop(f"not in {a.source}'s marketplace: {', '.join(unknown)}")
@@ -225,6 +239,9 @@ def run_release(a: argparse.Namespace) -> int:
     keep = a.keep_worktree
     try:
         git(wt, "restore", f"--source={main_sha}", "--staged", "--worktree", "--", *paths)
+        if retired:
+            git(wt, "rm", "-r", "-q", "--", *retired)
+            print(f"removing from {a.branch} (not in {a.source}'s marketplace): {', '.join(retired)}")
         have = sorted(git(wt, "ls-files", "-z", "--", *paths).stdout.split("\0"))
         want = sorted(git(wt, "ls-tree", "-r", "-z", "--name-only", main_sha, "--", *paths).stdout.split("\0"))
         if have != want:
@@ -233,7 +250,7 @@ def run_release(a: argparse.Namespace) -> int:
         if git(wt, "diff", "--cached", "--quiet", main_sha, "--", *paths, check=False).returncode != 0:
             raise Stop(f"restored content differs from {a.source}")
         print(f"ok   {a.branch} worktree matches {a.source} for {len(mods)} mod folder(s) and the marketplace")
-        status = git(wt, "diff", "--cached", "--name-status", pub_sha, "--", *paths).stdout.strip()
+        status = git(wt, "diff", "--cached", "--name-status", pub_sha, "--", *paths, *retired).stdout.strip()
         if verify:
             if status:
                 raise Stop(f"unexpected diff vs the {a.branch} tip:\n{status}")
@@ -268,9 +285,9 @@ def run_release(a: argparse.Namespace) -> int:
             ver = manifest_version(root, main_sha, mod) or ""
             rows.append((mod, ver, changelog_entry(show(root, main_sha, f"{mod}/CHANGELOG.md") or "", ver) or ""))
         notes = Path(tempfile.mkdtemp(prefix="bws-publish-notes-")) / f"v{a.version}.md"
-        notes.write_text(Path(a.notes).read_text(encoding="utf-8") if a.notes else release_notes(a.version, rows),
+        notes.write_text(Path(a.notes).read_text(encoding="utf-8") if a.notes else release_notes(a.version, rows, retired),
                          encoding="utf-8")
-        message = a.message or f"bws-mods {a.version}: " + ", ".join(f"{m} {v}" for m, v, _ in rows)
+        message = a.message or f"bws-mods {a.version}: " + ", ".join([f"{m} {v}" for m, v, _ in rows] + [f"remove {m}" for m in retired])
         tag = f"v{a.version}"
         cmds: list[list[str]] = []
         if a.source == "main" and git(root, "merge-base", "--is-ancestor", main_sha, f"{a.private}/main",

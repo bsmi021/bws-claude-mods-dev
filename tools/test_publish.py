@@ -30,8 +30,8 @@ def mod(root: Path, name: str, version: str, log: str | None = None) -> None:
     write(root / name / "CHANGELOG.md", f"# Changelog\n\n## {version}\n- {log or 'First.'}\n")
 
 
-def market(root: Path, version: str) -> None:
-    plugins = [{"name": n, "source": f"./{n}"} for n in ("bws-a", "bws-b")]
+def market(root: Path, version: str, names: tuple[str, ...] = ("bws-a", "bws-b")) -> None:
+    plugins = [{"name": n, "source": f"./{n}"} for n in names]
     write(root / ".claude-plugin" / "marketplace.json", json.dumps({"name": "m", "plugins": plugins, "metadata": {"version": version}}, indent=2) + "\n")
 
 
@@ -73,6 +73,14 @@ def bump(repo: Path, version: str = "1.1.0", line: str = "export const a = 2\n")
     market(repo, version)
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "bump bws-a")
+
+
+def retire_b(repo: Path, version: str = "1.1.0", remove_folder: bool = True) -> None:
+    if remove_folder:
+        git(repo, "rm", "-q", "-r", "bws-b")
+    market(repo, version, ("bws-a",))
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "retire bws-b")
 
 
 class Publish(unittest.TestCase):
@@ -173,6 +181,56 @@ class Publish(unittest.TestCase):
         self.assertIn("| bws-a | 0.2.0 |", notes)
         self.assertIn("- Second.", notes)
         self.assertEqual(self.worktrees(), 1)
+
+    def published_files(self) -> list[str]:
+        return git(self.repo, "ls-tree", "-r", "--name-only", "publish").splitlines()
+
+    def test_verify_counts_a_retired_mod_as_behind(self) -> None:
+        retire_b(self.repo)
+        r = self.cli()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("bws-b (retired)", r.stdout)
+
+    def test_dry_run_names_the_retired_mod_and_leaves_publish_alone(self) -> None:
+        bump(self.repo)
+        retire_b(self.repo, "1.2.0")
+        tip = git(self.repo, "rev-parse", "publish")
+        r = self.cli("bws-a", "--version", "1.2.0")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("removing from publish (not in main's marketplace): bws-b", r.stdout)
+        self.assertEqual(git(self.repo, "rev-parse", "publish"), tip)
+
+    def test_push_removes_a_retired_mod_alongside_a_release(self) -> None:
+        bump(self.repo)
+        retire_b(self.repo, "1.2.0")
+        r = self.cli("bws-a", "--version", "1.2.0", "--push")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        files = self.published_files()
+        self.assertFalse(any(f.startswith("bws-b/") for f in files))
+        self.assertTrue(any(f.startswith("bws-a/") for f in files))
+        self.assertIn("README.md", files)
+        self.assertEqual(git(self.repo, "log", "-1", "--format=%s", "publish"), "bws-mods 1.2.0: bws-a 0.2.0, remove bws-b")
+        notes = Path(self.gh_log.read_text(encoding="utf-8").split("--notes-file ")[1].strip()).read_text(encoding="utf-8")
+        self.assertIn("claude plugin uninstall bws-b@bws-mods", notes)
+        self.assertEqual(self.cli().returncode, 0)
+
+    def test_retirement_only_release_needs_no_named_mods(self) -> None:
+        retire_b(self.repo)
+        r = self.cli("--version", "1.1.0", "--push")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertFalse(any(f.startswith("bws-b/") for f in self.published_files()))
+        self.assertEqual(git(self.repo, "log", "-1", "--format=%s", "publish"), "bws-mods 1.1.0: remove bws-b")
+
+    def test_delisted_mod_is_removed_even_if_its_folder_stays_on_main(self) -> None:
+        retire_b(self.repo, remove_folder=False)
+        r = self.cli("--version", "1.1.0", "--push")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertFalse(any(f.startswith("bws-b/") for f in self.published_files()))
+
+    def test_version_with_nothing_named_or_retired_is_refused(self) -> None:
+        r = self.cli("--version", "1.1.0")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no mods named and none to retire", r.stdout)
 
     def test_privacy_hit_stops_before_the_gate_and_allow_waives_it(self) -> None:
         bump(self.repo, line="const home = 'C:/Users/somebody/.claude'\n")

@@ -162,5 +162,6 @@ Local Doc: ./docs/mods.md
 - Release steps: bump each touched mod's version and CHANGELOG (`## <version>`), bump the marketplace version, merge to main, then
   `python tools/publish.py <mods...> --version X` (a dry run: version and CHANGELOG checks, publish worktree, privacy scan, gate, then it prints the commands) and the same with `--push` (pushes `private` main if behind, commits `publish`, pushes it to `mods` main, tags `vX`, `gh release create`). Log it in the RUNLOG.
   - `python tools/publish.py` with no mods answers "is publish current?": it restores every mod and reports any diff vs the publish tip.
+  - A release deletes any plugin folder on `publish` that main's marketplace no longer lists. To retire a mod with nothing else to ship: `python tools/publish.py --version X`.
   - The plugin cache is keyed by version. A docs- or manifest-only change still needs a patch bump, or `claude plugin update` ships nothing.
   - Uninstalling a mod drops its `pluginConfigs["<mod>@bws-mods"]` options. Back them up first.
