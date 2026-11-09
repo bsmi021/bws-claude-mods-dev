@@ -1,0 +1,22 @@
+start: --plugin-dir C:/Projects/bws.mods.claude-code/bws-prism  size 170x50  cwd C:/Users/bsmi0/AppData/Local/Temp/bws-live
+ready; mouse tracking on
+01 say:/prism  ok
+02 wait:Raster \d+x\d+ px@25  ok
+03 dump:plasma-1  saved plasma-1.txt
+04 sleep:1  ok
+05 dump:plasma-2  saved plasma-2.txt
+06 say:/prism scene horizon  ok
+07 wait:horizon@10  ok
+08 dump:horizon  saved horizon.txt
+09 say:/prism palette vapor  ok
+10 wait:vapor@10  ok
+11 dump:vapor  saved vapor.txt
+12 say:/prism pause  ok
+13 wait:paused@10  ok
+14 dump:paused-1  saved paused-1.txt
+15 sleep:1  ok
+16 dump:paused-2  saved paused-2.txt
+17 say:/prism close  ok
+18 sleep:2  ok
+19 dump:closed  saved closed.txt
+exit 0

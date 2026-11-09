@@ -1,0 +1,19 @@
+say:/prism
+wait:Raster \d+x\d+ px@25
+dump:plasma-1
+sleep:1
+dump:plasma-2
+say:/prism scene horizon
+wait:horizon@10
+dump:horizon
+say:/prism palette vapor
+wait:vapor@10
+dump:vapor
+say:/prism pause
+wait:paused@10
+dump:paused-1
+sleep:1
+dump:paused-2
+say:/prism close
+sleep:2
+dump:closed
