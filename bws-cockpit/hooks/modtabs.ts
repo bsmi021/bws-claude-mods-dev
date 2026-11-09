@@ -1,4 +1,4 @@
-// The dashboard's mod tabs: every loaded mod gets one, after Assumptions, Shelf, Board and Loop. A mod that publishes
+// The dashboard's mod tabs: every loaded mod gets one, after Board and Loop. A mod that publishes
 // a `tab` (bws-kit/tab.ts) gets that; one that only publishes a `summary` (bws-kit/summary.ts) gets a small tab built
 // from it. These replace the bar's per-mod chips. Pure: no `$`, so tests call it directly.
 
@@ -12,13 +12,11 @@ export const KNOWN_MODS = [
   'bws-memory',
   'bws-diagram',
   'bws-enhance',
-  'bws-better',
   'bws-sidechat',
   'bws-secrets',
   'bws-skillgate',
   'bws-notify',
   'bws-shell-lint',
-  'bws-interview',
   'bws-direction',
   'bws-summary',
   'bws-agents',
@@ -35,13 +33,11 @@ export const MOD_TITLE: Record<KnownMod, string> = {
   'bws-memory': 'Memory',
   'bws-diagram': 'Diagram',
   'bws-enhance': 'Enhance',
-  'bws-better': 'Better',
   'bws-sidechat': 'Side chat',
   'bws-secrets': 'Secrets',
   'bws-skillgate': 'Skillgate',
   'bws-notify': 'Notify',
   'bws-shell-lint': 'Shell lint',
-  'bws-interview': 'Interview',
   'bws-direction': 'Direction',
   'bws-summary': 'Summary',
   'bws-agents': 'Agents',

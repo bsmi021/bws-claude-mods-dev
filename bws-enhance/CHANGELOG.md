@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.6
+- bws-better is retired: the bouncer no longer checks its automatic mode.
+
 ## 0.4.5
 - No behaviour change. Ships the shared tab module with the new markdown and picture nodes (bws-cockpit 0.27.0).
 

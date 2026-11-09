@@ -10,13 +10,11 @@ describe('mod tabs', () => {
       'bws-memory',
       'bws-diagram',
       'bws-enhance',
-      'bws-better',
       'bws-sidechat',
       'bws-secrets',
       'bws-skillgate',
       'bws-notify',
       'bws-shell-lint',
-      'bws-interview',
       'bws-direction',
       'bws-summary',
       'bws-agents',
@@ -64,7 +62,7 @@ describe('mod tabs', () => {
     const ask = makeTab('Side chat', [text('x'), { kind: 'input', id: 'ask-3', placeholder: 'p', isFocused: true }])
     expect(focusKeyOf('bws-sidechat', ask)).toBe('bws-sidechat-ask-3')
     const inCard = makeTab('Better', [{ kind: 'card', title: 'Q', body: [{ kind: 'input', id: 'other-input-1', placeholder: 'p', isFocused: true }] }])
-    expect(focusKeyOf('bws-better', inCard)).toBe('bws-better-other-input-1')
+    expect(focusKeyOf('bws-enhance', inCard)).toBe('bws-enhance-other-input-1')
     expect(focusKeyOf('bws-notify', makeTab('Notify', [{ kind: 'input', id: 'note', placeholder: 'p' }]))).toBeNull()
     expect(focusKeyOf('bws-notify', null)).toBeNull()
     const send = makeTab('Enhance', [{ kind: 'buttons', items: [{ id: 'send', label: 'Send', isFocused: true }, { id: 'revert', label: 'Revert' }] }])

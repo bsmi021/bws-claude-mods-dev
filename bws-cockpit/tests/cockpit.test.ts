@@ -377,10 +377,10 @@ describe('cockpit', () => {
       for (const label of ['UE', 'Unity', 'adb']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${label}$`) })).toBeUndefined()
       expect(await ui.find({ type: 'Text', text: /1\.0\/8\.0 GB/ })).toBeDefined()
       expect(await ui.find({ key: 'dash' })).toBeDefined() // the badge
-      const keys: [string, string][] = [['resume', '1'], ['handoff', 'h'], ['idea', 'i'], ['enhance', 'e'], ['hide', '3']]
+      const keys: [string, string][] = [['resume', '1'], ['handoff', 'h'], ['enhance', 'e'], ['hide', '3']]
       for (const [key, hotkey] of keys) expect((await ui.find({ key }))?.props?.hotkey).toBe(hotkey)
       // No button per tab: the signals open their tabs, and there is nothing to signal here.
-      for (const key of ['tab-assumptions', 'tab-shelf', 'tab-board']) expect(await ui.find({ key })).toBeUndefined()
+      for (const key of ['tab-board']) expect(await ui.find({ key })).toBeUndefined()
       expect(await ui.find({ key: 'meter-tasks' })).toBeUndefined() // no task list yet
       expect(await ui.find({ key: 'loop' })).toBeUndefined() // no loop here
       expect(await ui.find({ key: 'refresh' })).toBeUndefined()
@@ -470,8 +470,8 @@ describe('action bar', () => {
     }
     expect(await ui.find({ type: 'Text', text: /^bow-fix$/ })).toBeDefined()
     const actions = await ui.find({ key: 'actions' })
-    expect(actions?.text).toMatch(/^handoff.*idea.*enhance.*resume.*hide$/) // nothing to signal here
-    expect(actions?.text).not.toMatch(/dash|asm|shelf|board|loop/)
+    expect(actions?.text).toMatch(/^handoff.*enhance.*resume.*hide$/) // nothing to signal here
+    expect(actions?.text).not.toMatch(/dash|board|loop/)
     await ui.unmount()
   })
 

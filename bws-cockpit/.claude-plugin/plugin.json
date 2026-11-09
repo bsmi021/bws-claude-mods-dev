@@ -1,7 +1,7 @@
 {
   "name": "bws-cockpit",
-  "version": "0.30.0",
-  "description": "Dashboard pane (Assumptions, Shelf, Board, Loop and Mods tabs, the Mods tab a switchboard that turns each bws mod on or off and hides or shows its tab) with a colour action bar above the prompt (progress bars for the session's tasks, the run checklist and a live loop), Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold. Claude records assumptions and shelves tangents through its tools.",
+  "version": "0.31.0",
+  "description": "Dashboard pane (Board, Loop and Mods tabs, the Mods tab a switchboard that turns each bws mod on or off and hides or shows its tab) with a colour action bar above the prompt (progress bars for the session's tasks, the run checklist and a live loop), Editor & Device Guard for Unreal/Unity/Blender/adb, Finish-Line Guard, Project Locator, /handoff with a context nudge, and a worker model pin for subagents. A cache clock on the bar counts down the prompt cache and writes a handoff before it runs cold.",
   "author": {
     "name": "bsmi021",
     "url": "https://github.com/bsmi021"
@@ -151,28 +151,16 @@
       "description": "Subagent types the worker model applies to, comma-separated.",
       "default": "general-purpose,claude"
     },
-    "shelfPath": {
-      "type": "string",
-      "title": "Shelf file",
-      "description": "Path of the idea shelf JSON file. Empty: <CLAUDE_CONFIG_DIR or ~/.claude>/idea-shelf/shelf.json.",
-      "default": ""
-    },
-    "shelfNudge": {
-      "type": "boolean",
-      "title": "Tell Claude to shelve tangents",
-      "description": "Add one line to the conversation's opening context with the open-idea count and the shelve_idea tool.",
-      "default": true
-    },
     "modSummaries": {
       "type": "string",
       "title": "Mod tabs",
-      "description": "Mods that get a dashboard tab while loaded, in this order, comma-separated. Known: bws-memory, bws-diagram, bws-enhance, bws-better, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-interview, bws-direction, bws-summary, bws-agents, bws-inventory, bws-mask, bws-codex.",
-      "default": "bws-memory,bws-diagram,bws-enhance,bws-better,bws-sidechat,bws-secrets,bws-skillgate,bws-notify,bws-shell-lint,bws-interview,bws-direction,bws-summary,bws-agents,bws-inventory,bws-mask,bws-codex"
+      "description": "Mods that get a dashboard tab while loaded, in this order, comma-separated. Known: bws-memory, bws-diagram, bws-enhance, bws-sidechat, bws-secrets, bws-skillgate, bws-notify, bws-shell-lint, bws-direction, bws-summary, bws-agents, bws-inventory, bws-mask, bws-codex.",
+      "default": "bws-memory,bws-diagram,bws-enhance,bws-sidechat,bws-secrets,bws-skillgate,bws-notify,bws-shell-lint,bws-direction,bws-summary,bws-agents,bws-inventory,bws-mask,bws-codex"
     },
     "dashboardOnStart": {
       "type": "boolean",
       "title": "Open the dashboard at session start",
-      "description": "Open the Dashboard pane (Assumptions, Shelf, Board, Loop tabs) when a session starts, on the first tab with something waiting. Needs a terminal 144 columns wide or Desktop.",
+      "description": "Open the Dashboard pane (Board, Loop and mod tabs) when a session starts, on the first tab with something waiting. Needs a terminal 144 columns wide or Desktop.",
       "default": true
     },
     "handoffNudgePercent": {

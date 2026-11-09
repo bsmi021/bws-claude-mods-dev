@@ -65,50 +65,9 @@ export type LoopView = {
 
 export type LoopActionNote = { text: string; at: number; isError: boolean }
 
-// ---------- Dashboard (Assumptions and Shelf moved in from bws-assumptions and bws-shelf) ----------
+// ---------- Dashboard ----------
 
-export type Verdict = 'open' | 'right' | 'wrong'
-
-// One assumption Claude recorded, numbered A1, A2… in the order it arrived.
-export type Assumption = {
-  n: number
-  text: string
-  why: string
-  verdict: Verdict
-  // What it should be instead; only read when verdict is 'wrong'. Empty: Claude is told to ask.
-  correction: string
-  // True once its verdict went to Claude.
-  isSent: boolean
-  // Its blast radius: file edits Claude made while it was unsent, the files (short paths, newest last), and when the
-  // last one landed (epoch ms; the deck glows the card for a moment). Absent on items recorded before 0.29.0.
-  edits?: number
-  files?: string[]
-  bumped?: number
-}
-
-// An idea on the shelf, as hooks/shelf.ts writes it to the shelf file.
-export type ShelfIdea = {
-  id: number
-  text: string
-  detail?: string
-  by: 'user' | 'claude'
-  project: string
-  createdAt: number
-  status: 'open' | 'done' | 'dropped'
-  closedAt?: number
-}
-
-// What the Shelf tab draws: the open ideas as last loaded from the shelf file, and this project's open count.
-export type ShelfView = {
-  isAll: boolean
-  root: string
-  ideas: ShelfIdea[]
-  now: number
-  note: string
-  count: number
-}
-
-export type DashTab = 'assumptions' | 'shelf' | 'board' | 'loop' | 'mods'
+export type DashTab = 'board' | 'loop' | 'mods'
 
 export type DashView = {
   // The tab shown: a DashTab, or a mod's `mod:<plugin>`; null until something picks one.
@@ -166,13 +125,11 @@ declare module 'claude-code' {
     'bws-memory': { summary: ModSummary | null; tab: unknown }
     'bws-diagram': { summary: ModSummary | null; tab: unknown }
     'bws-enhance': { summary: ModSummary | null; tab: unknown }
-    'bws-better': { summary: ModSummary | null; tab: unknown }
     'bws-sidechat': { summary: ModSummary | null; tab: unknown }
     'bws-secrets': { summary: ModSummary | null; tab: unknown }
     'bws-skillgate': { summary: ModSummary | null; tab: unknown }
     'bws-notify': { summary: ModSummary | null; tab: unknown }
     'bws-shell-lint': { summary: ModSummary | null; tab: unknown }
-    'bws-interview': { tab: unknown }
     'bws-direction': { summary: ModSummary | null; tab: unknown }
     'bws-summary': { summary: ModSummary | null; tab: unknown }
     'bws-agents': { summary: ModSummary | null; tab: unknown }
@@ -190,9 +147,7 @@ declare module 'claude-code' {
       stopArmedAt: number | null
       // Finish-Line Guard: run folders this conversation's own tool calls wrote to, keyed by its start
       touched: { startedAt: number; folders: string[] } | null
-      assumptions: Assumption[]
       dash: DashView
-      shelf: ShelfView
       handoffNudge: HandoffNudge | null
       // The last press or submitted input in a mod's dashboard tab (bws-kit/tab.ts TabEvent); the mod reads it with a
       // state.set hook filtered to its own plugin name.
@@ -223,9 +178,5 @@ declare module 'claude-code' {
 // (they are registered at session.start, after the types are written on a first load).
 declare module 'claude-code' {
   interface McpToolInputs {
-    'mcp__bws-cockpit__record_assumption': { assumption: string; why?: string }
-    'mcp__bws-cockpit__shelve_idea': { text: string; detail?: string }
-    'mcp__bws-cockpit__list_ideas': { scope?: 'project' | 'all' }
-    'mcp__bws-cockpit__close_idea': { id: number; status: 'done' | 'dropped' | 'open' }
   }
 }

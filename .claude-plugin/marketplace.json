@@ -11,10 +11,6 @@
       "source": "./bws-agents"
     },
     {
-      "name": "bws-better",
-      "source": "./bws-better"
-    },
-    {
       "name": "bws-board",
       "source": "./bws-board"
     },
@@ -41,10 +37,6 @@
     {
       "name": "bws-enhance",
       "source": "./bws-enhance"
-    },
-    {
-      "name": "bws-interview",
-      "source": "./bws-interview"
     },
     {
       "name": "bws-inventory",
@@ -84,6 +76,6 @@
     }
   ],
   "metadata": {
-    "version": "1.21.0"
+    "version": "1.22.0"
   }
 }

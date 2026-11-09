@@ -21,8 +21,6 @@ export const MODS: Record<string, ModInfo> = {
   'bws-diagram': { emoji: '📊', title: 'Diagram', blurb: 'Draws big turns and pins mermaid blocks' },
   'bws-sidechat': { emoji: '💬', title: 'Side chat', blurb: '/fork and /btw in a side pane; /explain decision trees' },
   'bws-enhance': { emoji: '✨', title: 'Enhance', blurb: 'Rewrites a rough prompt; optional prompt bouncer' },
-  'bws-better': { emoji: '🎯', title: 'Better', blurb: '/better: three questions, then a goal-and-outcome prompt' },
-  'bws-interview': { emoji: '🎤', title: 'Interview', blurb: 'Keeps every AskUserQuestion round per project' },
   'bws-skillgate': { emoji: '🚪', title: 'Skillgate', blurb: 'Cuts the skill listing to the ones a prompt needs' },
   'bws-secrets': { emoji: '🔐', title: 'Secrets', blurb: 'Masked secret entry; {{secret:NAME}} in Bash' },
   'bws-notify': { emoji: '🔔', title: 'Notify', blurb: 'Windows toasts for asks, finished turns and errors' },

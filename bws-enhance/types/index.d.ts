@@ -18,10 +18,6 @@ export type Setting = {
 }
 
 declare module 'claude-code' {
-  // bws-better's automatic-mode switch, read by the bouncer (it declares the value itself, the same way).
-  interface PluginState {
-    'bws-better': { auto: boolean }
-  }
   interface PluginState {
     'bws-enhance': {
       view: View

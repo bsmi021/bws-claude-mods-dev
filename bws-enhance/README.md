@@ -15,8 +15,7 @@ claude plugin install bws-enhance@bws-mods
 ```
 
 Then `/reload-plugins`. Requires Claude Code 2.1.296 or later. The review buttons live in the **Enhance** tab of
-[bws-cockpit](../bws-cockpit/README.md)'s dashboard, so install bws-cockpit 0.21.1 or later too. It pairs with
-[bws-better](../bws-better/README.md), which upgrades prompts by asking you questions instead.
+[bws-cockpit](../bws-cockpit/README.md)'s dashboard, so install bws-cockpit 0.21.1 or later too.
 
 ## Use
 
@@ -104,7 +103,6 @@ What is not checked:
 - short answers (under 4 words, such as yes, no, continue, ok, a number or an option letter);
 - prompts with an attachment or a leftover paste placeholder (pastes arrive expanded, so a long pasted log is checked as ordinary text);
 - anything a plugin, another session, a schedule or a task sends, including the bouncer's own **Send anyway**;
-- every prompt, while bws-better's automatic mode is on (only one mod takes a typed prompt);
 - a headless run in `warn` mode, which has no dashboard to send anyway from.
 
 It fails open: a classifier error, a timeout, an unreadable answer or a failed reason call sends the prompt unchanged and

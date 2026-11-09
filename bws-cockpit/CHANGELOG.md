@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.31.0
+- Removed the Assumptions and Shelf features: their dashboard tabs, `/assumptions`, `/shelf`, `/idea`, the tools `record_assumption`, `shelve_idea`, `list_ideas` and `close_idea`, the system-prompt guide, the opening-context shelf line, the bar's review and idea signals and its `idea` button, and the options `shelfPath` and `shelfNudge`.
+- The dashboard's default tab is now Board. `bws-cockpit-start.log` moves to `<CLAUDE_CONFIG_DIR or ~/.claude>/bws-cockpit/`.
+- An existing `idea-shelf/shelf.json` is left on disk; nothing reads it any more.
+- bws-better and bws-interview are retired: gone from the default `modSummaries`, the known tabs and the switchboard.
+
 ## 0.30.0
 - The action bar is redrawn: a `◆ cockpit` badge (opens or closes the dashboard), then progress bars in colour: `tasks` (this session's task list from TodoWrite, the Task tools or the Desktop task list, with the current step), `run` (the run folder's `[x]` against `[ ]` items) and `loop` (a live loop's units), green when full.
 - No more buttons that repeat the dashboard's tabs (`dash`, `asm`, `shelf`, `board`, `loop`): each signal (`⚑ 2 to review`, `💡 3 ideas`, `⇄ 2 live · 1 open`, the loop chip) is the press that opens its tab, and shows only when it has something to say. The `do` / `open` labels are gone; the cache clock gets a `⏱`. The `2` hotkey for the dashboard is gone too: use the badge, the footer `◧ cockpit` or `/dashboard`.
