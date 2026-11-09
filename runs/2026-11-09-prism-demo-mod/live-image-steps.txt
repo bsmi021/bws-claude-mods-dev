@@ -1,0 +1,7 @@
+say:/prism
+wait:Raster \d+x\d+ px@25
+say:/prism image
+wait:Image \d+x\d+ px|No Image here@10
+dump:image-1
+sleep:3
+dump:image-2

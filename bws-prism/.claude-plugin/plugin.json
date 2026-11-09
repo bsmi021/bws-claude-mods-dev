@@ -1,6 +1,6 @@
 {
   "name": "bws-prism",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A showpiece for what a mod can draw: /prism opens a pane of animated generative art, painted cell by cell with Raster in the terminal and as animated Svg in the Desktop app.",
   "author": {
     "name": "bsmi021",

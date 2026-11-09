@@ -1,0 +1,10 @@
+start: --plugin-dir C:/Projects/bws.mods.claude-code/bws-prism  size 170x50  cwd C:/Users/bsmi0/AppData/Local/Temp/bws-live
+ready; mouse tracking on
+01 say:/prism  ok
+02 wait:Raster \d+x\d+ px@25  ok
+03 say:/prism image  ok
+04 wait:Image \d+x\d+ px|No Image here@10  ok
+05 dump:image-1  saved image-1.txt
+06 sleep:3  ok
+07 dump:image-2  saved image-2.txt
+exit 0

@@ -63,7 +63,7 @@ const horizon: Shader = (x, y, t, W, H) => {
       const isCut = low > 0 && fract(y * 0.28 - t * 0.5) < 0.2 + low * 0.45
       if (!isCut) return 1 - ((dy + radius) / (2 * radius)) * 0.5
     }
-    if (noise(x, y) > 0.985) return 0.55 + 0.45 * Math.abs(Math.sin(t * 2 + x))
+    if (noise(Math.floor(x), Math.floor(y)) > 0.985) return 0.55 + 0.45 * Math.abs(Math.sin(t * 2 + x))
     return 0.04 + 0.36 * (y / line) ** 2
   }
   const z = (y - line + 1) / (H - line)
@@ -115,10 +115,10 @@ const GLYPHS = [
 ]
 const SHADOW = 0x05030f
 
-function drawLogo(px: Uint32Array, W: number, H: number, colors: number[], t: number) {
-  const scale = W >= 70 && H >= 30 ? 2 : 1
+function drawLogo(px: Uint32Array, W: number, H: number, colors: number[], t: number, k: number) {
+  const scale = (W / k >= 70 && H / k >= 30 ? 2 : 1) * k
   const width = (GLYPHS.length * 4 - 1) * scale
-  if (W < width + 4 || H < 5 * scale + 3) return
+  if (W < width + 4 * k || H < 5 * scale + 3 * k) return
   const put = (x: number, y: number, c: number) => {
     if (x >= 0 && y >= 0 && x < W && y < H) px[y * W + x] = c
   }
@@ -130,25 +130,26 @@ function drawLogo(px: Uint32Array, W: number, H: number, colors: number[], t: nu
       rows.forEach((bits, row) => {
         for (let col = 0; col < 3; col++) {
           if (!((bits >> (2 - col)) & 1)) continue
-          const x = 2 + (g * 4 + col) * scale
-          const y = 2 + row * scale
-          if (pass === 'shadow') fill(x + 1, y + 1, SHADOW)
-          else fill(x, y, colors[Math.floor(LEVELS * 0.55 + (LEVELS * 0.44 * (Math.sin(t * 2 - x * 0.2) + 1)) / 2)]!)
+          const x = 2 * k + (g * 4 + col) * scale
+          const y = 2 * k + row * scale
+          if (pass === 'shadow') fill(x + k, y + k, SHADOW)
+          else fill(x, y, colors[Math.floor(colors.length * 0.55 + (colors.length * 0.44 * (Math.sin(t * 2 - (x / k) * 0.2) + 1)) / 2)]!)
         }
       })
     })
   }
 }
 
-function drawBars(px: Uint32Array, W: number, H: number, colors: number[], t: number) {
-  const room = Math.min(12, Math.floor(H / 4))
+function drawBars(px: Uint32Array, W: number, H: number, colors: number[], t: number, k: number) {
+  const room = Math.min(12, Math.floor(H / k / 4))
   if (room < 2) return
-  for (let bar = 0; bar * 3 + 1 < W; bar++) {
+  const n = colors.length
+  for (let bar = 0; bar * 3 + 1 < W / k; bar++) {
     const level = ((Math.sin(bar * 0.7 + t * 3) + 1) / 2) * ((Math.sin(bar * 0.23 - t * 1.7) + 1) / 2)
-    const height = Math.max(1, Math.round(level * room))
+    const height = Math.max(1, Math.round(level * room)) * k
     for (let up = 0; up < height; up++) {
-      const c = up === height - 1 ? colors[LEVELS - 1]! : colors[Math.floor(LEVELS * 0.45 + (up / room) * LEVELS * 0.5)]!
-      for (let side = 0; side < 2; side++) px[(H - 1 - up) * W + bar * 3 + side] = c
+      const c = up >= height - k ? colors[n - 1]! : colors[Math.floor(n * 0.45 + (up / (room * k)) * n * 0.5)]!
+      for (let side = 0; side < 2 * k; side++) px[(H - 1 - up) * W + bar * 3 * k + side] = c
     }
   }
 }
@@ -159,20 +160,24 @@ const UPPER_HALF = 0x2580
 const SPACE = 0x20
 const DEFAULT = 0x01000000
 
-/** The picture, two pixels to a cell: `columns` by `rows * 2` colors, row-major. */
-export function pixels(look: Look, t: number, columns: number, rows: number, colors = ramp(look.palette.stops)): Uint32Array {
-  const W = columns
-  const H = rows * 2
+/**
+ * The picture, `k` pixels across a cell and `k * 2` down: `columns * k` by `rows * 2 * k` colors, row-major.
+ * The scenes are shaded in cell-pixel units, so a larger `k` draws the same picture sharper.
+ */
+export function pixels(look: Look, t: number, columns: number, rows: number, k = 1, colors = ramp(look.palette.stops)): Uint32Array {
+  const W = columns * k
+  const H = rows * 2 * k
   const shade = SHADERS[look.scene]
   const px = new Uint32Array(W * H)
+  const n = colors.length
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      const level = Math.floor(shade(x, y, t, W, H) * LEVELS)
-      px[y * W + x] = colors[Math.max(0, Math.min(LEVELS - 1, level))]!
+      const level = Math.floor(shade(x / k, y / k, t, columns, rows * 2) * n)
+      px[y * W + x] = colors[Math.max(0, Math.min(n - 1, level))]!
     }
   }
-  drawBars(px, W, H, colors, t)
-  drawLogo(px, W, H, colors, t)
+  drawBars(px, W, H, colors, t, k)
+  drawLogo(px, W, H, colors, t, k)
   return px
 }
 
@@ -192,6 +197,31 @@ export function rasterFrame(look: Look, t: number, columns: number, rows: number
   }
   return { columns, rows, cells: toBase64(new Uint8Array(words.buffer)) }
 }
+
+// An Image's pixels cross as base64 each frame, so it is bounded well under the 2 MiB limit, and to what a frame can compute.
+export const MAX_IMAGE_PIXELS = 90_000
+const MAX_SHARPNESS = 4
+
+/** How many times sharper than a Raster an Image of this size is drawn. */
+export const sharpness = (columns: number, rows: number): number =>
+  Math.max(1, Math.min(MAX_SHARPNESS, Math.floor(Math.sqrt(MAX_IMAGE_PIXELS / (columns * rows * 2)))))
+
+/** One frame as an `Image` source: RGBA bytes with a 256-level ramp, since an image has no color-pair limit. */
+export function imageFrame(look: Look, t: number, columns: number, rows: number) {
+  const k = sharpness(columns, rows)
+  const px = pixels(look, t, columns, rows, k, ramp(look.palette.stops, 256))
+  const bytes = new Uint8Array(px.length * 4)
+  px.forEach((c, i) => {
+    bytes[i * 4] = c >> 16
+    bytes[i * 4 + 1] = (c >> 8) & 255
+    bytes[i * 4 + 2] = c & 255
+    bytes[i * 4 + 3] = 255
+  })
+  return { rgba: toBase64(bytes), width: columns * k, height: rows * 2 * k }
+}
+
+/** Whether a blit refusal means this terminal drew the alt text, as against the pane having gone or changed size. */
+export const isImageRefused = (deny: string): boolean => /\balt\b|placeholder/i.test(deny)
 
 // The rows of the pane that are not art: title, status and buttons.
 export const CHROME_ROWS = 4

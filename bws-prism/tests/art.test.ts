@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'claude-code/testing'
-import { CHROME_ROWS, fit, gradient, LEVELS, PALETTES, pixels, ramp, rasterFrame, SCENES } from '../hooks/art'
+import { CHROME_ROWS, fit, gradient, imageFrame, isImageRefused, LEVELS, MAX_IMAGE_PIXELS, PALETTES, pixels, ramp, rasterFrame, SCENES, sharpness } from '../hooks/art'
 import { sceneSvg } from '../hooks/vector'
 
 const LOOKS = SCENES.flatMap(scene => PALETTES.map(palette => ({ scene, palette })))
@@ -38,6 +38,40 @@ describe('frames', () => {
   test('the scene shades stay inside the 1024 color pairs Raster paints at once', async () => {
     expect(LEVELS * LEVELS).toBeLessThanOrEqual(1024)
     expect(new Set(ramp(PALETTES[0].stops)).size).toBeLessThanOrEqual(LEVELS)
+  })
+})
+
+describe('image frames', () => {
+  test('RGBA bytes match the stated size, opaque, inside the limits', async () => {
+    const f = imageFrame(neon, 1, 40, 12)
+    const bytes = atob(f.rgba)
+    expect(bytes.length).toBe(f.width * f.height * 4)
+    expect(bytes.charCodeAt(3)).toBe(255)
+    expect(f.width * f.height).toBeLessThanOrEqual(MAX_IMAGE_PIXELS)
+    expect(bytes.length).toBeLessThanOrEqual(2 * 1024 * 1024)
+  })
+
+  test('a small pane is sharper, up to 4x; the largest stays bounded', async () => {
+    expect(sharpness(16, 4)).toBe(4)
+    expect(sharpness(160, 48)).toBe(2)
+    expect(160 * 2 * 48 * 2 * 2).toBeLessThanOrEqual(MAX_IMAGE_PIXELS)
+  })
+
+  test('sharper frames use finer color than a Raster', async () => {
+    const coarse = new Set(pixels(neon, 2, 40, 12)).size
+    const fine = new Set(pixels(neon, 2, 40, 12, 3, ramp(PALETTES[0].stops, 256))).size
+    expect(fine).toBeGreaterThan(coarse)
+  })
+
+  test('the largest Image frame computes inside its 100 ms tick', async () => {
+    const start = Date.now()
+    for (let i = 0; i < 5; i++) imageFrame({ ...neon, scene: 'lava' }, i, 160, 48)
+    expect((Date.now() - start) / 5).toBeLessThan(100)
+  })
+
+  test('only a refusal about the alt text gives up on Image', async () => {
+    expect(isImageRefused('this Image draws its alt here')).toBe(true)
+    expect(isImageRefused('nothing of bws-prism is mounted at prism')).toBe(false)
   })
 })
 

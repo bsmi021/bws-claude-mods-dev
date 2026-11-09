@@ -34,6 +34,29 @@ test('the terminal draws a Raster sized to the pane, with the controls', async (
   await ui.unmount()
 })
 
+test('/prism image draws an Image with alt text; /prism raster goes back', async ($, on) => {
+  world(on)
+  await $.session.start(START)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await run($, 'image')
+  const photo = await ui.find({ key: 'photo' })
+  expect(photo?.type).toBe('Image')
+  expect(photo?.props.alt).toMatch(/plasma/)
+  expect(await ui.find({ type: 'Raster' })).toBeUndefined()
+  await run($, 'raster')
+  expect((await ui.find({ key: 'art' }))?.type).toBe('Raster')
+  await ui.unmount()
+})
+
+test('Desktop has no Image mode: no button, and /prism image says why', async ($, on) => {
+  world(on, ['desktop'])
+  await $.session.start(START)
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ key: 'mode' })).toBeUndefined()
+  expect(((await run($, 'image')) as any).text).toMatch(/Desktop draws Svg/)
+  await ui.unmount()
+})
+
 test('Desktop draws an interactive Svg and no Raster', async ($, on) => {
   world(on)
   await $.session.start(START)
