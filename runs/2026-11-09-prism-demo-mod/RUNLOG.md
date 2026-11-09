@@ -1,7 +1,7 @@
 Status: done
 Finish line: `/prism` opens animated art (Raster in the terminal, Svg on Desktop) with working controls; gate passes; live terminal session animates.
-Next step: Brian tries it in Desktop with `claude --plugin-dir`-style loading, or asks for a release.
-Open: Svg not seen inside the real Desktop app. Not in the marketplace, by scope.
+Next step: load bws-prism into the Desktop app and check pane Svg, embedded PNG and Backdrop there.
+Open: not yet seen in the Desktop app. Not in the marketplace, by scope.
 
 ## Summary
 
@@ -20,6 +20,11 @@ New mod `bws-prism` at version 0.1.0: four scenes, four palettes, 20 fps `$.ui.b
 Live in the Windows Terminal-style harness: the real refusal triggered the fallback, the note shows, Raster keeps animating (`receipts/live-image/`).
 `receipts/image-frames.png` is the real Image pixels written to a PNG.
 Not verified: an `Image` actually on screen. No kitty, Ghostty or iTerm2 on this machine, and none was installed.
+
+## 0.3.0: Desktop first
+
+Brian runs the Desktop app. Pane Svg (vector or an embedded indexed PNG, 360x204, about 100k of the 131k limit) and a full-window Backdrop.
+Gate passes. PNG decodes and the scenes render in the browser pane. Not yet seen inside the Desktop app: the session loads installed mods, and bws-prism is not installed.
 
 ## Not verified
 

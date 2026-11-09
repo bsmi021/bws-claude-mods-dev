@@ -1,5 +1,6 @@
 // The Desktop app's picture: the same four scenes as SVG that animates itself with SMIL, so no frames are sent. Pure.
-import { hex, ramp, type Look, type Scene } from './art'
+import { hex, pixels, ramp, type Look, type Scene } from './art'
+import { indexedPng } from './png'
 
 const W = 640
 const H = 360
@@ -69,17 +70,47 @@ function bars(): string {
   }).join('')
 }
 
+const palette = (look: Look): Colors => {
+  const colors = ramp(look.palette.stops, 101)
+  return at => hex(colors[Math.round(Math.max(0, Math.min(1, at)) * 100)]!)
+}
+
+const GLOW = `<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
+const CLIP = `<clipPath id="frame"><rect width="${W}" height="${H}" rx="14"/></clipPath>`
+const TAG = (look: Look, what: string): string =>
+  `<text x="26" y="${H - 18}" font-family="ui-monospace,monospace" font-size="13" letter-spacing="3" fill="#fff" opacity="0.8">${look.scene.toUpperCase()} / ${look.palette.name.toUpperCase()}${what}</text>`
+
 /** The whole picture, `<svg>` to `</svg>`, for `Svg` with `isInteractive` (SMIL runs in the sandboxed frame). */
 export function sceneSvg(look: Look): string {
-  const colors = ramp(look.palette.stops, 101)
-  const c: Colors = at => hex(colors[Math.round(Math.max(0, Math.min(1, at)) * 100)]!)
-  const defs = `<defs>` +
-    `<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` +
+  const c = palette(look)
+  const defs = `<defs>${GLOW}${CLIP}` +
     `<linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c(0.6)}"/><stop offset="0.5" stop-color="${c(1)}"/><stop offset="1" stop-color="${c(0.75)}"/></linearGradient>` +
-    `<linearGradient id="bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c(1)}"/><stop offset="1" stop-color="${c(0.5)}" stop-opacity="0.35"/></linearGradient>` +
-    `<clipPath id="frame"><rect width="${W}" height="${H}" rx="14"/></clipPath></defs>`
+    `<linearGradient id="bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c(1)}"/><stop offset="1" stop-color="${c(0.5)}" stop-opacity="0.35"/></linearGradient></defs>`
   const title = `<text x="24" y="58" font-family="ui-sans-serif,system-ui,sans-serif" font-size="44" font-weight="800" letter-spacing="10" fill="url(#ink)" filter="url(#glow)">PRISM</text>` +
     `<text x="26" y="82" font-family="ui-monospace,monospace" font-size="13" letter-spacing="3" fill="#fff" opacity="0.75">${look.scene.toUpperCase()} / ${look.palette.name.toUpperCase()}</text>`
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${defs}` +
     `<g clip-path="url(#frame)"><rect width="${W}" height="${H}" fill="${c(0)}"/>${SCENES[look.scene](c)}${bars()}${title}</g></svg>`
+}
+
+/** The scene alone, filling whatever box it is given: the full-window `Backdrop`. */
+export function backdropSvg(look: Look): string {
+  const c = palette(look)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice"><defs>${GLOW}</defs>` +
+    `<rect width="${W}" height="${H}" fill="${c(0)}"/>${SCENES[look.scene](c)}</svg>`
+}
+
+export const PHOTO_WIDTH = 360
+export const PHOTO_HEIGHT = 204
+
+/** A real picture on Desktop, which has no Image element: the shader's pixels as a PNG inside the Svg, slowly drifting. */
+export function photoSvg(look: Look, t: number): string {
+  const c = palette(look)
+  const px = pixels(look, t, PHOTO_WIDTH / 3, PHOTO_HEIGHT / 6, 3, ramp(look.palette.stops, 255))
+  const png = indexedPng(px, PHOTO_WIDTH, PHOTO_HEIGHT)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>${CLIP}` +
+    `<radialGradient id="edge" r="0.75"><stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="${c(0)}" stop-opacity="0.85"/></radialGradient></defs>` +
+    `<g clip-path="url(#frame)"><rect width="${W}" height="${H}" fill="${c(0)}"/>` +
+    `<g transform="translate(${W / 2} ${H / 2})"><image x="-${W / 2}" y="-${H / 2}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" href="data:image/png;base64,${png}">` +
+    `<animateTransform attributeName="transform" type="scale" dur="14s" repeatCount="indefinite" values="1;1.14;1"/></image></g>` +
+    `<rect width="${W}" height="${H}" fill="url(#edge)"/>${TAG(look, ' / PNG')}</g></svg>`
 }

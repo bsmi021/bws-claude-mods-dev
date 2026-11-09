@@ -2,11 +2,13 @@
 import type { EngineInterface, Register } from 'claude-code'
 import { fit, gradient, hex, imageFrame, isImageRefused, PALETTES, ramp, rasterFrame, SCENES, LEVELS } from './art'
 import type { Look, Scene } from './art'
-import { sceneSvg } from './vector'
+import { backdropSvg, PHOTO_HEIGHT, PHOTO_WIDTH, photoSvg, sceneSvg } from './vector'
 
 const PANE = 'prism'
 const ART = 'art'
 const PHOTO = 'photo'
+const BACKDROP = 'prism-backdrop'
+const STILL_TIME = 4.2 // the moment of the scene a Desktop picture shows
 const TICK_MS = 50 // 20 frames a second
 const STEP = 0.05 // scene time per frame
 
@@ -16,6 +18,7 @@ let paletteAt = 0
 let isImage = false // true pixels with Image instead of Raster's cells (terminal only)
 let note = '' // why Image was given up, shown under the art
 let frameNo = 0
+let hasBackdrop = false
 let isPaused = false
 let time = 0
 let mounted: { columns: number; rows: number } | null = null // the Raster now on screen; null while there is none
@@ -59,6 +62,18 @@ function setImage($: EngineInterface, on: boolean) {
   $.ui.invalidate('ui.render')
 }
 
+async function toggleBackdrop($: EngineInterface): Promise<string> {
+  if (hasBackdrop) {
+    await $.ui.backdrop(undefined)
+    hasBackdrop = false
+    return ''
+  }
+  const r = await $.ui.backdrop({ id: BACKDROP, glass: { blur: 14, opacity: 0.55 }, colorScheme: 'dark' })
+  if (!r.isDrawn) return `No backdrop here (${r.reason}).`
+  hasBackdrop = true
+  return ''
+}
+
 function act($: EngineInterface, what: 'scene' | 'palette' | 'pause', name?: string): string {
   if (what === 'pause') {
     isPaused = !isPaused
@@ -75,7 +90,7 @@ function act($: EngineInterface, what: 'scene' | 'palette' | 'pause', name?: str
   return ''
 }
 
-const USAGE = 'Usage: /prism [scene [name] | palette [name] | image | raster | pause | close]'
+const USAGE = 'Usage: /prism [scene [name] | palette [name] | image | vector | backdrop | pause | close]'
 
 export const register: Register = on => {
   sceneAt = 0
@@ -83,6 +98,7 @@ export const register: Register = on => {
   isImage = false
   note = ''
   frameNo = 0
+  hasBackdrop = false
   isPaused = false
   time = 0
   stop()
@@ -91,7 +107,7 @@ export const register: Register = on => {
     await $.command.register({
       name: 'prism',
       description: 'Open a pane of animated art: Raster in the terminal, Svg on Desktop',
-      argumentHint: '[scene [name] | palette [name] | image | raster | pause | close]',
+      argumentHint: '[scene [name] | palette [name] | image | vector | backdrop | pause | close]',
       immediate: true,
     })
     return next(e)
@@ -104,10 +120,13 @@ export const register: Register = on => {
       stop()
       return {}
     }
-    if (verb === 'image' || verb === 'raster') {
-      if (!(await $.session.surfaces()).includes('terminal')) return { text: 'Raster and Image are terminal elements. Desktop draws Svg.' }
+    if (verb === 'image' || verb === 'raster' || verb === 'vector') {
       setImage($, verb === 'image')
       return {}
+    }
+    if (verb === 'backdrop') {
+      const problem = await toggleBackdrop($)
+      return problem ? { text: problem } : {}
     }
     if (verb === 'scene' || verb === 'palette' || verb === 'pause') {
       const problem = act($, verb, name)
@@ -117,6 +136,15 @@ export const register: Register = on => {
     if ((await $.session.surfaces()).length === 0) return { text: 'bws-prism draws a pane, and this session has no screen. Run /prism in the terminal or the Desktop app.' }
     const r = await $.ui.open({ id: PANE, title: 'Prism' })
     return r.isPlaced ? {} : { text: `Prism is waiting for room (${r.reason}).` }
+  })
+
+  on('ui.render', { component: 'Backdrop' }, async ($, e, next) => {
+    if (e.props.plugin !== 'bws-prism') return next(e)
+    const table = $.ui.resolve(e)
+    if (!('Svg' in table)) return next(e)
+    const { Svg } = table
+    const now = look()
+    return <Svg source={backdropSvg(now)} alt={`${now.scene} backdrop`} isInteractive />
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
@@ -146,8 +174,8 @@ export const register: Register = on => {
       }
     } else if ('Svg' in table) {
       const { Svg } = table
-      art = <Svg source={sceneSvg(now)} alt={`Animated ${now.scene} scene in the ${now.palette.name} palette`} isInteractive />
-      mode = 'Svg + SMIL'
+      art = <Svg source={isImage ? photoSvg(now, STILL_TIME) : sceneSvg(now)} alt={`${now.scene} scene in the ${now.palette.name} palette`} isInteractive />
+      mode = isImage ? `PNG in Svg, ${PHOTO_WIDTH}x${PHOTO_HEIGHT} px` : 'Svg + SMIL'
     }
 
     return (
@@ -167,8 +195,9 @@ export const register: Register = on => {
         <Box flexDirection="row" gap={1}>
           <Button key="scene" label="Scene" hotkey="s" variant="primary" onPress={() => { act($, 'scene') }} />
           <Button key="palette" label="Palette" hotkey="p" onPress={() => { act($, 'palette') }} />
-          {isTerminal ? <Button key="mode" label={isImage ? 'Raster' : 'Image'} hotkey="m" onPress={() => { setImage($, !isImage) }} /> : null}
-          <Button key="pause" label={isPaused ? 'Play' : 'Pause'} hotkey="k" onPress={() => { act($, 'pause') }} />
+          <Button key="mode" label={isImage ? (isTerminal ? 'Raster' : 'Vector') : 'Image'} hotkey="m" onPress={() => { setImage($, !isImage) }} />
+          {e.surface === 'desktop' ? <Button key="backdrop" label={hasBackdrop ? 'Backdrop off' : 'Backdrop'} hotkey="b" onPress={() => { void toggleBackdrop($).then(problem => { if (problem) $.ui.toast(problem); $.ui.invalidate('ui.render') }) }} /> : null}
+          {isTerminal ? <Button key="pause" label={isPaused ? 'Play' : 'Pause'} hotkey="k" onPress={() => { act($, 'pause') }} /> : null}
           <Button key="close" label="Close" hotkey="x" onPress={() => { stop(); void $.ui.close({ id: PANE }) }} />
         </Box>
       </Box>

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 import { CHROME_ROWS, fit, gradient, imageFrame, isImageRefused, LEVELS, MAX_IMAGE_PIXELS, PALETTES, pixels, ramp, rasterFrame, SCENES, sharpness } from '../hooks/art'
-import { sceneSvg } from '../hooks/vector'
+import { backdropSvg, photoSvg, sceneSvg } from '../hooks/vector'
+import { crc32, indexedPng } from '../hooks/png'
 
 const LOOKS = SCENES.flatMap(scene => PALETTES.map(palette => ({ scene, palette })))
 const neon = { scene: 'plasma', palette: PALETTES[0] } as const
@@ -72,6 +73,33 @@ describe('image frames', () => {
   test('only a refusal about the alt text gives up on Image', async () => {
     expect(isImageRefused('this Image draws its alt here')).toBe(true)
     expect(isImageRefused('nothing of bws-prism is mounted at prism')).toBe(false)
+  })
+})
+
+describe('desktop pictures', () => {
+  test('crc32 matches the standard check value', async () => {
+    expect(crc32(new TextEncoder().encode('123456789'))).toBe(0xcbf43926)
+  })
+
+  test('a PNG starts with the signature and holds its pixels uncompressed', async () => {
+    const bytes = atob(indexedPng(Uint32Array.of(0xff0000, 0x00ff00, 0x0000ff, 0xff0000), 2, 2))
+    expect(bytes.slice(1, 4)).toBe('PNG')
+    expect(bytes).toContain('PLTE')
+    expect(bytes).toContain('IEND')
+  })
+
+  test('more than 256 colors is refused', async () => {
+    expect(() => indexedPng(Uint32Array.from({ length: 257 }, (_, i) => i), 257, 1)).toThrow()
+  })
+
+  test('every photo and backdrop fits the Svg limit', async () => {
+    for (const look of LOOKS) {
+      const photo = photoSvg(look, 4.2)
+      expect(photo).toContain('data:image/png;base64,')
+      expect(photo.length).toBeLessThanOrEqual(131072)
+      expect(backdropSvg(look).length).toBeLessThanOrEqual(131072)
+      expect(backdropSvg(look)).toContain('slice')
+    }
   })
 })
 

@@ -48,13 +48,30 @@ test('/prism image draws an Image with alt text; /prism raster goes back', async
   await ui.unmount()
 })
 
-test('Desktop has no Image mode: no button, and /prism image says why', async ($, on) => {
+test('on Desktop Image embeds a PNG, Vector goes back, and there is no Pause', async ($, on) => {
   world(on, ['desktop'])
   await $.session.start(START)
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
-  expect(await ui.find({ key: 'mode' })).toBeUndefined()
-  expect(((await run($, 'image')) as any).text).toMatch(/Desktop draws Svg/)
+  expect(await ui.find({ key: 'pause' })).toBeUndefined()
+  await ui.press({ key: 'mode' })
+  expect((await ui.find({ type: 'Svg' }))?.props.source).toContain('data:image/png')
+  await ui.press({ key: 'mode' })
+  expect((await ui.find({ type: 'Svg' }))?.props.source).not.toContain('data:image/png')
   await ui.unmount()
+})
+
+test('the backdrop is set, then cleared, and a refusal is said', async ($, on) => {
+  world(on, ['desktop'])
+  const calls: unknown[] = []
+  let isDrawn = true
+  on('ui.backdrop', async (_: unknown, e: any) => { calls.push(e.backdrop); return { value: isDrawn ? { isDrawn: true, requestId: 'b' } : { isDrawn: false, reason: 'no room' } } as never })
+  await $.session.start(START)
+  await run($, 'backdrop')
+  expect((calls[0] as any).id).toBe('prism-backdrop')
+  await run($, 'backdrop')
+  expect(calls[1]).toBeUndefined()
+  isDrawn = false
+  expect(((await run($, 'backdrop')) as any).text).toMatch(/no room/)
 })
 
 test('Desktop draws an interactive Svg and no Raster', async ($, on) => {
@@ -66,7 +83,7 @@ test('Desktop draws an interactive Svg and no Raster', async ($, on) => {
   await ui.unmount()
 })
 
-test('the Scene and Palette buttons change the look; Pause flips its label', async ($, on) => {
+test('the Scene and Palette buttons change the look', async ($, on) => {
   world(on)
   await $.session.start(START)
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
@@ -74,8 +91,6 @@ test('the Scene and Palette buttons change the look; Pause flips its label', asy
   expect(await ui.find({ type: 'Text', text: /horizon/ })).toBeDefined()
   await ui.press({ key: 'palette' })
   expect(await ui.find({ type: 'Text', text: /ember/ })).toBeDefined()
-  await ui.press({ key: 'pause' })
-  expect((await ui.find({ key: 'pause' }))?.text).toContain('Play')
   await ui.unmount()
 })
 
