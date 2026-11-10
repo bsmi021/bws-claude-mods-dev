@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.31.1
+- The Unity pipeline guard no longer fails closed when the process listing fails. The probe now records whether a listing succeeded. If the WMI listing fails or times out (intermittent "Call cancelled"), it falls back to `Get-Process` (name and id only, no command lines). The guard denies a `unity` CLI command only when a successful listing shows no Unity; if both listings fail it lets the command through and notes that the probe was unavailable.
+- A process without a command line is unknown, never a match. Command lines are never printed or logged.
+
 ## 0.31.0
 - Removed the Assumptions and Shelf features: their dashboard tabs, `/assumptions`, `/shelf`, `/idea`, the tools `record_assumption`, `shelve_idea`, `list_ideas` and `close_idea`, the system-prompt guide, the opening-context shelf line, the bar's review and idea signals and its `idea` button, and the options `shelfPath` and `shelfNudge`.
 - The dashboard's default tab is now Board. `bws-cockpit-start.log` moves to `<CLAUDE_CONFIG_DIR or ~/.claude>/bws-cockpit/`.

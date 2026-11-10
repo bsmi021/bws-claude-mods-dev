@@ -1,11 +1,14 @@
 // Pure helpers: parsing probe output, run files and shell commands.
 // No `$` here, so tests can call them directly.
 
+// cmdline is '' when unknown (the Get-Process fallback has none): treat that as unknown, never as a match or a violation.
 export type Proc = { name: string; pid: number; cmdline: string }
 
 export type Probe = {
   at: number
   procs: Proc[]
+  procsOk: boolean // a listing (WMI or the fallback) succeeded; false means procs is empty because we could not look
+  procsLite?: boolean // the listing came from the fallback, so no command lines
   vram?: { usedMb: number; totalMb: number }
   adb?: { ready: string[]; other: string[] } // undefined when adb is missing
   ueMcp?: { url: string; isUp: boolean } // undefined when the project has no unreal-mcp

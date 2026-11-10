@@ -162,8 +162,13 @@ const STATE_COLOR: Record<CockpitState, string | undefined> = { good: 'success',
 const GUARD_NOTE_MS = 10 * 60 * 1000
 
 const PS_PROCS =
-  "Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('UnrealEditor.exe','Unity.exe','blender.exe') } | " +
+  "Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object { $_.Name -in @('UnrealEditor.exe','Unity.exe','blender.exe') } | " +
   "ForEach-Object { '{0}|{1}|{2}' -f $_.Name, $_.ProcessId, $_.CommandLine }"
+
+// Fallback when WMI fails or times out: name and id only, never a command line.
+const PS_PROCS_LITE =
+  "Get-Process -Name UnrealEditor,Unity,blender -ErrorAction SilentlyContinue | " +
+  "ForEach-Object { '{0}.exe|{1}|' -f $_.ProcessName, $_.Id }"
 
 type Options = {
   guard: boolean
@@ -216,7 +221,14 @@ async function isPortUp($: EngineInterface, url: string): Promise<boolean> {
 }
 
 async function runProbe($: EngineInterface, o: Options, server?: string): Promise<Probe> {
-  const procsRun = settle($.process.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', PS_PROCS], { timeoutMs: 15000 }))
+  const listProcs = async (): Promise<{ procs: Probe['procs']; ok: boolean; lite: boolean }> => {
+    const full = await settle($.process.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', PS_PROCS], { timeoutMs: 15000 }))
+    if (full && full.exitCode === 0) return { procs: parseProcs(full.stdout), ok: true, lite: false }
+    const lite = await settle($.process.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', PS_PROCS_LITE], { timeoutMs: 10000 }))
+    if (lite && lite.exitCode === 0) return { procs: parseProcs(lite.stdout), ok: true, lite: true }
+    return { procs: [], ok: false, lite: false }
+  }
+  const procsRun = listProcs()
   const vramRun = settle($.process.run(['nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits'], { timeoutMs: 10000 }))
   const adbRun = settle($.process.run([o.adbPath, 'devices'], { timeoutMs: 10000 }))
   const mcpJson = await readMcpJson($)
@@ -225,7 +237,9 @@ async function runProbe($: EngineInterface, o: Options, server?: string): Promis
   const [procs, vram, adb, isUp] = await Promise.all([procsRun, vramRun, adbRun, upRun])
   return {
     at: await $.clock.now(),
-    procs: procs ? parseProcs(procs.stdout) : [],
+    procs: procs.procs,
+    procsOk: procs.ok,
+    procsLite: procs.lite,
     vram: vram && vram.exitCode === 0 ? parseVram(vram.stdout) : undefined,
     adb: adb && adb.exitCode === 0 ? parseAdb(adb.stdout) : undefined,
     ueMcp: url === undefined ? undefined : { url, isUp: isUp === true },
@@ -2133,6 +2147,11 @@ export const register: Register = (on, options) => {
     }
     if (isUnityPipelineCommand(e.command, dialectOf(e.tool))) {
       const p = await probe($, o, 5000)
+      if (!p.procsOk) {
+        // Both listings failed: nothing proves Unity is absent, so do not block.
+        await noteGuard($, 'process probe unavailable: let a unity CLI command through unchecked')
+        return next(e)
+      }
       if (!p.procs.some(isUnity)) {
         await noteGuard($, 'blocked a unity CLI command: no editor running')
         return {

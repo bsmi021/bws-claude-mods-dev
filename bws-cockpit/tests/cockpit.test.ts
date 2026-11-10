@@ -8,6 +8,8 @@ import { addLowVram, adbNeedsDevice, findUeGuiLaunch, fixUnityLaunch, isUnityPip
 
 type World = {
   procs?: string // name|pid|cmdline lines
+  wmiFails?: boolean // the Get-CimInstance listing exits non-zero
+  liteProcs?: string | null // the Get-Process fallback's output; null: it fails too
   vram?: string
   adb?: string | null // null: adb missing
   mcpJson?: string
@@ -15,6 +17,7 @@ type World = {
   files?: Record<string, string>
   dirs?: Record<string, { name: string; kind: 'file' | 'dir'; mtimeMs: number }[]>
   surfaces?: string[]
+  toasts?: string[] // collects toast text
 }
 
 const CWD = 'C:/proj'
@@ -25,13 +28,21 @@ function world(on: On, w: World) {
   clockStart += 1_000_000
   const clock = mock.clock(on, { now: clockStart })
   const reached: { tool: string; command?: string }[] = []
-  on('ui.toast', () => ({ value: undefined }))
+  on('ui.toast', ($, e) => {
+    w.toasts?.push(String((e as unknown as { text: string }).text))
+    return { value: undefined }
+  })
   on('session.cwd', () => ({ value: CWD }))
   on('session.surfaces', () => ({ value: (w.surfaces ?? []) as never }))
   on('process.run', ($, e) => {
     const exe = String(e.argv[0])
     const ok = (stdout: string) => ({ value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } })
-    if (exe === 'powershell') return ok(w.procs ?? '')
+    if (exe === 'powershell') {
+      const isLite = String(e.argv[e.argv.length - 1]).includes('Get-Process')
+      const fail = { value: { exitCode: 1, stdout: '', stderr: 'Call cancelled', isStdoutTruncated: false, isStderrTruncated: false } }
+      if (isLite) return w.liteProcs === null ? fail : ok(w.liteProcs ?? '')
+      return w.wmiFails ? fail : ok(w.procs ?? '')
+    }
     if (exe === 'nvidia-smi') return ok(w.vram ?? '1000, 8188')
     if (w.adb === null) throw new Error('ENOENT adb')
     return ok(w.adb ?? 'List of devices attached\n\n')
@@ -207,6 +218,33 @@ describe('guard', () => {
   test('unity CLI pipeline command passes with an editor running', async ($, on) => {
     const reached = world(on, { procs: 'Unity.exe|7|"C:/Unity/Unity.exe" -projectPath C:/p -automated' })
     await $.tool.call({ tool: 'PowerShell', command: 'unity command eval --code "return 1;"' })
+    expect(reached.length).toBe(1)
+  })
+
+  test('unity guard: WMI fails, the Get-Process fallback finds Unity, so the command is allowed', async ($, on) => {
+    const reached = world(on, { wmiFails: true, liteProcs: 'Unity.exe|7|' })
+    await $.tool.call({ tool: 'Bash', command: 'unity --format json command --project-path C:/p recompile' })
+    expect(reached.length).toBe(1)
+  })
+
+  test('unity guard: WMI fails and the fallback shows no Unity, so it is denied', async ($, on) => {
+    const reached = world(on, { wmiFails: true, liteProcs: '' })
+    const r = await $.tool.call({ tool: 'Bash', command: 'unity --format json command --project-path C:/p recompile' })
+    expect(r.deny ?? r.text ?? '').toMatch(/no Unity editor is running/)
+    expect(reached.length).toBe(0)
+  })
+
+  test('unity guard: both listings fail, so the command is allowed and a note says why', async ($, on) => {
+    const toasts: string[] = []
+    const reached = world(on, { wmiFails: true, liteProcs: null, toasts })
+    await $.tool.call({ tool: 'Bash', command: 'unity --format json command --project-path C:/p recompile' })
+    expect(reached.length).toBe(1)
+    expect(toasts.join(' ')).toMatch(/probe unavailable/)
+  })
+
+  test('unity guard: WMI succeeds with Unity, so allowed (the fallback is not needed)', async ($, on) => {
+    const reached = world(on, { procs: 'Unity.exe|7|"C:/Unity/Unity.exe" -projectPath C:/p', liteProcs: null })
+    await $.tool.call({ tool: 'Bash', command: 'unity command eval --code "return 1;"' })
     expect(reached.length).toBe(1)
   })
 
